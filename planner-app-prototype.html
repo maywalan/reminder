@@ -1,0 +1,2831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Routine — Planner Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Inter+Tight:wght@600;700;800&family=Noto+Sans+Thai:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&family=Merriweather:wght@400;700;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F5F7;
+    --surface:#FFFFFF;
+    --surface-2:#FBFBFC;
+    --text:#1D1D1F;
+    --text-secondary:#6E6E73;
+    --text-tertiary:#AEAEB4;
+    --accent:#5B5FEF;
+    --accent-strong:#4749D6;
+    --accent-soft:rgba(91,95,239,0.12);
+    --success:#2FB463;
+    --success-soft:rgba(47,180,99,0.12);
+    --danger:#FF3B30;
+    --danger-soft:rgba(255,59,48,0.10);
+    --divider:rgba(60,60,67,0.10);
+    --divider-strong:rgba(60,60,67,0.16);
+    --shadow-sm:0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md:0 10px 30px rgba(0,0,0,0.10);
+    --shadow-lg:0 24px 60px rgba(0,0,0,0.18);
+    --radius-lg:26px;
+    --radius-md:16px;
+    --radius-sm:10px;
+  }
+
+  body.dark-mode{
+    --bg:#000000;
+    --surface:#1C1C1E;
+    --surface-2:#131315;
+    --text:#F5F5F7;
+    --text-secondary:#98989D;
+    --text-tertiary:#6C6C70;
+    --accent:#7B7FFF;
+    --accent-strong:#9195FF;
+    --accent-soft:rgba(123,127,255,0.20);
+    --success:#30D158;
+    --success-soft:rgba(48,209,88,0.16);
+    --danger:#FF453A;
+    --danger-soft:rgba(255,69,58,0.16);
+    --divider:rgba(255,255,255,0.13);
+    --divider-strong:rgba(255,255,255,0.22);
+    --shadow-sm:0 1px 2px rgba(0,0,0,0.3);
+    --shadow-md:0 10px 30px rgba(0,0,0,0.5);
+    --shadow-lg:0 24px 60px rgba(0,0,0,0.6);
+    --navbar-bg:rgba(28,28,30,0.86);
+  }
+  body.dark-mode .guest-alert-box p,
+  body.dark-mode .guest-banner .gtext{ color:#FFC876; }
+  body.dark-mode .guest-alert-box svg,
+  body.dark-mode .guest-banner svg{ stroke:#FFC876; }
+  body.dark-mode .field-group select,
+  body.dark-mode .cal-customize-field select{ background:var(--surface); color:var(--text); border-color:var(--divider); }
+  body.dark-mode .statusbar svg path,
+  body.dark-mode .statusbar svg rect{ fill:currentColor; }
+
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:
+      radial-gradient(circle at 20% 10%, #EDEDF4 0%, transparent 45%),
+      radial-gradient(circle at 85% 90%, #ECEFFB 0%, transparent 40%),
+      #E9E9EE;
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    color:var(--text);
+    padding:40px 16px;
+  }
+
+  .display-face{font-family:'Inter Tight','Inter',-apple-system,sans-serif;}
+
+  body.lang-th, body.lang-th .display-face{font-family:'Noto Sans Thai','Inter',-apple-system,sans-serif;}
+  body.lang-zh, body.lang-zh .display-face{font-family:'Noto Sans SC','Inter',-apple-system,sans-serif;}
+
+  /* ---------- Phone frame ---------- */
+  .stage{display:flex; flex-direction:column; align-items:center; gap:14px;}
+  .stage-label{font-size:12px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:#9C9CA3;}
+
+  .phone{
+    width:390px;
+    height:844px;
+    background:#000;
+    border-radius:56px;
+    padding:14px;
+    box-shadow:var(--shadow-lg), 0 0 0 1px rgba(0,0,0,0.06);
+    position:relative;
+  }
+  .phone-inner{
+    position:relative;
+    width:100%;
+    height:100%;
+    background:var(--bg);
+    border-radius:42px;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+  }
+  .notch{
+    position:absolute;
+    top:14px; left:50%; transform:translateX(-50%);
+    width:126px; height:34px;
+    background:#000;
+    border-radius:20px;
+    z-index:50;
+  }
+  .statusbar{
+    height:52px;
+    flex:none;
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    padding:0 28px 8px 28px;
+    font-size:15px;
+    font-weight:600;
+    color:var(--text);
+    position:relative;
+    z-index:20;
+  }
+  .statusbar .icons{display:flex; gap:5px; align-items:center;}
+
+  .app{flex:1; position:relative; overflow:hidden;}
+  .screen{
+    position:absolute; inset:0;
+    overflow-y:auto;
+    -ms-overflow-style:none; scrollbar-width:none;
+    padding-bottom:110px;
+    display:none;
+  }
+  .screen::-webkit-scrollbar{display:none;}
+  .screen.active{display:block;}
+
+  /* ---------- Nav bar ---------- */
+  .navbar{
+    position:absolute;
+    left:0; right:0; bottom:0;
+    height:96px;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    gap:10px;
+    padding-top:14px;
+    background:var(--navbar-bg, rgba(250,250,252,0.82));
+    backdrop-filter:blur(20px);
+    -webkit-backdrop-filter:blur(20px);
+    border-top:1px solid var(--divider);
+    z-index:40;
+  }
+  .nav-btn{
+    background:none; border:none; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    color:var(--text-tertiary);
+    font-size:11px; font-weight:600;
+    width:56px;
+    padding:2px 0;
+  }
+  .nav-btn svg{width:25px; height:25px; stroke:var(--text-tertiary); fill:none; stroke-width:1.8;}
+  .nav-btn.active{color:var(--accent);}
+  .nav-btn.active svg{stroke:var(--accent);}
+
+  .fab{
+    width:56px; height:56px;
+    border-radius:50%;
+    background:linear-gradient(160deg, var(--accent), var(--accent-strong));
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 10px 22px rgba(91,95,239,0.42);
+    border:none; cursor:pointer;
+    margin-top:-30px;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .fab:active{transform:scale(0.90); box-shadow:0 6px 14px rgba(91,95,239,0.4);}
+  .fab svg{width:26px; height:26px; stroke:#fff; stroke-width:2.4;}
+
+  /* ---------- Shared bits ---------- */
+  .px{padding-left:22px; padding-right:22px;}
+  .header-row{display:flex; align-items:flex-start; justify-content:space-between; padding:20px 22px 6px 22px;}
+  .greeting{font-size:13px; font-weight:600; color:var(--text-secondary); margin:0 0 2px 0;}
+  .h1{font-size:30px; font-weight:800; margin:0; letter-spacing:-0.02em;}
+  .icon-btn{
+    width:38px; height:38px; border-radius:50%;
+    background:var(--surface); border:1px solid var(--divider);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; box-shadow:var(--shadow-sm);
+    flex:none;
+  }
+  .icon-btn svg{width:18px; height:18px; stroke:var(--text); fill:none; stroke-width:1.9;}
+
+  .section-title{
+    font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em;
+    color:var(--text-tertiary); padding:22px 22px 10px 22px; margin:0;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+
+  /* ---------- Live activity capsule ---------- */
+  .live-wrap{padding:6px 22px 4px 22px;}
+  .live-activity{
+    background:#111114;
+    border-radius:24px;
+    padding:14px 16px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    box-shadow:0 14px 30px rgba(0,0,0,0.28);
+    position:relative;
+    overflow:hidden;
+    animation:live-in .5s cubic-bezier(.2,.9,.25,1);
+  }
+  @keyframes live-in{from{opacity:0; transform:scale(0.92) translateY(-6px);} to{opacity:1; transform:none;}}
+  .live-dot{
+    width:9px; height:9px; border-radius:50%; background:var(--success);
+    box-shadow:0 0 0 0 rgba(47,180,99,0.6);
+    animation:pulse 1.8s infinite;
+    flex:none;
+  }
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(47,180,99,0.55);}
+    70%{box-shadow:0 0 0 7px rgba(47,180,99,0);}
+    100%{box-shadow:0 0 0 0 rgba(47,180,99,0);}
+  }
+  .live-text{flex:1; min-width:0;}
+  .live-label{color:#9E9EA6; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.04em; margin:0 0 2px 0;}
+  .live-name{color:#fff; font-size:15px; font-weight:700; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .live-countdown{
+    color:#fff; font-size:15px; font-weight:800; font-variant-numeric:tabular-nums;
+    background:rgba(255,255,255,0.12); padding:6px 12px; border-radius:14px; flex:none;
+  }
+
+  /* ---------- Today list ---------- */
+  .todo-list{padding:2px 16px 10px 16px; display:flex; flex-direction:column; gap:10px;}
+  .todo-empty{margin:10px 22px; padding:26px 18px; text-align:center; background:var(--surface); border-radius:var(--radius-md); border:1px dashed var(--divider-strong); color:var(--text-secondary); font-size:14px;}
+  .todo-item{
+    background:var(--surface);
+    border-radius:var(--radius-md);
+    padding:13px 12px 13px 14px;
+    display:flex; align-items:center; gap:12px;
+    box-shadow:var(--shadow-sm);
+    border:1px solid var(--divider);
+    transition:opacity .2s ease, transform .2s ease;
+  }
+  .todo-item.done{opacity:0.5;}
+  .check{
+    width:24px; height:24px; border-radius:50%; flex:none;
+    border:2px solid var(--divider-strong);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; background:var(--surface);
+  }
+  .check svg{width:13px; height:13px; stroke:#fff; stroke-width:3; fill:none; opacity:0;}
+  .todo-item.done .check{background:var(--success); border-color:var(--success);}
+  .todo-item.done .check svg{opacity:1;}
+  .todo-main{flex:1; min-width:0; cursor:pointer;}
+  .todo-name{font-size:15px; font-weight:600; margin:0 0 2px 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .todo-item.done .todo-name{text-decoration:line-through; color:var(--text-secondary);}
+  .todo-meta{display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--text-secondary); font-weight:500;}
+  .todo-meta svg{width:12px; height:12px; stroke:var(--text-secondary); stroke-width:2; fill:none;}
+  .todo-del{
+    width:32px; height:32px; border-radius:50%; flex:none; border:none;
+    background:var(--danger-soft); display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .todo-del svg{width:14px; height:14px; stroke:var(--danger); stroke-width:2.2;}
+
+  .todo-edit-btn{background:none; border:none; color:var(--accent); font-size:12.5px; font-weight:700; text-transform:none; letter-spacing:0; cursor:pointer; padding:2px;}
+
+  .todo-item.edit-mode .check{border-color:var(--divider-strong); background:var(--surface);}
+  .todo-item.edit-mode .check svg{opacity:0;}
+  .todo-item.edit-mode .check.sel-on{background:var(--danger); border-color:var(--danger);}
+  .todo-item.edit-mode .check.sel-on svg{opacity:1;}
+
+  .bulk-delete-bar{
+    display:none; align-items:center; justify-content:space-between;
+    position:absolute; left:20px; right:20px; bottom:112px; z-index:60;
+    background:var(--surface); border:1px solid var(--divider); border-radius:18px;
+    padding:12px 16px; box-shadow:var(--shadow-md);
+  }
+  .bulk-delete-bar .count{font-size:13px; font-weight:600; color:var(--text-secondary);}
+  .bulk-delete-btn{background:var(--danger); color:#fff; border:none; border-radius:12px; padding:9px 18px; font-size:13.5px; font-weight:700; cursor:pointer;}
+  .bulk-delete-btn:disabled{opacity:0.4; cursor:default;}
+
+  /* ---------- Calendar screen ---------- */
+  .segmented{
+    margin:14px 22px 4px 22px;
+    background:rgba(118,118,128,0.12);
+    border-radius:11px;
+    padding:3px;
+    display:flex;
+  }
+  .segmented button{
+    flex:1; border:none; background:none; padding:7px 0; border-radius:9px;
+    font-size:13px; font-weight:600; color:var(--text-secondary); cursor:pointer;
+  }
+  .segmented button.active{background:var(--surface); color:var(--text); box-shadow:var(--shadow-sm);}
+
+  #screen-calendar{ font-family:var(--cal-font, inherit); }
+  .cal-surface{ background:var(--cal-bg, var(--surface)); border:1px solid var(--divider); border-radius:24px; margin:2px 14px 16px 14px; padding-top:4px; padding-bottom:6px; box-shadow:var(--shadow-sm); }
+
+  .cal-nav{display:flex; align-items:center; justify-content:space-between; padding:18px 22px 8px 22px;}
+  .cal-nav .label{font-size:19px; font-weight:800; letter-spacing:-0.01em; color:var(--cal-month-color, var(--text)); font-family:var(--cal-font, inherit);}
+  .cal-nav .arrows{display:flex; gap:8px;}
+  .arrow-btn{width:32px; height:32px; border-radius:50%; border:1px solid var(--divider); background:var(--surface); cursor:pointer; display:flex; align-items:center; justify-content:center;}
+  .arrow-btn svg{width:14px; height:14px; stroke:var(--text); stroke-width:2.3; fill:none;}
+
+  .month-grid{padding:6px 10px 4px 10px;}
+  .dow-row{display:grid; grid-template-columns:repeat(7,1fr); margin-bottom:6px;}
+  .dow-row span{text-align:center; font-size:11px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;}
+  .day-grid{display:grid; grid-template-columns:repeat(7,1fr); row-gap:4px;}
+  .day-cell{
+    aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    cursor:pointer; position:relative; gap:3px;
+  }
+  .day-num{
+    width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-size:14px; font-weight:600; color:var(--cal-date-color, var(--text)); font-family:var(--cal-font, inherit);
+  }
+  .day-cell.muted .day-num{color:var(--text-tertiary); font-weight:500;}
+  .day-cell.today .day-num{border:1.6px solid var(--cal-highlight, var(--accent)); color:var(--cal-highlight, var(--accent));}
+  .day-cell.selected .day-num{background:var(--cal-highlight, var(--accent)); color:#fff;}
+  .day-dots{display:flex; gap:2px; height:4px;}
+  .day-dots span{width:4px; height:4px; border-radius:50%; background:var(--dot-color, var(--cal-highlight, var(--accent)));}
+
+  .day-detail{margin:16px 12px 4px 12px;}
+  .day-detail-title{font-size:15px; font-weight:700; margin:0 0 10px 0; color:var(--text-secondary);}
+
+  .week-list{padding:8px 12px 4px 12px; display:flex; flex-direction:column; gap:14px;}
+  .week-day-block{background:var(--surface); border-radius:var(--radius-md); border:1px solid var(--divider); overflow:hidden; box-shadow:var(--shadow-sm);}
+  .week-day-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:11px 14px; background:var(--surface-2); border-bottom:1px solid var(--divider);
+  }
+  .week-day-head .wd{font-size:13.5px; font-weight:700; color:var(--cal-date-color, var(--text)); font-family:var(--cal-font, inherit);}
+  .week-day-head .wd small{color:var(--text-tertiary); font-weight:600; margin-left:5px;}
+  .week-day-head.is-today{background:var(--accent-soft);}
+  .week-day-head.is-today .wd{color:var(--cal-highlight, var(--accent-strong));}
+  .week-plan-row{display:flex; align-items:center; gap:10px; padding:9px 14px; border-bottom:1px solid var(--divider);}
+  .week-plan-row:last-child{border-bottom:none;}
+  .week-plan-time{font-size:12px; font-weight:700; color:var(--accent); width:60px; flex:none;}
+  .week-plan-name{font-size:13.5px; font-weight:600; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .week-empty{padding:12px 14px; font-size:12.5px; color:var(--text-tertiary);}
+
+  .year-grid{padding:8px 10px 4px 10px; display:grid; grid-template-columns:repeat(2,1fr); gap:12px;}
+  .mini-month{background:var(--surface); border:1px solid var(--divider); border-radius:14px; padding:10px; cursor:pointer; box-shadow:var(--shadow-sm);}
+  .mini-month-title{font-size:12.5px; font-weight:700; margin:0 0 6px 2px; color:var(--cal-month-color, var(--text)); font-family:var(--cal-font, inherit);}
+  .mini-dow{display:grid; grid-template-columns:repeat(7,1fr); margin-bottom:2px;}
+  .mini-dow span{font-size:7px; text-align:center; color:var(--text-tertiary); font-weight:700;}
+  .mini-days{display:grid; grid-template-columns:repeat(7,1fr); row-gap:2px;}
+  .mini-day{font-size:8.5px; text-align:center; color:var(--cal-date-color, var(--text-secondary)); position:relative; padding:1.5px 0; font-family:var(--cal-font, inherit);}
+  .mini-day.muted{color:transparent;}
+  .mini-day.has-plan::after{content:''; position:absolute; bottom:-1px; left:50%; transform:translateX(-50%); width:3px; height:3px; border-radius:50%; background:var(--cal-highlight, var(--accent));}
+  .mini-day.today{color:#fff; background:var(--cal-highlight, var(--accent)); border-radius:50%;}
+
+  /* ---------- Task color / group / repeat ---------- */
+  .todo-item{border-left:4px solid var(--task-color, var(--accent));}
+  .week-plan-row{border-left:3px solid var(--task-color, var(--accent)); padding-left:11px;}
+  .day-detail-list .todo-item{border-left:4px solid var(--task-color, var(--accent));}
+  .repeat-badge{display:inline-flex; align-items:center; vertical-align:-1px;}
+  .repeat-badge svg{width:11px; height:11px; stroke:currentColor; stroke-width:2; fill:none;}
+
+  .swatch-row{display:flex; gap:10px; padding:12px 14px; flex-wrap:wrap;}
+  .swatch{width:30px; height:30px; border-radius:50%; cursor:pointer; border:2px solid transparent; display:flex; align-items:center; justify-content:center; flex:none;}
+  .swatch.selected{border-color:var(--text);}
+  .swatch svg{width:14px; height:14px; stroke:#fff; stroke-width:3; fill:none; opacity:0;}
+  .swatch.selected svg{opacity:1;}
+
+  .group-chip{display:inline-flex; align-items:center; gap:5px; padding:5px 11px 5px 8px; border-radius:20px; font-size:12px; font-weight:700; border:1px solid var(--divider); background:var(--surface); cursor:pointer; flex:none;}
+  .group-chip .dot{width:7px; height:7px; border-radius:50%; flex:none;}
+  .group-chip.active{background:var(--accent); color:#fff; border-color:var(--accent);}
+  .group-chip-row{display:flex; gap:8px; padding:0 22px 4px 22px; overflow-x:auto; -ms-overflow-style:none; scrollbar-width:none;}
+  .group-chip-row::-webkit-scrollbar{display:none;}
+
+  /* ---------- Widget preview ---------- */
+  .widget-section-label{font-size:12.5px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.05em; margin:18px 20px 8px 20px;}
+  .widget-note{margin:0 20px 6px 20px; font-size:12px; color:var(--text-secondary); line-height:1.5;}
+  .widget-mock-wrap{display:flex; justify-content:center; padding:10px 20px 4px 20px;}
+  .ios-widget{
+    background:linear-gradient(160deg,#3A3A3E,#1E1E21);
+    border-radius:24px; padding:14px; box-shadow:0 10px 24px rgba(0,0,0,0.25);
+    color:#fff;
+  }
+  .ios-widget.mini{width:155px; height:155px;}
+  .ios-widget.compact{width:100%; max-width:320px; height:155px;}
+  .widget-head{display:flex; align-items:center; gap:6px; margin-bottom:8px;}
+  .widget-app-icon{width:16px; height:16px; border-radius:5px; background:linear-gradient(160deg, var(--accent), var(--accent-strong)); flex:none;}
+  .widget-app-name{font-size:11px; font-weight:700; color:rgba(255,255,255,0.7);}
+  .widget-task-row{display:flex; align-items:center; gap:6px; padding:3px 0;}
+  .widget-task-dot{width:6px; height:6px; border-radius:50%; flex:none;}
+  .widget-task-name{font-size:11.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1;}
+  .widget-task-time{font-size:10px; color:rgba(255,255,255,0.5); font-weight:600; flex:none;}
+  .widget-more{font-size:10.5px; color:rgba(255,255,255,0.45); font-weight:600; margin-top:2px;}
+  .widget-empty{font-size:11px; color:rgba(255,255,255,0.5);}
+
+  .cal-customize-field{padding:13px 14px; border-bottom:1px solid var(--divider); display:flex; align-items:center; justify-content:space-between;}
+  .cal-customize-field:last-child{border-bottom:none;}
+  .cal-customize-field label{font-size:14.5px; font-weight:600;}
+  .cal-customize-field input[type="color"]{width:36px; height:36px; border:none; border-radius:10px; padding:0; cursor:pointer; background:none;}
+  .cal-customize-field select{border:1px solid var(--divider); border-radius:8px; padding:7px 10px; font-size:13.5px; font-weight:600; background:var(--surface); color:var(--text); font-family:'Inter',sans-serif;}
+  .reset-default-btn{margin:16px 20px 0 20px; width:calc(100% - 40px); padding:12px; border-radius:var(--radius-md); background:var(--surface-2); border:1px solid var(--divider); color:var(--text-secondary); font-size:14px; font-weight:700; cursor:pointer;}
+
+  /* ---------- Overlay / sheet ---------- */
+  .overlay{
+    position:absolute; inset:0; background:rgba(0,0,0,0.42); z-index:400;
+    display:flex; align-items:flex-end; opacity:0; pointer-events:none; transition:opacity .25s ease;
+    border-radius:42px; overflow:hidden;
+  }
+  .overlay.open{opacity:1; pointer-events:auto;}
+  .sheet{
+    width:100%; background:var(--bg); border-radius:26px 26px 0 0;
+    box-shadow:0 -14px 40px rgba(0,0,0,0.25);
+    transform:translateY(100%); transition:transform .32s cubic-bezier(.2,.9,.25,1);
+    max-height:88%; overflow-y:auto; padding-bottom:26px;
+  }
+  .overlay.open .sheet{transform:translateY(0);}
+  .sheet-handle{width:38px; height:4.5px; background:var(--divider-strong); border-radius:3px; margin:10px auto 4px auto;}
+  .sheet-head{display:flex; align-items:center; justify-content:space-between; padding:10px 20px 4px 20px;}
+  .sheet-head .t{font-size:17px; font-weight:800;}
+  .sheet-cancel{background:none; border:none; color:var(--text-secondary); font-size:15px; font-weight:600; cursor:pointer; padding:6px;}
+  .sheet-save{background:none; border:none; color:var(--accent); font-size:15px; font-weight:700; cursor:pointer; padding:6px;}
+
+  .field-group{margin:14px 20px 0 20px; background:var(--surface); border-radius:var(--radius-md); border:1px solid var(--divider); overflow:hidden;}
+  .field{padding:12px 14px; border-bottom:1px solid var(--divider);}
+  .field:last-child{border-bottom:none;}
+  .field label{display:block; font-size:11.5px; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:.04em; margin-bottom:4px;}
+  .field input[type="text"], .field input[type="date"], .field input[type="time"], .field select{
+    width:100%; border:none; background:none; font-size:15.5px; font-weight:600; color:var(--text); outline:none;
+    font-family:'Inter',sans-serif; padding:0;
+  }
+  .field-row{display:flex; align-items:center; justify-content:space-between; padding:13px 14px;}
+  .field-row label{font-size:15px; font-weight:600; margin:0; color:var(--text);}
+  .field-row .sub{font-size:12px; color:var(--text-secondary); font-weight:500; margin-top:2px; max-width:250px;}
+
+  .toggle{width:46px; height:28px; border-radius:16px; background:var(--divider-strong); position:relative; cursor:pointer; flex:none; transition:background .18s ease;}
+  .toggle.on{background:var(--success);}
+  .toggle::after{content:''; position:absolute; top:2px; left:2px; width:24px; height:24px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,0.3); transition:transform .18s ease;}
+  .toggle.on::after{transform:translateX(18px);}
+
+  .delete-plan-btn{
+    margin:18px 20px 0 20px; width:calc(100% - 40px); padding:13px; border-radius:var(--radius-md);
+    background:var(--danger-soft); color:var(--danger); border:none; font-size:15px; font-weight:700; cursor:pointer;
+  }
+
+  /* ---------- Share sheet ---------- */
+  .contact-row{display:flex; align-items:center; gap:12px; padding:11px 14px; border-bottom:1px solid var(--divider);}
+  .contact-row:last-child{border-bottom:none;}
+  .avatar{width:36px; height:36px; border-radius:50%; background:var(--accent-soft); color:var(--accent-strong); font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center; flex:none;}
+  .contact-name{font-size:14.5px; font-weight:600; flex:1;}
+  .role-pill{font-size:11px; font-weight:700; color:var(--text-secondary); background:var(--surface-2); border:1px solid var(--divider); padding:4px 9px; border-radius:20px;}
+  .share-note{margin:12px 20px 0 20px; font-size:12.5px; color:var(--text-secondary); line-height:1.5; background:var(--accent-soft); padding:12px 14px; border-radius:var(--radius-sm);}
+  .share-link-row{margin:14px 20px 0 20px; display:flex; gap:8px;}
+  .share-link-row .link{flex:1; background:var(--surface); border:1px solid var(--divider); border-radius:var(--radius-sm); padding:11px 12px; font-size:12.5px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .copy-btn{background:var(--accent); color:#fff; border:none; border-radius:var(--radius-sm); padding:0 16px; font-size:13px; font-weight:700; cursor:pointer;}
+
+  /* ---------- Settings screen ---------- */
+  .settings-header{display:flex; align-items:center; gap:6px; padding:14px 12px 6px 12px;}
+  .back-btn{width:36px; height:36px; border-radius:50%; border:none; background:none; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none;}
+  .back-btn svg{width:20px; height:20px; stroke:var(--accent); stroke-width:2.2; fill:none;}
+  .settings-title{font-size:22px; font-weight:800; letter-spacing:-0.01em; margin:0; padding:8px 10px 4px 10px;}
+
+  /* ---------- Profile header ---------- */
+  .profile-header{display:flex; flex-direction:column; align-items:center; padding:4px 20px 22px 20px; text-align:center;}
+  .profile-avatar{
+    width:88px; height:88px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-size:30px; font-weight:800; color:#fff; cursor:pointer; position:relative; margin-bottom:12px;
+    background:linear-gradient(160deg, var(--accent), var(--accent-strong)); box-shadow:var(--shadow-md);
+  }
+  .profile-avatar-edit{
+    position:absolute; right:-2px; bottom:-2px; width:28px; height:28px; border-radius:50%;
+    background:var(--surface); border:2px solid var(--bg); display:flex; align-items:center; justify-content:center;
+    box-shadow:var(--shadow-sm);
+  }
+  .profile-avatar-edit svg{width:14px; height:14px; stroke:var(--accent-strong); stroke-width:2; fill:none;}
+  .profile-name-row{display:flex; align-items:center; gap:7px; cursor:pointer;}
+  .profile-name-row h1{font-size:22px; font-weight:800; margin:0; letter-spacing:-0.01em;}
+  .profile-name-row svg{width:15px; height:15px; stroke:var(--text-tertiary); stroke-width:2; fill:none;}
+  .profile-sub{font-size:12.5px; color:var(--text-tertiary); font-weight:600; margin:5px 0 0 0;}
+
+  .settings-section-label{font-size:12.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-tertiary); padding:16px 24px 8px 24px; margin:0;}
+  .settings-group{margin:0 20px; background:var(--surface); border-radius:var(--radius-md); border:1px solid var(--divider); overflow:hidden; box-shadow:var(--shadow-sm);}
+  .settings-row{display:flex; align-items:center; gap:12px; padding:13px 14px; border-bottom:1px solid var(--divider); cursor:pointer;}
+  .settings-row:last-child{border-bottom:none;}
+  .settings-row .srow-icon{width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex:none; background:var(--accent-soft);}
+  .settings-row .srow-icon svg{width:16px; height:16px; stroke:var(--accent-strong); stroke-width:2; fill:none;}
+  .settings-row .srow-icon.danger{background:var(--danger-soft);}
+  .settings-row .srow-icon.danger svg{stroke:var(--danger);}
+  .settings-row .srow-main{flex:1; min-width:0;}
+  .settings-row .srow-label{font-size:14.5px; font-weight:600; margin:0;}
+  .settings-row .srow-label.danger-text{color:var(--danger);}
+  .settings-row .srow-value{font-size:13px; color:var(--text-tertiary); font-weight:500;}
+  .settings-row .chevron{width:16px; height:16px; stroke:var(--text-tertiary); stroke-width:2; fill:none; flex:none;}
+  .settings-row.no-hover{cursor:default;}
+
+  .radio-row{display:flex; align-items:center; justify-content:space-between; padding:13px 14px; border-bottom:1px solid var(--divider); cursor:pointer;}
+  .radio-row:last-child{border-bottom:none;}
+  .radio-row .rlabel{font-size:15px; font-weight:600;}
+  .radio-row .rsub{font-size:12px; color:var(--text-secondary); font-weight:500; margin-top:1px;}
+  .radio-dot{width:22px; height:22px; border-radius:50%; border:2px solid var(--divider-strong); flex:none; display:flex; align-items:center; justify-content:center;}
+  .radio-dot.checked{border-color:var(--accent); background:var(--accent);}
+  .radio-dot svg{width:11px; height:11px; stroke:#fff; stroke-width:3; fill:none; opacity:0;}
+  .radio-dot.checked svg{opacity:1;}
+
+  .privacy-text{margin:14px 20px 0 20px; padding:16px; background:var(--surface); border:1px solid var(--divider); border-radius:var(--radius-md); font-size:13.5px; line-height:1.7; color:var(--text-secondary);}
+  .privacy-text strong{color:var(--text); display:block; margin-bottom:4px;}
+
+  /* ---------- Progress screen ---------- */
+  .progress-hero{
+    margin:14px 22px 4px 22px; border-radius:24px; padding:20px 20px 18px 20px;
+    background:linear-gradient(160deg,#1C1C20,#0A0A0C); color:#fff;
+    position:relative; overflow:hidden; box-shadow:0 14px 30px rgba(0,0,0,0.28);
+  }
+  .progress-hero::before{
+    content:''; position:absolute; top:-46px; right:-46px; width:170px; height:170px; border-radius:50%;
+    background:radial-gradient(circle, var(--accent) 0%, transparent 70%); opacity:0.55; filter:blur(4px);
+  }
+  .progress-hero-label{position:relative; z-index:1; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:rgba(255,255,255,0.55); margin:0 0 6px 0;}
+  .progress-hero-value{position:relative; z-index:1; font-size:44px; font-weight:800; margin:0; letter-spacing:-0.02em;}
+  .progress-hero-sub{position:relative; z-index:1; display:flex; align-items:center; flex-wrap:wrap; gap:8px; font-size:13px; color:rgba(255,255,255,0.7); margin:8px 0 0 0;}
+  .progress-hero-delta{font-size:12px; font-weight:700; padding:3px 9px; border-radius:20px;}
+  .progress-hero-delta.up{background:rgba(48,209,88,0.22); color:#6FE39B;}
+  .progress-hero-delta.down{background:rgba(255,69,58,0.20); color:#FF8079;}
+
+  .progress-stats-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:14px 22px 4px 22px;}
+  .stat-tile{background:var(--surface); border:1px solid var(--divider); border-radius:var(--radius-md); padding:14px; box-shadow:var(--shadow-sm);}
+  .stat-tile .stat-icon{width:30px; height:30px; border-radius:8px; background:var(--accent-soft); display:flex; align-items:center; justify-content:center; margin-bottom:8px;}
+  .stat-tile .stat-icon svg{width:16px; height:16px; stroke:var(--accent-strong); stroke-width:2; fill:none;}
+  .stat-tile .stat-value{font-size:22px; font-weight:800; margin:0 0 2px 0; letter-spacing:-0.01em;}
+  .stat-tile .stat-label{font-size:11.5px; font-weight:600; color:var(--text-secondary); margin:0;}
+
+  .progress-chart-row{display:flex; align-items:flex-end; gap:8px; padding:14px 12px 12px 12px;}
+  .progress-bar-col{flex:1; height:112px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:4px; min-width:0;}
+  .progress-bar{width:100%; max-width:26px; border-radius:8px 8px 4px 4px; background:linear-gradient(180deg, var(--accent), var(--accent-strong));}
+  .progress-bar.future{background:var(--divider);}
+  .progress-bar-label{font-size:10px; font-weight:700; color:var(--text-tertiary); white-space:nowrap;}
+  .progress-bar-value{font-size:10px; font-weight:700; color:var(--text-secondary); min-height:12px;}
+
+  .progress-heat-dow{display:grid; grid-template-columns:repeat(7,1fr); margin:12px 12px 4px 12px;}
+  .progress-heat-dow span{font-size:10px; text-align:center; color:var(--text-tertiary); font-weight:700;}
+  .progress-heatmap{display:grid; grid-template-columns:repeat(7,1fr); gap:5px; padding:0 12px 14px 12px;}
+  .heat-cell{aspect-ratio:1; border-radius:7px;}
+  .heat-cell.empty{background:transparent;}
+  .heat-cell.is-today{box-shadow:0 0 0 1.6px var(--accent) inset;}
+
+  .category-row{display:flex; align-items:center; gap:10px; padding:9px 0;}
+  .category-dot{width:9px; height:9px; border-radius:50%; flex:none;}
+  .category-name{font-size:13px; font-weight:600; width:70px; flex:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .category-track{flex:1; height:8px; border-radius:5px; background:var(--divider); overflow:hidden;}
+  .category-fill{display:block; height:100%; border-radius:5px;}
+  .category-pct{font-size:12px; font-weight:700; color:var(--text-secondary); width:34px; text-align:right; flex:none;}
+
+  /* ---------- Recap sheet (Wrap-style) ---------- */
+  .recap-card{
+    margin:16px 20px 4px 20px; border-radius:28px; padding:26px 22px 22px 22px;
+    background:linear-gradient(165deg, #5B5FEF 0%, #8B5CF6 45%, #FF6482 100%);
+    color:#fff; position:relative; overflow:hidden; box-shadow:0 20px 40px rgba(91,95,239,0.35);
+  }
+  .recap-eyebrow{font-size:11px; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:rgba(255,255,255,0.75); margin:0 0 12px 0;}
+  .recap-big-number{font-size:56px; font-weight:800; margin:0; letter-spacing:-0.02em;}
+  .recap-big-label{font-size:13px; font-weight:600; color:rgba(255,255,255,0.85); margin:2px 0 20px 0;}
+  .recap-insight{margin:0; font-size:13.5px; line-height:1.5; background:rgba(255,255,255,0.14); padding:12px 14px; border-radius:16px;}
+  .recap-share-btn{margin:18px 20px 4px 20px; width:calc(100% - 40px); padding:14px; border-radius:var(--radius-md); background:var(--text); color:var(--surface); border:none; font-size:15px; font-weight:700; cursor:pointer;}
+
+  /* ---------- Logged out state ---------- */
+  .logged-out-screen{
+    position:absolute; inset:0; z-index:300; background:var(--bg);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; padding:0 36px;
+    text-align:center; opacity:0; pointer-events:none; transition:opacity .25s ease;
+  }
+  .logged-out-screen.show{opacity:1; pointer-events:auto;}
+  .logged-out-icon{width:64px; height:64px; border-radius:50%; background:var(--accent-soft); display:flex; align-items:center; justify-content:center;}
+  .logged-out-icon svg{width:28px; height:28px; stroke:var(--accent-strong); stroke-width:1.8; fill:none;}
+  .logged-out-title{font-size:19px; font-weight:800; margin:0;}
+  .logged-out-sub{font-size:13.5px; color:var(--text-secondary); margin:0; line-height:1.5;}
+  .login-btn{margin-top:6px; background:var(--accent); color:#fff; border:none; padding:13px 28px; border-radius:var(--radius-md); font-size:15px; font-weight:700; cursor:pointer;}
+  .guest-link-btn{margin-top:14px; background:none; border:none; color:var(--text-secondary); font-size:13.5px; font-weight:700; cursor:pointer; text-decoration:underline; text-underline-offset:2px;}
+
+  .confirm-sheet-actions{display:flex; gap:10px; padding:16px 20px 4px 20px;}
+  .confirm-sheet-actions button{flex:1; padding:13px; border-radius:var(--radius-md); font-size:14.5px; font-weight:700; border:none; cursor:pointer;}
+  .confirm-btn-cancel{background:var(--surface); border:1px solid var(--divider) !important; color:var(--text);}
+  .confirm-btn-danger{background:var(--danger); color:#fff;}
+  .confirm-btn-primary{background:var(--accent); color:#fff;}
+
+  .guest-alert-box{
+    margin:12px 20px 4px 20px; padding:14px; border-radius:var(--radius-md);
+    background:rgba(255,159,67,0.12); border:1px solid rgba(255,159,67,0.35);
+    display:flex; gap:10px; align-items:flex-start;
+  }
+  .guest-alert-box svg{width:20px; height:20px; stroke:#B8710B; stroke-width:2; fill:none; flex:none; margin-top:1px;}
+  .guest-alert-box p{margin:0; font-size:12.5px; line-height:1.55; color:#7A4B08; font-weight:500;}
+
+  .guest-banner{
+    display:none; align-items:center; gap:10px; margin:0 20px 16px 20px; padding:12px 14px;
+    background:rgba(255,159,67,0.12); border:1px solid rgba(255,159,67,0.35); border-radius:var(--radius-md);
+  }
+  .guest-banner svg{width:18px; height:18px; stroke:#B8710B; stroke-width:2; fill:none; flex:none;}
+  .guest-banner .gtext{flex:1; font-size:12px; line-height:1.4; color:#7A4B08; font-weight:600;}
+  .guest-banner .glogin{background:none; border:none; color:var(--accent-strong); font-size:12.5px; font-weight:700; cursor:pointer; flex:none;}
+
+  /* ---------- Snackbar ---------- */
+  .snackbar{
+    position:absolute; left:20px; right:20px; bottom:112px; z-index:200;
+    background:#1D1D1F; color:#fff; border-radius:14px; padding:12px 16px;
+    display:flex; align-items:center; justify-content:space-between; font-size:13.5px; font-weight:600;
+    box-shadow:var(--shadow-md);
+    transform:translateY(20px); opacity:0; pointer-events:none; transition:all .25s ease;
+  }
+  .snackbar.show{transform:translateY(0); opacity:1; pointer-events:auto;}
+  .snackbar button{background:none; border:none; color:#8E8CFF; font-weight:700; font-size:13.5px; cursor:pointer;}
+
+  @media (max-width:420px){
+    .phone{width:100vw; height:100vh; border-radius:0; padding:0;}
+    .phone-inner{border-radius:0;}
+    body{padding:0;}
+    .stage-label{display:none;}
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="stage-label">Routine — interactive prototype · tap around</div>
+  <div class="phone">
+    <div class="phone-inner">
+      <div class="notch"></div>
+      <div class="statusbar">
+        <span id="clock">9:41</span>
+        <div class="icons">
+          <svg width="18" height="12" viewBox="0 0 18 12" fill="none"><path d="M1 9 L1 11 L3 11 L3 5 Z M5 6 L5 11 L7 11 L7 3 Z M9 3 L9 11 L11 11 L11 1 Z M13 1 L13 11 L15 11 L15 0 Z" fill="#1D1D1F"/></svg>
+          <svg width="22" height="12" viewBox="0 0 22 12" fill="none"><rect x="1" y="1" width="18" height="10" rx="2.5" stroke="#1D1D1F" stroke-width="1"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.3" fill="#1D1D1F"/><rect x="20" y="4" width="1.5" height="4" rx="0.7" fill="#1D1D1F"/></svg>
+        </div>
+      </div>
+
+      <div class="app">
+        <!-- TODAY SCREEN -->
+        <div class="screen active" id="screen-today">
+          <div class="header-row">
+            <div>
+              <p class="greeting" id="greeting-text">Good morning</p>
+              <h1 class="h1 display-face" id="today-date">Today</h1>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <div class="icon-btn" id="btn-filter-quick" title="Filter">
+                <svg viewBox="0 0 24 24"><path d="M4 5h16M7 12h10M10 19h4" stroke-linecap="round"/></svg>
+              </div>
+              <div class="icon-btn" id="btn-share-quick" title="Share calendar">
+                <svg viewBox="0 0 24 24"><path d="M12 3v13M12 3l-4 4M12 3l4 4M5 14v4a2 2 0 002 2h10a2 2 0 002-2v-4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="group-chip-row" id="group-chip-row"></div>
+
+          <div class="live-wrap" id="live-activity-wrap"></div>
+
+          <p class="section-title">
+            <span data-i18n="todays_plan">Today's plan</span>
+            <button class="todo-edit-btn" id="btn-todo-edit">Edit</button>
+          </p>
+          <div class="todo-list" id="todo-list"></div>
+          <div class="bulk-delete-bar" id="bulk-delete-bar">
+            <span class="count" id="bulk-delete-count">0 selected</span>
+            <button class="bulk-delete-btn" id="btn-bulk-delete" data-i18n="delete_word">Delete</button>
+          </div>
+        </div>
+
+        <!-- CALENDAR SCREEN -->
+        <div class="screen" id="screen-calendar">
+          <div class="header-row">
+            <h1 class="h1 display-face" data-i18n="calendar">Calendar</h1>
+            <div style="display:flex; gap:8px;">
+              <div class="icon-btn" id="btn-cal-customize" title="Customize">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="9" cy="10" r="1.3" fill="currentColor" stroke="none"/><circle cx="14.5" cy="9" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="14" r="1.3" fill="currentColor" stroke="none"/><circle cx="10" cy="15" r="1.3" fill="currentColor" stroke="none"/><path d="M12 3a9 9 0 000 18c1.5 0 1.8-1 1-1.8-.5-.5-.3-1.2.4-1.4 3-1 4.6-3.6 4.6-6.8A9 9 0 0012 3z"/></svg>
+              </div>
+              <div class="icon-btn" id="btn-share-cal" title="Share calendar">
+                <svg viewBox="0 0 24 24"><path d="M12 3v13M12 3l-4 4M12 3l4 4M5 14v4a2 2 0 002 2h10a2 2 0 002-2v-4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+          </div>
+          <div class="segmented" id="cal-segmented">
+            <button data-view="week" data-i18n="week">Week</button>
+            <button data-view="month" class="active" data-i18n="month">Month</button>
+            <button data-view="year" data-i18n="year">Year</button>
+          </div>
+
+          <div class="cal-surface">
+            <div id="cal-nav-wrap"></div>
+            <div id="cal-body"></div>
+          </div>
+        </div>
+
+        <!-- PROGRESS SCREEN -->
+        <div class="screen" id="screen-progress">
+          <div class="header-row">
+            <h1 class="h1 display-face" data-i18n="progress_title">Progress</h1>
+            <div class="icon-btn" id="btn-progress-recap" title="Recap">
+              <svg viewBox="0 0 24 24"><path d="M12 2l1.8 5.4L19 9l-5.2 1.6L12 16l-1.8-5.4L5 9l5.2-1.6L12 2z"/><path d="M19 14l.8 2.4L22 17l-2.2.6L19 20l-.8-2.4L16 17l2.2-.6L19 14z"/></svg>
+            </div>
+          </div>
+
+          <div class="segmented" id="progress-segmented">
+            <button data-view="week" class="active" data-i18n="week">Week</button>
+            <button data-view="month" data-i18n="month">Month</button>
+            <button data-view="year" data-i18n="year">Year</button>
+          </div>
+
+          <div class="progress-hero" id="progress-hero"></div>
+
+          <div class="progress-stats-grid" id="progress-stats"></div>
+
+          <p class="section-title" data-i18n="trend_label">Trend</p>
+          <div class="cal-surface" style="margin:2px 14px 8px 14px;" id="progress-chart"></div>
+
+          <p class="section-title" data-i18n="categories_label">By Category</p>
+          <div class="field-group" style="margin:2px 20px 16px 20px; padding:4px 14px;" id="progress-categories"></div>
+        </div>
+
+        <!-- SETTINGS SCREEN -->
+        <div class="screen" id="screen-settings">
+          <div class="settings-header">
+            <button class="back-btn" id="btn-settings-back">
+              <svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+          <div class="profile-header">
+            <div class="profile-avatar" id="btn-profile-avatar">
+              <span id="profile-avatar-initials">AK</span>
+              <div class="profile-avatar-edit"><svg viewBox="0 0 24 24"><path d="M4 8.5V6.5a2 2 0 012-2h1.2l1-1.5h5.6l1 1.5H16a2 2 0 012 2v9a2 2 0 01-2 2H6a2 2 0 01-2-2v-3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="11" cy="11.5" r="3"/></svg></div>
+            </div>
+            <div class="profile-name-row" id="btn-profile-name">
+              <h1 class="profile-name display-face" id="profile-name-display">Alex Kim</h1>
+              <svg viewBox="0 0 24 24"><path d="M14.5 4.5l5 5L9 20H4v-5z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <p class="profile-sub" data-i18n="tap_to_edit">Tap photo or name to edit</p>
+          </div>
+
+          <div class="guest-banner" id="guest-banner">
+            <svg viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.9L2.5 17a2 2 0 001.7 3h15.6a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" stroke-linejoin="round"/></svg>
+            <span class="gtext" data-i18n="guest_banner_text">Guest Mode — your data is stored only on this device.</span>
+            <button class="glogin" id="guest-banner-login" data-i18n="log_in">Log In</button>
+          </div>
+
+          <p class="settings-section-label" data-i18n="section_notifications">Notifications</p>
+          <div class="settings-group">
+            <div class="settings-row no-hover">
+              <div class="srow-icon"><svg viewBox="0 0 24 24"><path d="M12 3a5 5 0 00-5 5v3.5c0 .7-.28 1.37-.78 1.87L5 15h14l-1.22-1.63A2.65 2.65 0 0117 11.5V8a5 5 0 00-5-5z" stroke-linejoin="round"/><path d="M9.5 18a2.5 2.5 0 005 0" stroke-linecap="round"/></svg></div>
+              <div class="srow-main">
+                <p class="srow-label" data-i18n="notifications">Notifications</p>
+              </div>
+              <div class="toggle on" id="toggle-notifications"></div>
+            </div>
+            <div class="settings-row no-hover">
+              <div class="srow-icon"><svg viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="3"/><path d="M12 17.5h.01" stroke-linecap="round"/></svg></div>
+              <div class="srow-main">
+                <p class="srow-label" data-i18n="live_activities">Live Activities</p>
+              </div>
+              <div class="toggle on" id="toggle-live-activities"></div>
+            </div>
+            <div class="settings-row" id="row-notification-options">
+              <div class="srow-icon"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10" stroke-linecap="round"/></svg></div>
+              <div class="srow-main">
+                <p class="srow-label" data-i18n="notification_options">Notification Options</p>
+              </div>
+              <svg class="chevron" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+          </div>
+
+          <p class="settings-section-label" data-i18n="section_preferences">Preferences</p>
+          <div class="settings-group">
+            <div class="settings-row" id="row-appearance">
+              <div class="srow-icon"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 000 18 9 9 0 000-18zm0 0v18" stroke-linejoin="round"/><path d="M12 3a9 9 0 010 18" fill="currentColor" stroke="none"/></svg></div>
+              <div class="srow-main">
+                <p class="srow-label" data-i18n="appearance">Appearance</p>
+              </div>
+              <span class="srow-value" id="appearance-current">Light</span>
+              <svg class="chevron" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="settings-row" id="row-language">
+              <div class="srow-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 2.5 15.3 0 18M12 3c-2.5 2.7-2.5 15.3 0 18" stroke-linecap="round"/></svg></div>
+              <div class="srow-main">
+                <p class="srow-label" data-i18n="language">Language</p>
+              </div>
+              <span class="srow-value" id="language-current">English</span>
+              <svg class="chevron" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="settings-row" id="row-privacy">
+              <div class="srow-icon"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z" stroke-linejoin="round"/></svg></div>
+              <div class="srow-main">
+                <p class="srow-label" data-i18n="data_privacy">Data Privacy</p>
+              </div>
+              <svg class="chevron" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+          </div>
+
+
+          <p class="settings-section-label" data-i18n="section_account">Account</p>
+          <div class="settings-group">
+            <div class="settings-row" id="row-switch-account">
+              <div class="srow-icon"><svg viewBox="0 0 24 24"><path d="M17 3l3 3-3 3M20 6H8M7 21l-3-3 3-3M4 18h12" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <div class="srow-main">
+                <p class="srow-label" data-i18n="switch_account">Switch Account</p>
+              </div>
+              <svg class="chevron" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="settings-row" id="row-logout">
+              <div class="srow-icon danger"><svg viewBox="0 0 24 24"><path d="M9 21H6a2 2 0 01-2-2V5a2 2 0 012-2h3M16 17l5-5-5-5M21 12H9" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <div class="srow-main">
+                <p class="srow-label danger-text" data-i18n="log_out">Log Out</p>
+              </div>
+            </div>
+          </div>
+
+          <p class="settings-section-label" data-i18n="section_widgets">iOS Widgets</p>
+          <div class="settings-group">
+            <div class="settings-row" id="row-widgets">
+              <div class="srow-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg></div>
+              <div class="srow-main">
+                <p class="srow-label" data-i18n="home_screen_widgets">Home Screen Widgets</p>
+              </div>
+              <svg class="chevron" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="navbar">
+        <button class="nav-btn active" id="nav-today" data-screen="today">
+          <svg viewBox="0 0 24 24"><path d="M4 11.5 12 4l8 7.5M6 10v9a1 1 0 001 1h4v-6h2v6h4a1 1 0 001-1v-9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span data-i18n="nav_today">Today</span>
+        </button>
+        <button class="nav-btn" id="nav-calendar" data-screen="calendar">
+          <svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2.5"/><path d="M4 9.5h16M8 3v3.5M16 3v3.5" stroke-linecap="round"/></svg>
+          <span data-i18n="nav_calendar">Calendar</span>
+        </button>
+        <button class="fab" id="btn-add">
+          <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
+        </button>
+        <button class="nav-btn" id="nav-progress" data-screen="progress">
+          <svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span data-i18n="nav_progress">Progress</span>
+        </button>
+        <button class="nav-btn" id="nav-settings" data-screen="settings">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.5-4 4.2-6 7.5-6s6 2 7.5 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span data-i18n="nav_profile">Profile</span>
+        </button>
+      </div>
+
+      <!-- ADD / EDIT PLAN SHEET -->
+      <div class="overlay" id="overlay-add">
+        <div class="sheet">
+          <div class="sheet-handle"></div>
+          <div class="sheet-head">
+            <button class="sheet-cancel" id="btn-add-cancel" data-i18n="cancel">Cancel</button>
+            <span class="t" id="add-sheet-title">New Plan</span>
+            <button class="sheet-save" id="btn-add-save" data-i18n="save">Save</button>
+          </div>
+
+          <div class="field-group">
+            <div class="field">
+              <label data-i18n="plan_name">Plan name</label>
+              <input type="text" id="input-name" placeholder="e.g. Morning Run" maxlength="60">
+            </div>
+          </div>
+
+          <div class="field-group">
+            <div class="field">
+              <label data-i18n="date">Date</label>
+              <input type="date" id="input-date">
+            </div>
+            <div class="field">
+              <label data-i18n="time">Time</label>
+              <input type="time" id="input-time">
+            </div>
+          </div>
+
+          <div class="field-group">
+            <div class="field">
+              <label data-i18n="alert">Alert</label>
+              <select id="input-alert">
+                <option value="none" data-i18n="alert_none">None</option>
+                <option value="0" data-i18n="alert_0">At time of event</option>
+                <option value="5" selected data-i18n="alert_5">5 minutes before</option>
+                <option value="15" data-i18n="alert_15">15 minutes before</option>
+                <option value="30" data-i18n="alert_30">30 minutes before</option>
+                <option value="60" data-i18n="alert_60">1 hour before</option>
+                <option value="1440" data-i18n="alert_1440">1 day before</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <div class="field" style="padding-bottom:2px;">
+              <label data-i18n="color">Color</label>
+            </div>
+            <div class="swatch-row" id="color-swatch-row"></div>
+          </div>
+
+          <div class="field-group">
+            <div class="field">
+              <label data-i18n="group">Group</label>
+              <select id="input-group"></select>
+            </div>
+          </div>
+
+          <div class="field-group" id="repeat-field-group">
+            <div class="field">
+              <label data-i18n="repeat">Repeat</label>
+              <select id="input-repeat">
+                <option value="none" data-i18n="repeat_none">Does not repeat</option>
+                <option value="1h" data-i18n="repeat_1h">Every 1 hour</option>
+                <option value="2h" data-i18n="repeat_2h">Every 2 hours</option>
+                <option value="3h" data-i18n="repeat_3h">Every 3 hours</option>
+                <option value="6h" data-i18n="repeat_6h">Every 6 hours</option>
+                <option value="1d" data-i18n="repeat_1d">Every 1 day</option>
+                <option value="2d" data-i18n="repeat_2d">Every 2 days</option>
+                <option value="week" data-i18n="repeat_week">Every week</option>
+                <option value="month" data-i18n="repeat_month">Every month</option>
+                <option value="2month" data-i18n="repeat_2month">Every 2 months</option>
+                <option value="3month" data-i18n="repeat_3month">Every 3 months</option>
+              </select>
+            </div>
+            <div class="field" id="repeat-until-field" style="display:none;">
+              <label data-i18n="repeat_until">Repeat until</label>
+              <input type="date" id="input-repeat-until">
+            </div>
+          </div>
+          <p id="repeat-edit-note" class="widget-note" style="display:none; margin-top:2px;" data-i18n="repeat_edit_note">Repeat can only be set when creating a new plan. This edits just this occurrence.</p>
+
+          <div class="field-group">
+            <div class="field-row">
+              <div>
+                <label style="margin:0;" data-i18n="live_activity">Live Activity</label>
+                <div class="sub" data-i18n="live_activity_sub">Show a live countdown on the Lock Screen and Dynamic Island as this plan approaches.</div>
+              </div>
+              <div class="toggle on" id="toggle-live"></div>
+            </div>
+          </div>
+
+          <button class="delete-plan-btn" id="btn-add-delete" style="display:none;" data-i18n="delete_plan">Delete Plan</button>
+        </div>
+      </div>
+
+      <!-- NEW GROUP SHEET -->
+      <div class="overlay" id="overlay-new-group">
+        <div class="sheet">
+          <div class="sheet-handle"></div>
+          <div class="sheet-head">
+            <button class="sheet-cancel" id="btn-newgroup-cancel" data-i18n="cancel">Cancel</button>
+            <span class="t" data-i18n="new_group">New Group</span>
+            <button class="sheet-save" id="btn-newgroup-save" data-i18n="save">Save</button>
+          </div>
+          <div class="field-group">
+            <div class="field">
+              <label data-i18n="group_name">Group name</label>
+              <input type="text" id="input-group-name" placeholder="e.g. Study" maxlength="24">
+            </div>
+          </div>
+          <div class="field-group">
+            <div class="field" style="padding-bottom:2px;"><label data-i18n="color">Color</label></div>
+            <div class="swatch-row" id="new-group-swatch-row"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FILTER SHEET -->
+      <div class="overlay" id="overlay-filter">
+        <div class="sheet">
+          <div class="sheet-handle"></div>
+          <div class="sheet-head">
+            <span style="width:44px;"></span>
+            <span class="t" data-i18n="filter_by_group">Filter by Group</span>
+            <button class="sheet-save" id="btn-filter-done" data-i18n="done">Done</button>
+          </div>
+          <div class="settings-group" style="margin-top:14px;" id="filter-list"></div>
+        </div>
+      </div>
+
+      <!-- WIDGET PREVIEW SHEET -->
+      <div class="overlay" id="overlay-widgets">
+        <div class="sheet">
+          <div class="sheet-handle"></div>
+          <div class="sheet-head">
+            <span style="width:44px;"></span>
+            <span class="t" data-i18n="home_screen_widgets">Home Screen Widgets</span>
+            <button class="sheet-save" id="btn-widgets-done" data-i18n="done">Done</button>
+          </div>
+          <p class="widget-note" style="margin-top:10px;" data-i18n="widget_add_note">Add these from your iOS Home Screen: long-press an empty area, tap the + button, then search for Routine.</p>
+
+          <p class="widget-section-label" data-i18n="widget_mini">Mini — Today's list</p>
+          <div class="widget-mock-wrap"><div class="ios-widget mini" id="widget-mini"></div></div>
+
+          <p class="widget-section-label" data-i18n="widget_compact">Compact — List with details</p>
+          <div class="widget-mock-wrap"><div class="ios-widget compact" id="widget-compact"></div></div>
+        </div>
+      </div>
+
+      <!-- RECAP SHEET (Spotify Wrap / YouTube Recap style) -->
+      <div class="overlay" id="overlay-recap">
+        <div class="sheet">
+          <div class="sheet-handle"></div>
+          <div class="sheet-head">
+            <button class="sheet-cancel" id="btn-recap-close" data-i18n="close">Close</button>
+            <span class="t" data-i18n="recap_title">Your Recap</span>
+            <span style="width:44px;"></span>
+          </div>
+          <div class="recap-card">
+            <p class="recap-eyebrow" id="recap-period">This Week</p>
+            <p class="recap-big-number" id="recap-number">0</p>
+            <p class="recap-big-label" data-i18n="recap_big_label">tasks completed</p>
+            <div id="recap-insights" style="display:flex; flex-direction:column; gap:10px;"></div>
+          </div>
+          <button class="recap-share-btn" id="btn-recap-share" data-i18n="recap_share">Share Recap</button>
+        </div>
+      </div>
+
+      <!-- CALENDAR CUSTOMIZE SHEET -->
+      <div class="overlay" id="overlay-cal-customize">
+        <div class="sheet">
+          <div class="sheet-handle"></div>
+          <div class="sheet-head">
+            <span style="width:44px;"></span>
+            <span class="t" data-i18n="customize_calendar">Customize Calendar</span>
+            <button class="sheet-save" id="btn-calcustom-done" data-i18n="done">Done</button>
+          </div>
+          <div class="field-group" style="margin-top:14px;">
+            <div class="cal-customize-field">
+              <label data-i18n="background_color">Background color</label>
+              <input type="color" id="cal-input-bg">
+            </div>
+            <div class="cal-customize-field">
+              <label data-i18n="font">Font</label>
+              <select id="cal-input-font">
+                <option value="Inter">Inter</option>
+                <option value="Inter Tight">Inter Tight</option>
+                <option value="Poppins">Poppins</option>
+                <option value="Merriweather">Merriweather</option>
+                <option value="JetBrains Mono">JetBrains Mono</option>
+              </select>
+            </div>
+            <div class="cal-customize-field">
+              <label data-i18n="date_color">Date font color</label>
+              <input type="color" id="cal-input-date-color">
+            </div>
+            <div class="cal-customize-field">
+              <label data-i18n="month_color">Month font color</label>
+              <input type="color" id="cal-input-month-color">
+            </div>
+            <div class="cal-customize-field">
+              <label data-i18n="highlight_color">Event highlight color</label>
+              <input type="color" id="cal-input-highlight">
+            </div>
+          </div>
+          <button class="reset-default-btn" id="btn-calcustom-reset" data-i18n="reset_default">Reset to Default</button>
+        </div>
+      </div>
+
+      <!-- SHARE SHEET -->
+      <div class="overlay" id="overlay-share">
+        <div class="sheet">
+          <div class="sheet-handle"></div>
+
+          <div class="sheet-head">
+            <button class="sheet-cancel" id="btn-share-cancel" data-i18n="cancel">Cancel</button>
+            <span class="t" data-i18n="share_calendar">Share Calendar</span>
+            <button class="sheet-save" id="btn-share-done" data-i18n="done">Done</button>
+          </div>
+          <div class="share-note" data-i18n="share_note">People you add can view your full calendar but can't add, edit, or remove plans — viewer access only.</div>
+          <div class="field-group" style="margin-top:14px;">
+            <div class="contact-row"><div class="avatar">JL</div><div class="contact-name">Jamie Lin</div><span class="role-pill" data-i18n="viewer">Viewer</span></div>
+            <div class="contact-row"><div class="avatar">MP</div><div class="contact-name">Marcus Patel</div><span class="role-pill" data-i18n="viewer">Viewer</span></div>
+            <div class="contact-row" id="add-viewer-row" style="cursor:pointer;">
+              <div class="avatar" style="background:var(--surface-2); color:var(--text-tertiary); border:1px dashed var(--divider-strong);">+</div>
+              <div class="contact-name" style="color:var(--accent);" data-i18n="add_someone">Add someone</div>
+            </div>
+          </div>
+          <div class="share-link-row">
+            <div class="link">routine.app/cal/share/9f2ab1c</div>
+            <button class="copy-btn" id="btn-copy-link" data-i18n="copy_link">Copy Link</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- NOTIFICATION OPTIONS SHEET -->
+      <div class="overlay" id="overlay-notif-options">
+        <div class="sheet">
+          <div class="sheet-handle"></div>
+          <div class="sheet-head">
+            <button class="sheet-cancel" id="btn-notif-cancel" data-i18n="cancel">Cancel</button>
+            <span class="t" data-i18n="notification_options">Notification Options</span>
+            <button class="sheet-save" id="btn-notif-done" data-i18n="done">Done</button>
+          </div>
+          <div class="settings-group" style="margin-top:14px;">
+            <div class="settings-row no-hover">
+              <div class="srow-main"><p class="srow-label" data-i18n="sound">Sound</p></div>
+              <div class="toggle on" id="toggle-sound"></div>
+            </div>
+            <div class="settings-row no-hover">
+              <div class="srow-main"><p class="srow-label" data-i18n="badges">Badges</p></div>
+              <div class="toggle on" id="toggle-badges"></div>
+            </div>
+          </div>
+          <p class="settings-section-label" data-i18n="alert_style">Alert Style</p>
+          <div class="settings-group" id="alert-style-group">
+            <div class="radio-row" data-style="banners">
+              <div><p class="rlabel" data-i18n="style_banners">Banners</p><p class="rsub" data-i18n="style_banners_sub">Appear briefly, then go away on their own.</p></div>
+              <div class="radio-dot checked"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            </div>
+            <div class="radio-row" data-style="persistent">
+              <div><p class="rlabel" data-i18n="style_persistent">Persistent</p><p class="rsub" data-i18n="style_persistent_sub">Stay on screen until dismissed.</p></div>
+              <div class="radio-dot"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EDIT PHOTO SHEET -->
+      <div class="overlay" id="overlay-avatar">
+        <div class="sheet">
+          <div class="sheet-handle"></div>
+          <div class="sheet-head">
+            <button class="sheet-cancel" id="btn-avatar-cancel" data-i18n="cancel">Cancel</button>
+            <span class="t" data-i18n="edit_photo">Edit Photo</span>
+            <button class="sheet-save" id="btn-avatar-save" data-i18n="save">Save</button>
+          </div>
+          <div style="display:flex; justify-content:center; padding:16px 0 4px 0;">
+            <div class="profile-avatar" id="avatar-preview" style="width:96px; height:96px; font-size:32px; cursor:default;"></div>
+          </div>
+          <div class="field-group">
+            <div class="field" style="padding-bottom:2px;"><label data-i18n="color">Color</label></div>
+            <div class="swatch-row" id="avatar-swatch-row"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EDIT NAME SHEET -->
+      <div class="overlay" id="overlay-name">
+        <div class="sheet">
+          <div class="sheet-handle"></div>
+          <div class="sheet-head">
+            <button class="sheet-cancel" id="btn-name-cancel" data-i18n="cancel">Cancel</button>
+            <span class="t" data-i18n="edit_name">Edit Name</span>
+            <button class="sheet-save" id="btn-name-save" data-i18n="save">Save</button>
+          </div>
+          <div class="field-group">
+            <div class="field">
+              <label data-i18n="your_name">Your name</label>
+              <input type="text" id="input-profile-name" placeholder="Your name" maxlength="40">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- APPEARANCE SHEET -->
+      <div class="overlay" id="overlay-appearance">
+        <div class="sheet">
+          <div class="sheet-handle"></div>
+          <div class="sheet-head">
+            <button class="sheet-cancel" id="btn-appearance-cancel" data-i18n="cancel">Cancel</button>
+            <span class="t" data-i18n="appearance">Appearance</span>
+            <span style="width:44px;"></span>
+          </div>
+          <div class="settings-group" style="margin-top:14px;" id="appearance-list">
+            <div class="radio-row" data-theme="light">
+              <div><p class="rlabel" data-i18n="theme_light">Light</p></div>
+              <div class="radio-dot checked"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            </div>
+            <div class="radio-row" data-theme="dark">
+              <div><p class="rlabel" data-i18n="theme_dark">Dark</p></div>
+              <div class="radio-dot"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            </div>
+            <div class="radio-row" data-theme="system">
+              <div><p class="rlabel" data-i18n="theme_system">System</p><p class="rsub" data-i18n="theme_system_sub">Matches your device settings</p></div>
+              <div class="radio-dot"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LANGUAGE SHEET -->
+      <div class="overlay" id="overlay-language">
+        <div class="sheet">
+          <div class="sheet-handle"></div>
+          <div class="sheet-head">
+            <button class="sheet-cancel" id="btn-lang-cancel" data-i18n="cancel">Cancel</button>
+            <span class="t" data-i18n="language">Language</span>
+            <span style="width:44px;"></span>
+          </div>
+          <div class="settings-group" style="margin-top:14px;" id="language-list">
+            <div class="radio-row" data-lang="th">
+              <div><p class="rlabel">ไทย</p><p class="rsub">Thai</p></div>
+              <div class="radio-dot"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            </div>
+            <div class="radio-row" data-lang="en">
+              <div><p class="rlabel">English</p><p class="rsub">English</p></div>
+              <div class="radio-dot checked"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            </div>
+            <div class="radio-row" data-lang="zh">
+              <div><p class="rlabel">中文</p><p class="rsub">Chinese</p></div>
+              <div class="radio-dot"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DATA PRIVACY SHEET -->
+      <div class="overlay" id="overlay-privacy">
+        <div class="sheet">
+          <div class="sheet-handle"></div>
+          <div class="sheet-head">
+            <button class="sheet-cancel" id="btn-privacy-cancel" data-i18n="close">Close</button>
+            <span class="t" data-i18n="data_privacy">Data Privacy</span>
+            <span style="width:44px;"></span>
+          </div>
+          <div class="privacy-text" data-i18n="privacy_body">
+            Your plans are stored securely and synced across your signed-in devices. Calendars you share are visible only to the people you invite, and they can only view — never edit or delete. You can request a copy or deletion of your data at any time.
+          </div>
+        </div>
+      </div>
+
+      <!-- SWITCH ACCOUNT SHEET -->
+      <div class="overlay" id="overlay-switch-account">
+        <div class="sheet">
+          <div class="sheet-handle"></div>
+          <div class="sheet-head">
+            <button class="sheet-cancel" id="btn-switch-cancel" data-i18n="cancel">Cancel</button>
+            <span class="t" data-i18n="switch_account">Switch Account</span>
+            <span style="width:44px;"></span>
+          </div>
+          <div class="settings-group" style="margin-top:14px;" id="switch-account-list">
+            <div class="contact-row" data-account="alex" style="cursor:pointer;">
+              <div class="avatar">AK</div><div class="contact-name">Alex Kim</div>
+              <div class="radio-dot checked"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            </div>
+            <div class="contact-row" data-account="priya" style="cursor:pointer;">
+              <div class="avatar">PS</div><div class="contact-name">Priya Shah</div>
+              <div class="radio-dot"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            </div>
+            <div class="contact-row" id="add-account-row" style="cursor:pointer;">
+              <div class="avatar" style="background:var(--surface-2); color:var(--text-tertiary); border:1px dashed var(--divider-strong);">+</div>
+              <div class="contact-name" style="color:var(--accent);" data-i18n="add_account">Add Account</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LOGOUT CONFIRM SHEET -->
+      <div class="overlay" id="overlay-logout-confirm">
+        <div class="sheet">
+          <div class="sheet-handle"></div>
+          <div class="sheet-head" style="justify-content:center;">
+            <span class="t" data-i18n="log_out_confirm_title">Log out of Routine?</span>
+          </div>
+          <p style="text-align:center; font-size:13px; color:var(--text-secondary); margin:6px 24px 0 24px;" data-i18n="log_out_confirm_sub">You'll need to sign in again to sync your plans.</p>
+          <div class="confirm-sheet-actions">
+            <button class="confirm-btn-cancel" id="btn-logout-cancel" data-i18n="cancel">Cancel</button>
+            <button class="confirm-btn-danger" id="btn-logout-confirm" data-i18n="log_out">Log Out</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- LOGGED OUT FULL SCREEN -->
+      <div class="logged-out-screen" id="logged-out-screen">
+        <div class="logged-out-icon"><svg viewBox="0 0 24 24"><path d="M9 21H6a2 2 0 01-2-2V5a2 2 0 012-2h3M16 17l5-5-5-5M21 12H9" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <p class="logged-out-title" data-i18n="logged_out_title">You've been logged out</p>
+        <p class="logged-out-sub" data-i18n="logged_out_sub">Sign back in to sync your plans and shared calendars across your devices.</p>
+        <button class="login-btn" id="btn-log-back-in" data-i18n="log_back_in">Log Back In</button>
+        <button class="guest-link-btn" id="btn-guest" data-i18n="continue_as_guest">Continue as Guest</button>
+      </div>
+
+      <!-- GUEST MODE CONFIRM SHEET -->
+      <div class="overlay" id="overlay-guest-confirm">
+        <div class="sheet">
+          <div class="sheet-handle"></div>
+          <div class="sheet-head" style="justify-content:center;">
+            <span class="t" data-i18n="guest_confirm_title">Continue as Guest?</span>
+          </div>
+          <div class="guest-alert-box">
+            <svg viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.9L2.5 17a2 2 0 001.7 3h15.6a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" stroke-linejoin="round"/></svg>
+            <p data-i18n="guest_confirm_body">All plans and settings will be saved only on this device, not on our servers. They won't sync to other devices or be backed up — if you delete the app or lose this phone, this data can't be recovered.</p>
+          </div>
+          <div class="confirm-sheet-actions">
+            <button class="confirm-btn-cancel" id="btn-guest-cancel" data-i18n="cancel">Cancel</button>
+            <button class="confirm-btn-primary" id="btn-guest-confirm" data-i18n="continue_as_guest">Continue as Guest</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="snackbar" id="snackbar">
+        <span id="snackbar-text">Plan deleted</span>
+        <button id="snackbar-undo">Undo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  // ---------- Date helpers ----------
+  const pad = n => String(n).padStart(2,'0');
+  const toISO = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  const fromISO = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
+  const todayObj = new Date();
+  const todayISO = toISO(todayObj);
+  // ---------- Localization ----------
+  const MONTHS_BY_LANG = {
+    en: ['January','February','March','April','May','June','July','August','September','October','November','December'],
+    th: ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'],
+    zh: ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'],
+  };
+  const WD_SHORT_BY_LANG = {
+    en: ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
+    th: ['อา','จ','อ','พ','พฤ','ศ','ส'],
+    zh: ['周日','周一','周二','周三','周四','周五','周六'],
+  };
+  const WD_LETTER_BY_LANG = {
+    en: ['S','M','T','W','T','F','S'],
+    th: ['อา','จ','อ','พ','พฤ','ศ','ส'],
+    zh: ['日','一','二','三','四','五','六'],
+  };
+  const LOCALE_BY_LANG = { en: 'en-US', th: 'th-TH', zh: 'zh-CN' };
+  const WD_FULL_BY_LANG = {
+    en: ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],
+    th: ['วันอาทิตย์','วันจันทร์','วันอังคาร','วันพุธ','วันพฤหัสบดี','วันศุกร์','วันเสาร์'],
+    zh: ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'],
+  };
+
+  const LANG = {
+    en: {
+      nav_today:"Today", nav_calendar:"Calendar", settings_title:"Settings",
+      section_notifications:"Notifications", notifications:"Notifications", live_activities:"Live Activities", notification_options:"Notification Options",
+      section_preferences:"Preferences", language:"Language", data_privacy:"Data Privacy",
+      section_account:"Account", switch_account:"Switch Account", log_out:"Log Out",
+      todays_plan:"Today's plan", calendar:"Calendar", week:"Week", month:"Month", year:"Year",
+      cancel:"Cancel", save:"Save", plan_name:"Plan name", date:"Date", time:"Time", alert:"Alert",
+      alert_none:"None", alert_0:"At time of event", alert_5:"5 minutes before", alert_15:"15 minutes before",
+      alert_30:"30 minutes before", alert_60:"1 hour before", alert_1440:"1 day before",
+      live_activity:"Live Activity", live_activity_sub:"Show a live countdown on the Lock Screen and Dynamic Island as this plan approaches.",
+      delete_plan:"Delete Plan", share_calendar:"Share Calendar", done:"Done",
+      share_note:"People you add can view your full calendar but can't add, edit, or remove plans — viewer access only.",
+      viewer:"Viewer", add_someone:"Add someone", copy_link:"Copy Link",
+      sound:"Sound", badges:"Badges", alert_style:"Alert Style",
+      style_banners:"Banners", style_banners_sub:"Appear briefly, then go away on their own.",
+      style_persistent:"Persistent", style_persistent_sub:"Stay on screen until dismissed.",
+      close:"Close", privacy_body:"Your plans are stored securely and synced across your signed-in devices. Calendars you share are visible only to the people you invite, and they can only view — never edit or delete. You can request a copy or deletion of your data at any time.",
+      add_account:"Add Account", account_added:"Account added",
+      log_out_confirm_title:"Log out of Routine?", log_out_confirm_sub:"You'll need to sign in again to sync your plans.",
+      logged_out_title:"You've been logged out", logged_out_sub:"Sign back in to sync your plans and shared calendars across your devices.", log_back_in:"Log Back In",
+      greeting_morning:"Good morning", greeting_afternoon:"Good afternoon", greeting_evening:"Good evening",
+      empty_today:"Nothing planned for today.<br>Tap the + button to add your first plan.",
+      empty_day:"No plans on this day.", empty_week:"No plans",
+      new_plan:"New Plan", edit_plan:"Edit Plan", today_label:"Today",
+      live_word:"Live", alert_word:"Alert", plan_deleted:"deleted", undo:"Undo",
+      link_copied:"Link copied", invite_sent:"Invite sent · Viewer access", switched_to:"Switched to", logged_out_snack:"Logged out",
+      color:"Color", group:"Group", no_group:"No Group", new_group:"New Group", group_name:"Group name", add_new_group:"+ New Group",
+      section_widgets:"iOS Widgets", home_screen_widgets:"Home Screen Widgets",
+      repeat:"Repeat", repeat_none:"Does not repeat", repeat_1h:"Every 1 hour", repeat_2h:"Every 2 hours", repeat_3h:"Every 3 hours",
+      repeat_6h:"Every 6 hours", repeat_1d:"Every 1 day", repeat_2d:"Every 2 days", repeat_week:"Every week", repeat_month:"Every month",
+      repeat_2month:"Every 2 months", repeat_3month:"Every 3 months", repeat_until:"Repeat until",
+      repeat_edit_note:"Repeat can only be set when creating a new plan. This edits just this occurrence.",
+      filter_by_group:"Filter by Group", filter_all:"All Plans",
+      widget_add_note:"Add these from your iOS Home Screen: long-press an empty area, tap the + button, then search for Routine.",
+      widget_mini:"Mini — Today's list", widget_compact:"Compact — List with details", widget_more:"more",
+      customize_calendar:"Customize Calendar", background_color:"Background color", font:"Font",
+      date_color:"Date font color", month_color:"Month font color", highlight_color:"Event highlight color", reset_default:"Reset to Default",
+      continue_as_guest:"Continue as Guest", log_in:"Log In",
+      guest_confirm_title:"Continue as Guest?",
+      guest_confirm_body:"All plans and settings will be saved only on this device, not on our servers. They won't sync to other devices or be backed up — if you delete the app or lose this phone, this data can't be recovered.",
+      guest_banner_text:"Guest Mode — your data is stored only on this device.",
+      guest_snackbar:"Continuing as Guest · data saved on this device only",
+      appearance:"Appearance", theme_light:"Light", theme_dark:"Dark", theme_system:"System", theme_system_sub:"Matches your device settings",
+      nav_progress:"Progress", progress_title:"Progress",
+      period_week:"This Week", period_month:"This Month", period_year:"This Year",
+      stat_completed:"Completed", stat_completion_rate:"Completion Rate", stat_streak:"Current Streak", stat_best_day:"Best Day",
+      vs_last_week:"vs last week", vs_last_month:"vs last month", vs_last_year:"vs last year",
+      trend_label:"Trend", categories_label:"By Category",
+      recap_title:"Your Recap", recap_big_label:"tasks completed", recap_share:"Share Recap", recap_shared_snack:"Recap shared!",
+      recap_insight_streak:"You're on a {n}-day streak — keep it going!", recap_insight_start:"Complete a task today to start a streak!",
+      recap_insight_best:"Your most productive day is {day}.",
+      edit_btn:"Edit", delete_word:"Delete", selected_count:"selected", select_items_hint:"Tap plans to select", items_deleted:"{n} plans deleted",
+      nav_profile:"Profile", edit_photo:"Edit Photo", edit_name:"Edit Name", your_name:"Your name", tap_to_edit:"Tap photo or name to edit",
+    },
+    th: {
+      nav_today:"วันนี้", nav_calendar:"ปฏิทิน", settings_title:"ตั้งค่า",
+      section_notifications:"การแจ้งเตือน", notifications:"การแจ้งเตือน", live_activities:"ไลฟ์แอคทิวิตี้", notification_options:"ตัวเลือกการแจ้งเตือน",
+      section_preferences:"การตั้งค่าทั่วไป", language:"ภาษา", data_privacy:"ความเป็นส่วนตัวของข้อมูล",
+      section_account:"บัญชี", switch_account:"สลับบัญชี", log_out:"ออกจากระบบ",
+      todays_plan:"แผนวันนี้", calendar:"ปฏิทิน", week:"สัปดาห์", month:"เดือน", year:"ปี",
+      cancel:"ยกเลิก", save:"บันทึก", plan_name:"ชื่อแผน", date:"วันที่", time:"เวลา", alert:"การแจ้งเตือน",
+      alert_none:"ไม่มี", alert_0:"ตอนถึงเวลา", alert_5:"ก่อน 5 นาที", alert_15:"ก่อน 15 นาที",
+      alert_30:"ก่อน 30 นาที", alert_60:"ก่อน 1 ชั่วโมง", alert_1440:"ก่อน 1 วัน",
+      live_activity:"ไลฟ์แอคทิวิตี้", live_activity_sub:"แสดงการนับถอยหลังแบบสดบนหน้าจอล็อกและ Dynamic Island เมื่อใกล้ถึงเวลา",
+      delete_plan:"ลบแผน", share_calendar:"แชร์ปฏิทิน", done:"เสร็จสิ้น",
+      share_note:"ผู้ที่คุณเพิ่มสามารถดูปฏิทินทั้งหมดของคุณได้ แต่ไม่สามารถเพิ่ม แก้ไข หรือลบแผนได้ — สิทธิ์ดูอย่างเดียวเท่านั้น",
+      viewer:"ผู้ดู", add_someone:"เพิ่มคน", copy_link:"คัดลอกลิงก์",
+      sound:"เสียง", badges:"ตัวเลขแจ้งเตือน", alert_style:"รูปแบบการแจ้งเตือน",
+      style_banners:"แบนเนอร์", style_banners_sub:"ปรากฏชั่วครู่แล้วหายไปเอง",
+      style_persistent:"ค้างไว้", style_persistent_sub:"ค้างอยู่บนหน้าจอจนกว่าจะปิด",
+      close:"ปิด", privacy_body:"แผนของคุณถูกจัดเก็บอย่างปลอดภัยและซิงค์ในทุกอุปกรณ์ที่คุณลงชื่อเข้าใช้ ปฏิทินที่คุณแชร์จะมองเห็นได้เฉพาะคนที่คุณเชิญเท่านั้น และพวกเขาสามารถดูได้อย่างเดียว ไม่สามารถแก้ไขหรือลบได้ คุณสามารถขอสำเนาหรือขอให้ลบข้อมูลของคุณได้ทุกเมื่อ",
+      add_account:"เพิ่มบัญชี", account_added:"เพิ่มบัญชีแล้ว",
+      log_out_confirm_title:"ออกจากระบบ Routine ใช่ไหม", log_out_confirm_sub:"คุณจะต้องเข้าสู่ระบบอีกครั้งเพื่อซิงค์แผนของคุณ",
+      logged_out_title:"คุณออกจากระบบแล้ว", logged_out_sub:"เข้าสู่ระบบอีกครั้งเพื่อซิงค์แผนและปฏิทินที่แชร์ในทุกอุปกรณ์ของคุณ", log_back_in:"เข้าสู่ระบบอีกครั้ง",
+      greeting_morning:"สวัสดีตอนเช้า", greeting_afternoon:"สวัสดีตอนบ่าย", greeting_evening:"สวัสดีตอนเย็น",
+      empty_today:"ยังไม่มีแผนสำหรับวันนี้<br>แตะปุ่ม + เพื่อเพิ่มแผนแรกของคุณ",
+      empty_day:"ไม่มีแผนในวันนี้", empty_week:"ไม่มีแผน",
+      new_plan:"แผนใหม่", edit_plan:"แก้ไขแผน", today_label:"วันนี้",
+      live_word:"สด", alert_word:"แจ้งเตือน", plan_deleted:"ถูกลบแล้ว", undo:"เลิกทำ",
+      link_copied:"คัดลอกลิงก์แล้ว", invite_sent:"ส่งคำเชิญแล้ว · สิทธิ์ดูอย่างเดียว", switched_to:"สลับไปที่", logged_out_snack:"ออกจากระบบแล้ว",
+      color:"สี", group:"กลุ่ม", no_group:"ไม่มีกลุ่ม", new_group:"กลุ่มใหม่", group_name:"ชื่อกลุ่ม", add_new_group:"+ กลุ่มใหม่",
+      section_widgets:"วิดเจ็ต iOS", home_screen_widgets:"วิดเจ็ตหน้าจอโฮม",
+      repeat:"ทำซ้ำ", repeat_none:"ไม่ทำซ้ำ", repeat_1h:"ทุก 1 ชั่วโมง", repeat_2h:"ทุก 2 ชั่วโมง", repeat_3h:"ทุก 3 ชั่วโมง",
+      repeat_6h:"ทุก 6 ชั่วโมง", repeat_1d:"ทุก 1 วัน", repeat_2d:"ทุก 2 วัน", repeat_week:"ทุกสัปดาห์", repeat_month:"ทุกเดือน",
+      repeat_2month:"ทุก 2 เดือน", repeat_3month:"ทุก 3 เดือน", repeat_until:"ทำซ้ำจนถึง",
+      repeat_edit_note:"ตั้งค่าการทำซ้ำได้เฉพาะตอนสร้างแผนใหม่เท่านั้น การแก้ไขนี้มีผลกับรายการนี้เพียงรายการเดียว",
+      filter_by_group:"กรองตามกลุ่ม", filter_all:"แผนทั้งหมด",
+      widget_add_note:"เพิ่มวิดเจ็ตจากหน้าจอโฮมของ iOS: กดค้างที่พื้นที่ว่าง แตะปุ่ม + แล้วค้นหา Routine",
+      widget_mini:"มินิ — รายการวันนี้", widget_compact:"กะทัดรัด — รายการพร้อมรายละเอียด", widget_more:"เพิ่มเติม",
+      customize_calendar:"ปรับแต่งปฏิทิน", background_color:"สีพื้นหลัง", font:"ฟอนต์",
+      date_color:"สีตัวเลขวันที่", month_color:"สีตัวอักษรเดือน", highlight_color:"สีไฮไลต์กิจกรรม", reset_default:"รีเซ็ตเป็นค่าเริ่มต้น",
+      continue_as_guest:"ดำเนินการต่อในฐานะผู้เยี่ยมชม", log_in:"เข้าสู่ระบบ",
+      guest_confirm_title:"ดำเนินการต่อในฐานะผู้เยี่ยมชมใช่ไหม",
+      guest_confirm_body:"แผนและการตั้งค่าทั้งหมดจะถูกบันทึกไว้บนอุปกรณ์เครื่องนี้เท่านั้น ไม่ใช่บนเซิร์ฟเวอร์ของเรา ข้อมูลจะไม่ซิงค์ไปยังอุปกรณ์อื่นหรือสำรองไว้ — หากคุณลบแอปหรือทำโทรศัพท์เครื่องนี้หาย จะไม่สามารถกู้คืนข้อมูลนี้ได้",
+      guest_banner_text:"โหมดผู้เยี่ยมชม — ข้อมูลของคุณถูกบันทึกไว้บนอุปกรณ์เครื่องนี้เท่านั้น",
+      guest_snackbar:"กำลังดำเนินการต่อในฐานะผู้เยี่ยมชม · บันทึกข้อมูลไว้บนอุปกรณ์นี้เท่านั้น",
+      appearance:"ธีม", theme_light:"สว่าง", theme_dark:"มืด", theme_system:"ระบบ", theme_system_sub:"ตรงกับการตั้งค่าอุปกรณ์ของคุณ",
+      nav_progress:"ความคืบหน้า", progress_title:"ความคืบหน้า",
+      period_week:"สัปดาห์นี้", period_month:"เดือนนี้", period_year:"ปีนี้",
+      stat_completed:"เสร็จสิ้น", stat_completion_rate:"อัตราความสำเร็จ", stat_streak:"สตรีคปัจจุบัน", stat_best_day:"วันที่ทำได้ดีที่สุด",
+      vs_last_week:"เทียบกับสัปดาห์ที่แล้ว", vs_last_month:"เทียบกับเดือนที่แล้ว", vs_last_year:"เทียบกับปีที่แล้ว",
+      trend_label:"แนวโน้ม", categories_label:"แยกตามหมวดหมู่",
+      recap_title:"รีแคปของคุณ", recap_big_label:"งานที่ทำสำเร็จ", recap_share:"แชร์รีแคป", recap_shared_snack:"แชร์รีแคปแล้ว!",
+      recap_insight_streak:"คุณทำต่อเนื่องมาแล้ว {n} วัน — ทำต่อไปนะ!", recap_insight_start:"ทำงานให้เสร็จวันนี้เพื่อเริ่มสตรีค!",
+      recap_insight_best:"วันที่คุณทำงานได้ดีที่สุดคือ {day}",
+      edit_btn:"แก้ไข", delete_word:"ลบ", selected_count:"ที่เลือก", select_items_hint:"แตะแผนเพื่อเลือก", items_deleted:"ลบแผน {n} รายการแล้ว",
+      nav_profile:"โปรไฟล์", edit_photo:"แก้ไขรูปโปรไฟล์", edit_name:"แก้ไขชื่อ", your_name:"ชื่อของคุณ", tap_to_edit:"แตะรูปหรือชื่อเพื่อแก้ไข",
+    },
+    zh: {
+      nav_today:"今天", nav_calendar:"日历", settings_title:"设置",
+      section_notifications:"通知", notifications:"通知", live_activities:"实时活动", notification_options:"通知选项",
+      section_preferences:"偏好设置", language:"语言", data_privacy:"数据隐私",
+      section_account:"账户", switch_account:"切换账户", log_out:"退出登录",
+      todays_plan:"今日计划", calendar:"日历", week:"周", month:"月", year:"年",
+      cancel:"取消", save:"保存", plan_name:"计划名称", date:"日期", time:"时间", alert:"提醒",
+      alert_none:"无", alert_0:"准时提醒", alert_5:"提前5分钟", alert_15:"提前15分钟",
+      alert_30:"提前30分钟", alert_60:"提前1小时", alert_1440:"提前1天",
+      live_activity:"实时活动", live_activity_sub:"在锁屏和灵动岛上显示该计划的实时倒计时。",
+      delete_plan:"删除计划", share_calendar:"共享日历", done:"完成",
+      share_note:"你添加的人可以查看你的完整日历，但不能添加、编辑或删除计划 — 仅限查看权限。",
+      viewer:"查看者", add_someone:"添加成员", copy_link:"复制链接",
+      sound:"声音", badges:"角标", alert_style:"提醒样式",
+      style_banners:"横幅", style_banners_sub:"短暂显示后自动消失。",
+      style_persistent:"常驻", style_persistent_sub:"在被关闭前一直显示在屏幕上。",
+      close:"关闭", privacy_body:"你的计划会被安全存储，并在你登录的所有设备间同步。你共享的日历仅对受邀人可见，他们只能查看，不能编辑或删除。你可以随时申请获取或删除你的数据副本。",
+      add_account:"添加账户", account_added:"账户已添加",
+      log_out_confirm_title:"确定要退出 Routine 吗？", log_out_confirm_sub:"退出后需要重新登录才能同步你的计划。",
+      logged_out_title:"你已退出登录", logged_out_sub:"重新登录以在你的所有设备间同步计划和共享日历。", log_back_in:"重新登录",
+      greeting_morning:"早上好", greeting_afternoon:"下午好", greeting_evening:"晚上好",
+      empty_today:"今天还没有安排计划。<br>点击 + 按钮添加你的第一个计划。",
+      empty_day:"这一天没有计划。", empty_week:"没有计划",
+      new_plan:"新建计划", edit_plan:"编辑计划", today_label:"今天",
+      live_word:"实时", alert_word:"提醒", plan_deleted:"已删除", undo:"撤销",
+      link_copied:"链接已复制", invite_sent:"邀请已发送 · 仅限查看权限", switched_to:"已切换到", logged_out_snack:"已退出登录",
+      color:"颜色", group:"分组", no_group:"无分组", new_group:"新建分组", group_name:"分组名称", add_new_group:"+ 新建分组",
+      section_widgets:"iOS 小组件", home_screen_widgets:"主屏幕小组件",
+      repeat:"重复", repeat_none:"不重复", repeat_1h:"每1小时", repeat_2h:"每2小时", repeat_3h:"每3小时",
+      repeat_6h:"每6小时", repeat_1d:"每1天", repeat_2d:"每2天", repeat_week:"每周", repeat_month:"每月",
+      repeat_2month:"每2个月", repeat_3month:"每3个月", repeat_until:"重复至",
+      repeat_edit_note:"重复只能在新建计划时设置。此次编辑仅影响这一项。",
+      filter_by_group:"按分组筛选", filter_all:"全部计划",
+      widget_add_note:"在 iOS 主屏幕添加：长按空白区域，点击 + 按钮，然后搜索 Routine。",
+      widget_mini:"迷你 — 今日列表", widget_compact:"紧凑 — 带详情的列表", widget_more:"更多",
+      customize_calendar:"自定义日历", background_color:"背景颜色", font:"字体",
+      date_color:"日期字体颜色", month_color:"月份字体颜色", highlight_color:"事件高亮颜色", reset_default:"恢复默认",
+      continue_as_guest:"以访客身份继续", log_in:"登录",
+      guest_confirm_title:"以访客身份继续？",
+      guest_confirm_body:"所有计划和设置将仅保存在此设备上，不会保存到我们的服务器。数据不会同步到其他设备，也不会被备份 — 如果你删除该应用或丢失此手机，这些数据将无法恢复。",
+      guest_banner_text:"访客模式 — 你的数据仅保存在此设备上。",
+      guest_snackbar:"正在以访客身份继续 · 数据仅保存在此设备",
+      appearance:"外观", theme_light:"浅色", theme_dark:"深色", theme_system:"系统", theme_system_sub:"与设备设置一致",
+      nav_progress:"进度", progress_title:"进度",
+      period_week:"本周", period_month:"本月", period_year:"今年",
+      stat_completed:"已完成", stat_completion_rate:"完成率", stat_streak:"当前连续天数", stat_best_day:"最佳一天",
+      vs_last_week:"环比上周", vs_last_month:"环比上月", vs_last_year:"环比去年",
+      trend_label:"趋势", categories_label:"按分类",
+      recap_title:"你的回顾", recap_big_label:"个任务已完成", recap_share:"分享回顾", recap_shared_snack:"回顾已分享！",
+      recap_insight_streak:"你已连续完成 {n} 天，继续保持！", recap_insight_start:"今天完成一个任务，开始你的连续记录！",
+      recap_insight_best:"你效率最高的一天是{day}。",
+      edit_btn:"编辑", delete_word:"删除", selected_count:"已选择", select_items_hint:"点击计划以选择", items_deleted:"已删除 {n} 个计划",
+      nav_profile:"个人资料", edit_photo:"编辑头像", edit_name:"编辑姓名", your_name:"你的姓名", tap_to_edit:"点击头像或姓名进行编辑",
+    },
+  };
+  function t(key){ return (LANG[currentLang] && LANG[currentLang][key]) || LANG.en[key] || key; }
+
+  function timeToMinutes(t){ const [h,m] = t.split(':').map(Number); return h*60+m; }
+  function fmtTime12(t){
+    let [h,m] = t.split(':').map(Number);
+    const ap = h >= 12 ? 'PM' : 'AM';
+    h = h % 12; if (h === 0) h = 12;
+    return `${h}:${pad(m)} ${ap}`;
+  }
+
+  // ---------- Groups & colors ----------
+  const COLOR_PALETTE = ['#5B5FEF','#2E86FF','#17A2B8','#009688','#2FB463','#8BC34A','#FFC107','#FF9F43','#FF6F61','#FF3B30','#E91E8C','#FF6482','#9B59D0','#8D6E63','#34495E','#6E6E73'];
+  let groups = [
+    {id:'work', name:'Work', color:'#5B5FEF'},
+    {id:'personal', name:'Personal', color:'#FF6482'},
+    {id:'health', name:'Health', color:'#2FB463'},
+    {id:'errands', name:'Errands', color:'#FF9F43'},
+  ];
+  function uid(){ return 'p_' + Math.random().toString(36).slice(2,10); }
+  function groupById(id){ return groups.find(g => g.id === id); }
+  function colorForPlan(p){ return p.color || (p.groupId && groupById(p.groupId) && groupById(p.groupId).color) || '#5B5FEF'; }
+
+  // ---------- Seed data ----------
+  // Build a couple of near-future times today so the Live Activity demo works immediately.
+  const now = new Date();
+  const soon1 = new Date(now.getTime() + 4*60000);   // 4 min from now
+  const soon1Str = `${pad(soon1.getHours())}:${pad(soon1.getMinutes())}`;
+
+  let plans = [
+    {id: uid(), name:'Team Standup', date: todayISO, time: soon1Str, alert:'5', live:true, completed:false, color:'#5B5FEF', groupId:'work', repeatType:'none'},
+    {id: uid(), name:'Morning Run', date: todayISO, time:'07:00', alert:'0', live:false, completed:true, color:'#2FB463', groupId:'health', repeatType:'none'},
+    {id: uid(), name:'Deep Work Block', date: todayISO, time:'10:30', alert:'15', live:false, completed:false, color:'#5B5FEF', groupId:'work', repeatType:'none'},
+    {id: uid(), name:'Lunch with Sam', date: todayISO, time:'12:30', alert:'30', live:false, completed:false, color:'#FF6482', groupId:'personal', repeatType:'none'},
+    {id: uid(), name:'Gym', date: todayISO, time:'18:00', alert:'15', live:false, completed:false, color:'#2FB463', groupId:'health', repeatType:'none'},
+  ];
+  addRelative(1, 'Dentist Appointment', '10:00', '60', '#2FB463', 'health');
+  addRelative(2, 'Grocery Run', '17:30', '15', '#FF9F43', 'errands');
+  addRelative(3, 'Project Review', '14:00', '15', '#5B5FEF', 'work');
+  addRelative(5, "Mia's Birthday Dinner", '19:00', '60', '#FF6482', 'personal');
+  addRelative(9, 'Car Service', '08:30', '1440', '#FF9F43', 'errands');
+  addRelative(12, 'Quarterly Offsite', '09:00', '1440', '#5B5FEF', 'work');
+  addRelative(-2, 'Yoga Class', '07:30', '5', '#2FB463', 'health');
+
+  // Demo a weekly-repeating task ("Weekly Planning") sharing one repeatId
+  (function seedRepeatDemo(){
+    const repeatId = uid();
+    [7, 14, 21, 28].forEach(days => {
+      const d = new Date(todayObj); d.setDate(d.getDate()+days);
+      plans.push({id: uid(), name:'Weekly Planning', date: toISO(d), time:'09:00', alert:'5', live:false, completed:false, color:'#5B5FEF', groupId:'work', repeatType:'week', repeatId});
+    });
+  })();
+
+  function addRelative(days, name, time, alert, color, groupId){
+    const d = new Date(todayObj); d.setDate(d.getDate()+days);
+    plans.push({id: uid(), name, date: toISO(d), time, alert, live:false, completed:false, color: color||'#5B5FEF', groupId: groupId||null, repeatType:'none'});
+  }
+
+  // ---------- App state ----------
+  let currentLang = 'en';
+  const state = {
+    screen: 'today',
+    previousScreen: 'today',
+    calView: 'month',
+    calMonth: todayObj.getMonth(),
+    calYear: todayObj.getFullYear(),
+    selectedDate: todayISO,
+    editingPlanId: null,
+    lastDeleted: null,
+    notificationsEnabled: true,
+    liveActivitiesEnabled: true,
+    filterGroupId: null,
+    isGuest: false,
+    themeMode: 'light',
+    calCustomized: false,
+    calStyle: { bg:'#FFFFFF', font:'Inter', dateColor:'#1D1D1F', monthColor:'#1D1D1F', highlight:'#5B5FEF' },
+    progressView: 'week',
+    todoEditMode: false,
+    selectedForDelete: new Set(),
+  };
+  const CAL_STYLE_DEFAULTS = {
+    light: { bg:'#FFFFFF', font:'Inter', dateColor:'#1D1D1F', monthColor:'#1D1D1F', highlight:'#5B5FEF' },
+    dark:  { bg:'#1C1C1E', font:'Inter', dateColor:'#F5F5F7', monthColor:'#F5F5F7', highlight:'#7B7FFF' },
+  };
+
+  // ---------- Elements ----------
+  const el = id => document.getElementById(id);
+  const clockEl = el('clock');
+  const greetingEl = el('greeting-text');
+  const todayDateEl = el('today-date');
+  const liveWrap = el('live-activity-wrap');
+  const todoListEl = el('todo-list');
+  const calSegmented = el('cal-segmented');
+  const calNavWrap = el('cal-nav-wrap');
+  const calBody = el('cal-body');
+
+  // ---------- Clock / greeting ----------
+  function updateClock(){
+    const n = new Date();
+    let h = n.getHours(); const m = n.getMinutes();
+    const ap = h >= 12 ? 'PM' : 'AM';
+    let h12 = h % 12; if (h12===0) h12=12;
+    clockEl.textContent = `${h12}:${pad(m)}`;
+    const hr = n.getHours();
+    greetingEl.textContent = hr < 12 ? t('greeting_morning') : (hr < 18 ? t('greeting_afternoon') : t('greeting_evening'));
+  }
+  updateClock();
+  setInterval(updateClock, 15000);
+
+  function updateTodayDateLabel(){
+    todayDateEl.textContent = new Date().toLocaleDateString(LOCALE_BY_LANG[currentLang], { weekday:'long', month:'long', day:'numeric' });
+  }
+  updateTodayDateLabel();
+
+  // ---------- Screen switching ----------
+  function switchScreen(name){
+    if (name !== 'settings') state.previousScreen = name;
+    state.screen = name;
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    el('screen-' + name).classList.add('active');
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.screen === name));
+    if (name === 'calendar') renderCalendar();
+    if (name === 'progress') renderProgress();
+  }
+  el('nav-today').addEventListener('click', () => switchScreen('today'));
+  el('nav-calendar').addEventListener('click', () => switchScreen('calendar'));
+  el('nav-progress').addEventListener('click', () => switchScreen('progress'));
+  el('nav-settings').addEventListener('click', () => switchScreen('settings'));
+  el('btn-settings-back').addEventListener('click', () => switchScreen(state.previousScreen || 'today'));
+
+  // ---------- Today screen render ----------
+  function plansForDate(dateISO){
+    return plans.filter(p => p.date === dateISO).sort((a,b)=> timeToMinutes(a.time)-timeToMinutes(b.time));
+  }
+  function visiblePlansForDate(dateISO){
+    const list = plansForDate(dateISO);
+    if (!state.filterGroupId) return list;
+    return list.filter(p => p.groupId === state.filterGroupId);
+  }
+  const REPEAT_ICON = `<svg viewBox="0 0 24 24"><path d="M17 2l4 4-4 4M3 11V9a4 4 0 014-4h14M7 22l-4-4 4-4M21 13v2a4 4 0 01-4 4H3" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+  function renderGroupChips(){
+    const counts = {};
+    plans.forEach(p => { if (p.groupId) counts[p.groupId] = (counts[p.groupId]||0)+1; });
+    const chips = [`<div class="group-chip ${!state.filterGroupId?'active':''}" data-group="">${t('filter_all')}</div>`]
+      .concat(groups.filter(g => counts[g.id]).map(g => `
+        <div class="group-chip ${state.filterGroupId===g.id?'active':''}" data-group="${g.id}">
+          <span class="dot" style="background:${state.filterGroupId===g.id ? '#fff' : g.color};"></span>${escapeHtml(g.name)}
+        </div>`));
+    el('group-chip-row').innerHTML = chips.join('');
+  }
+  el('group-chip-row').addEventListener('click', (e) => {
+    const chip = e.target.closest('.group-chip');
+    if (!chip) return;
+    state.filterGroupId = chip.dataset.group || null;
+    renderGroupChips();
+    renderToday();
+  });
+
+  function taskMetaExtras(p){
+    const parts = [];
+    if (p.live) parts.push(`<span style="color:var(--success); font-weight:700;">· ${t('live_word')}</span>`);
+    if (p.alert!=='none') parts.push(`<span>· ${t('alert_word')}</span>`);
+    if (p.repeatType && p.repeatType!=='none') parts.push(`<span class="repeat-badge" title="Repeats">· ${REPEAT_ICON}</span>`);
+    if (p.groupId && groupById(p.groupId)) parts.push(`<span style="color:${groupById(p.groupId).color}; font-weight:700;">· ${escapeHtml(groupById(p.groupId).name)}</span>`);
+    return parts.join('');
+  }
+
+  function renderToday(){
+    renderGroupChips();
+    const todays = visiblePlansForDate(todayISO);
+    const editMode = state.todoEditMode;
+    if (todays.length === 0){
+      todoListEl.innerHTML = `<div class="todo-empty">${t('empty_today')}</div>`;
+    } else {
+      todoListEl.innerHTML = todays.map(p => {
+        const selected = state.selectedForDelete.has(p.id);
+        const checkAction = editMode ? 'select' : 'toggle';
+        const mainAction = editMode ? 'select' : 'edit';
+        return `
+        <div class="todo-item ${p.completed?'done':''} ${editMode?'edit-mode':''}" data-id="${p.id}" style="--task-color:${colorForPlan(p)};">
+          <div class="check ${editMode ? (selected?'sel-on':'sel-off') : ''}" data-action="${checkAction}">
+            <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="todo-main" data-action="${mainAction}">
+            <p class="todo-name">${escapeHtml(p.name)}</p>
+            <div class="todo-meta">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3" stroke-linecap="round"/></svg>
+              <span>${fmtTime12(p.time)}</span>
+              ${taskMetaExtras(p)}
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+    renderLiveActivity();
+    renderBulkBar();
+  }
+
+  todoListEl.addEventListener('click', (e) => {
+    const item = e.target.closest('.todo-item');
+    if (!item) return;
+    const id = item.dataset.id;
+    const action = e.target.closest('[data-action]')?.dataset.action;
+    if (action === 'toggle') toggleComplete(id);
+    else if (action === 'select') toggleSelectForDelete(id);
+    else if (action === 'edit') openAddSheet(id);
+  });
+
+  function toggleComplete(id){
+    const p = plans.find(p => p.id === id);
+    if (p){ p.completed = !p.completed; renderToday(); if (state.screen === 'progress') renderProgress(); }
+  }
+
+  function deletePlan(id){
+    const idx = plans.findIndex(p => p.id === id);
+    if (idx === -1) return;
+    const removedPlan = plans[idx];
+    state.lastDeleted = { snapshot: plans.slice() };
+    plans.splice(idx, 1);
+    renderToday();
+    if (state.screen === 'calendar') renderCalendar();
+    if (state.screen === 'progress') renderProgress();
+    showSnackbar(`"${removedPlan.name}" ${t('plan_deleted')}`);
+  }
+
+  // ---------- Today: edit mode + bulk delete ----------
+  function updateTodoEditBtnLabel(){
+    el('btn-todo-edit').textContent = state.todoEditMode ? t('done') : t('edit_btn');
+  }
+  function setTodoEditMode(on){
+    state.todoEditMode = on;
+    if (!on) state.selectedForDelete.clear();
+    updateTodoEditBtnLabel();
+    renderToday();
+  }
+  function toggleSelectForDelete(id){
+    if (state.selectedForDelete.has(id)) state.selectedForDelete.delete(id);
+    else state.selectedForDelete.add(id);
+    renderToday();
+  }
+  function renderBulkBar(){
+    const bar = el('bulk-delete-bar');
+    if (!state.todoEditMode){ bar.style.display = 'none'; return; }
+    const n = state.selectedForDelete.size;
+    bar.style.display = 'flex';
+    el('bulk-delete-count').textContent = n > 0 ? `${n} ${t('selected_count')}` : t('select_items_hint');
+    el('btn-bulk-delete').disabled = n === 0;
+  }
+  function bulkDeletePlans(ids){
+    if (!ids.length) return;
+    const idSet = new Set(ids);
+    const removed = plans.filter(p => idSet.has(p.id));
+    state.lastDeleted = { snapshot: plans.slice() };
+    plans = plans.filter(p => !idSet.has(p.id));
+    setTodoEditMode(false);
+    if (state.screen === 'calendar') renderCalendar();
+    if (state.screen === 'progress') renderProgress();
+    const msg = removed.length === 1 ? `"${removed[0].name}" ${t('plan_deleted')}` : t('items_deleted').replace('{n}', removed.length);
+    showSnackbar(msg);
+  }
+  el('btn-todo-edit').addEventListener('click', () => setTodoEditMode(!state.todoEditMode));
+  el('btn-bulk-delete').addEventListener('click', () => bulkDeletePlans(Array.from(state.selectedForDelete)));
+  updateTodoEditBtnLabel();
+
+  // ---------- Live activity ----------
+  function renderLiveActivity(){
+    if (!state.liveActivitiesEnabled){ liveWrap.innerHTML = ''; return; }
+    const active = plans.find(p => p.live && p.date === todayISO && !p.completed && timeToMinutes(p.time)*60 - nowSeconds() > -60 );
+    if (!active){ liveWrap.innerHTML = ''; return; }
+    liveWrap.innerHTML = `
+      <div class="live-activity">
+        <div class="live-dot"></div>
+        <div class="live-text">
+          <p class="live-label">${t('live_activity')}</p>
+          <p class="live-name">${escapeHtml(active.name)}</p>
+        </div>
+        <div class="live-countdown" id="live-countdown-val">--:--</div>
+      </div>`;
+    updateCountdown(active);
+  }
+  function nowSeconds(){ const n = new Date(); return n.getHours()*3600 + n.getMinutes()*60 + n.getSeconds(); }
+  function updateCountdown(plan){
+    const valEl = el('live-countdown-val');
+    if (!valEl) return;
+    const [h,m] = plan.time.split(':').map(Number);
+    const targetSec = h*3600 + m*60;
+    let diff = targetSec - nowSeconds();
+    if (diff < 0) diff = 0;
+    const mm = Math.floor(diff/60), ss = diff%60;
+    valEl.textContent = diff <= 0 ? 'Now' : `in ${mm}:${pad(ss)}`;
+  }
+  setInterval(() => {
+    const active = plans.find(p => p.live && p.date === todayISO && !p.completed);
+    if (active && el('live-countdown-val')) updateCountdown(active);
+  }, 1000);
+
+  // ---------- Snackbar ----------
+  let snackTimer = null;
+  function showSnackbar(text){
+    el('snackbar-text').textContent = text;
+    el('snackbar').classList.add('show');
+    clearTimeout(snackTimer);
+    snackTimer = setTimeout(() => el('snackbar').classList.remove('show'), 4000);
+  }
+  el('snackbar-undo').addEventListener('click', () => {
+    if (state.lastDeleted){
+      plans = state.lastDeleted.snapshot;
+      state.lastDeleted = null;
+      renderToday();
+      if (state.screen === 'calendar') renderCalendar();
+      if (state.screen === 'progress') renderProgress();
+    }
+    el('snackbar').classList.remove('show');
+  });
+
+  // ---------- Add / Edit sheet ----------
+  const overlayAdd = el('overlay-add');
+  let selectedColor = COLOR_PALETTE[0];
+
+  function renderColorSwatches(){
+    el('color-swatch-row').innerHTML = COLOR_PALETTE.map(c => `
+      <div class="swatch ${c===selectedColor?'selected':''}" data-color="${c}" style="background:${c};">
+        <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>`).join('');
+  }
+  el('color-swatch-row').addEventListener('click', (e) => {
+    const sw = e.target.closest('.swatch');
+    if (!sw) return;
+    selectedColor = sw.dataset.color;
+    renderColorSwatches();
+  });
+
+  function renderGroupSelect(){
+    const sel = el('input-group');
+    const current = sel.value;
+    sel.innerHTML = `<option value="">${t('no_group')}</option>` +
+      groups.map(g => `<option value="${g.id}">${escapeHtml(g.name)}</option>`).join('') +
+      `<option value="__new__">${t('add_new_group')}</option>`;
+    if (current && groups.some(g => g.id === current)) sel.value = current;
+  }
+  el('input-group').addEventListener('change', function(){
+    if (this.value === '__new__'){
+      this.value = '';
+      openNewGroupSheet();
+    } else if (this.value){
+      const g = groupById(this.value);
+      if (g){ selectedColor = g.color; renderColorSwatches(); }
+    }
+  });
+
+  function updateRepeatFieldVisibility(){
+    const isEditing = !!state.editingPlanId;
+    el('repeat-field-group').style.display = isEditing ? 'none' : 'block';
+    el('repeat-edit-note').style.display = isEditing ? 'block' : 'none';
+  }
+  el('input-repeat').addEventListener('change', function(){
+    el('repeat-until-field').style.display = this.value === 'none' ? 'none' : 'block';
+  });
+
+  function openAddSheet(planId){
+    state.editingPlanId = planId || null;
+    const toggle = el('toggle-live');
+    renderGroupSelect();
+    if (planId){
+      const p = plans.find(p => p.id === planId);
+      el('add-sheet-title').textContent = t('edit_plan');
+      el('input-name').value = p.name;
+      el('input-date').value = p.date;
+      el('input-time').value = p.time;
+      el('input-alert').value = p.alert;
+      el('input-group').value = p.groupId || '';
+      selectedColor = colorForPlan(p);
+      toggle.classList.toggle('on', !!p.live);
+      el('btn-add-delete').style.display = 'block';
+      el('input-repeat').value = 'none';
+      el('repeat-until-field').style.display = 'none';
+    } else {
+      el('add-sheet-title').textContent = t('new_plan');
+      el('input-name').value = '';
+      el('input-date').value = state.selectedDate || todayISO;
+      el('input-time').value = '09:00';
+      el('input-alert').value = '5';
+      el('input-group').value = '';
+      selectedColor = COLOR_PALETTE[0];
+      toggle.classList.add('on');
+      el('btn-add-delete').style.display = 'none';
+      el('input-repeat').value = 'none';
+      el('input-repeat-until').value = '';
+      el('repeat-until-field').style.display = 'none';
+    }
+    renderColorSwatches();
+    updateRepeatFieldVisibility();
+    el('input-name').style.boxShadow = '';
+    overlayAdd.classList.add('open');
+  }
+  function closeAddSheet(){ overlayAdd.classList.remove('open'); state.editingPlanId = null; }
+
+  el('btn-add').addEventListener('click', () => openAddSheet(null));
+  el('btn-add-cancel').addEventListener('click', closeAddSheet);
+  overlayAdd.addEventListener('click', (e) => { if (e.target === overlayAdd) closeAddSheet(); });
+  el('toggle-live').addEventListener('click', function(){ this.classList.toggle('on'); });
+
+  // ---------- Repeat occurrence generation ----------
+  const REPEAT_CAP = 150;
+  function stepDate(d, repeatType){
+    const nd = new Date(d);
+    switch(repeatType){
+      case '1h': nd.setHours(nd.getHours()+1); break;
+      case '2h': nd.setHours(nd.getHours()+2); break;
+      case '3h': nd.setHours(nd.getHours()+3); break;
+      case '6h': nd.setHours(nd.getHours()+6); break;
+      case '1d': nd.setDate(nd.getDate()+1); break;
+      case '2d': nd.setDate(nd.getDate()+2); break;
+      case 'week': nd.setDate(nd.getDate()+7); break;
+      case 'month': nd.setMonth(nd.getMonth()+1); break;
+      case '2month': nd.setMonth(nd.getMonth()+2); break;
+      case '3month': nd.setMonth(nd.getMonth()+3); break;
+      default: return null;
+    }
+    return nd;
+  }
+  function generateRepeatOccurrences(dateISO, time, repeatType, untilISO){
+    const [h,m] = time.split(':').map(Number);
+    let cur = fromISO(dateISO); cur.setHours(h, m, 0, 0);
+    const until = fromISO(untilISO); until.setHours(23,59,59,999);
+    const out = [];
+    let count = 0;
+    while (cur <= until && count < REPEAT_CAP){
+      out.push({ date: toISO(cur), time: `${pad(cur.getHours())}:${pad(cur.getMinutes())}` });
+      count++;
+      const next = stepDate(cur, repeatType);
+      if (!next) break;
+      cur = next;
+    }
+    return out;
+  }
+
+  el('btn-add-save').addEventListener('click', () => {
+    const name = el('input-name').value.trim();
+    const date = el('input-date').value;
+    const time = el('input-time').value;
+    const alert = el('input-alert').value;
+    const live = el('toggle-live').classList.contains('on');
+    const groupId = el('input-group').value || null;
+    const color = selectedColor;
+    if (!name || !date || !time){
+      el('input-name').style.boxShadow = !name ? '0 0 0 2px var(--danger)' : '';
+      return;
+    }
+    if (state.editingPlanId){
+      const p = plans.find(p => p.id === state.editingPlanId);
+      Object.assign(p, { name, date, time, alert, live, groupId, color });
+    } else {
+      const repeatType = el('input-repeat').value;
+      const repeatUntil = el('input-repeat-until').value;
+      if (repeatType !== 'none' && repeatUntil){
+        const occurrences = generateRepeatOccurrences(date, time, repeatType, repeatUntil);
+        const repeatId = uid();
+        occurrences.forEach(o => {
+          plans.push({ id: uid(), name, date:o.date, time:o.time, alert, live, completed:false, groupId, color, repeatType, repeatId });
+        });
+      } else {
+        plans.push({ id: uid(), name, date, time, alert, live, completed:false, groupId, color, repeatType:'none' });
+      }
+    }
+    closeAddSheet();
+    renderToday();
+    if (state.screen === 'calendar') renderCalendar();
+  });
+
+  el('btn-add-delete').addEventListener('click', () => {
+    if (state.editingPlanId){ deletePlan(state.editingPlanId); closeAddSheet(); }
+  });
+
+  // ---------- New Group sheet ----------
+  const overlayNewGroup = el('overlay-new-group');
+  let newGroupColor = COLOR_PALETTE[0];
+  function renderNewGroupSwatches(){
+    el('new-group-swatch-row').innerHTML = COLOR_PALETTE.map(c => `
+      <div class="swatch ${c===newGroupColor?'selected':''}" data-color="${c}" style="background:${c};">
+        <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>`).join('');
+  }
+  el('new-group-swatch-row').addEventListener('click', (e) => {
+    const sw = e.target.closest('.swatch');
+    if (!sw) return;
+    newGroupColor = sw.dataset.color;
+    renderNewGroupSwatches();
+  });
+  function openNewGroupSheet(){
+    el('input-group-name').value = '';
+    newGroupColor = COLOR_PALETTE[Math.floor(Math.random()*COLOR_PALETTE.length)];
+    renderNewGroupSwatches();
+    openOverlay('overlay-new-group');
+  }
+  el('btn-newgroup-cancel').addEventListener('click', () => closeOverlay('overlay-new-group'));
+  overlayNewGroup.addEventListener('click', (e) => { if (e.target === overlayNewGroup) closeOverlay('overlay-new-group'); });
+  el('btn-newgroup-save').addEventListener('click', () => {
+    const name = el('input-group-name').value.trim();
+    if (!name){
+      el('input-group-name').style.boxShadow = '0 0 0 2px var(--danger)';
+      return;
+    }
+    const g = { id: uid(), name, color: newGroupColor };
+    groups.push(g);
+    renderGroupSelect();
+    el('input-group').value = g.id;
+    selectedColor = g.color;
+    renderColorSwatches();
+    closeOverlay('overlay-new-group');
+  });
+
+  // ---------- Filter sheet ----------
+  function renderFilterList(){
+    const counts = {};
+    plans.forEach(p => { if (p.groupId) counts[p.groupId] = (counts[p.groupId]||0)+1; });
+    let rows = `<div class="radio-row" data-group="">
+      <div class="rlabel">${t('filter_all')}</div>
+      <div class="radio-dot ${!state.filterGroupId?'checked':''}"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    </div>`;
+    rows += groups.map(g => `
+      <div class="radio-row" data-group="${g.id}">
+        <div style="display:flex; align-items:center; gap:8px;"><span class="dot" style="width:10px; height:10px; border-radius:50%; background:${g.color};"></span><span class="rlabel">${escapeHtml(g.name)}</span></div>
+        <div class="radio-dot ${state.filterGroupId===g.id?'checked':''}"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      </div>`).join('');
+    el('filter-list').innerHTML = rows;
+  }
+  el('btn-filter-quick').addEventListener('click', () => { renderFilterList(); openOverlay('overlay-filter'); });
+  el('filter-list').addEventListener('click', (e) => {
+    const row = e.target.closest('.radio-row');
+    if (!row) return;
+    state.filterGroupId = row.dataset.group || null;
+    renderFilterList();
+    renderGroupChips();
+    renderToday();
+    if (state.screen === 'calendar') renderCalendar();
+  });
+  el('btn-filter-done').addEventListener('click', () => closeOverlay('overlay-filter'));
+  el('overlay-filter').addEventListener('click', (e) => { if (e.target.id === 'overlay-filter') closeOverlay('overlay-filter'); });
+
+  // ---------- Share sheet ----------
+  const overlayShare = el('overlay-share');
+  function openShare(){ overlayShare.classList.add('open'); }
+  function closeShare(){ overlayShare.classList.remove('open'); }
+  el('btn-share-quick').addEventListener('click', openShare);
+  el('btn-share-cal').addEventListener('click', openShare);
+  el('btn-share-cancel').addEventListener('click', closeShare);
+  el('btn-share-done').addEventListener('click', closeShare);
+  overlayShare.addEventListener('click', (e) => { if (e.target === overlayShare) closeShare(); });
+  el('btn-copy-link').addEventListener('click', () => showSnackbarSimple(t('link_copied')));
+  el('add-viewer-row').addEventListener('click', () => showSnackbarSimple(t('invite_sent')));
+  function showSnackbarSimple(text){
+    el('snackbar-text').textContent = text;
+    el('snackbar').querySelector('#snackbar-undo').style.display = 'none';
+    el('snackbar').classList.add('show');
+    clearTimeout(snackTimer);
+    snackTimer = setTimeout(() => {
+      el('snackbar').classList.remove('show');
+      el('snackbar').querySelector('#snackbar-undo').style.display = 'inline';
+    }, 2200);
+  }
+
+  // ---------- Generic overlay helpers ----------
+  function openOverlay(id){ el(id).classList.add('open'); }
+  function closeOverlay(id){ el(id).classList.remove('open'); }
+
+  // ---------- Profile ----------
+  const profileState = { name: 'Alex Kim', avatarColor: '#5B5FEF' };
+  function profileInitials(name){
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return '?';
+    return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
+  }
+  function renderProfileHeader(){
+    el('profile-avatar-initials').textContent = profileInitials(profileState.name);
+    el('btn-profile-avatar').style.background = `linear-gradient(160deg, ${profileState.avatarColor}, ${profileState.avatarColor})`;
+    el('profile-name-display').textContent = profileState.name;
+  }
+  let avatarColorDraft = profileState.avatarColor;
+  function renderAvatarSwatches(){
+    el('avatar-preview').textContent = profileInitials(profileState.name);
+    el('avatar-preview').style.background = `linear-gradient(160deg, ${avatarColorDraft}, ${avatarColorDraft})`;
+    el('avatar-swatch-row').innerHTML = COLOR_PALETTE.map(c => `
+      <div class="swatch ${c===avatarColorDraft?'selected':''}" data-color="${c}" style="background:${c};">
+        <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>`).join('');
+  }
+  function openAvatarSheet(){
+    avatarColorDraft = profileState.avatarColor;
+    renderAvatarSwatches();
+    openOverlay('overlay-avatar');
+  }
+  el('avatar-swatch-row').addEventListener('click', (e) => {
+    const sw = e.target.closest('.swatch');
+    if (!sw) return;
+    avatarColorDraft = sw.dataset.color;
+    renderAvatarSwatches();
+  });
+  el('btn-profile-avatar').addEventListener('click', openAvatarSheet);
+  el('btn-avatar-cancel').addEventListener('click', () => closeOverlay('overlay-avatar'));
+  el('overlay-avatar').addEventListener('click', (e) => { if (e.target.id === 'overlay-avatar') closeOverlay('overlay-avatar'); });
+  el('btn-avatar-save').addEventListener('click', () => {
+    profileState.avatarColor = avatarColorDraft;
+    renderProfileHeader();
+    closeOverlay('overlay-avatar');
+  });
+
+  el('btn-profile-name').addEventListener('click', () => {
+    el('input-profile-name').value = profileState.name;
+    el('input-profile-name').style.boxShadow = '';
+    openOverlay('overlay-name');
+  });
+  el('btn-name-cancel').addEventListener('click', () => closeOverlay('overlay-name'));
+  el('overlay-name').addEventListener('click', (e) => { if (e.target.id === 'overlay-name') closeOverlay('overlay-name'); });
+  el('btn-name-save').addEventListener('click', () => {
+    const val = el('input-profile-name').value.trim();
+    if (!val){ el('input-profile-name').style.boxShadow = '0 0 0 2px var(--danger)'; return; }
+    profileState.name = val;
+    renderProfileHeader();
+    closeOverlay('overlay-name');
+  });
+  renderProfileHeader();
+
+  // ---------- Settings: Notifications / Live Activities toggles ----------
+  el('toggle-notifications').addEventListener('click', function(){
+    this.classList.toggle('on');
+    state.notificationsEnabled = this.classList.contains('on');
+  });
+  el('toggle-live-activities').addEventListener('click', function(){
+    this.classList.toggle('on');
+    state.liveActivitiesEnabled = this.classList.contains('on');
+    renderLiveActivity();
+  });
+
+  // ---------- Settings: Notification Options sub-sheet ----------
+  el('row-notification-options').addEventListener('click', () => openOverlay('overlay-notif-options'));
+  el('btn-notif-cancel').addEventListener('click', () => closeOverlay('overlay-notif-options'));
+  el('btn-notif-done').addEventListener('click', () => closeOverlay('overlay-notif-options'));
+  el('overlay-notif-options').addEventListener('click', (e) => { if (e.target.id === 'overlay-notif-options') closeOverlay('overlay-notif-options'); });
+  el('toggle-sound').addEventListener('click', function(){ this.classList.toggle('on'); });
+  el('toggle-badges').addEventListener('click', function(){ this.classList.toggle('on'); });
+  el('alert-style-group').addEventListener('click', (e) => {
+    const row = e.target.closest('.radio-row');
+    if (!row) return;
+    el('alert-style-group').querySelectorAll('.radio-dot').forEach(d => d.classList.remove('checked'));
+    row.querySelector('.radio-dot').classList.add('checked');
+  });
+
+  // ---------- Settings: Language sub-sheet ----------
+  el('row-language').addEventListener('click', () => openOverlay('overlay-language'));
+  el('btn-lang-cancel').addEventListener('click', () => closeOverlay('overlay-language'));
+  el('overlay-language').addEventListener('click', (e) => { if (e.target.id === 'overlay-language') closeOverlay('overlay-language'); });
+  const LANG_DISPLAY_NAME = { en: 'English', th: 'ไทย', zh: '中文' };
+  el('language-list').addEventListener('click', (e) => {
+    const row = e.target.closest('.radio-row');
+    if (!row) return;
+    const lang = row.dataset.lang;
+    el('language-list').querySelectorAll('.radio-dot').forEach(d => d.classList.remove('checked'));
+    row.querySelector('.radio-dot').classList.add('checked');
+    currentLang = lang;
+    applyLanguage();
+    setTimeout(() => closeOverlay('overlay-language'), 220);
+  });
+
+  // ---------- Settings: Data Privacy sub-sheet ----------
+  el('row-privacy').addEventListener('click', () => openOverlay('overlay-privacy'));
+  el('btn-privacy-cancel').addEventListener('click', () => closeOverlay('overlay-privacy'));
+  el('overlay-privacy').addEventListener('click', (e) => { if (e.target.id === 'overlay-privacy') closeOverlay('overlay-privacy'); });
+
+  // ---------- Settings: Switch Account sub-sheet ----------
+  el('row-switch-account').addEventListener('click', () => openOverlay('overlay-switch-account'));
+  el('btn-switch-cancel').addEventListener('click', () => closeOverlay('overlay-switch-account'));
+  el('overlay-switch-account').addEventListener('click', (e) => { if (e.target.id === 'overlay-switch-account') closeOverlay('overlay-switch-account'); });
+  el('switch-account-list').addEventListener('click', (e) => {
+    const row = e.target.closest('.contact-row[data-account]');
+    if (!row) return;
+    el('switch-account-list').querySelectorAll('.radio-dot').forEach(d => d.classList.remove('checked'));
+    row.querySelector('.radio-dot').classList.add('checked');
+    const name = row.querySelector('.contact-name').textContent;
+    showSnackbarSimple(`${t('switched_to')} ${name}`);
+    setTimeout(() => closeOverlay('overlay-switch-account'), 250);
+  });
+  el('add-account-row').addEventListener('click', () => showSnackbarSimple(t('account_added')));
+
+  // ---------- Settings: Log Out flow ----------
+  el('row-logout').addEventListener('click', () => openOverlay('overlay-logout-confirm'));
+  el('btn-logout-cancel').addEventListener('click', () => closeOverlay('overlay-logout-confirm'));
+  el('overlay-logout-confirm').addEventListener('click', (e) => { if (e.target.id === 'overlay-logout-confirm') closeOverlay('overlay-logout-confirm'); });
+  el('btn-logout-confirm').addEventListener('click', () => {
+    closeOverlay('overlay-logout-confirm');
+    el('logged-out-screen').classList.add('show');
+  });
+  el('btn-log-back-in').addEventListener('click', () => {
+    el('logged-out-screen').classList.remove('show');
+    state.isGuest = false;
+    updateGuestBanner();
+    switchScreen('today');
+  });
+
+  // ---------- Guest mode ----------
+  function updateGuestBanner(){
+    el('guest-banner').style.display = state.isGuest ? 'flex' : 'none';
+  }
+  el('btn-guest').addEventListener('click', () => openOverlay('overlay-guest-confirm'));
+  el('btn-guest-cancel').addEventListener('click', () => closeOverlay('overlay-guest-confirm'));
+  el('overlay-guest-confirm').addEventListener('click', (e) => { if (e.target.id === 'overlay-guest-confirm') closeOverlay('overlay-guest-confirm'); });
+  el('btn-guest-confirm').addEventListener('click', () => {
+    closeOverlay('overlay-guest-confirm');
+    el('logged-out-screen').classList.remove('show');
+    state.isGuest = true;
+    updateGuestBanner();
+    switchScreen('today');
+    showSnackbarSimple(t('guest_snackbar'));
+  });
+  el('guest-banner-login').addEventListener('click', () => {
+    el('logged-out-screen').classList.add('show');
+  });
+
+  // ---------- Settings: Home Screen Widgets preview ----------
+  function renderWidgets(){
+    const todays = plansForDate(todayISO).filter(p => !p.completed);
+    const iconSvg = `<svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:#fff;stroke-width:2;fill:none;"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3" stroke-linecap="round"/></svg>`;
+    // Mini: up to 3 items, dot + name only
+    const miniItems = todays.slice(0, 3);
+    const miniMore = todays.length - miniItems.length;
+    el('widget-mini').innerHTML = `
+      <div class="widget-head"><div class="widget-app-icon"></div><span class="widget-app-name">Routine</span></div>
+      ${miniItems.length === 0 ? `<div class="widget-empty">${t('empty_today')}</div>` : miniItems.map(p => `
+        <div class="widget-task-row"><span class="widget-task-dot" style="background:${colorForPlan(p)};"></span><span class="widget-task-name">${escapeHtml(p.name)}</span></div>
+      `).join('')}
+      ${miniMore > 0 ? `<div class="widget-more">+${miniMore} ${t('widget_more')}</div>` : ''}
+    `;
+    // Compact: up to 5 items, dot + name + time
+    const compactItems = todays.slice(0, 5);
+    const compactMore = todays.length - compactItems.length;
+    el('widget-compact').innerHTML = `
+      <div class="widget-head"><div class="widget-app-icon"></div><span class="widget-app-name">Routine · ${t('today_label')}</span></div>
+      ${compactItems.length === 0 ? `<div class="widget-empty">${t('empty_today')}</div>` : compactItems.map(p => `
+        <div class="widget-task-row"><span class="widget-task-dot" style="background:${colorForPlan(p)};"></span><span class="widget-task-name">${escapeHtml(p.name)}</span><span class="widget-task-time">${fmtTime12(p.time)}</span></div>
+      `).join('')}
+      ${compactMore > 0 ? `<div class="widget-more">+${compactMore} ${t('widget_more')}</div>` : ''}
+    `;
+  }
+  el('row-widgets').addEventListener('click', () => { renderWidgets(); openOverlay('overlay-widgets'); });
+  el('btn-widgets-done').addEventListener('click', () => closeOverlay('overlay-widgets'));
+  el('overlay-widgets').addEventListener('click', (e) => { if (e.target.id === 'overlay-widgets') closeOverlay('overlay-widgets'); });
+
+  // ---------- Calendar Customize sheet ----------
+  function applyCalendarStyle(){
+    const s = state.calStyle;
+    const FONT_CSS = {
+      'Inter': "'Inter',-apple-system,sans-serif",
+      'Inter Tight': "'Inter Tight','Inter',sans-serif",
+      'Poppins': "'Poppins',sans-serif",
+      'Merriweather': "'Merriweather',serif",
+      'JetBrains Mono': "'JetBrains Mono',monospace",
+    };
+    const screenCal = el('screen-calendar');
+    screenCal.style.setProperty('--cal-bg', s.bg);
+    screenCal.style.setProperty('--cal-font', FONT_CSS[s.font] || FONT_CSS.Inter);
+    screenCal.style.setProperty('--cal-date-color', s.dateColor);
+    screenCal.style.setProperty('--cal-month-color', s.monthColor);
+    screenCal.style.setProperty('--cal-highlight', s.highlight);
+  }
+  function syncCalCustomizeInputs(){
+    const s = state.calStyle;
+    el('cal-input-bg').value = s.bg;
+    el('cal-input-font').value = s.font;
+    el('cal-input-date-color').value = s.dateColor;
+    el('cal-input-month-color').value = s.monthColor;
+    el('cal-input-highlight').value = s.highlight;
+  }
+  el('btn-cal-customize').addEventListener('click', () => { syncCalCustomizeInputs(); openOverlay('overlay-cal-customize'); });
+  el('btn-calcustom-done').addEventListener('click', () => closeOverlay('overlay-cal-customize'));
+  el('overlay-cal-customize').addEventListener('click', (e) => { if (e.target.id === 'overlay-cal-customize') closeOverlay('overlay-cal-customize'); });
+  ['cal-input-bg','cal-input-date-color','cal-input-month-color','cal-input-highlight'].forEach(id => {
+    el(id).addEventListener('input', function(){
+      const keyMap = { 'cal-input-bg':'bg', 'cal-input-date-color':'dateColor', 'cal-input-month-color':'monthColor', 'cal-input-highlight':'highlight' };
+      state.calStyle[keyMap[id]] = this.value;
+      state.calCustomized = true;
+      applyCalendarStyle();
+    });
+  });
+  el('cal-input-font').addEventListener('change', function(){
+    state.calStyle.font = this.value;
+    state.calCustomized = true;
+    applyCalendarStyle();
+  });
+  el('btn-calcustom-reset').addEventListener('click', () => {
+    state.calStyle = Object.assign({}, CAL_STYLE_DEFAULTS[getEffectiveTheme()]);
+    state.calCustomized = false;
+    applyCalendarStyle();
+    syncCalCustomizeInputs();
+  });
+  applyCalendarStyle();
+
+  // ---------- Appearance (Light / Dark / System) ----------
+  const THEME_DISPLAY_KEY = { light:'theme_light', dark:'theme_dark', system:'theme_system' };
+  const darkModeQuery = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+
+  function getEffectiveTheme(){
+    if (state.themeMode === 'system'){
+      return (darkModeQuery && darkModeQuery.matches) ? 'dark' : 'light';
+    }
+    return state.themeMode;
+  }
+  function applyTheme(){
+    const eff = getEffectiveTheme();
+    document.body.classList.toggle('dark-mode', eff === 'dark');
+    if (!state.calCustomized){
+      state.calStyle = Object.assign({}, CAL_STYLE_DEFAULTS[eff]);
+      applyCalendarStyle();
+    }
+    el('appearance-current').textContent = t(THEME_DISPLAY_KEY[state.themeMode]);
+  }
+  if (darkModeQuery && darkModeQuery.addEventListener){
+    darkModeQuery.addEventListener('change', () => { if (state.themeMode === 'system') applyTheme(); });
+  }
+
+  function renderAppearanceList(){
+    el('appearance-list').querySelectorAll('.radio-row').forEach(row => {
+      row.querySelector('.radio-dot').classList.toggle('checked', row.dataset.theme === state.themeMode);
+    });
+  }
+  el('row-appearance').addEventListener('click', () => { renderAppearanceList(); openOverlay('overlay-appearance'); });
+  el('btn-appearance-cancel').addEventListener('click', () => closeOverlay('overlay-appearance'));
+  el('overlay-appearance').addEventListener('click', (e) => { if (e.target.id === 'overlay-appearance') closeOverlay('overlay-appearance'); });
+  el('appearance-list').addEventListener('click', (e) => {
+    const row = e.target.closest('.radio-row');
+    if (!row) return;
+    state.themeMode = row.dataset.theme;
+    renderAppearanceList();
+    applyTheme();
+    setTimeout(() => closeOverlay('overlay-appearance'), 200);
+  });
+  applyTheme();
+
+  // ---------- Apply language across the app ----------
+  function applyLanguage(){
+    document.body.classList.remove('lang-th','lang-zh');
+    if (currentLang === 'th') document.body.classList.add('lang-th');
+    if (currentLang === 'zh') document.body.classList.add('lang-zh');
+    document.querySelectorAll('[data-i18n]').forEach(node => {
+      const key = node.getAttribute('data-i18n');
+      node.innerHTML = t(key);
+    });
+    el('language-current').textContent = LANG_DISPLAY_NAME[currentLang];
+    el('appearance-current').textContent = t(THEME_DISPLAY_KEY[state.themeMode]);
+    updateClock();
+    updateTodayDateLabel();
+    updateTodoEditBtnLabel();
+    renderToday();
+    if (state.screen === 'calendar') renderCalendar();
+    if (state.screen === 'progress') renderProgress();
+  }
+
+  // ---------- Calendar screen ----------
+  calSegmented.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-view]');
+    if (!btn) return;
+    state.calView = btn.dataset.view;
+    calSegmented.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+    renderCalendar();
+  });
+
+  function renderCalendar(){
+    if (state.calView === 'month') renderMonthView();
+    else if (state.calView === 'week') renderWeekView();
+    else renderYearView();
+  }
+
+  function renderMonthNav(){
+    const MONTHS = MONTHS_BY_LANG[currentLang];
+    calNavWrap.innerHTML = `
+      <div class="cal-nav">
+        <span class="label display-face">${MONTHS[state.calMonth]} ${state.calYear}</span>
+        <div class="arrows">
+          <button class="arrow-btn" id="cal-prev"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <button class="arrow-btn" id="cal-next"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        </div>
+      </div>`;
+    el('cal-prev').addEventListener('click', () => shiftMonth(-1));
+    el('cal-next').addEventListener('click', () => shiftMonth(1));
+  }
+  function shiftMonth(delta){
+    state.calMonth += delta;
+    if (state.calMonth < 0){ state.calMonth = 11; state.calYear--; }
+    if (state.calMonth > 11){ state.calMonth = 0; state.calYear++; }
+    renderCalendar();
+  }
+
+  function renderMonthView(){
+    renderMonthNav();
+    const firstOfMonth = new Date(state.calYear, state.calMonth, 1);
+    const startOffset = firstOfMonth.getDay();
+    const daysInMonth = new Date(state.calYear, state.calMonth+1, 0).getDate();
+    const daysInPrevMonth = new Date(state.calYear, state.calMonth, 0).getDate();
+
+    let cells = [];
+    for (let i = startOffset; i > 0; i--){
+      cells.push({ day: daysInPrevMonth - i + 1, muted:true, date:null });
+    }
+    for (let d = 1; d <= daysInMonth; d++){
+      const dateObj = new Date(state.calYear, state.calMonth, d);
+      cells.push({ day: d, muted:false, date: toISO(dateObj) });
+    }
+    while (cells.length % 7 !== 0){
+      const n = cells.length - (startOffset + daysInMonth) + 1;
+      cells.push({ day: n, muted:true, date:null });
+    }
+
+    const dow = WD_LETTER_BY_LANG[currentLang].map(l => `<span>${l}</span>`).join('');
+    const dayCells = cells.map(c => {
+      if (c.muted) return `<div class="day-cell muted"><span class="day-num">${c.day}</span></div>`;
+      const isToday = c.date === todayISO;
+      const isSel = c.date === state.selectedDate;
+      const dayPlans = visiblePlansForDate(c.date);
+      const count = dayPlans.length;
+      const dots = count > 0 ? `<div class="day-dots">${dayPlans.slice(0,3).map(p => `<span style="background:${colorForPlan(p)};"></span>`).join('')}</div>` : '<div class="day-dots"></div>';
+      return `<div class="day-cell ${isToday?'today':''} ${isSel?'selected':''}" data-date="${c.date}">
+        <span class="day-num">${c.day}</span>${dots}
+      </div>`;
+    }).join('');
+
+    calBody.innerHTML = `
+      <div class="month-grid">
+        <div class="dow-row">${dow}</div>
+        <div class="day-grid">${dayCells}</div>
+      </div>
+      <div class="day-detail">
+        <p class="day-detail-title" id="day-detail-title"></p>
+        <div id="day-detail-list" style="display:flex; flex-direction:column; gap:10px;"></div>
+      </div>
+    `;
+    calBody.querySelectorAll('.day-cell[data-date]').forEach(c => {
+      c.addEventListener('click', () => { state.selectedDate = c.dataset.date; renderMonthView(); });
+    });
+    renderDayDetail();
+  }
+
+  function renderDayDetail(){
+    const d = fromISO(state.selectedDate);
+    const label = d.toLocaleDateString(LOCALE_BY_LANG[currentLang], { weekday:'long', month:'long', day:'numeric' });
+    el('day-detail-title').textContent = state.selectedDate === todayISO ? `${t('today_label')}, ${label}` : label;
+    const list = visiblePlansForDate(state.selectedDate);
+    el('day-detail-list').innerHTML = list.length === 0
+      ? `<div class="todo-empty" style="margin:0;">${t('empty_day')}</div>`
+      : list.map(p => `
+        <div class="todo-item" data-id="${p.id}" style="cursor:pointer; --task-color:${colorForPlan(p)};" data-action="edit-day">
+          <div class="check" style="border-color:var(--divider); pointer-events:none;"><svg viewBox="0 0 24 24"></svg></div>
+          <div class="todo-main">
+            <p class="todo-name">${escapeHtml(p.name)}</p>
+            <div class="todo-meta">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3" stroke-linecap="round"/></svg>
+              <span>${fmtTime12(p.time)}</span>
+              ${taskMetaExtras(p)}
+            </div>
+          </div>
+        </div>`).join('');
+    el('day-detail-list').querySelectorAll('.todo-item').forEach(item => {
+      item.addEventListener('click', () => openAddSheet(item.dataset.id));
+    });
+  }
+
+  function renderWeekView(){
+    const MONTHS = MONTHS_BY_LANG[currentLang];
+    const WD_SHORT = WD_SHORT_BY_LANG[currentLang];
+    const sel = fromISO(state.selectedDate);
+    const startOfWeek = new Date(sel);
+    startOfWeek.setDate(sel.getDate() - sel.getDay());
+    const endOfWeek = new Date(startOfWeek); endOfWeek.setDate(startOfWeek.getDate()+6);
+
+    calNavWrap.innerHTML = `
+      <div class="cal-nav">
+        <span class="label display-face">${MONTHS[startOfWeek.getMonth()].slice(0,3)} ${startOfWeek.getDate()} – ${MONTHS[endOfWeek.getMonth()].slice(0,3)} ${endOfWeek.getDate()}</span>
+        <div class="arrows">
+          <button class="arrow-btn" id="week-prev"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <button class="arrow-btn" id="week-next"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        </div>
+      </div>`;
+    el('week-prev').addEventListener('click', () => shiftWeek(-7));
+    el('week-next').addEventListener('click', () => shiftWeek(7));
+
+    let blocks = '';
+    for (let i = 0; i < 7; i++){
+      const d = new Date(startOfWeek); d.setDate(startOfWeek.getDate()+i);
+      const iso = toISO(d);
+      const isToday = iso === todayISO;
+      const list = visiblePlansForDate(iso);
+      blocks += `
+        <div class="week-day-block">
+          <div class="week-day-head ${isToday?'is-today':''}">
+            <span class="wd">${WD_SHORT[d.getDay()]} ${d.getDate()}<small>${isToday ? '· ' + t('today_label') : ''}</small></span>
+          </div>
+          ${list.length === 0
+            ? `<div class="week-empty">${t('empty_week')}</div>`
+            : list.map(p => `
+              <div class="week-plan-row" data-id="${p.id}" style="--task-color:${colorForPlan(p)};">
+                <span class="week-plan-time">${fmtTime12(p.time)}</span>
+                <span class="week-plan-name">${escapeHtml(p.name)}</span>
+              </div>`).join('')}
+        </div>`;
+    }
+    calBody.innerHTML = `<div class="week-list">${blocks}</div>`;
+    calBody.querySelectorAll('.week-plan-row').forEach(row => {
+      row.addEventListener('click', () => openAddSheet(row.dataset.id));
+    });
+  }
+  function shiftWeek(deltaDays){
+    const d = fromISO(state.selectedDate);
+    d.setDate(d.getDate()+deltaDays);
+    state.selectedDate = toISO(d);
+    renderWeekView();
+  }
+
+  function renderYearView(){
+    const MONTHS = MONTHS_BY_LANG[currentLang];
+    const WD_LETTER = WD_LETTER_BY_LANG[currentLang];
+    calNavWrap.innerHTML = `
+      <div class="cal-nav">
+        <span class="label display-face">${state.calYear}</span>
+        <div class="arrows">
+          <button class="arrow-btn" id="year-prev"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <button class="arrow-btn" id="year-next"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        </div>
+      </div>`;
+    el('year-prev').addEventListener('click', () => { state.calYear--; renderYearView(); });
+    el('year-next').addEventListener('click', () => { state.calYear++; renderYearView(); });
+
+    let months = '';
+    for (let m = 0; m < 12; m++){
+      const firstOfMonth = new Date(state.calYear, m, 1);
+      const startOffset = firstOfMonth.getDay();
+      const daysInMonth = new Date(state.calYear, m+1, 0).getDate();
+      let dayCells = '';
+      for (let i = 0; i < startOffset; i++) dayCells += `<span class="mini-day muted">.</span>`;
+      for (let d = 1; d <= daysInMonth; d++){
+        const iso = toISO(new Date(state.calYear, m, d));
+        const isToday = iso === todayISO;
+        const hasPlan = visiblePlansForDate(iso).length > 0;
+        dayCells += `<span class="mini-day ${isToday?'today':''} ${hasPlan?'has-plan':''}">${d}</span>`;
+      }
+      months += `
+        <div class="mini-month" data-month="${m}">
+          <p class="mini-month-title">${MONTHS[m]}</p>
+          <div class="mini-dow">${WD_LETTER.map(l=>`<span>${l}</span>`).join('')}</div>
+          <div class="mini-days">${dayCells}</div>
+        </div>`;
+    }
+    calBody.innerHTML = `<div class="year-grid">${months}</div>`;
+    calBody.querySelectorAll('.mini-month').forEach(mm => {
+      mm.addEventListener('click', () => {
+        state.calMonth = Number(mm.dataset.month);
+        state.calView = 'month';
+        calSegmented.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.view === 'month'));
+        renderCalendar();
+      });
+    });
+  }
+
+  // ---------- Progress: completion history ----------
+  function seededRandom(seed){
+    let a = seed >>> 0;
+    return function(){
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let x = Math.imul(a ^ (a >>> 15), 1 | a);
+      x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x;
+      return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function hashStr(s){
+    let h = 0;
+    for (let i = 0; i < s.length; i++){ h = (h << 5) - h + s.charCodeAt(i); h |= 0; }
+    return h;
+  }
+
+  function historyForDate(iso){
+    if (iso > todayISO) return { total: 0, completed: 0 };
+    if (iso === todayISO){
+      const todays = plansForDate(todayISO);
+      return { total: todays.length, completed: todays.filter(p => p.completed).length };
+    }
+    const d = fromISO(iso);
+    const dow = d.getDay();
+    const rnd = seededRandom(hashStr(iso));
+    const baseTotal = (dow === 0 || dow === 6) ? 1 + Math.floor(rnd() * 3) : 2 + Math.floor(rnd() * 4);
+    const offDay = rnd() < 0.16;
+    if (offDay) return { total: baseTotal, completed: 0 };
+    const daysAgo = Math.round((todayObj - d) / 86400000);
+    const drift = Math.min(0.22, daysAgo / 365 * 0.22);
+    const rate = Math.max(0.35, Math.min(0.95, 0.8 - drift + (rnd() - 0.5) * 0.3));
+    return { total: baseTotal, completed: Math.max(1, Math.min(baseTotal, Math.round(baseTotal * rate))) };
+  }
+
+  function datesInRange(startISO, endISO){
+    const out = [];
+    let cur = fromISO(startISO);
+    const end = fromISO(endISO);
+    while (cur <= end){ out.push(toISO(cur)); cur.setDate(cur.getDate() + 1); }
+    return out;
+  }
+
+  function sumHistory(dates){
+    return dates.reduce((acc, iso) => {
+      const h = historyForDate(iso);
+      acc.total += h.total; acc.completed += h.completed;
+      return acc;
+    }, { total: 0, completed: 0 });
+  }
+
+  function currentStreak(){
+    let streak = 0;
+    let cur = new Date(todayObj);
+    while (true){
+      const iso = toISO(cur);
+      const h = historyForDate(iso);
+      if (h.completed > 0){ streak++; cur.setDate(cur.getDate() - 1); }
+      else break;
+      if (streak > 400) break;
+    }
+    return streak;
+  }
+
+  function bestWeekday(dates){
+    const totals = [0,0,0,0,0,0,0], counts = [0,0,0,0,0,0,0];
+    dates.forEach(iso => {
+      const d = fromISO(iso), h = historyForDate(iso);
+      totals[d.getDay()] += h.completed; counts[d.getDay()]++;
+    });
+    let best = 0, bestAvg = -1;
+    totals.forEach((sum, i) => { const avg = counts[i] ? sum / counts[i] : 0; if (avg > bestAvg){ bestAvg = avg; best = i; } });
+    return best;
+  }
+
+  function categoryBreakdown(periodTotal, seedKey){
+    if (periodTotal <= 0) return groups.map(g => ({ group: g, count: 0, pct: 0 }));
+    const rnd = seededRandom(hashStr(seedKey));
+    const weights = groups.map(() => 0.5 + rnd());
+    const sumW = weights.reduce((a,b) => a+b, 0);
+    let rows = groups.map((g,i) => ({ group: g, count: Math.round(periodTotal * weights[i] / sumW) }));
+    rows.sort((a,b) => b.count - a.count);
+    const total = rows.reduce((a,r) => a+r.count, 0) || 1;
+    rows.forEach(r => r.pct = Math.round(r.count / total * 100));
+    return rows;
+  }
+
+  function progressRange(period){
+    if (period === 'week'){
+      const end = new Date(todayObj);
+      const start = new Date(todayObj); start.setDate(start.getDate() - 6);
+      const prevEnd = new Date(start); prevEnd.setDate(prevEnd.getDate() - 1);
+      const prevStart = new Date(prevEnd); prevStart.setDate(prevStart.getDate() - 6);
+      return { start: toISO(start), end: toISO(end), prevStart: toISO(prevStart), prevEnd: toISO(prevEnd) };
+    }
+    if (period === 'month'){
+      const start = new Date(todayObj.getFullYear(), todayObj.getMonth(), 1);
+      const end = new Date(todayObj);
+      const elapsed = todayObj.getDate();
+      const prevMonthDate = new Date(todayObj.getFullYear(), todayObj.getMonth() - 1, 1);
+      const daysInPrevMonth = new Date(prevMonthDate.getFullYear(), prevMonthDate.getMonth()+1, 0).getDate();
+      const prevEnd = new Date(prevMonthDate.getFullYear(), prevMonthDate.getMonth(), Math.min(elapsed, daysInPrevMonth));
+      return { start: toISO(start), end: toISO(end), prevStart: toISO(prevMonthDate), prevEnd: toISO(prevEnd) };
+    }
+    const start = new Date(todayObj.getFullYear(), 0, 1);
+    const end = new Date(todayObj);
+    const prevStart = new Date(todayObj.getFullYear() - 1, 0, 1);
+    const prevEnd = new Date(todayObj.getFullYear() - 1, todayObj.getMonth(), todayObj.getDate());
+    return { start: toISO(start), end: toISO(end), prevStart: toISO(prevStart), prevEnd: toISO(prevEnd) };
+  }
+
+  function pctDelta(cur, prev){
+    if (prev <= 0) return cur > 0 ? 100 : 0;
+    return Math.round((cur - prev) / prev * 100);
+  }
+
+  const VS_KEY = { week:'vs_last_week', month:'vs_last_month', year:'vs_last_year' };
+  const PERIOD_LABEL_KEY = { week:'period_week', month:'period_month', year:'period_year' };
+
+  function renderProgress(){
+    const period = state.progressView;
+    const range = progressRange(period);
+    const dates = datesInRange(range.start, range.end);
+    const cur = sumHistory(dates);
+    const prevDates = datesInRange(range.prevStart, range.prevEnd);
+    const prev = sumHistory(prevDates);
+    renderProgressHero(period, cur, prev);
+    renderProgressStats(period, dates, cur);
+    renderProgressChart(period, dates);
+    renderProgressCategories(cur.completed, period + '-' + range.start);
+  }
+
+  function renderProgressHero(period, cur, prev){
+    const delta = pctDelta(cur.completed, prev.completed);
+    const up = delta >= 0;
+    el('progress-hero').innerHTML = `
+      <p class="progress-hero-label">${t(PERIOD_LABEL_KEY[period])}</p>
+      <p class="progress-hero-value">${cur.completed}</p>
+      <p class="progress-hero-sub">
+        <span>${t('recap_big_label')}</span>
+        <span class="progress-hero-delta ${up?'up':'down'}">${up?'▲':'▼'} ${Math.abs(delta)}% ${t(VS_KEY[period])}</span>
+      </p>`;
+  }
+
+  function renderProgressStats(period, dates, cur){
+    const rate = cur.total > 0 ? Math.round(cur.completed / cur.total * 100) : 0;
+    const streak = currentStreak();
+    const best = bestWeekday(dates);
+    el('progress-stats').innerHTML = `
+      <div class="stat-tile">
+        <div class="stat-icon"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <p class="stat-value">${cur.completed}</p><p class="stat-label">${t('stat_completed')}</p>
+      </div>
+      <div class="stat-tile">
+        <div class="stat-icon"><svg viewBox="0 0 24 24"><path d="M3 3v18h18M7 15l4-6 3 3 5-8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <p class="stat-value">${rate}%</p><p class="stat-label">${t('stat_completion_rate')}</p>
+      </div>
+      <div class="stat-tile">
+        <div class="stat-icon"><svg viewBox="0 0 24 24"><path d="M12 2c3 4-3 5-3 9a3 3 0 006 0c0-1-.5-2-1-2.5.7 2 0 3.5-2 3.5a2.5 2.5 0 01-2.5-2.5C9.5 7 12 6 12 2z"/></svg></div>
+        <p class="stat-value">${streak}</p><p class="stat-label">${t('stat_streak')}</p>
+      </div>
+      <div class="stat-tile">
+        <div class="stat-icon"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2.5"/><path d="M4 9.5h16M8 3v3.5M16 3v3.5" stroke-linecap="round"/></svg></div>
+        <p class="stat-value" style="font-size:16px;">${WD_FULL_BY_LANG[currentLang][best]}</p><p class="stat-label">${t('stat_best_day')}</p>
+      </div>`;
+  }
+
+  function renderProgressChart(period, dates){
+    if (period === 'month') return renderProgressHeatmap();
+    const WD_SHORT = WD_SHORT_BY_LANG[currentLang];
+    const MONTHS = MONTHS_BY_LANG[currentLang];
+    let bars;
+    if (period === 'week'){
+      bars = dates.map(iso => {
+        const h = historyForDate(iso);
+        const d = fromISO(iso);
+        return { value: h.completed, label: WD_SHORT[d.getDay()], future: iso > todayISO };
+      });
+    } else {
+      bars = [];
+      for (let m = 0; m <= todayObj.getMonth(); m++){
+        const monthStart = new Date(todayObj.getFullYear(), m, 1);
+        const monthEnd = new Date(todayObj.getFullYear(), m + 1, 0);
+        const endClamped = monthEnd > todayObj ? todayObj : monthEnd;
+        const monthDates = datesInRange(toISO(monthStart), toISO(endClamped));
+        const sum = sumHistory(monthDates);
+        bars.push({ value: sum.completed, label: MONTHS[m].slice(0,3), future:false });
+      }
+      for (let m = todayObj.getMonth()+1; m < 12; m++){
+        bars.push({ value:0, label: MONTHS[m].slice(0,3), future:true });
+      }
+    }
+    const max = Math.max(1, ...bars.map(b => b.value));
+    el('progress-chart').innerHTML = `<div class="progress-chart-row">${bars.map(b => `
+      <div class="progress-bar-col">
+        <span class="progress-bar-value">${b.future ? '' : b.value}</span>
+        <div class="progress-bar ${b.future?'future':''}" style="height:${Math.max(4, Math.round(b.value/max*64))}px;"></div>
+        <span class="progress-bar-label">${b.label}</span>
+      </div>`).join('')}</div>`;
+  }
+
+  function renderProgressHeatmap(){
+    const firstOfMonth = new Date(todayObj.getFullYear(), todayObj.getMonth(), 1);
+    const startOffset = firstOfMonth.getDay();
+    const daysInMonth = new Date(todayObj.getFullYear(), todayObj.getMonth()+1, 0).getDate();
+    const dayHistories = [];
+    for (let d = 1; d <= daysInMonth; d++){
+      const iso = toISO(new Date(todayObj.getFullYear(), todayObj.getMonth(), d));
+      dayHistories.push({ day:d, iso, h: historyForDate(iso) });
+    }
+    const max = Math.max(1, ...dayHistories.map(x => x.h.completed));
+    const WD_LETTER = WD_LETTER_BY_LANG[currentLang];
+    let cells = `<div class="progress-heat-dow">${WD_LETTER.map(l=>`<span>${l}</span>`).join('')}</div><div class="progress-heatmap">`;
+    for (let i=0;i<startOffset;i++) cells += `<div class="heat-cell empty"></div>`;
+    dayHistories.forEach(x => {
+      const isFuture = x.iso > todayISO;
+      const op = isFuture ? 0 : (x.h.completed === 0 ? 0.12 : 0.25 + (x.h.completed/max)*0.75);
+      const isToday = x.iso === todayISO;
+      cells += `<div class="heat-cell ${isToday?'is-today':''}" style="background:var(--accent); opacity:${op};" title="${x.day}"></div>`;
+    });
+    cells += `</div>`;
+    el('progress-chart').innerHTML = cells;
+  }
+
+  function renderProgressCategories(periodTotal, seedKey){
+    const rows = categoryBreakdown(periodTotal, seedKey);
+    const wrap = el('progress-categories');
+    if (!rows.some(r => r.count > 0)){
+      wrap.innerHTML = `<div class="todo-empty" style="margin:0; border:none; padding:20px 0;">${t('empty_week')}</div>`;
+      return;
+    }
+    wrap.innerHTML = rows.map(r => `
+      <div class="category-row">
+        <span class="category-dot" style="background:${r.group.color};"></span>
+        <span class="category-name">${escapeHtml(r.group.name)}</span>
+        <span class="category-track"><span class="category-fill" style="width:${r.pct}%; background:${r.group.color};"></span></span>
+        <span class="category-pct">${r.pct}%</span>
+      </div>`).join('');
+  }
+
+  const progressSegmented = el('progress-segmented');
+  progressSegmented.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-view]');
+    if (!btn) return;
+    state.progressView = btn.dataset.view;
+    progressSegmented.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+    renderProgress();
+  });
+
+  // ---------- Recap sheet ----------
+  function openRecap(){
+    const period = state.progressView;
+    const range = progressRange(period);
+    const dates = datesInRange(range.start, range.end);
+    const cur = sumHistory(dates);
+    const streak = currentStreak();
+    const best = bestWeekday(dates);
+    el('recap-period').textContent = t(PERIOD_LABEL_KEY[period]);
+    el('recap-number').textContent = cur.completed;
+    el('recap-insights').innerHTML = `
+      <p class="recap-insight">${streak > 0 ? t('recap_insight_streak').replace('{n}', streak) : t('recap_insight_start')}</p>
+      <p class="recap-insight">${t('recap_insight_best').replace('{day}', WD_FULL_BY_LANG[currentLang][best])}</p>`;
+    openOverlay('overlay-recap');
+  }
+  el('btn-progress-recap').addEventListener('click', openRecap);
+  el('btn-recap-close').addEventListener('click', () => closeOverlay('overlay-recap'));
+  el('overlay-recap').addEventListener('click', (e) => { if (e.target.id === 'overlay-recap') closeOverlay('overlay-recap'); });
+  el('btn-recap-share').addEventListener('click', () => { closeOverlay('overlay-recap'); showSnackbarSimple(t('recap_shared_snack')); });
+
+  function escapeHtml(str){
+    return str.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // ---------- init ----------
+  renderToday();
+})();
+</script>
+</body>
+</html>

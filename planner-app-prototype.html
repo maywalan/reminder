@@ -1756,10 +1756,43 @@
   updateTodoEditBtnLabel();
 
   // ---------- Live activity ----------
+  function planDateTime(plan){
+    const [h, m] = plan.time.split(':').map(Number);
+    const d = fromISO(plan.date);
+    d.setHours(h, m, 0, 0);
+    return d;
+  }
+  function secondsUntilPlan(plan){
+    return Math.round((planDateTime(plan) - new Date()) / 1000);
+  }
+  function findActiveLivePlan(){
+    const candidates = plans.filter(p => p.live && !p.completed && secondsUntilPlan(p) > -60);
+    candidates.sort((a, b) => secondsUntilPlan(a) - secondsUntilPlan(b));
+    return candidates[0] || null;
+  }
+  function formatCountdown(diffSec){
+    if (diffSec <= 0) return 'Now';
+    if (diffSec < 3600){
+      const mm = Math.floor(diffSec / 60), ss = diffSec % 60;
+      return `in ${mm}:${pad(ss)}`;
+    }
+    if (diffSec < 86400){
+      const hh = Math.floor(diffSec / 3600), mm = Math.floor((diffSec % 3600) / 60);
+      return mm > 0 ? `in ${hh}h ${mm}m` : `in ${hh}h`;
+    }
+    if (diffSec < 2592000){ // < 30 days
+      const dd = Math.floor(diffSec / 86400), hh = Math.floor((diffSec % 86400) / 3600);
+      return hh > 0 ? `in ${dd}d ${hh}h` : `in ${dd}d`;
+    }
+    const mo = Math.floor(diffSec / 2592000);
+    return `in ${mo}mo`;
+  }
+  let liveActivityPlanId = null;
   function renderLiveActivity(){
-    if (!state.liveActivitiesEnabled){ liveWrap.innerHTML = ''; return; }
-    const active = plans.find(p => p.live && p.date === todayISO && !p.completed && timeToMinutes(p.time)*60 - nowSeconds() > -60 );
-    if (!active){ liveWrap.innerHTML = ''; return; }
+    if (!state.liveActivitiesEnabled){ liveWrap.innerHTML = ''; liveActivityPlanId = null; return; }
+    const active = findActiveLivePlan();
+    if (!active){ liveWrap.innerHTML = ''; liveActivityPlanId = null; return; }
+    liveActivityPlanId = active.id;
     liveWrap.innerHTML = `
       <div class="live-activity">
         <div class="live-dot"></div>
@@ -1771,20 +1804,20 @@
       </div>`;
     updateCountdown(active);
   }
-  function nowSeconds(){ const n = new Date(); return n.getHours()*3600 + n.getMinutes()*60 + n.getSeconds(); }
   function updateCountdown(plan){
     const valEl = el('live-countdown-val');
     if (!valEl) return;
-    const [h,m] = plan.time.split(':').map(Number);
-    const targetSec = h*3600 + m*60;
-    let diff = targetSec - nowSeconds();
-    if (diff < 0) diff = 0;
-    const mm = Math.floor(diff/60), ss = diff%60;
-    valEl.textContent = diff <= 0 ? 'Now' : `in ${mm}:${pad(ss)}`;
+    valEl.textContent = formatCountdown(secondsUntilPlan(plan));
   }
   setInterval(() => {
-    const active = plans.find(p => p.live && p.date === todayISO && !p.completed);
-    if (active && el('live-countdown-val')) updateCountdown(active);
+    if (!state.liveActivitiesEnabled) return;
+    const active = findActiveLivePlan();
+    if (!active){
+      if (liveActivityPlanId !== null) renderLiveActivity();
+      return;
+    }
+    if (active.id !== liveActivityPlanId) renderLiveActivity();
+    else updateCountdown(active);
   }, 1000);
 
   // ---------- Snackbar ----------

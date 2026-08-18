@@ -1,18 +1,22 @@
+import { useFocusEffect } from '@react-navigation/native';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import DraggableFlatList from 'react-native-draggable-flatlist';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BottomSheet } from '@/components/bottom-sheet';
 import { CheckIcon, FilterIcon, ShareIcon } from '@/components/icon';
 import { LiveActivityCard } from '@/components/live-activity-card';
+import { PastActivityList } from '@/components/past-activity-list';
 import { Toast } from '@/components/toast';
 import { TodoItem } from '@/components/todo-item';
 import { Radii } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useToast } from '@/hooks/use-toast';
 import { usePlannerStore } from '@/store/use-planner-store';
+import type { Plan } from '@/store/types';
 import { toISO } from '@/utils/dates';
 
 const SHARE_LINK = 'routine.app/cal/share/9f2ab1c';
@@ -34,17 +38,26 @@ export default function TodayScreen() {
   const plans = usePlannerStore((s) => s.plans);
   const groups = usePlannerStore((s) => s.groups);
   const toggleComplete = usePlannerStore((s) => s.toggleComplete);
-  const bulkDeletePlans = usePlannerStore((s) => s.bulkDeletePlans);
+  const deletePlan = usePlannerStore((s) => s.deletePlan);
+  const reorderPlans = usePlannerStore((s) => s.reorderPlans);
   const undoDelete = usePlannerStore((s) => s.undoDelete);
   const lastDeletedSnapshot = usePlannerStore((s) => s.lastDeletedSnapshot);
   const filterGroupId = usePlannerStore((s) => s.filterGroupId);
   const setFilterGroupId = usePlannerStore((s) => s.setFilterGroupId);
+  const selectMode = usePlannerStore((s) => s.selectMode);
+  const selectedIds = usePlannerStore((s) => s.selectedIds);
+  const setSelectMode = usePlannerStore((s) => s.setSelectMode);
+  const toggleSelected = usePlannerStore((s) => s.toggleSelected);
 
-  const [editMode, setEditMode] = useState(false);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [filterOpen, setFilterOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const { toastMessage, showToast } = useToast();
+
+  useFocusEffect(
+    useCallback(() => {
+      return () => setSelectMode(false);
+    }, [setSelectMode])
+  );
 
   const now = useMemo(() => new Date(), []);
   const todayISO = useMemo(() => toISO(now), [now]);
@@ -53,136 +66,122 @@ export default function TodayScreen() {
     [now]
   );
 
-  const todays = plans
-    .filter((p) => p.date === todayISO)
+  const dayPlans = plans.filter((p) => p.date === todayISO);
+  const hasManualOrder = dayPlans.some((p) => p.order !== undefined);
+  const todays = dayPlans
     .filter((p) => !filterGroupId || p.groupId === filterGroupId)
-    .sort((a, b) => a.time.localeCompare(b.time));
+    .sort((a, b) => (hasManualOrder ? (a.order ?? Infinity) - (b.order ?? Infinity) : a.time.localeCompare(b.time)));
 
   async function handleCopyLink() {
     await Clipboard.setStringAsync(SHARE_LINK);
     showToast('Link copied');
   }
 
-  function toggleSelect(id: string) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
+  const header = (
+    <>
+      <View style={styles.header}>
+        <View>
+          <Text style={[styles.greeting, { color: theme.textSecondary }]}>{greeting(now.getHours())}</Text>
+          <Text style={[styles.h1, { color: theme.text }]}>{dateLabel}</Text>
+        </View>
+        <View style={styles.headerActions}>
+          <Pressable
+            onPress={() => setFilterOpen(true)}
+            hitSlop={8}
+            style={[styles.iconBtn, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
+            <FilterIcon size={18} color={theme.text} strokeWidth={1.9} />
+          </Pressable>
+          <Pressable
+            onPress={() => setShareOpen(true)}
+            hitSlop={8}
+            style={[styles.iconBtn, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
+            <ShareIcon size={18} color={theme.text} strokeWidth={1.9} />
+          </Pressable>
+        </View>
+      </View>
 
-  function exitEditMode() {
-    setEditMode(false);
-    setSelected(new Set());
-  }
+      {groups.length > 0 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+          <Pressable
+            onPress={() => setFilterGroupId(null)}
+            style={[
+              styles.chip,
+              { borderColor: theme.divider, backgroundColor: filterGroupId === null ? theme.accent : theme.surface },
+            ]}>
+            <Text style={{ color: filterGroupId === null ? '#fff' : theme.text, fontSize: 12, fontWeight: '700' }}>All</Text>
+          </Pressable>
+          {groups.map((g) => (
+            <Pressable
+              key={g.id}
+              onPress={() => setFilterGroupId(filterGroupId === g.id ? null : g.id)}
+              style={[
+                styles.chip,
+                { borderColor: theme.divider, backgroundColor: filterGroupId === g.id ? g.color : theme.surface },
+              ]}>
+              {filterGroupId !== g.id && <View style={[styles.chipDot, { backgroundColor: g.color }]} />}
+              <Text style={{ color: filterGroupId === g.id ? '#fff' : theme.text, fontSize: 12, fontWeight: '700' }}>
+                {g.name}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      )}
 
-  function handleBulkDelete() {
-    bulkDeletePlans(Array.from(selected));
-    exitEditMode();
-  }
+      <LiveActivityCard />
+
+      <View style={styles.sectionRow}>
+        <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>TODAY&apos;S PLAN</Text>
+        <Pressable onPress={() => setSelectMode(!selectMode)} hitSlop={8}>
+          <Text style={[styles.editBtn, { color: theme.accent }]}>{selectMode ? 'Done' : 'Edit'}</Text>
+        </Pressable>
+      </View>
+    </>
+  );
+
+  const footer = (
+    <>
+      {lastDeletedSnapshot && !selectMode && (
+        <Pressable onPress={undoDelete} style={[styles.undoBar, { backgroundColor: theme.surface2, borderColor: theme.divider }]}>
+          <Text style={{ color: theme.textSecondary, fontSize: 13 }}>Undo last delete</Text>
+        </Pressable>
+      )}
+
+      <PastActivityList />
+    </>
+  );
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.bg }]}>
-      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 22, paddingBottom: 130 }}>
-        <View style={styles.header}>
-          <View>
-            <Text style={[styles.greeting, { color: theme.textSecondary }]}>{greeting(now.getHours())}</Text>
-            <Text style={[styles.h1, { color: theme.text }]}>{dateLabel}</Text>
-          </View>
-          <View style={styles.headerActions}>
-            <Pressable
-              onPress={() => setFilterOpen(true)}
-              hitSlop={8}
-              style={[styles.iconBtn, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
-              <FilterIcon size={18} color={theme.text} strokeWidth={1.9} />
-            </Pressable>
-            <Pressable
-              onPress={() => setShareOpen(true)}
-              hitSlop={8}
-              style={[styles.iconBtn, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
-              <ShareIcon size={18} color={theme.text} strokeWidth={1.9} />
-            </Pressable>
-          </View>
-        </View>
-
-        {groups.length > 0 && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-            <Pressable
-              onPress={() => setFilterGroupId(null)}
-              style={[
-                styles.chip,
-                { borderColor: theme.divider, backgroundColor: filterGroupId === null ? theme.accent : theme.surface },
-              ]}>
-              <Text style={{ color: filterGroupId === null ? '#fff' : theme.text, fontSize: 12, fontWeight: '700' }}>All</Text>
-            </Pressable>
-            {groups.map((g) => (
-              <Pressable
-                key={g.id}
-                onPress={() => setFilterGroupId(filterGroupId === g.id ? null : g.id)}
-                style={[
-                  styles.chip,
-                  { borderColor: theme.divider, backgroundColor: filterGroupId === g.id ? g.color : theme.surface },
-                ]}>
-                {filterGroupId !== g.id && <View style={[styles.chipDot, { backgroundColor: g.color }]} />}
-                <Text style={{ color: filterGroupId === g.id ? '#fff' : theme.text, fontSize: 12, fontWeight: '700' }}>
-                  {g.name}
-                </Text>
-              </Pressable>
-            ))}
-          </ScrollView>
-        )}
-
-        <LiveActivityCard />
-
-        <View style={styles.sectionRow}>
-          <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>TODAY&apos;S PLAN</Text>
-          <Pressable onPress={() => (editMode ? exitEditMode() : setEditMode(true))} hitSlop={8}>
-            <Text style={[styles.editBtn, { color: theme.accent }]}>{editMode ? 'Done' : 'Edit'}</Text>
-          </Pressable>
-        </View>
-
-        {todays.length === 0 ? (
+      <DraggableFlatList
+        data={todays}
+        keyExtractor={(item) => item.id}
+        containerStyle={{ flex: 1 }}
+        contentContainerStyle={{ paddingTop: insets.top + 22, paddingBottom: 130 }}
+        onDragEnd={({ data }) => reorderPlans(todayISO, data.map((p) => p.id))}
+        ListHeaderComponent={header}
+        ListFooterComponent={footer}
+        ListEmptyComponent={
           <View style={[styles.empty, { backgroundColor: theme.surface, borderColor: theme.dividerStrong }]}>
             <Text style={{ color: theme.textSecondary, fontSize: 14 }}>
               {filterGroupId ? 'Nothing in this group today.' : 'Nothing planned for today.'}
             </Text>
           </View>
-        ) : (
-          todays.map((plan) => (
-            <TodoItem
-              key={plan.id}
-              plan={plan}
-              group={groups.find((g) => g.id === plan.groupId)}
-              editMode={editMode}
-              selected={selected.has(plan.id)}
-              onToggleComplete={() => toggleComplete(plan.id)}
-              onSelect={() => toggleSelect(plan.id)}
-              onPress={() => router.push({ pathname: '/add-plan', params: { id: plan.id } })}
-            />
-          ))
+        }
+        renderItem={({ item, drag, isActive }: { item: Plan; drag: () => void; isActive: boolean }) => (
+          <TodoItem
+            plan={item}
+            group={groups.find((g) => g.id === item.groupId)}
+            selectMode={selectMode}
+            selected={selectedIds.includes(item.id)}
+            isActive={isActive}
+            onToggleComplete={() => toggleComplete(item.id)}
+            onToggleSelect={() => toggleSelected(item.id)}
+            onPress={() => router.push({ pathname: '/add-plan', params: { id: item.id } })}
+            onDelete={() => deletePlan(item.id)}
+            onDrag={drag}
+          />
         )}
-
-        {lastDeletedSnapshot && !editMode && (
-          <Pressable onPress={undoDelete} style={[styles.undoBar, { backgroundColor: theme.surface2, borderColor: theme.divider }]}>
-            <Text style={{ color: theme.textSecondary, fontSize: 13 }}>Undo last delete</Text>
-          </Pressable>
-        )}
-      </ScrollView>
-
-      {editMode && (
-        <View style={[styles.bulkBar, { bottom: 112 + insets.bottom, backgroundColor: theme.surface, borderColor: theme.divider }]}>
-          <Text style={{ color: theme.textSecondary, fontSize: 13, fontWeight: '600' }}>
-            {selected.size > 0 ? `${selected.size} selected` : 'Tap plans to select'}
-          </Text>
-          <Pressable
-            onPress={handleBulkDelete}
-            disabled={selected.size === 0}
-            style={[styles.deleteBtn, { backgroundColor: theme.danger, opacity: selected.size === 0 ? 0.4 : 1 }]}>
-            <Text style={{ color: '#fff', fontSize: 13.5, fontWeight: '700' }}>Delete</Text>
-          </Pressable>
-        </View>
-      )}
+      />
 
       <Toast message={toastMessage} />
 
@@ -303,21 +302,4 @@ const styles = StyleSheet.create({
   editBtn: { fontSize: 12.5, fontWeight: '700' },
   empty: { marginHorizontal: 22, padding: 26, borderRadius: Radii.md, borderWidth: 1, borderStyle: 'dashed', alignItems: 'center' },
   undoBar: { marginHorizontal: 22, marginTop: 4, padding: 12, borderRadius: Radii.md, borderWidth: 1, alignItems: 'center' },
-  bulkBar: {
-    position: 'absolute',
-    left: 20,
-    right: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 12,
-    borderRadius: 18,
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 6,
-  },
-  deleteBtn: { paddingVertical: 9, paddingHorizontal: 18, borderRadius: 12 },
 });

@@ -248,3 +248,17 @@ export function WarningIcon({ size = 24, color, strokeWidth = 1.8 }: IconProps) 
     </Svg>
   );
 }
+
+export function TrashIcon({ size = 24, color, strokeWidth = 1.8 }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m3 0-1 13a1 1 0 01-1 1H7a1 1 0 01-1-1L5 7h14zM10 11v6M14 11v6"
+        stroke={color}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}

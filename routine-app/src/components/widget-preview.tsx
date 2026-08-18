@@ -41,7 +41,7 @@ export function WidgetPreview({ variant }: WidgetPreviewProps) {
             <Text style={styles.taskName} numberOfLines={1}>
               {p.name}
             </Text>
-            {variant === 'compact' && <Text style={styles.taskTime}>{fmtTime12(p.time)}</Text>}
+            {variant === 'compact' && <Text style={styles.taskTime}>{p.allDay ? 'All Day' : fmtTime12(p.time)}</Text>}
           </View>
         ))
       )}

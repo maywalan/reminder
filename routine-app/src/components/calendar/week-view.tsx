@@ -59,7 +59,7 @@ export function WeekView({ selectedDate, todayISO, plans, colorForPlan, onShiftW
                   key={p.id}
                   onPress={() => onPressPlan(p.id)}
                   style={[styles.planRow, { borderColor: theme.divider, borderLeftColor: colorForPlan(p) }]}>
-                  <Text style={[styles.planTime, { color: theme.accent }]}>{fmtTime12(p.time)}</Text>
+                  <Text style={[styles.planTime, { color: theme.accent }]}>{p.allDay ? 'All Day' : fmtTime12(p.time)}</Text>
                   <Text numberOfLines={1} style={[styles.planName, { color: theme.text }]}>
                     {p.name}
                   </Text>

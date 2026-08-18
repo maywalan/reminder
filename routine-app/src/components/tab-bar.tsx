@@ -2,11 +2,13 @@ import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { Alert, Animated, Platform, Pressable, StyleSheet, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CalendarIcon, ChartIcon, HomeIcon, PersonIcon, PlusIcon } from '@/components/icon';
 import { useEffectiveScheme, useTheme } from '@/hooks/use-theme';
+import { usePlannerStore } from '@/store/use-planner-store';
 
 const ROUTE_ICONS: Record<string, typeof HomeIcon> = {
   index: HomeIcon,
@@ -20,6 +22,22 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const scheme = useEffectiveScheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const selectMode = usePlannerStore((s) => s.selectMode);
+  const selectedIds = usePlannerStore((s) => s.selectedIds);
+  const selectAllToday = usePlannerStore((s) => s.selectAllToday);
+  const deleteSelected = usePlannerStore((s) => s.deleteSelected);
+
+  const fade = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(fade, { toValue: selectMode ? 1 : 0, duration: 220, useNativeDriver: true }).start();
+  }, [selectMode, fade]);
+
+  function handleDelete() {
+    Alert.alert('Delete Plans?', `${selectedIds.length} plan${selectedIds.length === 1 ? '' : 's'} will be deleted.`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: deleteSelected },
+    ]);
+  }
 
   // Prototype order: Today, Calendar, [FAB], Progress, Profile — the FAB is not a route,
   // it's inserted visually between the 2nd and 3rd tab.
@@ -54,19 +72,33 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
 
   return (
     <BlurView
-      intensity={Platform.OS === 'ios' ? 60 : 100}
+      intensity={8}
       tint={scheme === 'dark' ? 'dark' : 'light'}
+      experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
       style={[
         styles.bar,
         { paddingBottom: Math.max(insets.bottom, 10), borderTopColor: theme.divider, backgroundColor: theme.navbarBg },
       ]}>
-      <View style={styles.row}>
+      <Animated.View
+        style={[styles.row, { opacity: fade.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }]}
+        pointerEvents={selectMode ? 'none' : 'auto'}>
         {items[0]}
         {items[1]}
         {fab}
         {items[2]}
         {items[3]}
-      </View>
+      </Animated.View>
+
+      <Animated.View
+        style={[styles.selectRow, { opacity: fade }]}
+        pointerEvents={selectMode ? 'auto' : 'none'}>
+        <Pressable onPress={selectAllToday} hitSlop={8}>
+          <Text style={[styles.selectAction, { color: theme.accent }]}>Select All</Text>
+        </Pressable>
+        <Pressable onPress={handleDelete} hitSlop={8} disabled={selectedIds.length === 0}>
+          <Text style={[styles.selectAction, { color: theme.danger, opacity: selectedIds.length === 0 ? 0.4 : 1 }]}>Delete</Text>
+        </Pressable>
+      </Animated.View>
     </BlurView>
   );
 }
@@ -74,6 +106,19 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
 const styles = StyleSheet.create({
   bar: { borderTopWidth: StyleSheet.hairlineWidth },
   row: { flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-start', gap: 16, paddingTop: 12, paddingBottom: 8 },
+  selectRow: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 8,
+  },
+  selectAction: { fontSize: 15.5, fontWeight: '700' },
   tabBtn: { width: 60, alignItems: 'center', gap: 5, paddingVertical: 2 },
   tabLabel: { fontSize: 11.5, fontWeight: '600' },
   fabWrap: { marginTop: -30 },

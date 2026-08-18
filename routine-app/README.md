@@ -72,8 +72,10 @@ src/
 ## What's already ported vs. what's next
 
 **Done:** Today screen (greeting/date header, group filter chips, Filter/Share icon buttons and
-sheets, Live Activity card, task list, "Edit" → multi-select → bulk delete with undo, tap a task
-to edit), Add/Edit Plan sheet (name, native date/time pickers, color, group, live-toggle),
+sheets, Live Activity card, Past Activity list, task list with swipe-to-delete, "Edit" →
+multi-select → bulk delete with undo, tap a task to edit), Add/Edit Plan sheet (name, native
+date/time pickers, up to 5 alerts, color, group, repeat rules with "repeat until", free-text
+details, optional location with Google Places autocomplete, optional photo, live-toggle),
 Calendar (Week/Month/Year), Progress (hero/trend/categories), Recap sheet, full Settings screen
 (profile avatar/name editing, guest banner, notifications + notification options + alert style,
 appearance, language picker, data privacy, Home Screen Widgets preview), custom tab bar, light/dark
@@ -84,14 +86,26 @@ theming, local persistence.
 | Feature | Where to look in `planner-app-prototype.html` |
 |---|---|
 | Group creation flow | `openNewGroupSheet()` |
-| Alert & repeat rule fields on Add/Edit Plan | `#overlay-add`'s `input-alert`/`input-repeat` fields |
 | Real login / switch-account flow | `#logged-out-screen`, `#overlay-guest-confirm` — the Settings guest banner and its "Log In" button are UI-only for now since there's no backend/auth yet |
 | Actual in-app translation | the Language sheet persists a choice, but text isn't retranslated yet — see the `LANG` object and `applyLanguage()` |
 | Real iOS Home Screen widgets | the Settings widgets sheet is a preview mockup (matching the prototype's own mock); a working WidgetKit widget needs a native dev build, which Expo Go can't provide |
 | Calendar customize sheet (background/font/colors) | `#overlay-cal-customize` |
 
-Suggested order: group creation, then alert/repeat fields, then decide on a backend before
-tackling real login/sync.
+Suggested order: group creation, then decide on a backend before tackling real login/sync.
+
+## Location autocomplete (optional)
+
+The Location field on Add/Edit Plan works as plain free text out of the box. To turn on
+Google-Places-style suggestions as you type:
+
+1. In [Google Cloud Console](https://console.cloud.google.com), create/select a project, enable
+   **"Places API (New)"**, then create an API key under Credentials.
+2. Restrict that key to the Places API (Application restrictions can stay "None" for Expo Go
+   testing, since the key ships inside the JS bundle either way — see step 3).
+3. Copy `.env.example` to `.env` and paste the key into `EXPO_PUBLIC_GOOGLE_PLACES_API_KEY`, then
+   restart `npx expo start`. `.env` is gitignored so the key won't get committed.
+
+Without a key, the field just stays free text — no errors, no broken UI.
 
 ## Notes on a couple of implementation choices
 

@@ -20,7 +20,7 @@ export const Colors = {
     dangerSoft: 'rgba(255,59,48,0.10)',
     divider: 'rgba(60,60,67,0.10)',
     dividerStrong: 'rgba(60,60,67,0.16)',
-    navbarBg: 'rgba(250,250,252,0.82)',
+    navbarBg: 'rgba(255,255,255,0.97)',
   },
   dark: {
     bg: '#000000',
@@ -38,7 +38,7 @@ export const Colors = {
     dangerSoft: 'rgba(255,69,58,0.16)',
     divider: 'rgba(255,255,255,0.13)',
     dividerStrong: 'rgba(255,255,255,0.22)',
-    navbarBg: 'rgba(28,28,30,0.86)',
+    navbarBg: 'rgba(20,20,22,0.97)',
   },
 } as const;
 

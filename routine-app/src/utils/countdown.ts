@@ -22,6 +22,16 @@ export function findActiveLivePlan(plans: Plan[]): Plan | null {
   return candidates[0] ?? null;
 }
 
+const DAY_SECONDS = 86400;
+
+/** Live-toggled plans that already ended (past the 60s grace window), up to `withinDays` ago, most recent first. */
+export function findPastLivePlans(plans: Plan[], withinDays = 30): Plan[] {
+  const cutoff = -withinDays * DAY_SECONDS;
+  return plans
+    .filter((p) => p.live && secondsUntilPlan(p) <= -60 && secondsUntilPlan(p) > cutoff)
+    .sort((a, b) => secondsUntilPlan(b) - secondsUntilPlan(a));
+}
+
 /**
  * mm:ss under an hour, "Xh Ym" under a day, "Xd Xh" under 30 days, "Xmo" beyond that.
  */

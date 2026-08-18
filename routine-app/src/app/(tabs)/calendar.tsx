@@ -22,6 +22,7 @@ export default function CalendarScreen() {
   const plans = usePlannerStore((s) => s.plans);
   const groups = usePlannerStore((s) => s.groups);
   const toggleComplete = usePlannerStore((s) => s.toggleComplete);
+  const deletePlan = usePlannerStore((s) => s.deletePlan);
 
   const now = useMemo(() => new Date(), []);
   const todayISO = useMemo(() => toISO(now), [now]);
@@ -99,11 +100,13 @@ export default function CalendarScreen() {
                     key={p.id}
                     plan={p}
                     group={groups.find((g) => g.id === p.groupId)}
-                    editMode={false}
+                    selectMode={false}
                     selected={false}
                     onToggleComplete={() => toggleComplete(p.id)}
-                    onSelect={() => {}}
+                    onToggleSelect={() => {}}
                     onPress={() => router.push({ pathname: '/add-plan', params: { id: p.id } })}
+                    onDelete={() => deletePlan(p.id)}
+                    onDrag={() => {}}
                   />
                 ))
               )}

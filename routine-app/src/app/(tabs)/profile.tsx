@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BottomSheet } from '@/components/bottom-sheet';
@@ -37,7 +37,22 @@ export default function ProfileScreen() {
   const profile = usePlannerStore((s) => s.profile);
   const settings = usePlannerStore((s) => s.settings);
   const updateSettings = usePlannerStore((s) => s.updateSettings);
+  const resetData = usePlannerStore((s) => s.resetData);
   const { toastMessage, showToast } = useToast();
+
+  function handleClearData() {
+    Alert.alert('Clear All Data?', 'This deletes every plan and group on this device. This can’t be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Clear All Data',
+        style: 'destructive',
+        onPress: () => {
+          resetData();
+          showToast('All data cleared');
+        },
+      },
+    ]);
+  }
 
   const [appearanceOpen, setAppearanceOpen] = useState(false);
   const [languageOpen, setLanguageOpen] = useState(false);
@@ -247,9 +262,11 @@ export default function ProfileScreen() {
         }>
         <Text style={[styles.privacyText, { color: theme.textSecondary }]}>
           Your plans are stored only on this device — Routine doesn&apos;t have a backend yet, so nothing is uploaded or synced.
-          Sharing a calendar or account sync will require a future update. You can clear all local data at any time by
-          uninstalling the app.
+          Sharing a calendar or account sync will require a future update.
         </Text>
+        <Pressable onPress={handleClearData} style={[styles.clearDataBtn, { backgroundColor: theme.dangerSoft }]}>
+          <Text style={{ color: theme.danger, fontSize: 15, fontWeight: '700' }}>Clear All Data</Text>
+        </Pressable>
       </BottomSheet>
 
       <BottomSheet
@@ -308,6 +325,7 @@ const styles = StyleSheet.create({
   rowIcon: { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   rowLabel: { fontSize: 14.5, fontWeight: '600', flex: 1 },
   privacyText: { fontSize: 13.5, lineHeight: 20, marginTop: 12 },
+  clearDataBtn: { padding: 14, borderRadius: Radii.md, alignItems: 'center', marginTop: 16 },
   footnote: { fontSize: 12, lineHeight: 17, marginTop: 10 },
   widgetWrap: { alignItems: 'center', marginBottom: 4 },
 });

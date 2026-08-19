@@ -18,7 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BottomSheet } from '@/components/bottom-sheet';
 import { CameraIcon, CheckIcon, ChevronRightIcon, PlusIcon } from '@/components/icon';
-import { Radii, SwatchColors } from '@/constants/theme';
+import { Radii, SwatchColors, Typography } from '@/constants/theme';
 import { usePlaceSearch } from '@/hooks/use-place-search';
 import { useEffectiveScheme, useTheme } from '@/hooks/use-theme';
 import { uid, usePlannerStore } from '@/store/use-planner-store';
@@ -88,7 +88,11 @@ export default function AddPlanScreen() {
   const [live, setLive] = useState(editing?.live ?? false);
   const [alert1, setAlert1] = useState(editing?.alerts?.[0] ?? '5');
   const [alert2, setAlert2] = useState(editing?.alerts?.[1] ?? 'none');
-  const [alertSlot, setAlertSlot] = useState<1 | 2 | null>(null);
+  const [alert3, setAlert3] = useState(editing?.alerts?.[2] ?? 'none');
+  // Alert1 defaults to '5' even on a brand-new plan, but Second Alert should only reveal once
+  // the user has actually gone through the picker for Alert -- not just because of that preset.
+  const [alert1Touched, setAlert1Touched] = useState(() => (editing?.alerts?.length ?? 0) > 0);
+  const [alertSlot, setAlertSlot] = useState<1 | 2 | 3 | null>(null);
   const [repeatType, setRepeatType] = useState<RepeatType>('none');
   const [repeatOpen, setRepeatOpen] = useState(false);
   const [repeatUntil, setRepeatUntil] = useState<Date | null>(null);
@@ -155,7 +159,7 @@ export default function AddPlanScreen() {
       color,
       groupId,
       live,
-      alerts: [alert1, alert2].filter((a) => a !== 'none'),
+      alerts: [alert1, alert2, alert3].filter((a) => a !== 'none'),
       notes: notes.trim() || undefined,
       location: location.trim() || undefined,
       photoUris,
@@ -216,9 +220,16 @@ export default function AddPlanScreen() {
   function selectAlert(value: string) {
     if (alertSlot === 1) {
       setAlert1(value);
-      if (value === 'none') setAlert2('none');
+      setAlert1Touched(value !== 'none');
+      if (value === 'none') {
+        setAlert2('none');
+        setAlert3('none');
+      }
     } else if (alertSlot === 2) {
       setAlert2(value);
+      if (value === 'none') setAlert3('none');
+    } else if (alertSlot === 3) {
+      setAlert3(value);
     }
     setAlertSlot(null);
   }
@@ -227,11 +238,11 @@ export default function AddPlanScreen() {
     <View style={[styles.screen, { backgroundColor: theme.bg, paddingTop: insets.top, paddingBottom: insets.bottom + 16 }]}>
       <View style={styles.head}>
         <Pressable onPress={() => router.back()} hitSlop={8}>
-          <Text style={{ color: theme.textSecondary, fontSize: 15, fontWeight: '600' }}>Cancel</Text>
+          <Text style={{ color: theme.textSecondary, fontSize: Typography.heading, fontWeight: '600' }}>Cancel</Text>
         </Pressable>
-        <Text style={{ color: theme.text, fontSize: 17, fontWeight: '800' }}>{editing ? 'Edit Plan' : 'New Plan'}</Text>
+        <Text style={{ color: theme.text, fontSize: Typography.title, fontWeight: '800' }}>{editing ? 'Edit Plan' : 'New Plan'}</Text>
         <Pressable onPress={handleSave} hitSlop={8}>
-          <Text style={{ color: theme.accent, fontSize: 15, fontWeight: '700' }}>Save</Text>
+          <Text style={{ color: theme.accent, fontSize: Typography.heading, fontWeight: '700' }}>Save</Text>
         </Pressable>
       </View>
 
@@ -273,7 +284,7 @@ export default function AddPlanScreen() {
             )}
           </View>
           <View style={[styles.fieldRow, styles.fieldBorder, { borderColor: theme.divider }]}>
-            <Text style={{ flex: 1, color: theme.text, fontSize: 15, fontWeight: '600' }}>All Day</Text>
+            <Text style={{ flex: 1, color: theme.text, fontSize: Typography.heading, fontWeight: '600' }}>All Day</Text>
             <Switch value={allDay} onValueChange={setAllDay} trackColor={{ true: theme.success }} />
           </View>
 
@@ -283,14 +294,14 @@ export default function AddPlanScreen() {
                 <Pressable
                   onPress={() => setTimeMode('specific')}
                   style={[styles.segment, { backgroundColor: timeMode === 'specific' ? theme.accent : theme.surface2, borderColor: theme.divider }]}>
-                  <Text style={{ color: timeMode === 'specific' ? '#fff' : theme.text, fontSize: 12.5, fontWeight: '700' }}>
+                  <Text style={{ color: timeMode === 'specific' ? '#fff' : theme.text, fontSize: Typography.body, fontWeight: '700' }}>
                     Specific Time
                   </Text>
                 </Pressable>
                 <Pressable
                   onPress={() => setTimeMode('range')}
                   style={[styles.segment, { backgroundColor: timeMode === 'range' ? theme.accent : theme.surface2, borderColor: theme.divider }]}>
-                  <Text style={{ color: timeMode === 'range' ? '#fff' : theme.text, fontSize: 12.5, fontWeight: '700' }}>Time Range</Text>
+                  <Text style={{ color: timeMode === 'range' ? '#fff' : theme.text, fontSize: Typography.body, fontWeight: '700' }}>Time Range</Text>
                 </Pressable>
               </View>
             </View>
@@ -372,14 +383,21 @@ export default function AddPlanScreen() {
 
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
           <Pressable onPress={() => setAlertSlot(1)} style={styles.fieldRow}>
-            <Text style={{ flex: 1, color: theme.text, fontSize: 15, fontWeight: '600' }}>Alert</Text>
-            <Text style={{ color: theme.textTertiary, fontSize: 14.5 }}>{alertLabel(alert1)}</Text>
+            <Text style={{ flex: 1, color: theme.text, fontSize: Typography.heading, fontWeight: '600' }}>Alert</Text>
+            <Text style={{ color: theme.textTertiary, fontSize: Typography.heading }}>{alertLabel(alert1)}</Text>
             <ChevronRightIcon size={16} color={theme.textTertiary} strokeWidth={2} />
           </Pressable>
-          {alert1 !== 'none' && (
+          {alert1Touched && (
             <Pressable onPress={() => setAlertSlot(2)} style={[styles.fieldRow, styles.fieldBorder, { borderColor: theme.divider }]}>
-              <Text style={{ flex: 1, color: theme.text, fontSize: 15, fontWeight: '600' }}>Second Alert</Text>
-              <Text style={{ color: theme.textTertiary, fontSize: 14.5 }}>{alertLabel(alert2)}</Text>
+              <Text style={{ flex: 1, color: theme.text, fontSize: Typography.heading, fontWeight: '600' }}>Second Alert</Text>
+              <Text style={{ color: theme.textTertiary, fontSize: Typography.heading }}>{alertLabel(alert2)}</Text>
+              <ChevronRightIcon size={16} color={theme.textTertiary} strokeWidth={2} />
+            </Pressable>
+          )}
+          {alert1Touched && alert2 !== 'none' && (
+            <Pressable onPress={() => setAlertSlot(3)} style={[styles.fieldRow, styles.fieldBorder, { borderColor: theme.divider }]}>
+              <Text style={{ flex: 1, color: theme.text, fontSize: Typography.heading, fontWeight: '600' }}>Third Alert</Text>
+              <Text style={{ color: theme.textTertiary, fontSize: Typography.heading }}>{alertLabel(alert3)}</Text>
               <ChevronRightIcon size={16} color={theme.textTertiary} strokeWidth={2} />
             </Pressable>
           )}
@@ -432,7 +450,7 @@ export default function AddPlanScreen() {
                     {s.primaryText}
                   </Text>
                   {!!s.secondaryText && (
-                    <Text style={{ color: theme.textTertiary, fontSize: 12, marginTop: 1 }} numberOfLines={1}>
+                    <Text style={{ color: theme.textTertiary, fontSize: Typography.body, marginTop: 1 }} numberOfLines={1}>
                       {s.secondaryText}
                     </Text>
                   )}
@@ -465,7 +483,7 @@ export default function AddPlanScreen() {
             {photoUris.length < MAX_PHOTOS && (
               <Pressable onPress={handlePickPhoto} style={[styles.photoPicker, { borderColor: theme.dividerStrong }]}>
                 <CameraIcon size={18} color={theme.textTertiary} strokeWidth={1.8} />
-                <Text style={{ color: theme.textSecondary, fontSize: 11.5, fontWeight: '600', marginTop: 4 }}>Add</Text>
+                <Text style={{ color: theme.textSecondary, fontSize: Typography.label, fontWeight: '600', marginTop: 4 }}>Add</Text>
               </Pressable>
             )}
           </View>
@@ -565,8 +583,8 @@ export default function AddPlanScreen() {
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
           <View style={styles.fieldRow}>
             <View style={{ flex: 1 }}>
-              <Text style={{ color: theme.text, fontSize: 15, fontWeight: '600' }}>Live Activity</Text>
-              <Text style={{ color: theme.textSecondary, fontSize: 12, marginTop: 2 }}>
+              <Text style={{ color: theme.text, fontSize: Typography.heading, fontWeight: '600' }}>Live Activity</Text>
+              <Text style={{ color: theme.textSecondary, fontSize: Typography.body, marginTop: 2 }}>
                 Show a live countdown on the home screen as this plan approaches.
               </Text>
             </View>
@@ -576,18 +594,21 @@ export default function AddPlanScreen() {
 
         {editing && (
           <Pressable onPress={handleDuplicate} style={[styles.deleteBtn, { backgroundColor: theme.surface, borderColor: theme.divider, borderWidth: 1, marginBottom: 10 }]}>
-            <Text style={{ color: theme.accent, fontSize: 15, fontWeight: '700' }}>Duplicate Plan</Text>
+            <Text style={{ color: theme.accent, fontSize: Typography.heading, fontWeight: '700' }}>Duplicate Plan</Text>
           </Pressable>
         )}
 
         {editing && (
           <Pressable onPress={handleDelete} style={[styles.deleteBtn, { backgroundColor: theme.dangerSoft }]}>
-            <Text style={{ color: theme.danger, fontSize: 15, fontWeight: '700' }}>Delete Plan</Text>
+            <Text style={{ color: theme.danger, fontSize: Typography.heading, fontWeight: '700' }}>Delete Plan</Text>
           </Pressable>
         )}
       </ScrollView>
 
-      <BottomSheet visible={alertSlot !== null} onClose={() => setAlertSlot(null)} title={alertSlot === 2 ? 'Second Alert' : 'Alert'}>
+      <BottomSheet
+        visible={alertSlot !== null}
+        onClose={() => setAlertSlot(null)}
+        title={alertSlot === 3 ? 'Third Alert' : alertSlot === 2 ? 'Second Alert' : 'Alert'}>
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider, marginTop: 10, marginBottom: 20 }]}>
           {ALERT_OPTIONS.map((opt, i) => (
             <Pressable
@@ -595,7 +616,9 @@ export default function AddPlanScreen() {
               onPress={() => selectAlert(opt.value)}
               style={[styles.sheetRow, i > 0 && styles.fieldBorder, { borderColor: theme.divider }]}>
               <Text style={[styles.sheetRowLabel, { color: theme.text }]}>{opt.label}</Text>
-              {(alertSlot === 1 ? alert1 : alert2) === opt.value && <CheckIcon size={16} color={theme.accent} strokeWidth={3} />}
+              {(alertSlot === 1 ? alert1 : alertSlot === 2 ? alert2 : alert3) === opt.value && (
+                <CheckIcon size={16} color={theme.accent} strokeWidth={3} />
+              )}
             </Pressable>
           ))}
         </View>
@@ -625,12 +648,12 @@ export default function AddPlanScreen() {
         title="New Group"
         left={
           <Pressable onPress={() => setNewGroupOpen(false)} hitSlop={8}>
-            <Text style={{ color: theme.textSecondary, fontSize: 15, fontWeight: '600' }}>Cancel</Text>
+            <Text style={{ color: theme.textSecondary, fontSize: Typography.heading, fontWeight: '600' }}>Cancel</Text>
           </Pressable>
         }
         right={
           <Pressable onPress={handleCreateGroup} hitSlop={8}>
-            <Text style={{ color: theme.accent, fontSize: 15, fontWeight: '700' }}>Save</Text>
+            <Text style={{ color: theme.accent, fontSize: Typography.heading, fontWeight: '700' }}>Save</Text>
           </Pressable>
         }>
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider, marginTop: 10 }]}>
@@ -671,7 +694,7 @@ const styles = StyleSheet.create({
   field: { paddingHorizontal: 14, paddingVertical: 12 },
   fieldBorder: { borderTopWidth: 1 },
   fieldRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 13, gap: 12 },
-  label: { fontSize: 11.5, fontWeight: '700', letterSpacing: 0.4, marginBottom: 4, textAlign: 'left' },
+  label: { fontSize: Typography.label, fontWeight: '700', letterSpacing: 0.4, marginBottom: 4, textAlign: 'left' },
   labelRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -679,13 +702,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingTop: 12,
   },
-  labelMeta: { fontSize: 11.5, fontWeight: '600' },
-  input: { fontSize: 15.5, fontWeight: '600', borderWidth: 1, borderRadius: 8, paddingVertical: 2, textAlign: 'left' },
+  labelMeta: { fontSize: Typography.label, fontWeight: '600' },
+  input: { fontSize: Typography.heading, fontWeight: '600', borderWidth: 1, borderRadius: 8, paddingVertical: 2, textAlign: 'left' },
   pickerRow: { flexDirection: 'row', alignItems: 'center' },
   pickerValue: { flex: 1 },
   sheetRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 13, paddingHorizontal: 14 },
-  sheetRowLabel: { fontSize: 14.5, fontWeight: '600' },
-  footnote: { fontSize: 12.5, lineHeight: 17, paddingHorizontal: 4, marginBottom: 14 },
+  sheetRowLabel: { fontSize: Typography.heading, fontWeight: '600' },
+  footnote: { fontSize: Typography.body, lineHeight: 17, paddingHorizontal: 4, marginBottom: 14 },
   iosPickerRow: { alignItems: 'flex-start' },
   swatchRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, padding: 14 },
   swatch: { width: 30, height: 30, borderRadius: 15, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },

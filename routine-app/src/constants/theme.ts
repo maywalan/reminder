@@ -47,6 +47,21 @@ export type ThemeColorKey = keyof ThemeColors;
 
 export const Radii = { sm: 10, md: 16, lg: 26 } as const;
 
+/**
+ * Canonical text sizes. Sizes had drifted into ~15 near-duplicate one-off values (14, 14.5, 15,
+ * 15.5 all meant to read as the same "body" weight, etc.) — use these instead of a literal
+ * `fontSize` for prose so the same kind of text reads the same size everywhere. Chip/pill labels
+ * and Progress screen's big stat numbers are intentionally their own thing and sit outside this
+ * scale.
+ */
+export const Typography = {
+  display: 28, // screen-level date/greeting header
+  title: 17, // sheet and modal titles ("New Plan", "Filter by Group")
+  heading: 15, // primary emphasized text: row labels, input values, task/plan names
+  body: 13, // secondary/meta text: times, descriptions, sub-labels
+  label: 11.5, // all-caps section labels, small counts
+} as const;
+
 export const Spacing = { xs: 4, sm: 8, md: 14, lg: 20, xl: 28 } as const;
 
 /** Same palette used for task/group color swatches in the prototype. */

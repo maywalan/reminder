@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Radii } from '@/constants/theme';
+import { Radii, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { usePlannerStore } from '@/store/use-planner-store';
 import { toISO } from '@/utils/dates';
@@ -33,9 +33,9 @@ export default function RecapScreen() {
     <View style={[styles.screen, { backgroundColor: theme.bg, paddingTop: insets.top + 8, paddingBottom: insets.bottom + 16 }]}>
       <View style={styles.head}>
         <Pressable onPress={() => router.back()} hitSlop={8}>
-          <Text style={{ color: theme.textSecondary, fontSize: 15, fontWeight: '600' }}>Close</Text>
+          <Text style={{ color: theme.textSecondary, fontSize: Typography.heading, fontWeight: '600' }}>Close</Text>
         </Pressable>
-        <Text style={{ color: theme.text, fontSize: 17, fontWeight: '800' }}>Your Recap</Text>
+        <Text style={{ color: theme.text, fontSize: Typography.title, fontWeight: '800' }}>Your Recap</Text>
         <View style={{ width: 44 }} />
       </View>
 
@@ -62,7 +62,7 @@ export default function RecapScreen() {
       <Pressable
         onPress={() => Alert.alert('Recap shared!')}
         style={[styles.shareBtn, { backgroundColor: theme.text }]}>
-        <Text style={{ color: theme.surface, fontSize: 15, fontWeight: '700' }}>Share Recap</Text>
+        <Text style={{ color: theme.surface, fontSize: Typography.heading, fontWeight: '700' }}>Share Recap</Text>
       </Pressable>
     </View>
   );
@@ -76,10 +76,10 @@ const styles = StyleSheet.create({
     padding: 24,
     marginTop: 16,
   },
-  eyebrow: { color: 'rgba(255,255,255,0.75)', fontSize: 11, fontWeight: '800', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 12 },
+  eyebrow: { color: 'rgba(255,255,255,0.75)', fontSize: Typography.label, fontWeight: '800', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 12 },
   big: { color: '#fff', fontSize: 56, fontWeight: '800', letterSpacing: -0.5 },
-  bigLabel: { color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: '600', marginBottom: 20 },
+  bigLabel: { color: 'rgba(255,255,255,0.85)', fontSize: Typography.body, fontWeight: '600', marginBottom: 20 },
   insight: { backgroundColor: 'rgba(255,255,255,0.14)', borderRadius: 16, padding: 14, marginTop: 10 },
-  insightText: { color: '#fff', fontSize: 13.5, lineHeight: 19 },
+  insightText: { color: '#fff', fontSize: Typography.body, lineHeight: 19 },
   shareBtn: { marginTop: 18, padding: 14, borderRadius: Radii.md, alignItems: 'center' },
 });

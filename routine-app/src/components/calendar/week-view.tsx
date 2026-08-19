@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ChevronLeftIcon, ChevronRightIcon } from '@/components/icon';
-import { Radii } from '@/constants/theme';
+import { Radii, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { Plan } from '@/store/types';
 import { buildWeekDates, MONTHS, WEEKDAY_SHORT } from '@/utils/calendar';
@@ -75,14 +75,14 @@ export function WeekView({ selectedDate, todayISO, plans, colorForPlan, onShiftW
 
 const styles = StyleSheet.create({
   nav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 22, paddingBottom: 10 },
-  navLabel: { fontSize: 18, fontWeight: '800', letterSpacing: -0.2 },
+  navLabel: { fontSize: Typography.title, fontWeight: '800', letterSpacing: -0.2 },
   arrows: { flexDirection: 'row', gap: 8 },
   arrowBtn: { width: 30, height: 30, borderRadius: 15, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   block: { borderRadius: Radii.md, borderWidth: 1, overflow: 'hidden', marginHorizontal: 14, marginBottom: 12 },
   blockHead: { paddingVertical: 10, paddingHorizontal: 14, borderBottomWidth: 1 },
-  blockHeadText: { fontSize: 13.5, fontWeight: '700' },
-  empty: { padding: 14, fontSize: 12.5 },
+  blockHeadText: { fontSize: Typography.body, fontWeight: '700' },
+  empty: { padding: 14, fontSize: Typography.body },
   planRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 9, paddingHorizontal: 14, borderLeftWidth: 3, borderBottomWidth: 1 },
-  planTime: { fontSize: 12, fontWeight: '700', width: 62 },
-  planName: { flex: 1, fontSize: 13.5, fontWeight: '600' },
+  planTime: { fontSize: Typography.body, fontWeight: '700', width: 62 },
+  planName: { flex: 1, fontSize: Typography.body, fontWeight: '600' },
 });

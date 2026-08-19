@@ -4,7 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CheckIcon } from '@/components/icon';
-import { Radii, SwatchColors } from '@/constants/theme';
+import { Radii, SwatchColors, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { usePlannerStore } from '@/store/use-planner-store';
 import { profileInitials } from '@/utils/profile';
@@ -33,11 +33,11 @@ export default function EditProfileScreen() {
     <View style={[styles.screen, { backgroundColor: theme.bg, paddingTop: insets.top + 8, paddingBottom: insets.bottom + 16 }]}>
       <View style={styles.head}>
         <Pressable onPress={() => router.back()} hitSlop={8}>
-          <Text style={{ color: theme.textSecondary, fontSize: 15, fontWeight: '600' }}>Cancel</Text>
+          <Text style={{ color: theme.textSecondary, fontSize: Typography.heading, fontWeight: '600' }}>Cancel</Text>
         </Pressable>
-        <Text style={{ color: theme.text, fontSize: 17, fontWeight: '800' }}>Edit Profile</Text>
+        <Text style={{ color: theme.text, fontSize: Typography.title, fontWeight: '800' }}>Edit Profile</Text>
         <Pressable onPress={handleSave} hitSlop={8}>
-          <Text style={{ color: theme.accent, fontSize: 15, fontWeight: '700' }}>Save</Text>
+          <Text style={{ color: theme.accent, fontSize: Typography.heading, fontWeight: '700' }}>Save</Text>
         </Pressable>
       </View>
 
@@ -90,8 +90,8 @@ const styles = StyleSheet.create({
   previewInitials: { color: '#fff', fontSize: 32, fontWeight: '800' },
   group: { borderRadius: Radii.md, borderWidth: 1, overflow: 'hidden', marginBottom: 14 },
   field: { paddingHorizontal: 14, paddingVertical: 12 },
-  label: { fontSize: 11.5, fontWeight: '700', letterSpacing: 0.4, marginBottom: 4 },
-  input: { fontSize: 15.5, fontWeight: '600', borderWidth: 1, borderRadius: 8, paddingVertical: 2 },
+  label: { fontSize: Typography.label, fontWeight: '700', letterSpacing: 0.4, marginBottom: 4 },
+  input: { fontSize: Typography.heading, fontWeight: '600', borderWidth: 1, borderRadius: 8, paddingVertical: 2 },
   swatchRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, padding: 14 },
   swatch: { width: 30, height: 30, borderRadius: 15, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
 });

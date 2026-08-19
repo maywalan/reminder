@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { TodoItem } from '@/components/todo-item';
+import { Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { usePlannerStore } from '@/store/use-planner-store';
 import { findPastLivePlans } from '@/utils/countdown';
@@ -45,5 +46,5 @@ export function PastActivityList() {
 
 const styles = StyleSheet.create({
   sectionRow: { paddingHorizontal: 22, paddingTop: 22, paddingBottom: 10 },
-  sectionTitle: { fontSize: 13, fontWeight: '700', letterSpacing: 0.6 },
+  sectionTitle: { fontSize: Typography.label, fontWeight: '700', letterSpacing: 0.6 },
 });

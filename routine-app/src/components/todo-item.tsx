@@ -2,7 +2,7 @@ import { Alert, Animated, Pressable, StyleSheet, Text, View } from 'react-native
 import { BorderlessButton, RectButton, Swipeable } from 'react-native-gesture-handler';
 
 import { CheckIcon, ClockIcon, TrashIcon } from '@/components/icon';
-import { Radii } from '@/constants/theme';
+import { Radii, Typography } from '@/constants/theme';
 import type { Group, Plan } from '@/store/types';
 import { useTheme } from '@/hooks/use-theme';
 import { fmtTime12 } from '@/utils/dates';
@@ -158,8 +158,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   main: { flex: 1, minWidth: 0 },
-  name: { fontSize: 15, fontWeight: '600', marginBottom: 2 },
+  name: { fontSize: Typography.heading, fontWeight: '600', marginBottom: 2 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, flexWrap: 'wrap' },
-  metaText: { fontSize: 12.5, fontWeight: '500' },
+  metaText: { fontSize: Typography.body, fontWeight: '500' },
   metaBold: { fontWeight: '700' },
 });

@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 interface Props<T extends string> {
@@ -31,5 +32,5 @@ export function SegmentedControl<T extends string>({ options, value, onChange }:
 const styles = StyleSheet.create({
   wrap: { flexDirection: 'row', borderRadius: 11, padding: 3, marginHorizontal: 22, marginTop: 14, marginBottom: 4 },
   btn: { flex: 1, paddingVertical: 7, borderRadius: 9, alignItems: 'center' },
-  label: { fontSize: 13, fontWeight: '600' },
+  label: { fontSize: Typography.body, fontWeight: '600' },
 });

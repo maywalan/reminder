@@ -7,6 +7,7 @@ import { Alert, Animated, Platform, Pressable, StyleSheet, Text } from 'react-na
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CalendarIcon, ChartIcon, HomeIcon, PersonIcon, PlusIcon } from '@/components/icon';
+import { Typography } from '@/constants/theme';
 import { useEffectiveScheme, useTheme } from '@/hooks/use-theme';
 import { usePlannerStore } from '@/store/use-planner-store';
 
@@ -118,9 +119,9 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 8,
   },
-  selectAction: { fontSize: 15.5, fontWeight: '700' },
+  selectAction: { fontSize: Typography.heading, fontWeight: '700' },
   tabBtn: { width: 60, alignItems: 'center', gap: 5, paddingVertical: 2 },
-  tabLabel: { fontSize: 11.5, fontWeight: '600' },
+  tabLabel: { fontSize: Typography.label, fontWeight: '600' },
   fabWrap: { marginTop: -30 },
   fab: {
     width: 56,

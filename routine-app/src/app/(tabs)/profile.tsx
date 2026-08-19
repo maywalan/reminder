@@ -19,7 +19,7 @@ import {
 } from '@/components/icon';
 import { Toast } from '@/components/toast';
 import { WidgetPreview } from '@/components/widget-preview';
-import { Radii } from '@/constants/theme';
+import { Radii, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useToast } from '@/hooks/use-toast';
 import { usePlannerStore } from '@/store/use-planner-store';
@@ -125,14 +125,14 @@ export default function ProfileScreen() {
               <CircleHalfIcon size={16} color={theme.accentStrong} strokeWidth={2} />
             </View>
             <Text style={[styles.rowLabel, { color: theme.text }]}>Appearance</Text>
-            <Text style={{ color: theme.textTertiary, fontSize: 13, marginRight: 4 }}>{THEME_LABEL[settings.themeMode]}</Text>
+            <Text style={{ color: theme.textTertiary, fontSize: Typography.body, marginRight: 4 }}>{THEME_LABEL[settings.themeMode]}</Text>
           </Pressable>
           <Pressable onPress={() => setLanguageOpen(true)} style={[styles.row, styles.rowBorder, { borderColor: theme.divider }]}>
             <View style={[styles.rowIcon, { backgroundColor: theme.accentSoft }]}>
               <GlobeIcon size={16} color={theme.accentStrong} strokeWidth={2} />
             </View>
             <Text style={[styles.rowLabel, { color: theme.text }]}>Language</Text>
-            <Text style={{ color: theme.textTertiary, fontSize: 13, marginRight: 4 }}>{LANGUAGE_LABEL[settings.language]}</Text>
+            <Text style={{ color: theme.textTertiary, fontSize: Typography.body, marginRight: 4 }}>{LANGUAGE_LABEL[settings.language]}</Text>
           </Pressable>
           <Pressable onPress={() => setPrivacyOpen(true)} style={[styles.row, styles.rowBorder, { borderColor: theme.divider }]}>
             <View style={[styles.rowIcon, { backgroundColor: theme.accentSoft }]}>
@@ -186,7 +186,7 @@ export default function ProfileScreen() {
               style={[styles.row, i > 0 && styles.rowBorder, { borderColor: theme.divider }]}>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.rowLabel, { color: theme.text }]}>{LANGUAGE_LABEL[lang]}</Text>
-                <Text style={{ color: theme.textTertiary, fontSize: 12, marginTop: 1 }}>{LANGUAGE_SUB[lang]}</Text>
+                <Text style={{ color: theme.textTertiary, fontSize: Typography.body, marginTop: 1 }}>{LANGUAGE_SUB[lang]}</Text>
               </View>
               {settings.language === lang && <CheckIcon size={16} color={theme.accent} strokeWidth={3} />}
             </Pressable>
@@ -203,12 +203,12 @@ export default function ProfileScreen() {
         title="Notification Options"
         left={
           <Pressable onPress={() => setNotifOptionsOpen(false)} hitSlop={8}>
-            <Text style={{ color: theme.textSecondary, fontSize: 15, fontWeight: '600' }}>Cancel</Text>
+            <Text style={{ color: theme.textSecondary, fontSize: Typography.heading, fontWeight: '600' }}>Cancel</Text>
           </Pressable>
         }
         right={
           <Pressable onPress={() => setNotifOptionsOpen(false)} hitSlop={8}>
-            <Text style={{ color: theme.accent, fontSize: 15, fontWeight: '700' }}>Done</Text>
+            <Text style={{ color: theme.accent, fontSize: Typography.heading, fontWeight: '700' }}>Done</Text>
           </Pressable>
         }>
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider, marginTop: 10 }]}>
@@ -243,7 +243,7 @@ export default function ProfileScreen() {
               style={[styles.row, i > 0 && styles.rowBorder, { borderColor: theme.divider }]}>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.rowLabel, { color: theme.text }]}>{opt.label}</Text>
-                <Text style={{ color: theme.textTertiary, fontSize: 12, marginTop: 1 }}>{opt.sub}</Text>
+                <Text style={{ color: theme.textTertiary, fontSize: Typography.body, marginTop: 1 }}>{opt.sub}</Text>
               </View>
               {settings.alertStyle === opt.key && <CheckIcon size={16} color={theme.accent} strokeWidth={3} />}
             </Pressable>
@@ -257,7 +257,7 @@ export default function ProfileScreen() {
         title="Data Privacy"
         right={
           <Pressable onPress={() => setPrivacyOpen(false)} hitSlop={8}>
-            <Text style={{ color: theme.accent, fontSize: 15, fontWeight: '700' }}>Close</Text>
+            <Text style={{ color: theme.accent, fontSize: Typography.heading, fontWeight: '700' }}>Close</Text>
           </Pressable>
         }>
         <Text style={[styles.privacyText, { color: theme.textSecondary }]}>
@@ -265,7 +265,7 @@ export default function ProfileScreen() {
           Sharing a calendar or account sync will require a future update.
         </Text>
         <Pressable onPress={handleClearData} style={[styles.clearDataBtn, { backgroundColor: theme.dangerSoft }]}>
-          <Text style={{ color: theme.danger, fontSize: 15, fontWeight: '700' }}>Clear All Data</Text>
+          <Text style={{ color: theme.danger, fontSize: Typography.heading, fontWeight: '700' }}>Clear All Data</Text>
         </Pressable>
       </BottomSheet>
 
@@ -275,7 +275,7 @@ export default function ProfileScreen() {
         title="Home Screen Widgets"
         right={
           <Pressable onPress={() => setWidgetsOpen(false)} hitSlop={8}>
-            <Text style={{ color: theme.accent, fontSize: 15, fontWeight: '700' }}>Done</Text>
+            <Text style={{ color: theme.accent, fontSize: Typography.heading, fontWeight: '700' }}>Done</Text>
           </Pressable>
         }>
         <ScrollView showsVerticalScrollIndicator={false}>
@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
   avatarEdit: { position: 'absolute', right: -2, bottom: -2, width: 28, height: 28, borderRadius: 14, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   name: { fontSize: 22, fontWeight: '800', letterSpacing: -0.2 },
-  sub: { fontSize: 12.5, fontWeight: '600', marginTop: 5 },
+  sub: { fontSize: Typography.body, fontWeight: '600', marginTop: 5 },
   guestBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -316,16 +316,16 @@ const styles = StyleSheet.create({
     borderRadius: Radii.md,
     borderWidth: 1,
   },
-  guestText: { flex: 1, fontSize: 12, fontWeight: '600', lineHeight: 16 },
-  guestLogin: { fontSize: 13, fontWeight: '700' },
-  sectionLabel: { fontSize: 12.5, fontWeight: '700', letterSpacing: 0.5, paddingHorizontal: 24, marginBottom: 8, marginTop: 6 },
+  guestText: { flex: 1, fontSize: Typography.body, fontWeight: '600', lineHeight: 16 },
+  guestLogin: { fontSize: Typography.body, fontWeight: '700' },
+  sectionLabel: { fontSize: Typography.label, fontWeight: '700', letterSpacing: 0.5, paddingHorizontal: 24, marginBottom: 8, marginTop: 6 },
   group: { borderRadius: Radii.md, borderWidth: 1, marginHorizontal: 20, overflow: 'hidden', marginBottom: 6 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, paddingHorizontal: 14 },
   rowBorder: { borderTopWidth: 1 },
   rowIcon: { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  rowLabel: { fontSize: 14.5, fontWeight: '600', flex: 1 },
-  privacyText: { fontSize: 13.5, lineHeight: 20, marginTop: 12 },
+  rowLabel: { fontSize: Typography.heading, fontWeight: '600', flex: 1 },
+  privacyText: { fontSize: Typography.body, lineHeight: 20, marginTop: 12 },
   clearDataBtn: { padding: 14, borderRadius: Radii.md, alignItems: 'center', marginTop: 16 },
-  footnote: { fontSize: 12, lineHeight: 17, marginTop: 10 },
+  footnote: { fontSize: Typography.body, lineHeight: 17, marginTop: 10 },
   widgetWrap: { alignItems: 'center', marginBottom: 4 },
 });

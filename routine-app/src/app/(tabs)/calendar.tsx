@@ -8,6 +8,7 @@ import { WeekView } from '@/components/calendar/week-view';
 import { YearView } from '@/components/calendar/year-view';
 import { SegmentedControl } from '@/components/segmented-control';
 import { TodoItem } from '@/components/todo-item';
+import { Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { usePlannerStore } from '@/store/use-planner-store';
 import { toISO } from '@/utils/dates';
@@ -93,7 +94,7 @@ export default function CalendarScreen() {
                 {selectedDate === todayISO ? `Today, ${selectedDateLabel}` : selectedDateLabel}
               </Text>
               {selectedDayPlans.length === 0 ? (
-                <Text style={{ color: theme.textTertiary, fontSize: 13, paddingHorizontal: 22 }}>No plans on this day.</Text>
+                <Text style={{ color: theme.textTertiary, fontSize: Typography.body, paddingHorizontal: 22 }}>No plans on this day.</Text>
               ) : (
                 selectedDayPlans.map((p) => (
                   <TodoItem
@@ -144,7 +145,7 @@ export default function CalendarScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  h1: { fontSize: 28, fontWeight: '800', letterSpacing: -0.4, paddingHorizontal: 22, marginBottom: 4 },
+  h1: { fontSize: Typography.display, fontWeight: '800', letterSpacing: -0.4, paddingHorizontal: 22, marginBottom: 4 },
   dayDetail: { marginTop: 16 },
-  dayDetailTitle: { fontSize: 14, fontWeight: '700', paddingHorizontal: 22, marginBottom: 10 },
+  dayDetailTitle: { fontSize: Typography.heading, fontWeight: '700', paddingHorizontal: 22, marginBottom: 10 },
 });

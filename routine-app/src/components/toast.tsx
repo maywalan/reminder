@@ -1,5 +1,7 @@
 import { StyleSheet, Text } from 'react-native';
 
+import { Typography } from '@/constants/theme';
+
 interface ToastProps {
   message: string | null;
 }
@@ -21,7 +23,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     backgroundColor: 'rgba(28,28,30,0.92)',
     color: '#fff',
-    fontSize: 13,
+    fontSize: Typography.body,
     fontWeight: '600',
     paddingVertical: 10,
     paddingHorizontal: 18,

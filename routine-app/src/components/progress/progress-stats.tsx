@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import { CalendarIcon, CheckIcon, ChartIcon, SparkleIcon } from '@/components/icon';
-import { Radii } from '@/constants/theme';
+import { Radii, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 interface Props {
@@ -41,5 +41,5 @@ const styles = StyleSheet.create({
   tile: { width: '47%', borderRadius: Radii.md, borderWidth: 1, padding: 14 },
   iconWrap: { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   value: { fontWeight: '800', marginBottom: 2, letterSpacing: -0.2 },
-  label: { fontSize: 11.5, fontWeight: '600' },
+  label: { fontSize: Typography.label, fontWeight: '600' },
 });

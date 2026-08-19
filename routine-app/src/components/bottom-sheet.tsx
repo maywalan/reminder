@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Animated, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 interface BottomSheetProps {
@@ -75,11 +76,15 @@ export function BottomSheet({ visible, onClose, title, left, right, children }: 
 const styles = StyleSheet.create({
   root: { flex: 1, justifyContent: 'flex-end' },
   backdrop: { backgroundColor: 'rgba(0,0,0,0.42)' },
-  sheetWrap: { shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 24, shadowOffset: { width: 0, height: -4 } },
-  sheet: { borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingHorizontal: 20, paddingTop: 10, maxHeight: '86%' },
+  // maxHeight must live here, not on `sheet` below: percentage heights only resolve against a
+  // parent with a definite size, and this View's parent (`root`) has a real flex:1 height —
+  // `sheet`'s old parent (this same Animated.View) had none, so '86%' silently failed to
+  // constrain it, letting the backdrop show through as a grey gap under a too-short sheet.
+  sheetWrap: { maxHeight: '86%', borderTopLeftRadius: 26, borderTopRightRadius: 26, overflow: 'hidden' },
+  sheet: { paddingHorizontal: 20, paddingTop: 10 },
   handle: { width: 38, height: 4.5, borderRadius: 3, backgroundColor: 'rgba(120,120,128,0.3)', alignSelf: 'center', marginBottom: 12 },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 4 },
   headSide: { minWidth: 44 },
   headSideRight: { alignItems: 'flex-end' },
-  title: { fontSize: 17, fontWeight: '800', flex: 1, textAlign: 'center' },
+  title: { fontSize: Typography.title, fontWeight: '800', flex: 1, textAlign: 'center' },
 });

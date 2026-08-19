@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { Radii } from '@/constants/theme';
+import { Radii, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { CategoryRow } from '@/utils/progress';
 
@@ -11,7 +11,7 @@ export function ProgressCategories({ rows }: { rows: CategoryRow[] }) {
   return (
     <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
       {!hasData ? (
-        <Text style={{ color: theme.textTertiary, fontSize: 13, textAlign: 'center', paddingVertical: 10 }}>No data yet</Text>
+        <Text style={{ color: theme.textTertiary, fontSize: Typography.body, textAlign: 'center', paddingVertical: 10 }}>No data yet</Text>
       ) : (
         rows.map((r) => (
           <View key={r.group.id} style={styles.row}>
@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
   card: { borderRadius: Radii.md, borderWidth: 1, marginHorizontal: 22, marginTop: 8, paddingHorizontal: 14, paddingVertical: 6 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 9 },
   dot: { width: 9, height: 9, borderRadius: 4.5 },
-  name: { fontSize: 13, fontWeight: '600', width: 70 },
+  name: { fontSize: Typography.body, fontWeight: '600', width: 70 },
   track: { flex: 1, height: 8, borderRadius: 5, overflow: 'hidden' },
   fill: { height: '100%', borderRadius: 5 },
   pct: { fontSize: 12, fontWeight: '700', width: 34, textAlign: 'right' },

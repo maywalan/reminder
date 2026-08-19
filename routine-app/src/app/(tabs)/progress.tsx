@@ -9,6 +9,7 @@ import { ProgressChart } from '@/components/progress/progress-chart';
 import { ProgressHero } from '@/components/progress/progress-hero';
 import { ProgressStats } from '@/components/progress/progress-stats';
 import { SegmentedControl } from '@/components/segmented-control';
+import { Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { usePlannerStore } from '@/store/use-planner-store';
 import { toISO } from '@/utils/dates';
@@ -77,7 +78,7 @@ export default function ProgressScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 22, marginBottom: 2 },
-  h1: { fontSize: 28, fontWeight: '800', letterSpacing: -0.4 },
+  h1: { fontSize: Typography.display, fontWeight: '800', letterSpacing: -0.4 },
   recapBtn: { width: 38, height: 38, borderRadius: 19, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  sectionLabel: { fontSize: 13, fontWeight: '700', letterSpacing: 0.6, paddingHorizontal: 22, marginTop: 20, marginBottom: 8 },
+  sectionLabel: { fontSize: Typography.label, fontWeight: '700', letterSpacing: 0.6, paddingHorizontal: 22, marginTop: 20, marginBottom: 8 },
 });

@@ -12,7 +12,7 @@ import { LiveActivityCard } from '@/components/live-activity-card';
 import { PastActivityList } from '@/components/past-activity-list';
 import { Toast } from '@/components/toast';
 import { TodoItem } from '@/components/todo-item';
-import { Radii } from '@/constants/theme';
+import { Radii, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useToast } from '@/hooks/use-toast';
 import { usePlannerStore } from '@/store/use-planner-store';
@@ -142,7 +142,7 @@ export default function TodayScreen() {
     <>
       {lastDeletedSnapshot && !selectMode && (
         <Pressable onPress={undoDelete} style={[styles.undoBar, { backgroundColor: theme.surface2, borderColor: theme.divider }]}>
-          <Text style={{ color: theme.textSecondary, fontSize: 13 }}>Undo last delete</Text>
+          <Text style={{ color: theme.textSecondary, fontSize: Typography.body }}>Undo last delete</Text>
         </Pressable>
       )}
 
@@ -162,7 +162,7 @@ export default function TodayScreen() {
         ListFooterComponent={footer}
         ListEmptyComponent={
           <View style={[styles.empty, { backgroundColor: theme.surface, borderColor: theme.dividerStrong }]}>
-            <Text style={{ color: theme.textSecondary, fontSize: 14 }}>
+            <Text style={{ color: theme.textSecondary, fontSize: Typography.heading }}>
               {filterGroupId ? 'Nothing in this group today.' : 'Nothing planned for today.'}
             </Text>
           </View>
@@ -191,12 +191,12 @@ export default function TodayScreen() {
         title="Filter by Group"
         right={
           <Pressable onPress={() => setFilterOpen(false)} hitSlop={8}>
-            <Text style={{ color: theme.accent, fontSize: 15, fontWeight: '700' }}>Done</Text>
+            <Text style={{ color: theme.accent, fontSize: Typography.heading, fontWeight: '700' }}>Done</Text>
           </Pressable>
         }>
         <View style={[styles.list, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
           <Pressable onPress={() => setFilterGroupId(null)} style={styles.listRow}>
-            <Text style={{ color: theme.text, fontSize: 14.5, fontWeight: '600', flex: 1 }}>All</Text>
+            <Text style={{ color: theme.text, fontSize: Typography.heading, fontWeight: '600', flex: 1 }}>All</Text>
             {filterGroupId === null && <CheckIcon size={16} color={theme.accent} strokeWidth={3} />}
           </Pressable>
           {groups.map((g) => (
@@ -205,7 +205,7 @@ export default function TodayScreen() {
               onPress={() => setFilterGroupId(g.id)}
               style={[styles.listRow, styles.listRowBorder, { borderColor: theme.divider }]}>
               <View style={[styles.chipDot, { backgroundColor: g.color }]} />
-              <Text style={{ color: theme.text, fontSize: 14.5, fontWeight: '600', flex: 1 }}>{g.name}</Text>
+              <Text style={{ color: theme.text, fontSize: Typography.heading, fontWeight: '600', flex: 1 }}>{g.name}</Text>
               {filterGroupId === g.id && <CheckIcon size={16} color={theme.accent} strokeWidth={3} />}
             </Pressable>
           ))}
@@ -218,12 +218,12 @@ export default function TodayScreen() {
         title="Share Calendar"
         left={
           <Pressable onPress={() => setShareOpen(false)} hitSlop={8}>
-            <Text style={{ color: theme.textSecondary, fontSize: 15, fontWeight: '600' }}>Cancel</Text>
+            <Text style={{ color: theme.textSecondary, fontSize: Typography.heading, fontWeight: '600' }}>Cancel</Text>
           </Pressable>
         }
         right={
           <Pressable onPress={() => setShareOpen(false)} hitSlop={8}>
-            <Text style={{ color: theme.accent, fontSize: 15, fontWeight: '700' }}>Done</Text>
+            <Text style={{ color: theme.accent, fontSize: Typography.heading, fontWeight: '700' }}>Done</Text>
           </Pressable>
         }>
         <Text style={[styles.shareNote, { color: theme.textSecondary }]}>
@@ -233,11 +233,11 @@ export default function TodayScreen() {
           {SHARE_CONTACTS.map((c, i) => (
             <View key={c.name} style={[styles.listRow, i > 0 && styles.listRowBorder, { borderColor: theme.divider }]}>
               <View style={[styles.contactAvatar, { backgroundColor: theme.accentSoft }]}>
-                <Text style={{ color: theme.accentStrong, fontSize: 12.5, fontWeight: '700' }}>{c.initials}</Text>
+                <Text style={{ color: theme.accentStrong, fontSize: Typography.body, fontWeight: '700' }}>{c.initials}</Text>
               </View>
-              <Text style={{ color: theme.text, fontSize: 14.5, fontWeight: '600', flex: 1 }}>{c.name}</Text>
+              <Text style={{ color: theme.text, fontSize: Typography.heading, fontWeight: '600', flex: 1 }}>{c.name}</Text>
               <View style={[styles.rolePill, { backgroundColor: theme.surface2, borderColor: theme.divider }]}>
-                <Text style={{ color: theme.textSecondary, fontSize: 11.5, fontWeight: '700' }}>Viewer</Text>
+                <Text style={{ color: theme.textSecondary, fontSize: Typography.label, fontWeight: '700' }}>Viewer</Text>
               </View>
             </View>
           ))}
@@ -247,15 +247,15 @@ export default function TodayScreen() {
             <View style={[styles.contactAvatar, styles.dashedAvatar, { borderColor: theme.dividerStrong }]}>
               <Text style={{ color: theme.textTertiary, fontSize: 16, fontWeight: '700' }}>+</Text>
             </View>
-            <Text style={{ color: theme.accent, fontSize: 14.5, fontWeight: '600' }}>Add someone</Text>
+            <Text style={{ color: theme.accent, fontSize: Typography.heading, fontWeight: '600' }}>Add someone</Text>
           </Pressable>
         </View>
         <View style={[styles.shareLinkRow, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
-          <Text style={{ color: theme.textSecondary, fontSize: 13, flex: 1 }} numberOfLines={1}>
+          <Text style={{ color: theme.textSecondary, fontSize: Typography.body, flex: 1 }} numberOfLines={1}>
             {SHARE_LINK}
           </Text>
           <Pressable onPress={handleCopyLink} style={[styles.copyBtn, { backgroundColor: theme.accent }]}>
-            <Text style={{ color: '#fff', fontSize: 12.5, fontWeight: '700' }}>Copy Link</Text>
+            <Text style={{ color: '#fff', fontSize: Typography.body, fontWeight: '700' }}>Copy Link</Text>
           </Pressable>
         </View>
       </BottomSheet>
@@ -268,15 +268,15 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', paddingHorizontal: 22, marginBottom: 4 },
   headerActions: { flexDirection: 'row', gap: 8 },
   iconBtn: { width: 38, height: 38, borderRadius: 19, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  greeting: { fontSize: 13, fontWeight: '600', marginBottom: 2 },
-  h1: { fontSize: 28, fontWeight: '800', letterSpacing: -0.4 },
+  greeting: { fontSize: Typography.body, fontWeight: '600', marginBottom: 2 },
+  h1: { fontSize: 22, fontWeight: '800', letterSpacing: -0.4 },
   chipRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 22, paddingTop: 14, paddingBottom: 2 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 7, paddingHorizontal: 13, borderRadius: 20, borderWidth: 1 },
   chipDot: { width: 7, height: 7, borderRadius: 3.5 },
   list: { borderRadius: Radii.md, borderWidth: 1, overflow: 'hidden', marginTop: 14 },
   listRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, paddingHorizontal: 14 },
   listRowBorder: { borderTopWidth: 1 },
-  shareNote: { fontSize: 12.5, lineHeight: 18, marginTop: 12 },
+  shareNote: { fontSize: Typography.body, lineHeight: 18, marginTop: 12 },
   contactAvatar: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   dashedAvatar: { borderWidth: 1, borderStyle: 'dashed', backgroundColor: 'transparent' },
   rolePill: { paddingVertical: 3, paddingHorizontal: 9, borderRadius: 12, borderWidth: 1 },
@@ -298,8 +298,8 @@ const styles = StyleSheet.create({
     paddingTop: 22,
     paddingBottom: 10,
   },
-  sectionTitle: { fontSize: 13, fontWeight: '700', letterSpacing: 0.6 },
-  editBtn: { fontSize: 12.5, fontWeight: '700' },
+  sectionTitle: { fontSize: Typography.label, fontWeight: '700', letterSpacing: 0.6 },
+  editBtn: { fontSize: Typography.body, fontWeight: '700' },
   empty: { marginHorizontal: 22, padding: 26, borderRadius: Radii.md, borderWidth: 1, borderStyle: 'dashed', alignItems: 'center' },
   undoBar: { marginHorizontal: 22, marginTop: 4, padding: 12, borderRadius: Radii.md, borderWidth: 1, alignItems: 'center' },
 });

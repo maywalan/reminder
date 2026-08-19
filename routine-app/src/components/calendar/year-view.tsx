@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ChevronLeftIcon, ChevronRightIcon } from '@/components/icon';
+import { Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { Plan } from '@/store/types';
 import { buildMonthGrid, MONTHS, WEEKDAY_LETTER } from '@/utils/calendar';
@@ -73,12 +74,12 @@ export function YearView({ year, todayISO, plans, onShiftYear, onPressMonth }: P
 
 const styles = StyleSheet.create({
   nav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 22, paddingBottom: 10 },
-  navLabel: { fontSize: 18, fontWeight: '800', letterSpacing: -0.2 },
+  navLabel: { fontSize: Typography.title, fontWeight: '800', letterSpacing: -0.2 },
   arrows: { flexDirection: 'row', gap: 8 },
   arrowBtn: { width: 30, height: 30, borderRadius: 15, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 10, gap: 12 },
   mini: { width: '46%', borderRadius: 14, borderWidth: 1, padding: 10 },
-  miniTitle: { fontSize: 12.5, fontWeight: '700', marginBottom: 6 },
+  miniTitle: { fontSize: Typography.body, fontWeight: '700', marginBottom: 6 },
   miniDow: { flexDirection: 'row', marginBottom: 2 },
   miniDowText: { flex: 1, textAlign: 'center', fontSize: 7, fontWeight: '700' },
   miniDays: { flexDirection: 'row', flexWrap: 'wrap' },

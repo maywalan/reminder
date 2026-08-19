@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { Radii } from '@/constants/theme';
+import { Radii, Typography } from '@/constants/theme';
 
 interface Props {
   periodLabel: string;
@@ -46,10 +46,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#5B5FEF',
     opacity: 0.35,
   },
-  label: { color: 'rgba(255,255,255,0.55)', fontSize: 11, fontWeight: '700', letterSpacing: 0.6, marginBottom: 6 },
+  label: { color: 'rgba(255,255,255,0.55)', fontSize: Typography.label, fontWeight: '700', letterSpacing: 0.6, marginBottom: 6 },
   value: { color: '#fff', fontSize: 44, fontWeight: '800', letterSpacing: -0.5 },
   subRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginTop: 8 },
-  sub: { color: 'rgba(255,255,255,0.7)', fontSize: 13 },
+  sub: { color: 'rgba(255,255,255,0.7)', fontSize: Typography.body },
   pill: { paddingVertical: 3, paddingHorizontal: 9, borderRadius: 20 },
   pillUp: { backgroundColor: 'rgba(48,209,88,0.22)' },
   pillDown: { backgroundColor: 'rgba(255,69,58,0.20)' },

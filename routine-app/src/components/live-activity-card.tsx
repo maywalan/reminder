@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
 
+import { Typography } from '@/constants/theme';
 import { usePlannerStore } from '@/store/use-planner-store';
 import { findActiveLivePlan, formatCountdown, secondsUntilPlan } from '@/utils/countdown';
 
@@ -62,8 +63,8 @@ const styles = StyleSheet.create({
   },
   dot: { width: 9, height: 9, borderRadius: 4.5, backgroundColor: '#2FB463' },
   textWrap: { flex: 1, minWidth: 0 },
-  label: { color: '#9E9EA6', fontSize: 11, fontWeight: '600', letterSpacing: 0.4, marginBottom: 2 },
-  name: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  label: { color: '#9E9EA6', fontSize: Typography.label, fontWeight: '600', letterSpacing: 0.4, marginBottom: 2 },
+  name: { color: '#fff', fontSize: Typography.heading, fontWeight: '700' },
   countdownPill: { backgroundColor: 'rgba(255,255,255,0.12)', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 14 },
-  countdownText: { color: '#fff', fontSize: 15, fontWeight: '800' },
+  countdownText: { color: '#fff', fontSize: Typography.heading, fontWeight: '800' },
 });

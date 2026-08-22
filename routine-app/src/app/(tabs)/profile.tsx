@@ -153,6 +153,12 @@ export default function ProfileScreen() {
             <ChevronRightIcon size={16} color={theme.textTertiary} strokeWidth={2} />
           </Pressable>
         </View>
+
+        <Pressable
+          onPress={() => showToast("Accounts aren't available yet")}
+          style={[styles.logOutBtn, { backgroundColor: theme.dangerSoft }]}>
+          <Text style={{ color: theme.danger, fontSize: Typography.heading, fontWeight: '700' }}>Log Out</Text>
+        </Pressable>
       </ScrollView>
 
       <Toast message={toastMessage} />
@@ -186,7 +192,9 @@ export default function ProfileScreen() {
               style={[styles.row, i > 0 && styles.rowBorder, { borderColor: theme.divider }]}>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.rowLabel, { color: theme.text }]}>{LANGUAGE_LABEL[lang]}</Text>
-                <Text style={{ color: theme.textTertiary, fontSize: Typography.body, marginTop: 1 }}>{LANGUAGE_SUB[lang]}</Text>
+                <Text style={{ color: theme.text, fontSize: Typography.heading, fontWeight: '600', marginTop: 4 }}>
+                  {LANGUAGE_SUB[lang]}
+                </Text>
               </View>
               {settings.language === lang && <CheckIcon size={16} color={theme.accent} strokeWidth={3} />}
             </Pressable>
@@ -326,6 +334,7 @@ const styles = StyleSheet.create({
   rowLabel: { fontSize: Typography.heading, fontWeight: '600', flex: 1 },
   privacyText: { fontSize: Typography.body, lineHeight: 20, marginTop: 12 },
   clearDataBtn: { padding: 14, borderRadius: Radii.md, alignItems: 'center', marginTop: 16 },
+  logOutBtn: { padding: 14, borderRadius: Radii.md, alignItems: 'center', marginHorizontal: 20, marginTop: 10 },
   footnote: { fontSize: Typography.body, lineHeight: 17, marginTop: 10 },
   widgetWrap: { alignItems: 'center', marginBottom: 4 },
 });

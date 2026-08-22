@@ -1,11 +1,10 @@
 /**
- * Location autocomplete via the Google Places API (New) "Autocomplete" endpoint — a plain HTTPS
- * call, so it works in Expo Go with no native map SDK. Requires an API key set as
- * EXPO_PUBLIC_GOOGLE_PLACES_API_KEY (see routine-app/README.md). Without a key, location stays a
- * plain free-text field.
+ * Location autocomplete via OpenStreetMap's Nominatim search API — free, no API key, no signup.
+ * Works in Expo Go with no native map SDK. The public instance rate-limits to ~1 request/sec,
+ * which the debounce in use-place-search.ts already respects.
  */
 
-const API_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY;
+const ENDPOINT = 'https://nominatim.openstreetmap.org/search';
 
 export interface PlaceSuggestion {
   id: string;
@@ -14,28 +13,22 @@ export interface PlaceSuggestion {
 }
 
 export function isPlacesSearchAvailable() {
-  return !!API_KEY;
+  return true;
 }
 
 export async function searchPlaces(query: string, signal?: AbortSignal): Promise<PlaceSuggestion[]> {
-  if (!API_KEY || !query.trim()) return [];
+  if (!query.trim()) return [];
 
-  const res = await fetch('https://places.googleapis.com/v1/places:autocomplete', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': API_KEY },
-    body: JSON.stringify({ input: query }),
+  const url = `${ENDPOINT}?format=jsonv2&addressdetails=0&limit=6&q=${encodeURIComponent(query)}`;
+  const res = await fetch(url, {
+    headers: { 'User-Agent': 'RoutineApp/1.0 (personal Expo app)', Accept: 'application/json' },
     signal,
   });
   if (!res.ok) return [];
 
-  const data = await res.json();
-  const suggestions: unknown[] = data.suggestions ?? [];
-  return suggestions
-    .map((s) => (s as { placePrediction?: Record<string, any> }).placePrediction)
-    .filter((p): p is Record<string, any> => !!p)
-    .map((p) => ({
-      id: p.placeId,
-      primaryText: p.structuredFormat?.mainText?.text ?? p.text?.text ?? '',
-      secondaryText: p.structuredFormat?.secondaryText?.text ?? '',
-    }));
+  const data: { place_id: number; display_name: string }[] = await res.json();
+  return data.map((p) => {
+    const [primaryText, ...rest] = p.display_name.split(', ');
+    return { id: String(p.place_id), primaryText, secondaryText: rest.join(', ') };
+  });
 }

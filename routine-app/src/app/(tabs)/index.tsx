@@ -48,6 +48,8 @@ export default function TodayScreen() {
   const selectedIds = usePlannerStore((s) => s.selectedIds);
   const setSelectMode = usePlannerStore((s) => s.setSelectMode);
   const toggleSelected = usePlannerStore((s) => s.toggleSelected);
+  const pendingSaveToast = usePlannerStore((s) => s.pendingSaveToast);
+  const setPendingSaveToast = usePlannerStore((s) => s.setPendingSaveToast);
 
   const [filterOpen, setFilterOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -57,6 +59,16 @@ export default function TodayScreen() {
     useCallback(() => {
       return () => setSelectMode(false);
     }, [setSelectMode])
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      if (pendingSaveToast) {
+        showToast(pendingSaveToast);
+        setPendingSaveToast(null);
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [pendingSaveToast])
   );
 
   const now = useMemo(() => new Date(), []);

@@ -21,6 +21,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 150,
     alignSelf: 'center',
+    maxWidth: '82%',
+    textAlign: 'center',
     backgroundColor: 'rgba(28,28,30,0.92)',
     color: '#fff',
     fontSize: Typography.body,

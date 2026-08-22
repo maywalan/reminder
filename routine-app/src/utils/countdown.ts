@@ -24,12 +24,24 @@ export function findActiveLivePlan(plans: Plan[]): Plan | null {
 
 const DAY_SECONDS = 86400;
 
-/** Live-toggled plans that already ended (past the 60s grace window), up to `withinDays` ago, most recent first. */
-export function findPastLivePlans(plans: Plan[], withinDays = 30): Plan[] {
+/**
+ * Like secondsUntilPlan, but an all-day plan counts as "ended" only once its whole calendar date
+ * has passed — its stored time is just a nominal placeholder, not a real end time, so using it
+ * directly would flag an all-day plan as already past partway through its own day.
+ */
+function effectiveSecondsUntil(plan: Plan): number {
+  if (!plan.allDay) return secondsUntilPlan(plan);
+  const end = fromISO(plan.date);
+  end.setHours(23, 59, 59, 999);
+  return Math.round((end.getTime() - Date.now()) / 1000);
+}
+
+/** Plans that already ended (past the 60s grace window), up to `withinDays` ago, most recent first. */
+export function findPastPlans(plans: Plan[], withinDays = 30): Plan[] {
   const cutoff = -withinDays * DAY_SECONDS;
   return plans
-    .filter((p) => p.live && secondsUntilPlan(p) <= -60 && secondsUntilPlan(p) > cutoff)
-    .sort((a, b) => secondsUntilPlan(b) - secondsUntilPlan(a));
+    .filter((p) => effectiveSecondsUntil(p) <= -60 && effectiveSecondsUntil(p) > cutoff)
+    .sort((a, b) => effectiveSecondsUntil(b) - effectiveSecondsUntil(a));
 }
 
 /**

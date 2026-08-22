@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 import type { Group, Plan, Profile, Settings } from './types';
-import { findPastLivePlans } from '@/utils/countdown';
+import { findPastPlans } from '@/utils/countdown';
 import { toISO } from '@/utils/dates';
 
 export const uid = () => 'p_' + Math.random().toString(36).slice(2, 10);
@@ -35,6 +35,8 @@ interface PlannerState {
   filterGroupId: string | null;
   selectMode: boolean;
   selectedIds: string[];
+  pendingSaveToast: string | null;
+  setPendingSaveToast: (message: string | null) => void;
   addPlan: (plan: Omit<Plan, 'id' | 'completed'>) => void;
   addPlans: (plans: Omit<Plan, 'id' | 'completed'>[]) => void;
   updatePlan: (id: string, patch: Partial<Plan>) => void;
@@ -65,6 +67,9 @@ export const usePlannerStore = create<PlannerState>()(
       filterGroupId: null,
       selectMode: false,
       selectedIds: [],
+      pendingSaveToast: null,
+
+      setPendingSaveToast: (message) => set({ pendingSaveToast: message }),
 
       addPlan: (plan) =>
         set((state) => {
@@ -163,7 +168,7 @@ export const usePlannerStore = create<PlannerState>()(
         const todayIds = plans
           .filter((p) => p.date === todayISO && (!filterGroupId || p.groupId === filterGroupId))
           .map((p) => p.id);
-        const pastIds = findPastLivePlans(plans).map((p) => p.id);
+        const pastIds = findPastPlans(plans).map((p) => p.id);
         const allIds = [...todayIds, ...pastIds];
         const allSelected = allIds.length > 0 && allIds.every((id) => selectedIds.includes(id));
         set({ selectedIds: allSelected ? [] : allIds });

@@ -75,7 +75,7 @@ src/
 sheets, Live Activity card, Past Activity list, task list with swipe-to-delete, "Edit" →
 multi-select → bulk delete with undo, tap a task to edit), Add/Edit Plan sheet (name, native
 date/time pickers, up to 5 alerts, color, group, repeat rules with "repeat until", free-text
-details, optional location with Google Places autocomplete, optional photo, live-toggle),
+details, optional location with OpenStreetMap autocomplete, optional photo, live-toggle),
 Calendar (Week/Month/Year), Progress (hero/trend/categories), Recap sheet, full Settings screen
 (profile avatar/name editing, guest banner, notifications + notification options + alert style,
 appearance, language picker, data privacy, Home Screen Widgets preview), custom tab bar, light/dark
@@ -93,19 +93,14 @@ theming, local persistence.
 
 Suggested order: group creation, then decide on a backend before tackling real login/sync.
 
-## Location autocomplete (optional)
+## Location autocomplete
 
-The Location field on Add/Edit Plan works as plain free text out of the box. To turn on
-Google-Places-style suggestions as you type:
-
-1. In [Google Cloud Console](https://console.cloud.google.com), create/select a project, enable
-   **"Places API (New)"**, then create an API key under Credentials.
-2. Restrict that key to the Places API (Application restrictions can stay "None" for Expo Go
-   testing, since the key ships inside the JS bundle either way — see step 3).
-3. Copy `.env.example` to `.env` and paste the key into `EXPO_PUBLIC_GOOGLE_PLACES_API_KEY`, then
-   restart `npx expo start`. `.env` is gitignored so the key won't get committed.
-
-Without a key, the field just stays free text — no errors, no broken UI.
+The Location field on Add/Edit Plan gets autocomplete suggestions from OpenStreetMap's Nominatim
+search API (`src/utils/places.ts`) — free, no API key, no signup. It works out of the box. The
+public instance rate-limits to ~1 request/sec, which the 300ms debounce in
+`src/hooks/use-place-search.ts` already respects; if that ever becomes a problem, Nominatim can be
+self-hosted or swapped for a paid provider (Google Places, Mapbox) behind the same
+`searchPlaces()`/`PlaceSuggestion` interface.
 
 ## Notes on a couple of implementation choices
 

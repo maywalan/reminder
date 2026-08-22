@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 
-import { isPlacesSearchAvailable, searchPlaces, type PlaceSuggestion } from '@/utils/places';
+import { searchPlaces, type PlaceSuggestion } from '@/utils/places';
 
-/** Debounced Google Places autocomplete for a query string; empty results when no API key is set. */
+/** Debounced OpenStreetMap Nominatim autocomplete for a query string. */
 export function usePlaceSearch(query: string) {
   const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!isPlacesSearchAvailable() || query.trim().length < 2) {
+    if (query.trim().length < 2) {
       setSuggestions([]);
       setLoading(false);
       return;

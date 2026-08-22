@@ -5,7 +5,7 @@ import { TodoItem } from '@/components/todo-item';
 import { Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { usePlannerStore } from '@/store/use-planner-store';
-import { findPastLivePlans } from '@/utils/countdown';
+import { findPastPlans } from '@/utils/countdown';
 
 export function PastActivityList() {
   const theme = useTheme();
@@ -17,7 +17,7 @@ export function PastActivityList() {
   const selectMode = usePlannerStore((s) => s.selectMode);
   const selectedIds = usePlannerStore((s) => s.selectedIds);
   const toggleSelected = usePlannerStore((s) => s.toggleSelected);
-  const past = findPastLivePlans(plans);
+  const past = findPastPlans(plans);
 
   if (past.length === 0) return null;
 

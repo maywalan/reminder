@@ -64,8 +64,5 @@ export const Typography = {
 
 export const Spacing = { xs: 4, sm: 8, md: 14, lg: 20, xl: 28 } as const;
 
-/** Same palette used for task/group color swatches in the prototype. */
-export const SwatchColors = [
-  '#5B5FEF', '#2E86FF', '#17A2B8', '#009688', '#2FB463', '#8BC34A', '#FFC107', '#FF9F43',
-  '#FF6F61', '#FF3B30', '#E91E8C', '#FF6482', '#9B59D0', '#8D6E63', '#34495E', '#6E6E73',
-] as const;
+/** Task/group/plan color swatches — red, orange, yellow, green, blue, purple, grey, in that order. */
+export const SwatchColors = ['#FF3B30', '#FF9F43', '#FFC107', '#2FB463', '#2E86FF', '#9B59D0', '#6E6E73'] as const;

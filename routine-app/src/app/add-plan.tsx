@@ -17,7 +17,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BottomSheet } from '@/components/bottom-sheet';
-import { CameraIcon, CheckIcon, ChevronRightIcon, PlusIcon } from '@/components/icon';
+import { CameraIcon, CheckIcon, ChevronRightIcon, XIcon } from '@/components/icon';
 import { Toast } from '@/components/toast';
 import { Radii, SwatchColors, Typography } from '@/constants/theme';
 import { usePlaceSearch } from '@/hooks/use-place-search';
@@ -61,13 +61,11 @@ export default function AddPlanScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
 
   const plans = usePlannerStore((s) => s.plans);
-  const groups = usePlannerStore((s) => s.groups);
   const addPlan = usePlannerStore((s) => s.addPlan);
   const addPlans = usePlannerStore((s) => s.addPlans);
   const updatePlan = usePlannerStore((s) => s.updatePlan);
   const deletePlan = usePlannerStore((s) => s.deletePlan);
   const duplicatePlan = usePlannerStore((s) => s.duplicatePlan);
-  const addGroup = usePlannerStore((s) => s.addGroup);
   const setPendingSaveToast = usePlannerStore((s) => s.setPendingSaveToast);
 
   const editing = useMemo(() => plans.find((p) => p.id === id), [plans, id]);
@@ -83,10 +81,7 @@ export default function AddPlanScreen() {
   );
   const [showEndTimePicker, setShowEndTimePicker] = useState(false);
   const [color, setColor] = useState(editing?.color ?? SwatchColors[0]);
-  const [groupId, setGroupId] = useState<string | null>(editing?.groupId ?? null);
-  const [newGroupOpen, setNewGroupOpen] = useState(false);
-  const [newGroupName, setNewGroupName] = useState('');
-  const [newGroupColor, setNewGroupColor] = useState<string>(SwatchColors[0]);
+  const [groupId] = useState<string | null>(editing?.groupId ?? null);
   const [live, setLive] = useState(editing?.live ?? false);
   const [alert1, setAlert1] = useState(editing?.alerts?.[0] ?? '5');
   const [alert2, setAlert2] = useState(editing?.alerts?.[1] ?? 'none');
@@ -219,15 +214,6 @@ export default function AddPlanScreen() {
     setPhotoUris((prev) => prev.filter((p) => p !== uri));
   }
 
-  function handleCreateGroup() {
-    if (!newGroupName.trim()) return;
-    const group = addGroup({ name: newGroupName.trim(), color: newGroupColor });
-    setGroupId(group.id);
-    setNewGroupName('');
-    setNewGroupColor(SwatchColors[0]);
-    setNewGroupOpen(false);
-  }
-
   function selectAlert(value: string) {
     if (alertSlot === 1) {
       setAlert1(value);
@@ -245,6 +231,15 @@ export default function AddPlanScreen() {
     setAlertSlot(null);
   }
 
+  function removeAlert(slot: 2 | 3) {
+    if (slot === 2) {
+      setAlert2('none');
+      setAlert3('none');
+    } else {
+      setAlert3('none');
+    }
+  }
+
   return (
     <View style={[styles.screen, { backgroundColor: theme.bg, paddingTop: insets.top, paddingBottom: insets.bottom + 16 }]}>
       <View style={styles.head}>
@@ -260,7 +255,6 @@ export default function AddPlanScreen() {
       <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
           <View style={styles.field}>
-            <Text style={[styles.label, { color: theme.textTertiary }]}>PLAN NAME</Text>
             <TextInput
               value={name}
               onChangeText={(t) => {
@@ -272,17 +266,13 @@ export default function AddPlanScreen() {
               style={[styles.input, { color: theme.text, borderColor: error ? theme.danger : 'transparent' }]}
             />
           </View>
-        </View>
-
-        <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
-          <View style={styles.field}>
-            <Text style={[styles.label, { color: theme.textTertiary }]}>LOCATION (OPTIONAL)</Text>
+          <View style={[styles.field, styles.fieldBorder, { borderColor: theme.divider }]}>
             <TextInput
               value={location}
               onChangeText={setLocation}
               onFocus={() => setLocationFocused(true)}
               onBlur={() => setTimeout(() => setLocationFocused(false), 150)}
-              placeholder="Search for a place or address"
+              placeholder="Location"
               placeholderTextColor={theme.textTertiary}
               style={[styles.input, { color: theme.text, borderColor: 'transparent' }]}
             />
@@ -475,6 +465,11 @@ export default function AddPlanScreen() {
             <Pressable onPress={() => setAlertSlot(2)} style={[styles.fieldRow, styles.fieldBorder, { borderColor: theme.divider }]}>
               <Text style={{ flex: 1, color: theme.text, fontSize: Typography.heading, fontWeight: '600' }}>Second Alert</Text>
               <Text style={{ color: theme.textTertiary, fontSize: Typography.heading }}>{alertLabel(alert2)}</Text>
+              {alert2 !== 'none' && (
+                <Pressable onPress={() => removeAlert(2)} hitSlop={8} style={styles.removeAlertBtn}>
+                  <XIcon size={14} color={theme.textTertiary} strokeWidth={2.2} />
+                </Pressable>
+              )}
               <ChevronRightIcon size={16} color={theme.textTertiary} strokeWidth={2} />
             </Pressable>
           )}
@@ -482,6 +477,11 @@ export default function AddPlanScreen() {
             <Pressable onPress={() => setAlertSlot(3)} style={[styles.fieldRow, styles.fieldBorder, { borderColor: theme.divider }]}>
               <Text style={{ flex: 1, color: theme.text, fontSize: Typography.heading, fontWeight: '600' }}>Third Alert</Text>
               <Text style={{ color: theme.textTertiary, fontSize: Typography.heading }}>{alertLabel(alert3)}</Text>
+              {alert3 !== 'none' && (
+                <Pressable onPress={() => removeAlert(3)} hitSlop={8} style={styles.removeAlertBtn}>
+                  <XIcon size={14} color={theme.textTertiary} strokeWidth={2.2} />
+                </Pressable>
+              )}
               <ChevronRightIcon size={16} color={theme.textTertiary} strokeWidth={2} />
             </Pressable>
           )}
@@ -550,6 +550,18 @@ export default function AddPlanScreen() {
         )}
 
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
+          <View style={styles.fieldRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: theme.text, fontSize: Typography.heading, fontWeight: '600' }}>Live Activity</Text>
+              <Text style={{ color: theme.textSecondary, fontSize: Typography.body, marginTop: 2 }}>
+                Show a live countdown on the home screen as this plan approaches.
+              </Text>
+            </View>
+            <Switch value={live} onValueChange={setLive} trackColor={{ true: theme.success }} />
+          </View>
+        </View>
+
+        <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
           <View style={styles.labelRow}>
             <Text style={[styles.label, { color: theme.textTertiary, marginBottom: 0 }]}>PHOTOS (OPTIONAL)</Text>
             <Text style={[styles.labelMeta, { color: theme.textTertiary }]}>
@@ -585,43 +597,6 @@ export default function AddPlanScreen() {
                 {c === color && <CheckIcon size={14} color="#fff" strokeWidth={3} />}
               </Pressable>
             ))}
-          </View>
-        </View>
-
-        <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
-          <Text style={[styles.label, { color: theme.textTertiary, paddingHorizontal: 14, paddingTop: 12 }]}>GROUP</Text>
-          <View style={styles.chipRow}>
-            <Pressable
-              onPress={() => setGroupId(null)}
-              style={[styles.chip, { borderColor: theme.divider, backgroundColor: groupId === null ? theme.accent : theme.surface }]}>
-              <Text style={{ color: groupId === null ? '#fff' : theme.text, fontSize: 12, fontWeight: '700' }}>No Group</Text>
-            </Pressable>
-            {groups.map((g) => (
-              <Pressable
-                key={g.id}
-                onPress={() => setGroupId(g.id)}
-                style={[styles.chip, { borderColor: theme.divider, backgroundColor: groupId === g.id ? theme.accent : theme.surface }]}>
-                <Text style={{ color: groupId === g.id ? '#fff' : theme.text, fontSize: 12, fontWeight: '700' }}>{g.name}</Text>
-              </Pressable>
-            ))}
-            <Pressable
-              onPress={() => setNewGroupOpen(true)}
-              style={[styles.chip, styles.addGroupChip, { borderColor: theme.divider, backgroundColor: theme.surface }]}>
-              <PlusIcon size={12} color={theme.accent} strokeWidth={2.6} />
-              <Text style={{ color: theme.accent, fontSize: 12, fontWeight: '700' }}>Add Group</Text>
-            </Pressable>
-          </View>
-        </View>
-
-        <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
-          <View style={styles.fieldRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: theme.text, fontSize: Typography.heading, fontWeight: '600' }}>Live Activity</Text>
-              <Text style={{ color: theme.textSecondary, fontSize: Typography.body, marginTop: 2 }}>
-                Show a live countdown on the home screen as this plan approaches.
-              </Text>
-            </View>
-            <Switch value={live} onValueChange={setLive} trackColor={{ true: theme.success }} />
           </View>
         </View>
 
@@ -690,48 +665,6 @@ export default function AddPlanScreen() {
           ))}
         </View>
       </BottomSheet>
-
-      <BottomSheet
-        visible={newGroupOpen}
-        onClose={() => setNewGroupOpen(false)}
-        title="New Group"
-        left={
-          <Pressable onPress={() => setNewGroupOpen(false)} hitSlop={8}>
-            <Text style={{ color: theme.textSecondary, fontSize: Typography.heading, fontWeight: '600' }}>Cancel</Text>
-          </Pressable>
-        }
-        right={
-          <Pressable onPress={handleCreateGroup} hitSlop={8}>
-            <Text style={{ color: theme.accent, fontSize: Typography.heading, fontWeight: '700' }}>Save</Text>
-          </Pressable>
-        }>
-        <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider, marginTop: 10 }]}>
-          <View style={styles.field}>
-            <Text style={[styles.label, { color: theme.textTertiary }]}>GROUP NAME</Text>
-            <TextInput
-              value={newGroupName}
-              onChangeText={setNewGroupName}
-              placeholder="e.g. Study"
-              placeholderTextColor={theme.textTertiary}
-              maxLength={24}
-              style={[styles.input, { color: theme.text, borderColor: 'transparent' }]}
-            />
-          </View>
-        </View>
-        <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider, marginBottom: 20 }]}>
-          <Text style={[styles.label, { color: theme.textTertiary, paddingHorizontal: 14, paddingTop: 12 }]}>COLOR</Text>
-          <View style={styles.swatchRow}>
-            {SwatchColors.map((c) => (
-              <Pressable
-                key={c}
-                onPress={() => setNewGroupColor(c)}
-                style={[styles.swatch, { backgroundColor: c, borderColor: c === newGroupColor ? theme.text : 'transparent' }]}>
-                {c === newGroupColor && <CheckIcon size={14} color="#fff" strokeWidth={3} />}
-              </Pressable>
-            ))}
-          </View>
-        </View>
-      </BottomSheet>
     </View>
   );
 }
@@ -743,6 +676,7 @@ const styles = StyleSheet.create({
   field: { paddingHorizontal: 14, paddingVertical: 12 },
   fieldBorder: { borderTopWidth: 1 },
   fieldRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 13, gap: 12 },
+  removeAlertBtn: { padding: 2 },
   label: { fontSize: Typography.label, fontWeight: '700', letterSpacing: 0.4, marginBottom: 4, textAlign: 'left' },
   labelRow: {
     flexDirection: 'row',
@@ -761,9 +695,6 @@ const styles = StyleSheet.create({
   iosPickerRow: { alignItems: 'flex-start' },
   swatchRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, padding: 14 },
   swatch: { width: 30, height: 30, borderRadius: 15, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, padding: 14 },
-  chip: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 20, borderWidth: 1 },
-  addGroupChip: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   deleteBtn: { padding: 14, borderRadius: Radii.md, alignItems: 'center' },
   notesInput: { minHeight: 70, textAlignVertical: 'top' },
   segmentRow: { flexDirection: 'row', gap: 8 },

@@ -5,14 +5,14 @@ import { TodoItem } from '@/components/todo-item';
 import { Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { usePlannerStore } from '@/store/use-planner-store';
-import { findPastPlans } from '@/utils/countdown';
+import { findFuturePlans } from '@/utils/countdown';
 import { fromISO } from '@/utils/dates';
 
 function shortDateLabel(dateISO: string) {
   return fromISO(dateISO).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
-export function PastActivityList() {
+export function UpcomingList() {
   const theme = useTheme();
   const router = useRouter();
   const plans = usePlannerStore((s) => s.plans);
@@ -24,18 +24,18 @@ export function PastActivityList() {
   const toggleSelected = usePlannerStore((s) => s.toggleSelected);
   const filterGroupId = usePlannerStore((s) => s.filterGroupId);
   const filterColor = usePlannerStore((s) => s.filterColor);
-  const past = findPastPlans(plans).filter(
+  const upcoming = findFuturePlans(plans).filter(
     (p) => (!filterGroupId || p.groupId === filterGroupId) && (!filterColor || p.color === filterColor)
   );
 
-  if (past.length === 0) return null;
+  if (upcoming.length === 0) return null;
 
   return (
     <>
       <View style={styles.sectionRow}>
-        <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>PAST ACTIVITY</Text>
+        <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>UPCOMING</Text>
       </View>
-      {past.map((plan) => (
+      {upcoming.map((plan) => (
         <TodoItem
           key={plan.id}
           plan={plan}

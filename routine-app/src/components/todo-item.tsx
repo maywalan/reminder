@@ -13,6 +13,8 @@ interface Props {
   selectMode: boolean;
   selected: boolean;
   isActive?: boolean;
+  /** Short date prefix (e.g. "Mon, Aug 24") shown before the time — for lists spanning more than one day. */
+  dateLabel?: string;
   onToggleComplete: () => void;
   onToggleSelect: () => void;
   onPress: () => void;
@@ -26,6 +28,7 @@ export function TodoItem({
   selectMode,
   selected,
   isActive,
+  dateLabel,
   onToggleComplete,
   onToggleSelect,
   onPress,
@@ -59,6 +62,7 @@ export function TodoItem({
         <View style={styles.metaRow}>
           <ClockIcon size={12} color={theme.textSecondary} strokeWidth={2} />
           <Text style={[styles.metaText, { color: theme.textSecondary }]}>
+            {dateLabel ? `${dateLabel} · ` : ''}
             {plan.allDay ? 'All Day' : plan.endTime ? `${fmtTime12(plan.time)} – ${fmtTime12(plan.endTime)}` : fmtTime12(plan.time)}
           </Text>
           {plan.live && <Text style={[styles.metaText, styles.metaBold, { color: theme.success }]}> · Live</Text>}

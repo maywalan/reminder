@@ -33,6 +33,7 @@ interface PlannerState {
   settings: Settings;
   lastDeletedSnapshot: Plan[] | null;
   filterGroupId: string | null;
+  filterColor: string | null;
   selectMode: boolean;
   selectedIds: string[];
   pendingSaveToast: string | null;
@@ -49,6 +50,7 @@ interface PlannerState {
   setProfile: (patch: Partial<Profile>) => void;
   updateSettings: (patch: Partial<Settings>) => void;
   setFilterGroupId: (groupId: string | null) => void;
+  setFilterColor: (color: string | null) => void;
   resetData: () => void;
   setSelectMode: (on: boolean) => void;
   toggleSelected: (id: string) => void;
@@ -65,6 +67,7 @@ export const usePlannerStore = create<PlannerState>()(
       settings: SEED_SETTINGS,
       lastDeletedSnapshot: null,
       filterGroupId: null,
+      filterColor: null,
       selectMode: false,
       selectedIds: [],
       pendingSaveToast: null,
@@ -149,9 +152,18 @@ export const usePlannerStore = create<PlannerState>()(
       updateSettings: (patch) => set((state) => ({ settings: { ...state.settings, ...patch } })),
 
       setFilterGroupId: (groupId) => set({ filterGroupId: groupId }),
+      setFilterColor: (color) => set({ filterColor: color }),
 
       resetData: () =>
-        set({ plans: [], groups: [], lastDeletedSnapshot: null, filterGroupId: null, selectMode: false, selectedIds: [] }),
+        set({
+          plans: [],
+          groups: [],
+          lastDeletedSnapshot: null,
+          filterGroupId: null,
+          filterColor: null,
+          selectMode: false,
+          selectedIds: [],
+        }),
 
       setSelectMode: (on) => set({ selectMode: on, selectedIds: [] }),
 
@@ -163,12 +175,11 @@ export const usePlannerStore = create<PlannerState>()(
         })),
 
       selectAllToday: () => {
-        const { plans, filterGroupId, selectedIds } = get();
+        const { plans, filterGroupId, filterColor, selectedIds } = get();
         const todayISO = toISO(new Date());
-        const todayIds = plans
-          .filter((p) => p.date === todayISO && (!filterGroupId || p.groupId === filterGroupId))
-          .map((p) => p.id);
-        const pastIds = findPastPlans(plans).map((p) => p.id);
+        const matchesFilter = (p: Plan) => (!filterGroupId || p.groupId === filterGroupId) && (!filterColor || p.color === filterColor);
+        const todayIds = plans.filter((p) => p.date === todayISO && matchesFilter(p)).map((p) => p.id);
+        const pastIds = findPastPlans(plans).filter(matchesFilter).map((p) => p.id);
         const allIds = [...todayIds, ...pastIds];
         const allSelected = allIds.length > 0 && allIds.every((id) => selectedIds.includes(id));
         set({ selectedIds: allSelected ? [] : allIds });

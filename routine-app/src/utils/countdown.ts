@@ -1,5 +1,5 @@
 import type { Plan } from '@/store/types';
-import { fromISO } from '@/utils/dates';
+import { fromISO, toISO } from '@/utils/dates';
 
 /** Live Activity countdown logic ported from planner-app-prototype.html. */
 
@@ -42,6 +42,20 @@ export function findPastPlans(plans: Plan[], withinDays = 30): Plan[] {
   return plans
     .filter((p) => effectiveSecondsUntil(p) <= -60 && effectiveSecondsUntil(p) > cutoff)
     .sort((a, b) => effectiveSecondsUntil(b) - effectiveSecondsUntil(a));
+}
+
+/**
+ * Plans on a future date (not today — Today's Plan already covers today in full), up to
+ * `withinDays` ahead, soonest first.
+ */
+export function findFuturePlans(plans: Plan[], withinDays = 30): Plan[] {
+  const todayISO = toISO(new Date());
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() + withinDays);
+  const cutoffISO = toISO(cutoff);
+  return plans
+    .filter((p) => p.date > todayISO && p.date <= cutoffISO)
+    .sort((a, b) => (a.date === b.date ? a.time.localeCompare(b.time) : a.date.localeCompare(b.date)));
 }
 
 /**

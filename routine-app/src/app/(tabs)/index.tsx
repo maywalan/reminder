@@ -1,8 +1,8 @@
 import { useFocusEffect } from '@react-navigation/native';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import DraggableFlatList from 'react-native-draggable-flatlist';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -12,7 +12,8 @@ import { LiveActivityCard } from '@/components/live-activity-card';
 import { PastActivityList } from '@/components/past-activity-list';
 import { Toast } from '@/components/toast';
 import { TodoItem } from '@/components/todo-item';
-import { Radii, Typography } from '@/constants/theme';
+import { UpcomingList } from '@/components/upcoming-list';
+import { Radii, SwatchColors, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useToast } from '@/hooks/use-toast';
 import { usePlannerStore } from '@/store/use-planner-store';
@@ -44,6 +45,8 @@ export default function TodayScreen() {
   const lastDeletedSnapshot = usePlannerStore((s) => s.lastDeletedSnapshot);
   const filterGroupId = usePlannerStore((s) => s.filterGroupId);
   const setFilterGroupId = usePlannerStore((s) => s.setFilterGroupId);
+  const filterColor = usePlannerStore((s) => s.filterColor);
+  const setFilterColor = usePlannerStore((s) => s.setFilterColor);
   const selectMode = usePlannerStore((s) => s.selectMode);
   const selectedIds = usePlannerStore((s) => s.selectedIds);
   const setSelectMode = usePlannerStore((s) => s.setSelectMode);
@@ -53,7 +56,23 @@ export default function TodayScreen() {
 
   const [filterOpen, setFilterOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [colorsOpen, setColorsOpen] = useState(false);
+  const [colorsMounted, setColorsMounted] = useState(false);
+  const colorAnim = useRef(new Animated.Value(0)).current;
   const { toastMessage, showToast } = useToast();
+
+  function toggleColors() {
+    if (!colorsOpen) {
+      setColorsOpen(true);
+      setColorsMounted(true);
+      Animated.timing(colorAnim, { toValue: 1, duration: 260, useNativeDriver: true }).start();
+    } else {
+      setColorsOpen(false);
+      Animated.timing(colorAnim, { toValue: 0, duration: 200, useNativeDriver: true }).start(({ finished }) => {
+        if (finished) setColorsMounted(false);
+      });
+    }
+  }
 
   useFocusEffect(
     useCallback(() => {
@@ -81,7 +100,7 @@ export default function TodayScreen() {
   const dayPlans = plans.filter((p) => p.date === todayISO);
   const hasManualOrder = dayPlans.some((p) => p.order !== undefined);
   const todays = dayPlans
-    .filter((p) => !filterGroupId || p.groupId === filterGroupId)
+    .filter((p) => (!filterGroupId || p.groupId === filterGroupId) && (!filterColor || p.color === filterColor))
     .sort((a, b) => (hasManualOrder ? (a.order ?? Infinity) - (b.order ?? Infinity) : a.time.localeCompare(b.time)));
 
   async function handleCopyLink() {
@@ -111,6 +130,41 @@ export default function TodayScreen() {
           </Pressable>
         </View>
       </View>
+
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+        <Pressable
+          onPress={toggleColors}
+          style={[styles.chip, { borderColor: theme.divider, backgroundColor: colorsOpen ? theme.accent : '#fff' }]}>
+          <Text style={{ color: colorsOpen ? '#fff' : theme.text, fontSize: 12, fontWeight: '700' }}>Colors</Text>
+        </Pressable>
+        {colorsMounted && (
+          <Animated.View
+            style={[
+              styles.colorRevealRow,
+              {
+                opacity: colorAnim,
+                transform: [{ translateX: colorAnim.interpolate({ inputRange: [0, 1], outputRange: [-24, 0] }) }],
+              },
+            ]}>
+            <Pressable
+              onPress={() => setFilterColor(null)}
+              style={[
+                styles.chip,
+                { borderColor: theme.divider, backgroundColor: filterColor === null ? theme.accent : theme.surface },
+              ]}>
+              <Text style={{ color: filterColor === null ? '#fff' : theme.text, fontSize: 12, fontWeight: '700' }}>All</Text>
+            </Pressable>
+            {SwatchColors.map((c) => (
+              <Pressable
+                key={c}
+                onPress={() => setFilterColor(filterColor === c ? null : c)}
+                style={[styles.colorSwatch, { backgroundColor: c, borderColor: filterColor === c ? theme.text : 'transparent' }]}>
+                {filterColor === c && <CheckIcon size={14} color="#fff" strokeWidth={3} />}
+              </Pressable>
+            ))}
+          </Animated.View>
+        )}
+      </ScrollView>
 
       {groups.length > 0 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
@@ -158,6 +212,7 @@ export default function TodayScreen() {
         </Pressable>
       )}
 
+      <UpcomingList />
       <PastActivityList />
     </>
   );
@@ -175,7 +230,7 @@ export default function TodayScreen() {
         ListEmptyComponent={
           <View style={[styles.empty, { backgroundColor: theme.surface, borderColor: theme.dividerStrong }]}>
             <Text style={{ color: theme.textSecondary, fontSize: Typography.heading }}>
-              {filterGroupId ? 'Nothing in this group today.' : 'Nothing planned for today.'}
+              {filterGroupId || filterColor ? 'Nothing matches this filter today.' : 'Nothing planned for today.'}
             </Text>
           </View>
         }
@@ -285,6 +340,8 @@ const styles = StyleSheet.create({
   chipRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 22, paddingTop: 14, paddingBottom: 2 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 7, paddingHorizontal: 13, borderRadius: 20, borderWidth: 1 },
   chipDot: { width: 7, height: 7, borderRadius: 3.5 },
+  colorSwatch: { width: 28, height: 28, borderRadius: 14, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  colorRevealRow: { flexDirection: 'row', gap: 8 },
   list: { borderRadius: Radii.md, borderWidth: 1, overflow: 'hidden', marginTop: 14 },
   listRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, paddingHorizontal: 14 },
   listRowBorder: { borderTopWidth: 1 },

@@ -76,6 +76,14 @@ export function CheckIcon({ size = 24, color, strokeWidth = 3 }: IconProps) {
   );
 }
 
+export function XIcon({ size = 24, color, strokeWidth = 2.2 }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M6 6l12 12M18 6L6 18" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
 export function ClockIcon({ size = 24, color, strokeWidth = 2 }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">

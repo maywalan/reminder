@@ -39,7 +39,8 @@
         {
           "photosPermission": "Allow Routine to access your photos to attach one to a plan."
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,

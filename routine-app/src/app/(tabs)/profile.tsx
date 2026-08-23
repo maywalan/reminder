@@ -22,6 +22,7 @@ import { WidgetPreview } from '@/components/widget-preview';
 import { Radii, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useToast } from '@/hooks/use-toast';
+import { useAuthStore } from '@/store/use-auth-store';
 import { usePlannerStore } from '@/store/use-planner-store';
 import type { AlertStyle, Language, ThemeMode } from '@/store/types';
 import { profileInitials } from '@/utils/profile';
@@ -38,6 +39,8 @@ export default function ProfileScreen() {
   const settings = usePlannerStore((s) => s.settings);
   const updateSettings = usePlannerStore((s) => s.updateSettings);
   const resetData = usePlannerStore((s) => s.resetData);
+  const authUser = useAuthStore((s) => s.user);
+  const signOut = useAuthStore((s) => s.signOut);
   const { toastMessage, showToast } = useToast();
 
   function handleClearData() {
@@ -77,13 +80,22 @@ export default function ProfileScreen() {
           <Text style={[styles.sub, { color: theme.textTertiary }]}>Tap photo or name to edit</Text>
         </View>
 
-        <View style={[styles.guestBanner, { backgroundColor: theme.accentSoft, borderColor: theme.divider }]}>
-          <WarningIcon size={18} color={theme.accentStrong} strokeWidth={1.8} />
-          <Text style={[styles.guestText, { color: theme.text }]}>Guest Mode — your data is stored only on this device.</Text>
-          <Pressable onPress={() => showToast("Accounts aren't available yet")} hitSlop={6}>
-            <Text style={[styles.guestLogin, { color: theme.accentStrong }]}>Log In</Text>
-          </Pressable>
-        </View>
+        {authUser ? (
+          <View style={[styles.guestBanner, { backgroundColor: theme.successSoft, borderColor: theme.divider }]}>
+            <ShieldIcon size={18} color={theme.success} strokeWidth={1.8} />
+            <Text style={[styles.guestText, { color: theme.text }]} numberOfLines={1}>
+              Signed in as {authUser.email}
+            </Text>
+          </View>
+        ) : (
+          <View style={[styles.guestBanner, { backgroundColor: theme.accentSoft, borderColor: theme.divider }]}>
+            <WarningIcon size={18} color={theme.accentStrong} strokeWidth={1.8} />
+            <Text style={[styles.guestText, { color: theme.text }]}>Guest Mode — your data is stored only on this device.</Text>
+            <Pressable onPress={() => router.push('/login')} hitSlop={6}>
+              <Text style={[styles.guestLogin, { color: theme.accentStrong }]}>Log In</Text>
+            </Pressable>
+          </View>
+        )}
 
         <Text style={[styles.sectionLabel, { color: theme.textTertiary }]}>NOTIFICATIONS</Text>
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
@@ -154,11 +166,16 @@ export default function ProfileScreen() {
           </Pressable>
         </View>
 
-        <Pressable
-          onPress={() => showToast("Accounts aren't available yet")}
-          style={[styles.logOutBtn, { backgroundColor: theme.dangerSoft }]}>
-          <Text style={{ color: theme.danger, fontSize: Typography.heading, fontWeight: '700' }}>Log Out</Text>
-        </Pressable>
+        {authUser && (
+          <Pressable
+            onPress={() => {
+              signOut();
+              showToast('Signed out');
+            }}
+            style={[styles.logOutBtn, { backgroundColor: theme.dangerSoft }]}>
+            <Text style={{ color: theme.danger, fontSize: Typography.heading, fontWeight: '700' }}>Log Out</Text>
+          </Pressable>
+        )}
       </ScrollView>
 
       <Toast message={toastMessage} />

@@ -10,6 +10,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { Colors } from '@/constants/theme';
 import { useEffectiveScheme } from '@/hooks/use-theme';
+import { useAuthStore } from '@/store/use-auth-store';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -33,6 +34,10 @@ export default function RootLayout() {
     if (fontsLoaded) SplashScreen.hideAsync();
   }, [fontsLoaded]);
 
+  useEffect(() => {
+    useAuthStore.getState().initialize();
+  }, []);
+
   if (!fontsLoaded) return null;
 
   return (
@@ -44,6 +49,7 @@ export default function RootLayout() {
           <Stack.Screen name="add-plan" options={{ presentation: 'modal' }} />
           <Stack.Screen name="recap" options={{ presentation: 'modal' }} />
           <Stack.Screen name="edit-profile" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="login" options={{ presentation: 'modal' }} />
         </Stack>
       </ThemeProvider>
     </GestureHandlerRootView>

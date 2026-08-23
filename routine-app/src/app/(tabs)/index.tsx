@@ -7,7 +7,7 @@ import DraggableFlatList from 'react-native-draggable-flatlist';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BottomSheet } from '@/components/bottom-sheet';
-import { CheckIcon, FilterIcon, ShareIcon } from '@/components/icon';
+import { CheckIcon, ShareIcon } from '@/components/icon';
 import { LiveActivityCard } from '@/components/live-activity-card';
 import { PastActivityList } from '@/components/past-activity-list';
 import { Toast } from '@/components/toast';
@@ -54,7 +54,6 @@ export default function TodayScreen() {
   const pendingSaveToast = usePlannerStore((s) => s.pendingSaveToast);
   const setPendingSaveToast = usePlannerStore((s) => s.setPendingSaveToast);
 
-  const [filterOpen, setFilterOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [colorsOpen, setColorsOpen] = useState(false);
   const [colorsMounted, setColorsMounted] = useState(false);
@@ -116,12 +115,6 @@ export default function TodayScreen() {
           <Text style={[styles.h1, { color: theme.text }]}>{dateLabel}</Text>
         </View>
         <View style={styles.headerActions}>
-          <Pressable
-            onPress={() => setFilterOpen(true)}
-            hitSlop={8}
-            style={[styles.iconBtn, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
-            <FilterIcon size={18} color={theme.text} strokeWidth={1.9} />
-          </Pressable>
           <Pressable
             onPress={() => setShareOpen(true)}
             hitSlop={8}
@@ -251,33 +244,6 @@ export default function TodayScreen() {
       />
 
       <Toast message={toastMessage} />
-
-      <BottomSheet
-        visible={filterOpen}
-        onClose={() => setFilterOpen(false)}
-        title="Filter by Group"
-        right={
-          <Pressable onPress={() => setFilterOpen(false)} hitSlop={8}>
-            <Text style={{ color: theme.accent, fontSize: Typography.heading, fontWeight: '700' }}>Done</Text>
-          </Pressable>
-        }>
-        <View style={[styles.list, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
-          <Pressable onPress={() => setFilterGroupId(null)} style={styles.listRow}>
-            <Text style={{ color: theme.text, fontSize: Typography.heading, fontWeight: '600', flex: 1 }}>All</Text>
-            {filterGroupId === null && <CheckIcon size={16} color={theme.accent} strokeWidth={3} />}
-          </Pressable>
-          {groups.map((g) => (
-            <Pressable
-              key={g.id}
-              onPress={() => setFilterGroupId(g.id)}
-              style={[styles.listRow, styles.listRowBorder, { borderColor: theme.divider }]}>
-              <View style={[styles.chipDot, { backgroundColor: g.color }]} />
-              <Text style={{ color: theme.text, fontSize: Typography.heading, fontWeight: '600', flex: 1 }}>{g.name}</Text>
-              {filterGroupId === g.id && <CheckIcon size={16} color={theme.accent} strokeWidth={3} />}
-            </Pressable>
-          ))}
-        </View>
-      </BottomSheet>
 
       <BottomSheet
         visible={shareOpen}

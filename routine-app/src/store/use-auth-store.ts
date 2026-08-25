@@ -4,6 +4,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { create } from 'zustand';
 
 import { supabase } from '@/lib/supabase';
+import { performInitialSync } from '@/lib/sync';
 import { usePlannerStore } from '@/store/use-planner-store';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -13,7 +14,7 @@ export type OAuthProvider = 'google' | 'apple';
 interface AuthState {
   session: Session | null;
   user: User | null;
-  /** True until the initial getSession() call resolves, so the UI can avoid a login flash. */
+  /** True until the first auth-state event resolves, so the UI can avoid a login flash. */
   initializing: boolean;
   initialize: () => void;
   signInWithEmail: (email: string, password: string) => Promise<{ error: string | null }>;
@@ -28,11 +29,16 @@ export const useAuthStore = create<AuthState>()((set) => ({
   initializing: true,
 
   initialize: () => {
-    supabase.auth.getSession().then(({ data }) => {
-      set({ session: data.session, user: data.session?.user ?? null, initializing: false });
-    });
-    supabase.auth.onAuthStateChange((_event, session) => {
+    supabase.auth.onAuthStateChange((event, session) => {
       set({ session, user: session?.user ?? null, initializing: false });
+
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
+        performInitialSync(session.user.id);
+      } else if (event === 'SIGNED_OUT') {
+        // Local plans/groups belong to whichever account was last active — clear them so the
+        // next sign-in (a different account, or guest mode) doesn't inherit stale data.
+        usePlannerStore.getState().resetData();
+      }
     });
   },
 
@@ -42,9 +48,22 @@ export const useAuthStore = create<AuthState>()((set) => ({
   },
 
   signUpWithEmail: async (email, password, name) => {
-    const { error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: name } } });
-    if (!error) usePlannerStore.getState().setProfile({ name });
-    return { error: error?.message ?? null };
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { full_name: name }, emailRedirectTo: Linking.createURL('auth/callback') },
+    });
+    if (error) return { error: error.message };
+
+    // Supabase returns 200 with a fake user (identities: []) instead of an error when the email
+    // is already registered and confirmed — under any provider, Google included — to avoid
+    // leaking which emails have accounts. An empty identities array is the only tell.
+    if (data.user && data.user.identities?.length === 0) {
+      return { error: 'This email is already signed up. Try logging in instead.' };
+    }
+
+    usePlannerStore.getState().setProfile({ name });
+    return { error: null };
   },
 
   signInWithOAuth: async (provider) => {
@@ -55,10 +74,26 @@ export const useAuthStore = create<AuthState>()((set) => ({
     });
     if (error || !data.url) return { error: error?.message ?? 'Could not start sign-in.' };
 
-    const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
-    if (result.type !== 'success' || !result.url) return { error: null }; // user cancelled
+    // openAuthSessionAsync (ASWebAuthenticationSession) is unreliable at catching the final
+    // exp://... redirect in Expo Go — it shows "Safari cannot open the page" even though the
+    // OAuth flow completed. Opening a plain browser tab and watching for the OS to route the
+    // callback URL back into the app as a normal deep link is more robust here, since that OS
+    // level routing is what expo-router relies on anyway.
+    const callbackUrl = await new Promise<string | null>((resolve) => {
+      const subscription = Linking.addEventListener('url', (event) => {
+        if (!event.url.startsWith(redirectTo)) return;
+        subscription.remove();
+        resolve(event.url);
+      });
+      WebBrowser.openBrowserAsync(data.url).then(() => {
+        subscription.remove();
+        resolve(null);
+      });
+    });
+    await WebBrowser.dismissBrowser().catch(() => {});
+    if (!callbackUrl) return { error: null }; // user cancelled without completing sign-in
 
-    const { queryParams } = Linking.parse(result.url.replace('#', '?'));
+    const { queryParams } = Linking.parse(callbackUrl.replace('#', '?'));
     if (queryParams?.error) return { error: (queryParams.error_description as string) ?? 'Sign-in failed.' };
 
     const access_token = queryParams?.access_token as string | undefined;

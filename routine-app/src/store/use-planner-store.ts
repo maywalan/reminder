@@ -1,12 +1,19 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Crypto from 'expo-crypto';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 import type { Group, Plan, Profile, Settings } from './types';
+import { syncClearAll, syncDeletePlan, syncDeletePlans, syncUpdateProfile, syncUpdateSettings, syncUpsertGroup, syncUpsertPlan, syncUpsertPlans } from '@/lib/sync';
 import { findPastPlans } from '@/utils/countdown';
 import { toISO } from '@/utils/dates';
 
-export const uid = () => 'p_' + Math.random().toString(36).slice(2, 10);
+/**
+ * A real UUID (not the old 'p_'-prefixed random string) so ids generated offline are already
+ * valid primary keys for the `plans`/`groups` uuid columns in Supabase — no id remapping needed
+ * when a locally-created row gets synced up.
+ */
+export const uid = () => Crypto.randomUUID();
 
 /** Once a date has any manually-ordered plan, new plans for that date append to the end of that order. */
 function nextOrderForDate(plans: Plan[], date: string): number | undefined {
@@ -37,6 +44,9 @@ interface PlannerState {
   selectMode: boolean;
   selectedIds: string[];
   pendingSaveToast: string | null;
+  /** ISO date this device first used the app — bounds how far back guest-mode Progress can navigate. */
+  firstUsedAt: string | null;
+  ensureFirstUsedAt: () => void;
   setPendingSaveToast: (message: string | null) => void;
   addPlan: (plan: Omit<Plan, 'id' | 'completed'>) => void;
   addPlans: (plans: Omit<Plan, 'id' | 'completed'>[]) => void;
@@ -71,63 +81,78 @@ export const usePlannerStore = create<PlannerState>()(
       selectMode: false,
       selectedIds: [],
       pendingSaveToast: null,
+      firstUsedAt: null,
+
+      ensureFirstUsedAt: () => {
+        if (!get().firstUsedAt) set({ firstUsedAt: toISO(new Date()) });
+      },
 
       setPendingSaveToast: (message) => set({ pendingSaveToast: message }),
 
-      addPlan: (plan) =>
-        set((state) => {
-          const order = nextOrderForDate(state.plans, plan.date);
-          return {
-            plans: [...state.plans, { ...plan, id: uid(), completed: false, ...(order !== undefined ? { order } : {}) }],
-          };
-        }),
+      addPlan: (plan) => {
+        const order = nextOrderForDate(get().plans, plan.date);
+        const newPlan: Plan = { ...plan, id: uid(), completed: false, ...(order !== undefined ? { order } : {}) };
+        set((state) => ({ plans: [...state.plans, newPlan] }));
+        syncUpsertPlan(newPlan);
+      },
 
-      addPlans: (newPlans) =>
-        set((state) => {
-          const added = newPlans.map((plan) => {
-            const order = nextOrderForDate(state.plans, plan.date);
-            return { ...plan, id: uid(), completed: false, ...(order !== undefined ? { order } : {}) };
-          });
-          return { plans: [...state.plans, ...added] };
-        }),
+      addPlans: (newPlans) => {
+        const added: Plan[] = [];
+        for (const plan of newPlans) {
+          const order = nextOrderForDate([...get().plans, ...added], plan.date);
+          added.push({ ...plan, id: uid(), completed: false, ...(order !== undefined ? { order } : {}) });
+        }
+        set((state) => ({ plans: [...state.plans, ...added] }));
+        syncUpsertPlans(added);
+      },
 
-      updatePlan: (id, patch) =>
+      updatePlan: (id, patch) => {
         set((state) => ({
           plans: state.plans.map((p) => (p.id === id ? { ...p, ...patch } : p)),
-        })),
+        }));
+        const updated = get().plans.find((p) => p.id === id);
+        if (updated) syncUpsertPlan(updated);
+      },
 
-      toggleComplete: (id) =>
+      toggleComplete: (id) => {
         set((state) => ({
           plans: state.plans.map((p) => (p.id === id ? { ...p, completed: !p.completed } : p)),
-        })),
+        }));
+        const updated = get().plans.find((p) => p.id === id);
+        if (updated) syncUpsertPlan(updated);
+      },
 
       deletePlan: (id) => {
         const { plans } = get();
         set({ lastDeletedSnapshot: plans, plans: plans.filter((p) => p.id !== id) });
+        syncDeletePlan(id);
       },
 
-      duplicatePlan: (id) =>
-        set((state) => {
-          const original = state.plans.find((p) => p.id === id);
-          if (!original) return state;
-          const { order: _order, repeatId: _repeatId, ...rest } = original;
-          const newOrder = nextOrderForDate(state.plans, original.date);
-          const copy: Plan = {
-            ...rest,
-            id: uid(),
-            completed: false,
-            repeatType: 'none',
-            ...(newOrder !== undefined ? { order: newOrder } : {}),
-          };
-          return { plans: [...state.plans, copy] };
-        }),
+      duplicatePlan: (id) => {
+        const original = get().plans.find((p) => p.id === id);
+        if (!original) return;
+        const { order: _order, repeatId: _repeatId, ...rest } = original;
+        const newOrder = nextOrderForDate(get().plans, original.date);
+        const copy: Plan = {
+          ...rest,
+          id: uid(),
+          completed: false,
+          repeatType: 'none',
+          ...(newOrder !== undefined ? { order: newOrder } : {}),
+        };
+        set((state) => ({ plans: [...state.plans, copy] }));
+        syncUpsertPlan(copy);
+      },
 
       undoDelete: () => {
         const { lastDeletedSnapshot } = get();
-        if (lastDeletedSnapshot) set({ plans: lastDeletedSnapshot, lastDeletedSnapshot: null });
+        if (lastDeletedSnapshot) {
+          set({ plans: lastDeletedSnapshot, lastDeletedSnapshot: null });
+          syncUpsertPlans(lastDeletedSnapshot);
+        }
       },
 
-      reorderPlans: (date, orderedVisibleIds) =>
+      reorderPlans: (date, orderedVisibleIds) => {
         set((state) => {
           const dayPlans = state.plans.filter((p) => p.date === date);
           const visibleSet = new Set(orderedVisibleIds);
@@ -139,22 +164,31 @@ export const usePlannerStore = create<PlannerState>()(
           return {
             plans: state.plans.map((p) => (p.date === date && orderMap.has(p.id) ? { ...p, order: orderMap.get(p.id) } : p)),
           };
-        }),
+        });
+        syncUpsertPlans(get().plans.filter((p) => p.date === date));
+      },
 
       addGroup: (group) => {
         const newGroup: Group = { ...group, id: uid() };
         set((state) => ({ groups: [...state.groups, newGroup] }));
+        syncUpsertGroup(newGroup);
         return newGroup;
       },
 
-      setProfile: (patch) => set((state) => ({ profile: { ...state.profile, ...patch } })),
+      setProfile: (patch) => {
+        set((state) => ({ profile: { ...state.profile, ...patch } }));
+        syncUpdateProfile(patch);
+      },
 
-      updateSettings: (patch) => set((state) => ({ settings: { ...state.settings, ...patch } })),
+      updateSettings: (patch) => {
+        set((state) => ({ settings: { ...state.settings, ...patch } }));
+        syncUpdateSettings(patch);
+      },
 
       setFilterGroupId: (groupId) => set({ filterGroupId: groupId }),
       setFilterColor: (color) => set({ filterColor: color }),
 
-      resetData: () =>
+      resetData: () => {
         set({
           plans: [],
           groups: [],
@@ -163,7 +197,9 @@ export const usePlannerStore = create<PlannerState>()(
           filterColor: null,
           selectMode: false,
           selectedIds: [],
-        }),
+        });
+        syncClearAll();
+      },
 
       setSelectMode: (on) => set({ selectMode: on, selectedIds: [] }),
 
@@ -194,12 +230,19 @@ export const usePlannerStore = create<PlannerState>()(
           selectedIds: [],
           selectMode: false,
         });
+        syncDeletePlans(selectedIds);
       },
     }),
     {
       name: 'routine-planner-storage',
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({ plans: state.plans, groups: state.groups, profile: state.profile, settings: state.settings }),
+      partialize: (state) => ({
+        plans: state.plans,
+        groups: state.groups,
+        profile: state.profile,
+        settings: state.settings,
+        firstUsedAt: state.firstUsedAt,
+      }),
       version: 2,
       migrate: (persisted) => {
         const state = persisted as { plans?: (Plan & { alert?: string; photoUri?: string })[] };

@@ -63,7 +63,10 @@ export default function LoginScreen() {
       setError(authError);
       return;
     }
-    router.back();
+    // The OAuth redirect deep link pushes an extra /auth/callback route onto the stack (on top
+    // of this modal) before landing here — dismissAll clears both in one go, back() would only
+    // clear one.
+    if (router.canDismiss()) router.dismissAll();
   }
 
   return (

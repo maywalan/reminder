@@ -25,7 +25,7 @@ import { useEffectiveScheme, useTheme } from '@/hooks/use-theme';
 import { useToast } from '@/hooks/use-toast';
 import { uid, usePlannerStore } from '@/store/use-planner-store';
 import { fmtTime12, fromISO, pad, toISO } from '@/utils/dates';
-import { generateRepeatOccurrences, REPEAT_OPTIONS, type RepeatType } from '@/utils/repeat';
+import { defaultRepeatUntil, generateRepeatOccurrences, REPEAT_OPTIONS, type RepeatType } from '@/utils/repeat';
 
 const MAX_PHOTOS = 3;
 
@@ -655,7 +655,7 @@ export default function AddPlanScreen() {
               key={opt.value}
               onPress={() => {
                 setRepeatType(opt.value);
-                if (opt.value !== 'none' && !repeatUntil) setRepeatUntil(dateTime);
+                if (opt.value !== 'none') setRepeatUntil(defaultRepeatUntil(dateTime, opt.value));
                 setRepeatOpen(false);
               }}
               style={[styles.sheetRow, i > 0 && styles.fieldBorder, { borderColor: theme.divider }]}>

@@ -20,6 +20,37 @@ export const REPEAT_OPTIONS: { value: RepeatType; label: string }[] = [
 
 const REPEAT_CAP = 150;
 
+/**
+ * A sensible default "repeat until" date for a freshly-picked repeat type, so simply choosing
+ * "Every week" and saving already produces a repeating series instead of defaulting to the same
+ * day as the start date (which would generate exactly one occurrence — effectively no repeat).
+ * Hour-based cadences default to the same day, since several occurrences already fit within it.
+ */
+export function defaultRepeatUntil(start: Date, repeatType: RepeatType): Date {
+  const d = new Date(start);
+  switch (repeatType) {
+    case '1h':
+    case '2h':
+    case '3h':
+    case '6h':
+      return d;
+    case '1d':
+    case '2d':
+      d.setDate(d.getDate() + 30);
+      return d;
+    case 'week':
+      d.setMonth(d.getMonth() + 3);
+      return d;
+    case 'month':
+    case '2month':
+    case '3month':
+      d.setFullYear(d.getFullYear() + 1);
+      return d;
+    default:
+      return d;
+  }
+}
+
 function stepDate(d: Date, repeatType: RepeatType): Date | null {
   const nd = new Date(d);
   switch (repeatType) {

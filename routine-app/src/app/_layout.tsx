@@ -11,6 +11,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Colors } from '@/constants/theme';
 import { useEffectiveScheme } from '@/hooks/use-theme';
 import { useAuthStore } from '@/store/use-auth-store';
+import { usePlannerStore } from '@/store/use-planner-store';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -36,6 +37,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     useAuthStore.getState().initialize();
+    usePlannerStore.getState().ensureFirstUsedAt();
   }, []);
 
   if (!fontsLoaded) return null;

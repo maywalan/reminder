@@ -1,51 +1,17 @@
-import type { Group, Plan } from '@/store/types';
+import { SwatchColorNames } from '@/constants/theme';
+import type { Plan } from '@/store/types';
 import { fromISO, toISO } from '@/utils/dates';
 
-/** Progress screen data logic, ported from planner-app-prototype.html's Progress section. */
-
-function seededRandom(seed: number) {
-  let a = seed >>> 0;
-  return function () {
-    a |= 0;
-    a = (a + 0x6d2b79f5) | 0;
-    let x = Math.imul(a ^ (a >>> 15), 1 | a);
-    x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x;
-    return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function hashStr(s: string) {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) {
-    h = (h << 5) - h + s.charCodeAt(i);
-    h |= 0;
-  }
-  return h;
-}
+/** Progress screen data logic — every stat here is derived from real plans in the store. */
 
 export interface DayHistory {
   total: number;
   completed: number;
 }
 
-/** Today reflects live data from the store; past days are seeded-random, future days are empty. */
-export function historyForDate(iso: string, todayISO: string, plans: Plan[]): DayHistory {
-  if (iso > todayISO) return { total: 0, completed: 0 };
-  if (iso === todayISO) {
-    const todays = plans.filter((p) => p.date === todayISO);
-    return { total: todays.length, completed: todays.filter((p) => p.completed).length };
-  }
-  const d = fromISO(iso);
-  const dow = d.getDay();
-  const rnd = seededRandom(hashStr(iso));
-  const baseTotal = dow === 0 || dow === 6 ? 1 + Math.floor(rnd() * 3) : 2 + Math.floor(rnd() * 4);
-  const offDay = rnd() < 0.16;
-  if (offDay) return { total: baseTotal, completed: 0 };
-  const today = fromISO(todayISO);
-  const daysAgo = Math.round((today.getTime() - d.getTime()) / 86400000);
-  const drift = Math.min(0.22, (daysAgo / 365) * 0.22);
-  const rate = Math.max(0.35, Math.min(0.95, 0.8 - drift + (rnd() - 0.5) * 0.3));
-  return { total: baseTotal, completed: Math.max(1, Math.min(baseTotal, Math.round(baseTotal * rate))) };
+export function historyForDate(iso: string, _todayISO: string, plans: Plan[]): DayHistory {
+  const dayPlans = plans.filter((p) => p.date === iso);
+  return { total: dayPlans.length, completed: dayPlans.filter((p) => p.completed).length };
 }
 
 export function datesInRange(startISO: string, endISO: string): string[] {
@@ -107,21 +73,28 @@ export function bestWeekday(dates: string[], todayISO: string, plans: Plan[]): n
   return best;
 }
 
-export interface CategoryRow {
-  group: Group;
+export interface ColorRow {
+  color: string;
+  label: string;
   count: number;
   pct: number;
 }
 
-export function categoryBreakdown(periodTotal: number, seedKey: string, groups: Group[]): CategoryRow[] {
-  if (periodTotal <= 0) return groups.map((g) => ({ group: g, count: 0, pct: 0 }));
-  const rnd = seededRandom(hashStr(seedKey));
-  const weights = groups.map(() => 0.5 + rnd());
-  const sumW = weights.reduce((a, b) => a + b, 0);
-  const rows = groups.map((g, i) => ({ group: g, count: Math.round((periodTotal * weights[i]) / sumW), pct: 0 }));
+/** Real breakdown of completed plans by color within the given dates — no groups involved, since group creation isn't wired up yet and every plan always has a color. */
+export function colorBreakdown(dates: string[], plans: Plan[]): ColorRow[] {
+  const dateSet = new Set(dates);
+  const completed = plans.filter((p) => dateSet.has(p.date) && p.completed);
+  const counts = new Map<string, number>();
+  for (const p of completed) counts.set(p.color, (counts.get(p.color) ?? 0) + 1);
+
+  const total = completed.length;
+  const rows = Array.from(counts.entries()).map(([color, count]) => ({
+    color,
+    label: SwatchColorNames[color] ?? 'Color',
+    count,
+    pct: total > 0 ? Math.round((count / total) * 100) : 0,
+  }));
   rows.sort((a, b) => b.count - a.count);
-  const total = rows.reduce((a, r) => a + r.count, 0) || 1;
-  rows.forEach((r) => (r.pct = Math.round((r.count / total) * 100)));
   return rows;
 }
 
@@ -134,11 +107,16 @@ export interface RangeResult {
   prevEnd: string;
 }
 
-export function progressRange(period: Period, todayISO: string): RangeResult {
+/**
+ * `offset` counts periods back from the current one (0 = this week/month/year, 1 = the one
+ * before, etc.) so the Progress screen can navigate through history, not just view "now".
+ */
+export function progressRange(period: Period, todayISO: string, offset = 0): RangeResult {
   const todayObj = fromISO(todayISO);
   if (period === 'week') {
     const end = new Date(todayObj);
-    const start = new Date(todayObj);
+    end.setDate(end.getDate() - 7 * offset);
+    const start = new Date(end);
     start.setDate(start.getDate() - 6);
     const prevEnd = new Date(start);
     prevEnd.setDate(prevEnd.getDate() - 1);
@@ -147,18 +125,22 @@ export function progressRange(period: Period, todayISO: string): RangeResult {
     return { start: toISO(start), end: toISO(end), prevStart: toISO(prevStart), prevEnd: toISO(prevEnd) };
   }
   if (period === 'month') {
-    const start = new Date(todayObj.getFullYear(), todayObj.getMonth(), 1);
-    const end = new Date(todayObj);
-    const elapsed = todayObj.getDate();
-    const prevMonthDate = new Date(todayObj.getFullYear(), todayObj.getMonth() - 1, 1);
+    const targetMonth = new Date(todayObj.getFullYear(), todayObj.getMonth() - offset, 1);
+    const start = new Date(targetMonth);
+    const isCurrent = offset === 0;
+    const lastDayOfTarget = new Date(targetMonth.getFullYear(), targetMonth.getMonth() + 1, 0);
+    const end = isCurrent ? todayObj : lastDayOfTarget;
+    const prevMonthDate = new Date(targetMonth.getFullYear(), targetMonth.getMonth() - 1, 1);
     const daysInPrevMonth = new Date(prevMonthDate.getFullYear(), prevMonthDate.getMonth() + 1, 0).getDate();
-    const prevEnd = new Date(prevMonthDate.getFullYear(), prevMonthDate.getMonth(), Math.min(elapsed, daysInPrevMonth));
+    const prevEnd = new Date(prevMonthDate.getFullYear(), prevMonthDate.getMonth(), Math.min(end.getDate(), daysInPrevMonth));
     return { start: toISO(start), end: toISO(end), prevStart: toISO(prevMonthDate), prevEnd: toISO(prevEnd) };
   }
-  const start = new Date(todayObj.getFullYear(), 0, 1);
-  const end = new Date(todayObj);
-  const prevStart = new Date(todayObj.getFullYear() - 1, 0, 1);
-  const prevEnd = new Date(todayObj.getFullYear() - 1, todayObj.getMonth(), todayObj.getDate());
+  const targetYear = todayObj.getFullYear() - offset;
+  const isCurrent = offset === 0;
+  const start = new Date(targetYear, 0, 1);
+  const end = isCurrent ? todayObj : new Date(targetYear, 11, 31);
+  const prevStart = new Date(targetYear - 1, 0, 1);
+  const prevEnd = isCurrent ? new Date(targetYear - 1, todayObj.getMonth(), todayObj.getDate()) : new Date(targetYear - 1, 11, 31);
   return { start: toISO(start), end: toISO(end), prevStart: toISO(prevStart), prevEnd: toISO(prevEnd) };
 }
 
@@ -167,62 +149,69 @@ export function pctDelta(cur: number, prev: number): number {
   return Math.round(((cur - prev) / prev) * 100);
 }
 
-export interface Bar {
-  value: number;
-  label: string;
-  future: boolean;
-}
-
-const WD_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTH_LONG = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
 const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-export function weekBars(dates: string[], todayISO: string, plans: Plan[]): Bar[] {
-  return dates.map((iso) => {
-    const h = historyForDate(iso, todayISO, plans);
-    const d = fromISO(iso);
-    return { value: h.completed, label: WD_SHORT[d.getDay()], future: iso > todayISO };
-  });
-}
-
-/** Always the current year (the prototype's Progress "year" view has no year navigation). */
-export function yearBars(todayISO: string, plans: Plan[]): Bar[] {
-  const todayObj = fromISO(todayISO);
-  const year = todayObj.getFullYear();
-  const lastMonth = todayObj.getMonth();
-  const bars: Bar[] = [];
-  for (let m = 0; m <= lastMonth; m++) {
-    const monthStart = new Date(year, m, 1);
-    const monthEndFull = new Date(year, m + 1, 0);
-    const monthEnd = monthEndFull > todayObj ? todayObj : monthEndFull;
-    const dates = datesInRange(toISO(monthStart), toISO(monthEnd));
-    const sum = sumHistory(dates, todayISO, plans);
-    bars.push({ value: sum.completed, label: MONTH_SHORT[m], future: false });
-  }
-  for (let m = lastMonth + 1; m < 12; m++) {
-    bars.push({ value: 0, label: MONTH_SHORT[m], future: true });
-  }
-  return bars;
+/** The nav-bar label for whichever period is currently in view, e.g. "Aug 19 – 25, 2026". */
+export function formatPeriodLabel(period: Period, range: RangeResult): string {
+  const start = fromISO(range.start);
+  const end = fromISO(range.end);
+  if (period === 'year') return String(start.getFullYear());
+  if (period === 'month') return `${MONTH_LONG[start.getMonth()]} ${start.getFullYear()}`;
+  const sameMonth = start.getMonth() === end.getMonth();
+  const startStr = `${MONTH_SHORT[start.getMonth()]} ${start.getDate()}`;
+  const endStr = sameMonth ? `${end.getDate()}` : `${MONTH_SHORT[end.getMonth()]} ${end.getDate()}`;
+  return `${startStr} – ${endStr}, ${end.getFullYear()}`;
 }
 
 export interface HeatCell {
-  day: number;
   iso: string;
   completed: number;
   isFuture: boolean;
 }
 
-export function monthHeatmapCells(todayISO: string, plans: Plan[]): { startOffset: number; cells: HeatCell[] } {
-  const todayObj = fromISO(todayISO);
-  const year = todayObj.getFullYear();
-  const month = todayObj.getMonth();
-  const firstOfMonth = new Date(year, month, 1);
-  const startOffset = firstOfMonth.getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const cells: HeatCell[] = [];
-  for (let d = 1; d <= daysInMonth; d++) {
-    const iso = toISO(new Date(year, month, d));
+/**
+ * Weekday-padded heatmap cells for any date range — the same grid shape (7-wide, wraps into
+ * calendar-aligned rows) powers Week and Month views. Year uses `yearMonthCells` instead — a
+ * day-per-cell grid across a full year is unreadably tall on a phone.
+ */
+export function heatmapCells(startISO: string, endISO: string, todayISO: string, plans: Plan[]): { startOffset: number; cells: HeatCell[] } {
+  const startOffset = fromISO(startISO).getDay();
+  const cells = datesInRange(startISO, endISO).map((iso) => {
     const h = historyForDate(iso, todayISO, plans);
-    cells.push({ day: d, iso, completed: h.completed, isFuture: iso > todayISO });
-  }
+    return { iso, completed: h.completed, isFuture: iso > todayISO };
+  });
   return { startOffset, cells };
+}
+
+export interface MonthCell {
+  label: string;
+  completed: number;
+  isFuture: boolean;
+}
+
+/** One heat cell per month of the given year — a Google-Calendar-style year-at-a-glance grid. */
+export function yearMonthCells(year: number, todayISO: string, plans: Plan[]): MonthCell[] {
+  const todayObj = fromISO(todayISO);
+  return MONTH_SHORT.map((label, m) => {
+    const monthStart = new Date(year, m, 1);
+    if (monthStart > todayObj) return { label, completed: 0, isFuture: true };
+    const monthEndFull = new Date(year, m + 1, 0);
+    const monthEnd = monthEndFull > todayObj ? todayObj : monthEndFull;
+    const sum = sumHistory(datesInRange(toISO(monthStart), toISO(monthEnd)), todayISO, plans);
+    return { label, completed: sum.completed, isFuture: false };
+  });
 }

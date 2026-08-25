@@ -8,22 +8,22 @@ import { Radii, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { usePlannerStore } from '@/store/use-planner-store';
 import { toISO } from '@/utils/dates';
-import { bestWeekday, currentStreak, datesInRange, progressRange, sumHistory, type Period } from '@/utils/progress';
+import { bestWeekday, currentStreak, datesInRange, formatPeriodLabel, progressRange, sumHistory, type Period } from '@/utils/progress';
 
-const PERIOD_LABEL: Record<Period, string> = { week: 'This Week', month: 'This Month', year: 'This Year' };
 const WEEKDAY_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 export default function RecapScreen() {
   const theme = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { period: periodParam } = useLocalSearchParams<{ period?: string }>();
+  const { period: periodParam, offset: offsetParam } = useLocalSearchParams<{ period?: string; offset?: string }>();
   const period = (periodParam as Period) ?? 'week';
+  const offset = Number(offsetParam ?? 0) || 0;
 
   const plans = usePlannerStore((s) => s.plans);
   const todayISO = useMemo(() => toISO(new Date()), []);
 
-  const range = progressRange(period, todayISO);
+  const range = progressRange(period, todayISO, offset);
   const dates = datesInRange(range.start, range.end);
   const cur = sumHistory(dates, todayISO, plans);
   const streak = currentStreak(todayISO, plans);
@@ -45,7 +45,7 @@ export default function RecapScreen() {
         start={{ x: 0.1, y: 0 }}
         end={{ x: 0.9, y: 1 }}
         style={styles.card}>
-        <Text style={styles.eyebrow}>{PERIOD_LABEL[period]}</Text>
+        <Text style={styles.eyebrow}>{formatPeriodLabel(period, range)}</Text>
         <Text style={styles.big}>{cur.completed}</Text>
         <Text style={styles.bigLabel}>tasks completed</Text>
 

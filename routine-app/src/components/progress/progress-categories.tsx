@@ -2,9 +2,9 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { Radii, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import type { CategoryRow } from '@/utils/progress';
+import type { ColorRow } from '@/utils/progress';
 
-export function ProgressCategories({ rows }: { rows: CategoryRow[] }) {
+export function ProgressCategories({ rows }: { rows: ColorRow[] }) {
   const theme = useTheme();
   const hasData = rows.some((r) => r.count > 0);
 
@@ -14,13 +14,13 @@ export function ProgressCategories({ rows }: { rows: CategoryRow[] }) {
         <Text style={{ color: theme.textTertiary, fontSize: Typography.body, textAlign: 'center', paddingVertical: 10 }}>No data yet</Text>
       ) : (
         rows.map((r) => (
-          <View key={r.group.id} style={styles.row}>
-            <View style={[styles.dot, { backgroundColor: r.group.color }]} />
+          <View key={r.color} style={styles.row}>
+            <View style={[styles.dot, { backgroundColor: r.color }]} />
             <Text numberOfLines={1} style={[styles.name, { color: theme.text }]}>
-              {r.group.name}
+              {r.label}
             </Text>
             <View style={[styles.track, { backgroundColor: theme.divider }]}>
-              <View style={[styles.fill, { width: `${r.pct}%`, backgroundColor: r.group.color }]} />
+              <View style={[styles.fill, { width: `${r.pct}%`, backgroundColor: r.color }]} />
             </View>
             <Text style={[styles.pct, { color: theme.textSecondary }]}>{r.pct}%</Text>
           </View>

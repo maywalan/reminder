@@ -66,3 +66,14 @@ export const Spacing = { xs: 4, sm: 8, md: 14, lg: 20, xl: 28 } as const;
 
 /** Task/group/plan color swatches — red, orange, yellow, green, blue, purple, grey, in that order. */
 export const SwatchColors = ['#FF3B30', '#FF9F43', '#FFC107', '#2FB463', '#2E86FF', '#9B59D0', '#6E6E73'] as const;
+
+/** Display names for SwatchColors, keyed by hex — used anywhere a color needs a human label (e.g. Progress's by-color breakdown). */
+export const SwatchColorNames: Record<string, string> = {
+  '#FF3B30': 'Red',
+  '#FF9F43': 'Orange',
+  '#FFC107': 'Yellow',
+  '#2FB463': 'Green',
+  '#2E86FF': 'Blue',
+  '#9B59D0': 'Purple',
+  '#6E6E73': 'Grey',
+};

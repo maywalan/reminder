@@ -4,10 +4,16 @@ A React Native (Expo) port of the `planner-app-prototype.html` prototype one lev
 `reminder-app/`. Today, Calendar, Progress, and Settings (the Profile tab) are all built out;
 see the roadmap table below for what's still prototype-only.
 
-Data is **local-only** — everything is stored on-device via AsyncStorage (no backend/auth),
-matching the prototype's current guest-mode behavior. This can be swapped for a real backend
-(e.g. Supabase or Firebase) later without touching the screens, by changing what's inside
-`src/store/use-planner-store.ts`.
+**Backend:** Supabase (project `routine-app`, see `supabase/migrations/`). Email/password
+sign-in and sign-up work; Guest mode is preserved as a fallback with local-only data. `src/lib/sync.ts`
+pushes/pulls `Plan`/`Group`/`Profile`/`Settings` between the local Zustand store
+(`src/store/use-planner-store.ts`) and Supabase on sign-in and on every mutation. **Google OAuth
+is currently broken** (Supabase hands back the app's Site URL instead of the requested `exp://`
+redirect — see the "Known issues" section below) and **Apple Sign-In isn't built yet** (blocked
+on enrolling in the Apple Developer Program).
+
+A hosted privacy policy lives at `docs/privacy.html` in the repo root (served via GitHub Pages at
+https://maywalan.github.io/reminder/privacy.html) and is linked from Profile → Data Privacy in-app.
 
 ## Run it
 
@@ -43,10 +49,10 @@ src/
     (tabs)/
       _layout.tsx       Tab navigator — uses our custom TabBar (not Expo's native NativeTabs,
                         which can't host a custom raised center button)
-      index.tsx         Today screen (route "/") — the fully-built screen
-      calendar.tsx       placeholder
-      progress.tsx        placeholder
-      profile.tsx          placeholder
+      index.tsx         Today screen (route "/") — fully built
+      calendar.tsx       Calendar screen (Week/Month/Year) — fully built
+      progress.tsx        Progress screen (hero/trend/by-color breakdown) — fully built
+      profile.tsx          Settings/Profile screen (auth, sync, data privacy) — fully built
     add-plan.tsx        Modal route for creating/editing a plan (?id=... to edit)
   components/
     icon.tsx             SVG icons, ported path-for-path from the prototype's inline <svg>s
@@ -56,8 +62,12 @@ src/
     placeholder-screen.tsx    Shared "coming soon" screen used by Calendar/Progress/Profile
   store/
     use-planner-store.ts  Zustand store: plans, groups, profile + actions, persisted to
-                          AsyncStorage, seeded with demo data on first launch
+                          AsyncStorage, seeded with demo data on first launch, write-throughs
+                          to Supabase via sync.ts when signed in
     types.ts               Plan / Group / Profile shapes
+  lib/
+    supabase.ts             Supabase client + auth helpers (sign-in/up, Google OAuth, guest)
+    sync.ts                  Maps local store rows <-> Supabase tables, push/pull on sign-in
   utils/
     dates.ts               toISO/fromISO/pad/fmtTime12 — ported verbatim from the prototype
     countdown.ts             The multi-tier Live Activity countdown formatter (mm:ss under 1h,
@@ -76,22 +86,55 @@ sheets, Live Activity card, Past Activity list, task list with swipe-to-delete, 
 multi-select → bulk delete with undo, tap a task to edit), Add/Edit Plan sheet (name, native
 date/time pickers, up to 5 alerts, color, group, repeat rules with "repeat until", free-text
 details, optional location with OpenStreetMap autocomplete, optional photo, live-toggle),
-Calendar (Week/Month/Year), Progress (hero/trend/categories), Recap sheet, full Settings screen
-(profile avatar/name editing, guest banner, notifications + notification options + alert style,
-appearance, language picker, data privacy, Home Screen Widgets preview), custom tab bar, light/dark
-theming, local persistence.
+Calendar (Week/Month/Year), Progress (hero/trend/by-color breakdown, prev/next period nav),
+Recap sheet, full Settings screen (profile avatar/name editing, email/password + Google OAuth +
+guest sign-in, sync status, notifications + notification options + alert style, appearance,
+language picker, data privacy with hosted policy link, Home Screen Widgets preview), custom tab
+bar, light/dark theming, local persistence + Supabase sync.
 
 **Not yet ported** (each row names its source section in the prototype file):
 
 | Feature | Where to look in `planner-app-prototype.html` |
 |---|---|
 | Group creation flow | `openNewGroupSheet()` |
-| Real login / switch-account flow | `#logged-out-screen`, `#overlay-guest-confirm` — the Settings guest banner and its "Log In" button are UI-only for now since there's no backend/auth yet |
+| Apple Sign-In | blocked on enrolling in the Apple Developer Program ($99/yr) — email/password and (broken) Google OAuth are the only sign-in methods right now |
 | Actual in-app translation | the Language sheet persists a choice, but text isn't retranslated yet — see the `LANG` object and `applyLanguage()` |
 | Real iOS Home Screen widgets | the Settings widgets sheet is a preview mockup (matching the prototype's own mock); a working WidgetKit widget needs a native dev build, which Expo Go can't provide |
 | Calendar customize sheet (background/font/colors) | `#overlay-cal-customize` |
 
-Suggested order: group creation, then decide on a backend before tackling real login/sync.
+Suggested order: fix Google OAuth or drop it in favor of Apple Sign-In (Apple requires offering
+Sign in with Apple alongside any other third-party login), then group creation.
+
+## Known issues
+
+- **Google OAuth redirect fails** ("Safari cannot open the page"). The Google↔Supabase
+  server-side handshake completes cleanly every time, but Supabase hands the completed session
+  back to the app using the Site URL (`routineapp://auth/callback`) instead of the app's
+  requested `exp://...` redirect, even with that literal URL added to the redirect allow-list.
+  Untested lead: this may be an Expo-Go-only limitation (shared `exp://` scheme across every
+  Expo Go project on a device) that a standalone/dev-client build using the app's own
+  `routineapp://` scheme would avoid.
+- Old local plans created before the switch to `expo-crypto` UUIDs use `'p_...'`-style ids and
+  will fail to push to Supabase until Settings → Clear All Data is run once.
+- No retry/offline queue for failed Supabase writes, no merge UI (first account to touch an
+  empty cloud wins), no realtime — a second device's edits need a fresh sign-in to appear.
+
+## Deploying to the App Store
+
+Not ready yet. What's in place vs. still needed:
+
+- ✅ `ios.bundleIdentifier` / `android.package` set to `com.maywalan.routineapp` in `app.json`.
+- ✅ `eas.json` build profiles configured (development/preview/production).
+- ✅ Hosted privacy policy, linked in-app.
+- ❌ Apple Developer Program enrollment — not done yet; nothing below can ship without it.
+- ✅ EAS project linked — `@maywalan/routine-app`, https://expo.dev/accounts/maywalan/projects/routine-app
+  (`extra.eas.projectId` in `app.json`).
+- ❌ Google OAuth must be fixed or removed before submitting (a visibly broken login button is
+  an easy App Review rejection); Apple Sign-In should be added alongside it per Guideline 4.8.
+- ❌ App Store Connect's "App Privacy" questionnaire still needs to be filled out (separate from
+  the hosted privacy policy page) — covers what Supabase collects: account email, user-generated
+  reminder content.
+- ❌ No App Store listing assets yet (screenshots, description, keywords, support URL).
 
 ## Location autocomplete
 

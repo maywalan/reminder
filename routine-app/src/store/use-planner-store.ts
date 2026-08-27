@@ -5,7 +5,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 
 import type { Group, Plan, Profile, Settings } from './types';
 import { syncClearAll, syncDeletePlan, syncDeletePlans, syncUpdateProfile, syncUpdateSettings, syncUpsertGroup, syncUpsertPlan, syncUpsertPlans } from '@/lib/sync';
-import { findPastPlans } from '@/utils/countdown';
+import { findFuturePlans, findPastPlans } from '@/utils/countdown';
 import { toISO } from '@/utils/dates';
 
 /**
@@ -64,7 +64,7 @@ interface PlannerState {
   resetData: () => void;
   setSelectMode: (on: boolean) => void;
   toggleSelected: (id: string) => void;
-  selectAllToday: () => void;
+  selectAll: () => void;
   deleteSelected: () => void;
 }
 
@@ -210,13 +210,14 @@ export const usePlannerStore = create<PlannerState>()(
             : [...state.selectedIds, id],
         })),
 
-      selectAllToday: () => {
+      selectAll: () => {
         const { plans, filterGroupId, filterColor, selectedIds } = get();
         const todayISO = toISO(new Date());
         const matchesFilter = (p: Plan) => (!filterGroupId || p.groupId === filterGroupId) && (!filterColor || p.color === filterColor);
         const todayIds = plans.filter((p) => p.date === todayISO && matchesFilter(p)).map((p) => p.id);
         const pastIds = findPastPlans(plans).filter(matchesFilter).map((p) => p.id);
-        const allIds = [...todayIds, ...pastIds];
+        const futureIds = findFuturePlans(plans).filter(matchesFilter).map((p) => p.id);
+        const allIds = [...todayIds, ...pastIds, ...futureIds];
         const allSelected = allIds.length > 0 && allIds.every((id) => selectedIds.includes(id));
         set({ selectedIds: allSelected ? [] : allIds });
       },

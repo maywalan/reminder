@@ -25,7 +25,7 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const router = useRouter();
   const selectMode = usePlannerStore((s) => s.selectMode);
   const selectedIds = usePlannerStore((s) => s.selectedIds);
-  const selectAllToday = usePlannerStore((s) => s.selectAllToday);
+  const selectAll = usePlannerStore((s) => s.selectAll);
   const deleteSelected = usePlannerStore((s) => s.deleteSelected);
 
   const fade = useRef(new Animated.Value(0)).current;
@@ -93,7 +93,7 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
       <Animated.View
         style={[styles.selectRow, { opacity: fade }]}
         pointerEvents={selectMode ? 'auto' : 'none'}>
-        <Pressable onPress={selectAllToday} hitSlop={8}>
+        <Pressable onPress={selectAll} hitSlop={8}>
           <Text style={[styles.selectAction, { color: theme.accent }]}>Select All</Text>
         </Pressable>
         <Pressable onPress={handleDelete} hitSlop={8} disabled={selectedIds.length === 0}>

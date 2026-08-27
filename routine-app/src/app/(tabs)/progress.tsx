@@ -52,7 +52,6 @@ export default function ProgressScreen() {
   const best = bestWeekday(dates, todayISO, plans);
   const colors = colorBreakdown(dates, plans);
 
-  const canGoNext = offset > 0;
   const canGoPrev = range.start > boundISO;
 
   return (
@@ -60,11 +59,18 @@ export default function ProgressScreen() {
       <ScrollView contentContainerStyle={{ paddingTop: insets.top + 22, paddingBottom: 130 }}>
         <View style={styles.headerRow}>
           <Text style={[styles.h1, { color: theme.text }]}>Progress</Text>
-          <Pressable
-            onPress={() => router.push({ pathname: '/recap', params: { period, offset: String(offset) } })}
-            style={[styles.recapBtn, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
-            <SparkleIcon size={18} color={theme.text} strokeWidth={1.6} />
-          </Pressable>
+          <View style={styles.headerActions}>
+            {offset !== 0 && (
+              <Pressable onPress={() => setOffset(0)} hitSlop={8}>
+                <Text style={[styles.todayBtn, { color: theme.accent }]}>Today</Text>
+              </Pressable>
+            )}
+            <Pressable
+              onPress={() => router.push({ pathname: '/recap', params: { period, offset: String(offset) } })}
+              style={[styles.recapBtn, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
+              <SparkleIcon size={18} color={theme.text} strokeWidth={1.6} />
+            </Pressable>
+          </View>
         </View>
 
         <SegmentedControl
@@ -87,10 +93,9 @@ export default function ProgressScreen() {
           </Pressable>
           <Text style={[styles.navLabel, { color: theme.text }]}>{formatPeriodLabel(period, range)}</Text>
           <Pressable
-            onPress={() => setOffset((o) => Math.max(0, o - 1))}
-            disabled={!canGoNext}
+            onPress={() => setOffset((o) => o - 1)}
             hitSlop={8}
-            style={[styles.navBtn, { backgroundColor: theme.surface, borderColor: theme.divider, opacity: canGoNext ? 1 : 0.3 }]}>
+            style={[styles.navBtn, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
             <ChevronRightIcon size={17} color={theme.text} strokeWidth={2.2} />
           </Pressable>
         </View>
@@ -112,6 +117,8 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 22, marginBottom: 2 },
   h1: { fontSize: Typography.display, fontWeight: '800', letterSpacing: -0.4 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  todayBtn: { fontSize: Typography.body, fontWeight: '700' },
   recapBtn: { width: 38, height: 38, borderRadius: 19, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   navRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 22, marginTop: 16, marginBottom: 18 },
   navBtn: { width: 30, height: 30, borderRadius: 15, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },

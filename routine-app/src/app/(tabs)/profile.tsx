@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Alert, Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BottomSheet } from '@/components/bottom-sheet';
@@ -286,9 +286,13 @@ export default function ProfileScreen() {
           </Pressable>
         }>
         <Text style={[styles.privacyText, { color: theme.textSecondary }]}>
-          Your plans are stored only on this device — Routine doesn&apos;t have a backend yet, so nothing is uploaded or synced.
-          Sharing a calendar or account sync will require a future update.
+          {authUser
+            ? 'Your plans sync to your account so they’re available if you sign in elsewhere. Photos stay on this device — only a local reference is saved, not the image itself.'
+            : 'You’re browsing as a guest — your plans are stored only on this device and nothing is uploaded.'}
         </Text>
+        <Pressable onPress={() => Linking.openURL('https://maywalan.github.io/reminder/privacy.html')} hitSlop={4}>
+          <Text style={[styles.privacyText, { color: theme.accent, marginTop: -6 }]}>Read the full privacy policy</Text>
+        </Pressable>
         <Pressable onPress={handleClearData} style={[styles.clearDataBtn, { backgroundColor: theme.dangerSoft }]}>
           <Text style={{ color: theme.danger, fontSize: Typography.heading, fontWeight: '700' }}>Clear All Data</Text>
         </Pressable>

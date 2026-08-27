@@ -19,10 +19,7 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false,
-      "permissions": [
-        "android.permission.RECORD_AUDIO"
-      ]
+      "predictiveBackGestureEnabled": false
     },
     "web": {
       "output": "static",
@@ -42,7 +39,9 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Routine to access your photos to attach one to a plan."
+          "photosPermission": "Allow Routine to access your photos to attach one to a plan.",
+          "cameraPermission": false,
+          "microphonePermission": false
         }
       ],
       "expo-web-browser"

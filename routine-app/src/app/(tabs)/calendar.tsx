@@ -1,16 +1,19 @@
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useMemo, useRef, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { MonthView } from '@/components/calendar/month-view';
 import { WeekView } from '@/components/calendar/week-view';
 import { YearView } from '@/components/calendar/year-view';
+import { PlusIcon } from '@/components/icon';
 import { SegmentedControl } from '@/components/segmented-control';
 import { TodoItem } from '@/components/todo-item';
-import { Typography } from '@/constants/theme';
+import { Radii, Typography } from '@/constants/theme';
+import { useHolidays } from '@/hooks/use-holidays';
 import { useTheme } from '@/hooks/use-theme';
 import { usePlannerStore } from '@/store/use-planner-store';
+import type { CalendarDensity } from '@/store/types';
 import { toISO } from '@/utils/dates';
 import { colorForPlan } from '@/utils/plans';
 
@@ -24,6 +27,8 @@ export default function CalendarScreen() {
   const groups = usePlannerStore((s) => s.groups);
   const toggleComplete = usePlannerStore((s) => s.toggleComplete);
   const deletePlan = usePlannerStore((s) => s.deletePlan);
+  const calendarDensity = usePlannerStore((s) => s.settings.calendarDensity);
+  const updateSettings = usePlannerStore((s) => s.updateSettings);
 
   const now = useMemo(() => new Date(), []);
   const todayISO = useMemo(() => toISO(now), [now]);
@@ -32,6 +37,19 @@ export default function CalendarScreen() {
   const [calMonth, setCalMonth] = useState(now.getMonth());
   const [calYear, setCalYear] = useState(now.getFullYear());
   const [selectedDate, setSelectedDate] = useState(todayISO);
+
+  const holidays = useHolidays(calYear);
+
+  const scrollRef = useRef<ScrollView>(null);
+  const dayDetailY = useRef(0);
+
+  /** Tapping a date on the grid scrolls the packed dot/chip preview into full detail below. */
+  function handleSelectDate(iso: string) {
+    setSelectedDate(iso);
+    requestAnimationFrame(() => {
+      scrollRef.current?.scrollTo({ y: Math.max(dayDetailY.current - 16, 0), animated: true });
+    });
+  }
 
   function shiftMonth(delta: number) {
     let m = calMonth + delta;
@@ -64,7 +82,7 @@ export default function CalendarScreen() {
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.bg }]}>
-      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 22, paddingBottom: 130 }}>
+      <ScrollView ref={scrollRef} contentContainerStyle={{ paddingTop: insets.top + 22, paddingBottom: 130 }}>
         <Text style={[styles.h1, { color: theme.text }]}>Calendar</Text>
 
         <SegmentedControl
@@ -79,6 +97,14 @@ export default function CalendarScreen() {
 
         {calView === 'month' && (
           <>
+            <SegmentedControl
+              value={calendarDensity}
+              onChange={(v: CalendarDensity) => updateSettings({ calendarDensity: v })}
+              options={[
+                { label: 'Compact', value: 'compact' },
+                { label: 'Detailed', value: 'detailed' },
+              ]}
+            />
             <MonthView
               year={calYear}
               month={calMonth}
@@ -86,13 +112,28 @@ export default function CalendarScreen() {
               selectedDate={selectedDate}
               plans={plans}
               colorForPlan={getColor}
-              onSelectDate={setSelectedDate}
+              onSelectDate={handleSelectDate}
               onShiftMonth={shiftMonth}
+              density={calendarDensity}
+              holidayByDate={holidays}
             />
-            <View style={styles.dayDetail}>
-              <Text style={[styles.dayDetailTitle, { color: theme.textSecondary }]}>
-                {selectedDate === todayISO ? `Today, ${selectedDateLabel}` : selectedDateLabel}
-              </Text>
+            <View style={styles.dayDetail} onLayout={(e) => (dayDetailY.current = e.nativeEvent.layout.y)}>
+              <View style={styles.dayDetailHeader}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.dayDetailTitle, { color: theme.textSecondary }]}>
+                    {selectedDate === todayISO ? `Today, ${selectedDateLabel}` : selectedDateLabel}
+                  </Text>
+                  {holidays[selectedDate] && (
+                    <Text style={[styles.holidayLabel, { color: theme.accent }]}>🎉 {holidays[selectedDate]}</Text>
+                  )}
+                </View>
+                <Pressable
+                  onPress={() => router.push({ pathname: '/add-plan', params: { date: selectedDate } })}
+                  style={[styles.addBtn, { backgroundColor: theme.accentSoft }]}
+                  hitSlop={6}>
+                  <PlusIcon size={16} color={theme.accent} strokeWidth={2.4} />
+                </Pressable>
+              </View>
               {selectedDayPlans.length === 0 ? (
                 <Text style={{ color: theme.textTertiary, fontSize: Typography.body, paddingHorizontal: 22 }}>No plans on this day.</Text>
               ) : (
@@ -147,5 +188,8 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   h1: { fontSize: Typography.display, fontWeight: '800', letterSpacing: -0.4, paddingHorizontal: 22, marginBottom: 4 },
   dayDetail: { marginTop: 16 },
-  dayDetailTitle: { fontSize: Typography.heading, fontWeight: '700', paddingHorizontal: 22, marginBottom: 10 },
+  dayDetailHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 22, marginBottom: 10 },
+  dayDetailTitle: { fontSize: Typography.heading, fontWeight: '700' },
+  holidayLabel: { fontSize: Typography.body, fontWeight: '600', marginTop: 2 },
+  addBtn: { width: 28, height: 28, borderRadius: Radii.sm, alignItems: 'center', justifyContent: 'center' },
 });

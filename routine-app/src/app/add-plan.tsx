@@ -25,7 +25,16 @@ import { useEffectiveScheme, useTheme } from '@/hooks/use-theme';
 import { useToast } from '@/hooks/use-toast';
 import { uid, usePlannerStore } from '@/store/use-planner-store';
 import { fmtTime12, fromISO, pad, toISO } from '@/utils/dates';
-import { defaultRepeatUntil, generateRepeatOccurrences, REPEAT_OPTIONS, type RepeatType } from '@/utils/repeat';
+import {
+  type CustomRepeatConfig,
+  customRepeatLabel,
+  defaultRepeatUntil,
+  generateRepeatOccurrences,
+  REPEAT_OPTIONS,
+  type RepeatType,
+  WEEKDAY_ABBR,
+} from '@/utils/repeat';
+import { COMMON_TIME_ZONES, deviceTimeZone, listTimeZones, timeZoneCityLabel, timeZoneOffsetLabel } from '@/utils/timezone';
 
 const MAX_PHOTOS = 3;
 
@@ -58,7 +67,7 @@ export default function AddPlanScreen() {
   const scheme = useEffectiveScheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { id, date: prefillDate } = useLocalSearchParams<{ id?: string; date?: string }>();
 
   const plans = usePlannerStore((s) => s.plans);
   const addPlan = usePlannerStore((s) => s.addPlan);
@@ -69,15 +78,16 @@ export default function AddPlanScreen() {
   const setPendingSaveToast = usePlannerStore((s) => s.setPendingSaveToast);
 
   const editing = useMemo(() => plans.find((p) => p.id === id), [plans, id]);
+  const initialDate = editing?.date ?? prefillDate ?? toISO(new Date());
 
   const [name, setName] = useState(editing?.name ?? '');
-  const [dateTime, setDateTime] = useState(() => combineDateAndTime(editing?.date ?? toISO(new Date()), editing?.time ?? '09:00'));
+  const [dateTime, setDateTime] = useState(() => combineDateAndTime(initialDate, editing?.time ?? '09:00'));
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [allDay, setAllDay] = useState(editing?.allDay ?? false);
   const [timeMode, setTimeMode] = useState<'specific' | 'range'>(editing?.endTime ? 'range' : 'specific');
   const [endDateTime, setEndDateTime] = useState(() =>
-    combineDateAndTime(editing?.date ?? toISO(new Date()), editing?.endTime ?? editing?.time ?? '10:00')
+    combineDateAndTime(initialDate, editing?.endTime ?? editing?.time ?? '10:00')
   );
   const [showEndTimePicker, setShowEndTimePicker] = useState(false);
   const [color, setColor] = useState(editing?.color ?? SwatchColors[0]);
@@ -94,6 +104,11 @@ export default function AddPlanScreen() {
   const [repeatOpen, setRepeatOpen] = useState(false);
   const [repeatUntil, setRepeatUntil] = useState<Date | null>(null);
   const [showRepeatUntilPicker, setShowRepeatUntilPicker] = useState(false);
+  const [customRepeatOpen, setCustomRepeatOpen] = useState(false);
+  const [customRepeat, setCustomRepeat] = useState<CustomRepeatConfig>({ interval: 1, unit: 'week', weekdays: [] });
+  const [timezone, setTimezone] = useState(editing?.timezone ?? deviceTimeZone());
+  const [timeZoneOpen, setTimeZoneOpen] = useState(false);
+  const [timeZoneQuery, setTimeZoneQuery] = useState('');
   const [notes, setNotes] = useState(editing?.notes ?? '');
   const [location, setLocation] = useState(editing?.location ?? '');
   const [locationFocused, setLocationFocused] = useState(false);
@@ -101,6 +116,11 @@ export default function AddPlanScreen() {
   const [error, setError] = useState(false);
 
   const { suggestions: placeSuggestions, loading: placesLoading } = usePlaceSearch(location);
+  const filteredTimeZones = useMemo(() => {
+    const q = timeZoneQuery.trim().toLowerCase();
+    if (!q) return COMMON_TIME_ZONES;
+    return listTimeZones().filter((tz) => tz.toLowerCase().includes(q.replace(/\s+/g, '_')) || timeZoneCityLabel(tz).toLowerCase().includes(q));
+  }, [timeZoneQuery]);
   const { toastMessage, showToast } = useToast();
 
   const dateLabel = dateTime.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
@@ -164,11 +184,18 @@ export default function AddPlanScreen() {
       photoUris,
       endTime,
       allDay,
+      timezone,
     };
     if (editing) {
       updatePlan(editing.id, { ...common, date, time });
     } else if (repeatType !== 'none' && repeatUntil) {
-      const occurrences = generateRepeatOccurrences(date, time, repeatType, toISO(repeatUntil));
+      const occurrences = generateRepeatOccurrences(
+        date,
+        time,
+        repeatType,
+        toISO(repeatUntil),
+        repeatType === 'custom' ? customRepeat : undefined
+      );
       const repeatId = uid();
       addPlans(occurrences.map((o) => ({ ...common, date: o.date, time: o.time, repeatType, repeatId })));
     } else {
@@ -456,6 +483,14 @@ export default function AddPlanScreen() {
             </>
           )}
 
+          <Pressable onPress={() => setTimeZoneOpen(true)} style={[styles.fieldRow, styles.fieldBorder, { borderColor: theme.divider }]}>
+            <Text style={{ flex: 1, color: theme.text, fontSize: Typography.heading, fontWeight: '600' }}>Time Zone</Text>
+            <Text style={{ color: theme.textTertiary, fontSize: Typography.heading }} numberOfLines={1}>
+              {timeZoneCityLabel(timezone)}
+            </Text>
+            <ChevronRightIcon size={16} color={theme.textTertiary} strokeWidth={2} />
+          </Pressable>
+
           <Pressable onPress={() => setAlertSlot(1)} style={[styles.fieldRow, styles.fieldBorder, { borderColor: theme.divider }]}>
             <Text style={{ flex: 1, color: theme.text, fontSize: Typography.heading, fontWeight: '600' }}>Alert</Text>
             <Text style={{ color: theme.textTertiary, fontSize: Typography.heading }}>{alertLabel(alert1)}</Text>
@@ -507,7 +542,7 @@ export default function AddPlanScreen() {
               <Text style={[styles.label, { color: theme.textTertiary }]}>REPEAT</Text>
               <View style={styles.pickerRow}>
                 <Text style={[styles.input, styles.pickerValue, { color: theme.text, borderColor: 'transparent' }]}>
-                  {REPEAT_OPTIONS.find((o) => o.value === repeatType)?.label ?? 'Does not repeat'}
+                  {repeatType === 'custom' ? customRepeatLabel(customRepeat) : (REPEAT_OPTIONS.find((o) => o.value === repeatType)?.label ?? 'Does not repeat')}
                 </Text>
                 <ChevronRightIcon size={16} color={theme.textTertiary} strokeWidth={2} />
               </View>
@@ -655,6 +690,12 @@ export default function AddPlanScreen() {
               key={opt.value}
               onPress={() => {
                 setRepeatType(opt.value);
+                if (opt.value === 'custom') {
+                  setRepeatUntil(defaultRepeatUntil(dateTime, 'custom', customRepeat));
+                  setRepeatOpen(false);
+                  setCustomRepeatOpen(true);
+                  return;
+                }
                 if (opt.value !== 'none') setRepeatUntil(defaultRepeatUntil(dateTime, opt.value));
                 setRepeatOpen(false);
               }}
@@ -664,6 +705,129 @@ export default function AddPlanScreen() {
             </Pressable>
           ))}
         </View>
+      </BottomSheet>
+
+      <BottomSheet
+        visible={customRepeatOpen}
+        onClose={() => setCustomRepeatOpen(false)}
+        title="Custom Repeat"
+        right={
+          <Pressable
+            onPress={() => {
+              setRepeatUntil(defaultRepeatUntil(dateTime, 'custom', customRepeat));
+              setCustomRepeatOpen(false);
+            }}
+            hitSlop={8}>
+            <Text style={{ color: theme.accent, fontSize: Typography.heading, fontWeight: '700' }}>Done</Text>
+          </Pressable>
+        }>
+        <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider, marginTop: 10 }]}>
+          <View style={styles.field}>
+            <Text style={[styles.label, { color: theme.textTertiary }]}>EVERY</Text>
+            <View style={styles.intervalRow}>
+              <Pressable
+                onPress={() => setCustomRepeat((c) => ({ ...c, interval: Math.max(1, c.interval - 1) }))}
+                style={[styles.stepBtn, { borderColor: theme.divider }]}>
+                <Text style={{ color: theme.text, fontSize: Typography.heading, fontWeight: '700' }}>−</Text>
+              </Pressable>
+              <Text style={[styles.intervalValue, { color: theme.text }]}>{customRepeat.interval}</Text>
+              <Pressable
+                onPress={() => setCustomRepeat((c) => ({ ...c, interval: Math.min(30, c.interval + 1) }))}
+                style={[styles.stepBtn, { borderColor: theme.divider }]}>
+                <Text style={{ color: theme.text, fontSize: Typography.heading, fontWeight: '700' }}>+</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+
+        <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider, marginTop: 10 }]}>
+          {(['day', 'week', 'month'] as const).map((unit, i) => (
+            <Pressable
+              key={unit}
+              onPress={() => setCustomRepeat((c) => ({ ...c, unit }))}
+              style={[styles.sheetRow, i > 0 && styles.fieldBorder, { borderColor: theme.divider }]}>
+              <Text style={[styles.sheetRowLabel, { color: theme.text, textTransform: 'capitalize' }]}>{unit}{customRepeat.interval > 1 ? 's' : ''}</Text>
+              {customRepeat.unit === unit && <CheckIcon size={16} color={theme.accent} strokeWidth={3} />}
+            </Pressable>
+          ))}
+        </View>
+
+        {customRepeat.unit === 'week' && (
+          <>
+            <Text style={[styles.sectionLabel, { color: theme.textTertiary, paddingHorizontal: 4 }]}>ON THESE DAYS</Text>
+            <View style={styles.weekdayRow}>
+              {WEEKDAY_ABBR.map((label, wd) => {
+                const active = customRepeat.weekdays.includes(wd);
+                return (
+                  <Pressable
+                    key={wd}
+                    onPress={() =>
+                      setCustomRepeat((c) => ({
+                        ...c,
+                        weekdays: c.weekdays.includes(wd) ? c.weekdays.filter((d) => d !== wd) : [...c.weekdays, wd],
+                      }))
+                    }
+                    style={[styles.weekdayChip, { borderColor: active ? theme.accent : theme.divider, backgroundColor: active ? theme.accentSoft : 'transparent' }]}>
+                    <Text style={{ color: active ? theme.accent : theme.textSecondary, fontSize: Typography.body, fontWeight: '700' }}>{label}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <Text style={[styles.footnote, { color: theme.textTertiary }]}>Leave none selected to repeat on {WEEKDAY_ABBR[dateTime.getDay()]} only.</Text>
+          </>
+        )}
+      </BottomSheet>
+
+      <BottomSheet
+        visible={timeZoneOpen}
+        onClose={() => {
+          setTimeZoneOpen(false);
+          setTimeZoneQuery('');
+        }}
+        title="Time Zone"
+        right={
+          <Pressable
+            onPress={() => {
+              setTimeZoneOpen(false);
+              setTimeZoneQuery('');
+            }}
+            hitSlop={8}>
+            <Text style={{ color: theme.accent, fontSize: Typography.heading, fontWeight: '700' }}>Done</Text>
+          </Pressable>
+        }>
+        <View style={[styles.field, { paddingHorizontal: 0 }]}>
+          <TextInput
+            value={timeZoneQuery}
+            onChangeText={setTimeZoneQuery}
+            placeholder="Search city or region"
+            placeholderTextColor={theme.textTertiary}
+            style={[styles.input, styles.searchInput, { color: theme.text, borderColor: theme.divider, backgroundColor: theme.surface2 }]}
+          />
+        </View>
+        <ScrollView style={styles.timeZoneList} showsVerticalScrollIndicator={false}>
+          <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider, marginBottom: 20 }]}>
+            {filteredTimeZones.map((tz, i) => (
+              <Pressable
+                key={tz}
+                onPress={() => {
+                  setTimezone(tz);
+                  setTimeZoneOpen(false);
+                  setTimeZoneQuery('');
+                }}
+                style={[styles.sheetRow, i > 0 && styles.fieldBorder, { borderColor: theme.divider }]}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.sheetRowLabel, { color: theme.text }]}>{timeZoneCityLabel(tz)}</Text>
+                  <Text style={{ color: theme.textTertiary, fontSize: Typography.body, marginTop: 1 }}>{tz}</Text>
+                </View>
+                <Text style={{ color: theme.textTertiary, fontSize: Typography.body, marginRight: 8 }}>{timeZoneOffsetLabel(tz)}</Text>
+                {timezone === tz && <CheckIcon size={16} color={theme.accent} strokeWidth={3} />}
+              </Pressable>
+            ))}
+            {filteredTimeZones.length === 0 && (
+              <Text style={[styles.footnote, { color: theme.textTertiary, marginBottom: 0 }]}>No matching time zones.</Text>
+            )}
+          </View>
+        </ScrollView>
       </BottomSheet>
     </View>
   );
@@ -692,6 +856,14 @@ const styles = StyleSheet.create({
   sheetRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 13, paddingHorizontal: 14 },
   sheetRowLabel: { fontSize: Typography.heading, fontWeight: '600' },
   footnote: { fontSize: Typography.body, lineHeight: 17, paddingHorizontal: 4, marginBottom: 14 },
+  sectionLabel: { fontSize: Typography.label, fontWeight: '700', letterSpacing: 0.5, marginBottom: 8, marginTop: 4 },
+  intervalRow: { flexDirection: 'row', alignItems: 'center', gap: 18, marginTop: 6 },
+  stepBtn: { width: 32, height: 32, borderRadius: 16, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  intervalValue: { fontSize: Typography.title, fontWeight: '800', minWidth: 24, textAlign: 'center' },
+  weekdayRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 4, marginBottom: 8 },
+  weekdayChip: { width: 34, height: 34, borderRadius: 17, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  searchInput: { borderWidth: 1, borderRadius: Radii.sm, paddingHorizontal: 12, paddingVertical: 9, marginTop: 6, marginBottom: 10 },
+  timeZoneList: { maxHeight: 380 },
   iosPickerRow: { alignItems: 'flex-start' },
   swatchRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, padding: 14 },
   swatch: { width: 30, height: 30, borderRadius: 15, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },

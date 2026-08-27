@@ -1,25 +1,22 @@
 import type { Plan } from '@/store/types';
 import { fromISO, toISO } from '@/utils/dates';
+import { deviceTimeZone, zonedWallTimeToDate } from '@/utils/timezone';
 
 /** Live Activity countdown logic ported from planner-app-prototype.html. */
 
 export function planDateTime(plan: Plan): Date {
-  const [h, m] = plan.time.split(':').map(Number);
-  const d = fromISO(plan.date);
-  d.setHours(h, m, 0, 0);
-  return d;
+  return zonedWallTimeToDate(plan.date, plan.time, plan.timezone ?? deviceTimeZone());
 }
 
 export function secondsUntilPlan(plan: Plan): number {
   return Math.round((planDateTime(plan).getTime() - Date.now()) / 1000);
 }
 
-/** Nearest upcoming (or just-started, within a 60s grace window) live-toggled plan. */
-export function findActiveLivePlan(plans: Plan[]): Plan | null {
-  const candidates = plans
+/** Every upcoming (or just-started, within a 60s grace window) live-toggled plan, nearest first. */
+export function findActiveLivePlans(plans: Plan[]): Plan[] {
+  return plans
     .filter((p) => p.live && !p.completed && secondsUntilPlan(p) > -60)
     .sort((a, b) => secondsUntilPlan(a) - secondsUntilPlan(b));
-  return candidates[0] ?? null;
 }
 
 const DAY_SECONDS = 86400;

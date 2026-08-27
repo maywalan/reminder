@@ -13,7 +13,9 @@ interface WidgetPreviewProps {
 export function WidgetPreview({ variant }: WidgetPreviewProps) {
   const plans = usePlannerStore((s) => s.plans);
   const groups = usePlannerStore((s) => s.groups);
-  const todayISO = toISO(new Date());
+  const now = new Date();
+  const todayISO = toISO(now);
+  const dateLabel = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 
   const todays = plans.filter((p) => p.date === todayISO && !p.completed).sort((a, b) => a.time.localeCompare(b.time));
 
@@ -29,7 +31,10 @@ export function WidgetPreview({ variant }: WidgetPreviewProps) {
       <View style={styles.head}>
         <LinearGradient colors={[Colors.light.accent, Colors.light.accentStrong]} style={styles.appIcon} />
         <Text style={styles.appName} numberOfLines={1}>
-          Routine{variant === 'compact' ? ' · Today' : ''}
+          Routine
+        </Text>
+        <Text style={styles.dateLabel} numberOfLines={1}>
+          {dateLabel}
         </Text>
       </View>
       {items.length === 0 ? (
@@ -57,6 +62,7 @@ const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
   appIcon: { width: 16, height: 16, borderRadius: 5 },
   appName: { fontSize: 11, fontWeight: '700', color: 'rgba(255,255,255,0.7)', flexShrink: 1 },
+  dateLabel: { fontSize: 9.5, fontWeight: '600', color: 'rgba(255,255,255,0.45)', flex: 1, textAlign: 'right' },
   taskRow: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 3 },
   taskDot: { width: 6, height: 6, borderRadius: 3 },
   taskName: { fontSize: 11.5, fontWeight: '600', color: '#fff', flex: 1 },

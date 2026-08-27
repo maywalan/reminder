@@ -53,14 +53,43 @@ export const Radii = { sm: 10, md: 16, lg: 26 } as const;
  * `fontSize` for prose so the same kind of text reads the same size everywhere. Chip/pill labels
  * and Progress screen's big stat numbers are intentionally their own thing and sit outside this
  * scale.
+ *
+ * Every value here is scaled by the user's Settings > Font Size preference (see
+ * `setFontScale`/`FONT_SCALE_OPTIONS`). `Typography` is a Proxy over the base sizes rather than a
+ * plain object so every existing `Typography.body`-style read — including ones baked into a
+ * module-level `StyleSheet.create()` at import time — re-evaluates against the current scale,
+ * without having to convert 20+ files to a hook. The one thing that doesn't happen for free is
+ * *re-rendering* already-mounted screens when the scale changes; `_layout.tsx` forces that by
+ * remounting the navigator, keyed on the scale, whenever it changes.
  */
-export const Typography = {
+const BASE_TYPOGRAPHY = {
   display: 28, // screen-level date/greeting header
   title: 17, // sheet and modal titles ("New Plan", "Filter by Group")
   heading: 15, // primary emphasized text: row labels, input values, task/plan names
   body: 13, // secondary/meta text: times, descriptions, sub-labels
   label: 11.5, // all-caps section labels, small counts
 } as const;
+
+export type FontScale = 0.9 | 1 | 1.15 | 1.3;
+
+export const FONT_SCALE_OPTIONS: { value: FontScale; label: string }[] = [
+  { value: 0.9, label: 'Small' },
+  { value: 1, label: 'Default' },
+  { value: 1.15, label: 'Large' },
+  { value: 1.3, label: 'Extra Large' },
+];
+
+let currentFontScale: FontScale = 1;
+
+export function setFontScale(scale: FontScale) {
+  currentFontScale = scale;
+}
+
+export const Typography = new Proxy(BASE_TYPOGRAPHY, {
+  get(target, prop: keyof typeof BASE_TYPOGRAPHY) {
+    return target[prop] * currentFontScale;
+  },
+}) as typeof BASE_TYPOGRAPHY;
 
 export const Spacing = { xs: 4, sm: 8, md: 14, lg: 20, xl: 28 } as const;
 

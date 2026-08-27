@@ -1,3 +1,5 @@
+import type { FontScale } from '@/constants/theme';
+
 export interface Group {
   id: string;
   name: string;
@@ -17,6 +19,8 @@ export interface Plan {
   photoUris?: string[]; // up to 3
   live: boolean;
   completed: boolean;
+  /** IANA zone the date/time is wall-clock-in — e.g. a 9am flight always means 9am at the airport's zone. Undefined = device's current zone (legacy plans, and the common case). */
+  timezone?: string;
   color: string;
   groupId: string | null;
   repeatType: string;
@@ -32,6 +36,7 @@ export interface Profile {
 export type ThemeMode = 'system' | 'light' | 'dark';
 export type AlertStyle = 'banners' | 'persistent';
 export type Language = 'en' | 'th' | 'zh';
+export type CalendarDensity = 'compact' | 'detailed';
 
 export interface Settings {
   notificationsEnabled: boolean;
@@ -41,4 +46,8 @@ export interface Settings {
   badgesEnabled: boolean;
   alertStyle: AlertStyle;
   language: Language;
+  calendarDensity: CalendarDensity;
+  fontScale: FontScale;
+  recapEnabled: boolean;
+  recapHour: number; // 0-23, local time
 }

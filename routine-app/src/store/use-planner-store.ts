@@ -31,6 +31,10 @@ const SEED_SETTINGS: Settings = {
   badgesEnabled: true,
   alertStyle: 'banners',
   language: 'en',
+  calendarDensity: 'compact',
+  fontScale: 1,
+  recapEnabled: true,
+  recapHour: 8,
 };
 
 interface PlannerState {
@@ -244,15 +248,21 @@ export const usePlannerStore = create<PlannerState>()(
         settings: state.settings,
         firstUsedAt: state.firstUsedAt,
       }),
-      version: 2,
+      version: 3,
       migrate: (persisted) => {
-        const state = persisted as { plans?: (Plan & { alert?: string; photoUri?: string })[] };
+        const state = persisted as {
+          plans?: (Plan & { alert?: string; photoUri?: string })[];
+          settings?: Partial<Settings>;
+        };
         if (state?.plans) {
           state.plans = state.plans.map((p) => ({
             ...p,
             alerts: p.alerts ?? (p.alert && p.alert !== 'none' ? [p.alert] : []),
             photoUris: p.photoUris ?? (p.photoUri ? [p.photoUri] : []),
           }));
+        }
+        if (state?.settings) {
+          state.settings = { ...SEED_SETTINGS, ...state.settings };
         }
         return state;
       },

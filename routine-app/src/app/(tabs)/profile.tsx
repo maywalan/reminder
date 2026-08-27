@@ -19,7 +19,7 @@ import {
 } from '@/components/icon';
 import { Toast } from '@/components/toast';
 import { WidgetPreview } from '@/components/widget-preview';
-import { Radii, Typography } from '@/constants/theme';
+import { FONT_SCALE_OPTIONS, Radii, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/use-auth-store';
@@ -58,6 +58,7 @@ export default function ProfileScreen() {
   }
 
   const [appearanceOpen, setAppearanceOpen] = useState(false);
+  const [fontSizeOpen, setFontSizeOpen] = useState(false);
   const [languageOpen, setLanguageOpen] = useState(false);
   const [notifOptionsOpen, setNotifOptionsOpen] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
@@ -139,6 +140,15 @@ export default function ProfileScreen() {
             <Text style={[styles.rowLabel, { color: theme.text }]}>Appearance</Text>
             <Text style={{ color: theme.textTertiary, fontSize: Typography.body, marginRight: 4 }}>{THEME_LABEL[settings.themeMode]}</Text>
           </Pressable>
+          <Pressable onPress={() => setFontSizeOpen(true)} style={[styles.row, styles.rowBorder, { borderColor: theme.divider }]}>
+            <View style={[styles.rowIcon, { backgroundColor: theme.accentSoft }]}>
+              <Text style={{ color: theme.accentStrong, fontSize: 13, fontWeight: '800' }}>A</Text>
+            </View>
+            <Text style={[styles.rowLabel, { color: theme.text }]}>Font Size</Text>
+            <Text style={{ color: theme.textTertiary, fontSize: Typography.body, marginRight: 4 }}>
+              {FONT_SCALE_OPTIONS.find((o) => o.value === settings.fontScale)?.label}
+            </Text>
+          </Pressable>
           <Pressable onPress={() => setLanguageOpen(true)} style={[styles.row, styles.rowBorder, { borderColor: theme.divider }]}>
             <View style={[styles.rowIcon, { backgroundColor: theme.accentSoft }]}>
               <GlobeIcon size={16} color={theme.accentStrong} strokeWidth={2} />
@@ -197,6 +207,24 @@ export default function ProfileScreen() {
         </View>
       </BottomSheet>
 
+      <BottomSheet visible={fontSizeOpen} onClose={() => setFontSizeOpen(false)} title="Font Size">
+        <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider, marginTop: 10 }]}>
+          {FONT_SCALE_OPTIONS.map((opt, i) => (
+            <Pressable
+              key={opt.value}
+              onPress={() => {
+                updateSettings({ fontScale: opt.value });
+                setFontSizeOpen(false);
+              }}
+              style={[styles.row, i > 0 && styles.rowBorder, { borderColor: theme.divider }]}>
+              <Text style={[styles.rowLabel, { color: theme.text, fontSize: Typography.heading * opt.value, flex: 1 }]}>{opt.label}</Text>
+              {settings.fontScale === opt.value && <CheckIcon size={16} color={theme.accent} strokeWidth={3} />}
+            </Pressable>
+          ))}
+        </View>
+        <Text style={[styles.footnote, { color: theme.textTertiary }]}>Applies throughout the app.</Text>
+      </BottomSheet>
+
       <BottomSheet visible={languageOpen} onClose={() => setLanguageOpen(false)} title="Language">
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider, marginTop: 10 }]}>
           {(['th', 'en', 'zh'] as Language[]).map((lang, i) => (
@@ -253,6 +281,39 @@ export default function ProfileScreen() {
               trackColor={{ true: theme.success }}
             />
           </View>
+        </View>
+        <Text style={[styles.sectionLabel, { color: theme.textTertiary, paddingHorizontal: 4 }]}>DAILY RECAP</Text>
+        <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
+          <View style={styles.row}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.rowLabel, { color: theme.text }]}>Morning Agenda</Text>
+              <Text style={{ color: theme.textTertiary, fontSize: Typography.body, marginTop: 1 }}>
+                One notification listing that day&apos;s plans.
+              </Text>
+            </View>
+            <Switch
+              value={settings.recapEnabled}
+              onValueChange={(v) => updateSettings({ recapEnabled: v })}
+              trackColor={{ true: theme.success }}
+            />
+          </View>
+          {settings.recapEnabled && (
+            <View style={[styles.row, styles.rowBorder, styles.hourRow, { borderColor: theme.divider }]}>
+              {[6, 7, 8, 9, 10].map((hour) => {
+                const active = settings.recapHour === hour;
+                return (
+                  <Pressable
+                    key={hour}
+                    onPress={() => updateSettings({ recapHour: hour })}
+                    style={[styles.hourChip, { borderColor: active ? theme.accent : theme.divider, backgroundColor: active ? theme.accentSoft : 'transparent' }]}>
+                    <Text style={{ color: active ? theme.accent : theme.textSecondary, fontSize: Typography.body, fontWeight: '700' }}>
+                      {hour === 12 ? '12 PM' : `${hour} AM`}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          )}
         </View>
         <Text style={[styles.sectionLabel, { color: theme.textTertiary, paddingHorizontal: 4 }]}>ALERT STYLE</Text>
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
@@ -358,4 +419,6 @@ const styles = StyleSheet.create({
   logOutBtn: { padding: 14, borderRadius: Radii.md, alignItems: 'center', marginHorizontal: 20, marginTop: 10 },
   footnote: { fontSize: Typography.body, lineHeight: 17, marginTop: 10 },
   widgetWrap: { alignItems: 'center', marginBottom: 4 },
+  hourRow: { gap: 8, flexWrap: 'wrap' },
+  hourChip: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: Radii.sm, borderWidth: 1 },
 });

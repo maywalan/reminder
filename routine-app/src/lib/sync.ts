@@ -1,7 +1,8 @@
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/use-auth-store';
 import { usePlannerStore } from '@/store/use-planner-store';
-import type { AlertStyle, Group, Language, Plan, Profile, Settings, ThemeMode } from '@/store/types';
+import type { FontScale } from '@/constants/theme';
+import type { AlertStyle, CalendarDensity, Group, Language, Plan, Profile, Settings, ThemeMode } from '@/store/types';
 
 /**
  * All Supabase read/write logic for syncing `usePlannerStore`'s local data to the
@@ -93,6 +94,11 @@ function rowToSettings(row: Record<string, any>): Settings {
     badgesEnabled: row.badges_enabled,
     alertStyle: row.alert_style as AlertStyle,
     language: row.language as Language,
+    // Not in the Supabase schema yet — these stay device-local for now.
+    calendarDensity: (row.calendar_density as CalendarDensity) ?? 'compact',
+    fontScale: (row.font_scale as FontScale) ?? 1,
+    recapEnabled: row.recap_enabled ?? true,
+    recapHour: row.recap_hour ?? 8,
   };
 }
 

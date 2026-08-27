@@ -82,15 +82,25 @@ src/
 ## What's already ported vs. what's next
 
 **Done:** Today screen (greeting/date header, group filter chips, Filter/Share icon buttons and
-sheets, Live Activity card, Past Activity list, task list with swipe-to-delete, "Edit" →
-multi-select → bulk delete with undo, tap a task to edit), Add/Edit Plan sheet (name, native
-date/time pickers, up to 5 alerts, color, group, repeat rules with "repeat until", free-text
-details, optional location with OpenStreetMap autocomplete, optional photo, live-toggle),
-Calendar (Week/Month/Year), Progress (hero/trend/by-color breakdown, prev/next period nav),
-Recap sheet, full Settings screen (profile avatar/name editing, email/password + Google OAuth +
-guest sign-in, sync status, notifications + notification options + alert style, appearance,
-language picker, data privacy with hosted policy link, Home Screen Widgets preview), custom tab
-bar, light/dark theming, local persistence + Supabase sync.
+sheets, Live Activity card — stacks up to 3 concurrent live plans, scrollable beyond that, Past
+Activity list, task list with swipe-to-delete, "Edit" → multi-select → bulk delete with undo, tap
+a task to edit), Add/Edit Plan sheet (name, native date/time pickers, per-plan IANA time zone, up
+to 5 alerts that actually fire as real local notifications, color, group, repeat rules — presets
+plus a custom "every N days/weeks/months" rule with specific weekdays — with "repeat until",
+free-text details, optional location with OpenStreetMap autocomplete, optional photo,
+live-toggle), Calendar (Week/Month/Year; Month has a Compact/Detailed density toggle, pending-task
+badges, tap a date to create a plan pre-filled with it, auto-scroll to full day detail, and public
+holidays by device region), Progress (hero/trend/by-color breakdown, prev/next period nav), Recap
+sheet, full Settings screen (profile avatar/name editing, email/password + Google OAuth + guest
+sign-in, sync status, real notification scheduling + a configurable daily recap notification +
+notification options + alert style, appearance, font size, language picker, data privacy with
+hosted policy link, Home Screen Widgets preview with today's date), custom tab bar, light/dark
+theming, local persistence + Supabase sync.
+
+**New Settings fields added for the above** (`calendarDensity`, `fontScale`, `recapEnabled`,
+`recapHour`) **and `Plan.timezone` are device-local only** — not yet columns in the Supabase
+schema, so they don't sync across a signed-in user's devices. Would need a migration
+(`supabase/migrations/`) to close; deliberately deferred rather than done live mid-session.
 
 **Not yet ported** (each row names its source section in the prototype file):
 
@@ -121,6 +131,18 @@ Sign in with Apple alongside any other third-party login), then group creation.
   will fail to push to Supabase until Settings → Clear All Data is run once.
 - No retry/offline queue for failed Supabase writes, no merge UI (first account to touch an
   empty cloud wins), no realtime — a second device's edits need a fresh sign-in to appear.
+- **`expo-notifications` and `expo-localization` are new native modules, not yet verified on
+  device/simulator.** `npx tsc --noEmit`, `npx expo lint`, `npx expo-doctor`, and `npx expo
+  export --platform ios` all pass, but the existing dev-client build on the Simulator predates
+  these — it needs a fresh `eas build --profile development --platform ios` before real
+  notification permission prompts, scheduled alerts, the recap notification, and holiday-region
+  detection can actually be exercised.
+- **Recap notification content can't be computed at fire time** (no server/background task) — it's
+  recomputed and rescheduled as a one-off notification every time the app is opened or a plan
+  changes, so it stays accurate as of the last time the app was used, but won't refresh further if
+  the app goes unopened for more than a day. See `src/lib/notifications.ts`'s `refreshDailyRecap`.
+- **Holiday coverage depends on the free date.nager.at API** (~100 countries) — a device region it
+  doesn't cover just shows no holidays, silently, rather than erroring.
 
 ## Deploying to the App Store
 

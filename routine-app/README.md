@@ -107,13 +107,16 @@ Sign in with Apple alongside any other third-party login), then group creation.
 
 ## Known issues
 
-- **Google OAuth redirect fails** ("Safari cannot open the page"). The Google↔Supabase
-  server-side handshake completes cleanly every time, but Supabase hands the completed session
-  back to the app using the Site URL (`routineapp://auth/callback`) instead of the app's
-  requested `exp://...` redirect, even with that literal URL added to the redirect allow-list.
-  Untested lead: this may be an Expo-Go-only limitation (shared `exp://` scheme across every
-  Expo Go project on a device) that a standalone/dev-client build using the app's own
-  `routineapp://` scheme would avoid.
+- **Google OAuth redirect fails in Expo Go** ("Safari cannot open the page") — **fixed in a real
+  dev-client build.** Root cause confirmed: it was an Expo-Go-only limitation (every Expo Go
+  project on a device shares the `exp://` scheme, which the redirect hand-back mishandled). A
+  standalone dev-client build using the app's own registered `routineapp://` scheme (`npx expo
+  install expo-dev-client`, `eas build --profile development --platform ios`) resolves it —
+  verified by completing Google sign-in in that build on the iOS Simulator. Expo Go itself will
+  still show the old failure, since that's inherent to Expo Go's shared scheme, not something
+  this project can fix. Building via `eas.json`'s `development` profile needs the Supabase env
+  vars set on EAS too (`eas env:set --name EXPO_PUBLIC_SUPABASE_URL ...` etc. for the
+  `development` environment), since `.env` is gitignored and excluded from what EAS uploads.
 - Old local plans created before the switch to `expo-crypto` UUIDs use `'p_...'`-style ids and
   will fail to push to Supabase until Settings → Clear All Data is run once.
 - No retry/offline queue for failed Supabase writes, no merge UI (first account to touch an
@@ -129,8 +132,10 @@ Not ready yet. What's in place vs. still needed:
 - ❌ Apple Developer Program enrollment — not done yet; nothing below can ship without it.
 - ✅ EAS project linked — `@maywalan/routine-app`, https://expo.dev/accounts/maywalan/projects/routine-app
   (`extra.eas.projectId` in `app.json`).
-- ❌ Google OAuth must be fixed or removed before submitting (a visibly broken login button is
-  an easy App Review rejection); Apple Sign-In should be added alongside it per Guideline 4.8.
+- ✅ Google OAuth fixed — works in a real dev-client/standalone build (see Known Issues above).
+  Still needed before submitting: Apple Sign-In alongside it, since Apple requires offering Sign
+  in with Apple whenever another third-party login is offered (Guideline 4.8) — blocked on Apple
+  Developer Program enrollment above.
 - ❌ App Store Connect's "App Privacy" questionnaire still needs to be filled out (separate from
   the hosted privacy policy page) — covers what Supabase collects: account email, user-generated
   reminder content.

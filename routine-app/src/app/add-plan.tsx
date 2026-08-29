@@ -598,10 +598,7 @@ export default function AddPlanScreen() {
 
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
           <View style={styles.labelRow}>
-            <Text style={[styles.label, { color: theme.textTertiary, marginBottom: 0 }]}>PHOTOS (OPTIONAL)</Text>
-            <Text style={[styles.labelMeta, { color: theme.textTertiary }]}>
-              {photoUris.length}/{MAX_PHOTOS}
-            </Text>
+            <Text style={[styles.label, { color: theme.textTertiary, marginBottom: 0 }]}>PHOTOS</Text>
           </View>
           <View style={styles.photoRow}>
             {photoUris.map((uri) => (
@@ -693,7 +690,10 @@ export default function AddPlanScreen() {
                 if (opt.value === 'custom') {
                   setRepeatUntil(defaultRepeatUntil(dateTime, 'custom', customRepeat));
                   setRepeatOpen(false);
-                  setCustomRepeatOpen(true);
+                  // Wait for the Repeat sheet's own close animation (bottom-sheet.tsx's 200ms
+                  // timing) to finish before presenting the Custom Repeat sheet — two RN <Modal>s
+                  // both mid-transition on iOS at once deadlocks the main thread.
+                  setTimeout(() => setCustomRepeatOpen(true), 250);
                   return;
                 }
                 if (opt.value !== 'none') setRepeatUntil(defaultRepeatUntil(dateTime, opt.value));
@@ -849,7 +849,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingTop: 12,
   },
-  labelMeta: { fontSize: Typography.label, fontWeight: '600' },
   input: { fontSize: Typography.heading, fontWeight: '600', borderWidth: 1, borderRadius: 8, paddingVertical: 2, textAlign: 'left' },
   pickerRow: { flexDirection: 'row', alignItems: 'center' },
   pickerValue: { flex: 1 },

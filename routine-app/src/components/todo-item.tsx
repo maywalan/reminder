@@ -1,4 +1,5 @@
-import { Alert, Animated, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useRef } from 'react';
+import { Alert, Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import { BorderlessButton, RectButton, Swipeable } from 'react-native-gesture-handler';
 
 import { CheckIcon, ClockIcon, TrashIcon } from '@/components/icon';
@@ -41,10 +42,38 @@ export function TodoItem({
   const checkBg = selectMode ? (selected ? theme.accent : theme.surface) : plan.completed ? theme.success : theme.surface;
   const checkBorder = selectMode ? (selected ? theme.accent : theme.dividerStrong) : plan.completed ? theme.success : theme.dividerStrong;
 
+  // Completing a task washes the row in its color from the left edge, then fades that wash away
+  // to reveal the (now-completed) row underneath — only on the incomplete -> complete transition.
+  // Both legs animate only `transform`/`opacity`, so they run entirely on the native UI thread
+  // (useNativeDriver: true) at the device's own display refresh rate, independent of JS-thread
+  // load. The actual `onToggleComplete()` store write — which can re-sort/re-render the whole
+  // list — is deliberately deferred until the wash is fully opaque, so that work happens while
+  // the row is completely covered instead of popping visibly mid-sweep.
+  const completeFillScale = useRef(new Animated.Value(0)).current;
+  const completeFillOpacity = useRef(new Animated.Value(1)).current;
+
+  function handleToggleComplete() {
+    if (plan.completed) {
+      onToggleComplete();
+      return;
+    }
+    completeFillScale.setValue(0);
+    completeFillOpacity.setValue(1);
+    Animated.timing(completeFillScale, {
+      toValue: 1,
+      duration: 420,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start(() => {
+      onToggleComplete();
+      Animated.timing(completeFillOpacity, { toValue: 0, duration: 320, delay: 180, useNativeDriver: true }).start();
+    });
+  }
+
   const rowContent = (
     <>
       <BorderlessButton
-        onPress={selectMode ? onToggleSelect : onToggleComplete}
+        onPress={selectMode ? onToggleSelect : handleToggleComplete}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         style={[styles.check, { backgroundColor: checkBg, borderColor: checkBorder }]}>
         {!selectMode && plan.completed && <CheckIcon size={13} color="#fff" strokeWidth={3} />}
@@ -74,6 +103,19 @@ export function TodoItem({
           )}
           {group && <Text style={[styles.metaText, styles.metaBold, { color: group.color }]}> · {group.name}</Text>}
         </View>
+      </View>
+
+      <View pointerEvents="none" style={styles.completeFillClip}>
+        <Animated.View
+          style={[
+            styles.completeFill,
+            {
+              backgroundColor: taskColor,
+              opacity: completeFillOpacity,
+              transform: [{ scaleX: completeFillScale }],
+            },
+          ]}
+        />
       </View>
     </>
   );
@@ -152,6 +194,25 @@ const styles = StyleSheet.create({
     borderRadius: Radii.md,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  // Clips the fill to the row's exact rounded rect — without this, a thin, heavily-scaled-down
+  // sliver at the start of the scaleX animation renders its own borderRadius poorly and visibly
+  // pokes past the row's corner instead of following it. Extended past the padding edge by the
+  // row's own border widths (1 on top/right/bottom, 4 on the accent-colored left) so the fill
+  // starts flush with that left border instead of a few px to the right of it — reads as the
+  // border itself expanding rather than a separate wash appearing mid-row.
+  completeFillClip: {
+    position: 'absolute',
+    top: -1,
+    right: -1,
+    bottom: -1,
+    left: -4,
+    borderRadius: Radii.md,
+    overflow: 'hidden',
+  },
+  completeFill: {
+    ...StyleSheet.absoluteFillObject,
+    transformOrigin: 'left',
   },
   check: {
     width: 24,

@@ -44,6 +44,12 @@ interface AlertJob {
   triggerDate: Date;
 }
 
+/**
+ * Skips any plan whose date/time/timezone can't resolve to a real Date. This isn't defensive
+ * padding: expo-notifications' native iOS layer hard-crashes the whole app (an uncatchable Swift
+ * trap, not a JS-catchable error) if it's ever handed a NaN trigger timestamp, so an Invalid Date
+ * must never reach scheduleNotificationAsync.
+ */
 function buildAlertJobs(plans: Plan[]): AlertJob[] {
   const jobs: AlertJob[] = [];
   const now = Date.now();
@@ -52,7 +58,9 @@ function buildAlertJobs(plans: Plan[]): AlertJob[] {
     for (const offset of plan.alerts) {
       const minutes = Number(offset);
       if (!Number.isFinite(minutes)) continue;
-      const triggerDate = new Date(planDateTime(plan).getTime() - minutes * 60_000);
+      const planTime = planDateTime(plan).getTime();
+      if (!Number.isFinite(planTime)) continue;
+      const triggerDate = new Date(planTime - minutes * 60_000);
       if (triggerDate.getTime() <= now) continue;
       jobs.push({ plan, offsetMinutes: minutes, triggerDate });
     }
@@ -120,6 +128,9 @@ export async function refreshDailyRecap(plans: Plan[], settings: Pick<Settings, 
   const now = new Date();
   const target = new Date(now);
   target.setHours(settings.recapHour, 0, 0, 0);
+  // Guards against a corrupted/non-numeric recapHour producing an Invalid Date — see
+  // buildAlertJobs' comment above for why this must never reach scheduleNotificationAsync.
+  if (!Number.isFinite(target.getTime())) return;
   if (target.getTime() <= now.getTime()) target.setDate(target.getDate() + 1);
 
   const targetISO = toISO(target);

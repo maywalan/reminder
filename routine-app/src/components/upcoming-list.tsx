@@ -56,5 +56,5 @@ export function UpcomingList() {
 
 const styles = StyleSheet.create({
   sectionRow: { paddingHorizontal: 22, paddingTop: 22, paddingBottom: 10 },
-  sectionTitle: { fontSize: Typography.label, fontWeight: '700', letterSpacing: 0.6 },
+  sectionTitle: { fontSize: Typography.caption, fontWeight: '700', letterSpacing: 0.9 },
 });

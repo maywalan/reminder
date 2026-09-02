@@ -22,7 +22,8 @@ export const Colors = {
     textFaint: 'rgba(16,32,58,0.3)', // "ink-30" — chevrons
     accent: '#1B76E8', // "azure-500" — fills, icon strokes, active states
     accentStrong: '#0F5FC4', // "azure-600" — every blue *word* (Save, Done, Log In, links)
-    accentSoft: '#EAF2FE', // "azure-50" — icon tiles, selected chip fill
+    accentSoft: '#EAF2FE', // "azure-50" — icon tiles, selected chip fill, active tab pill
+    accentLight: '#5AA0F5', // "azure-400" — FAB gradient end only
     success: '#35B978',
     successLive: '#4FC98A', // live dot / running-session pulse
     successSoft: '#ECF7F1',
@@ -52,6 +53,7 @@ export const Colors = {
     accent: '#4C9AFB',
     accentStrong: '#7FB4FC',
     accentSoft: 'rgba(27,118,232,0.18)',
+    accentLight: '#8FC1FE',
     success: '#3FCB86',
     successLive: '#4FC98A',
     successSoft: 'rgba(63,203,134,0.14)',

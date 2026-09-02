@@ -3,11 +3,11 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef } from 'react';
-import { Alert, Animated, Platform, Pressable, StyleSheet, Text } from 'react-native';
+import { Alert, Animated, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CalendarIcon, ChartIcon, HomeIcon, PersonIcon, PlusIcon } from '@/components/icon';
-import { Typography } from '@/constants/theme';
+import { Radii, Typography } from '@/constants/theme';
 import { useEffectiveScheme, useTheme } from '@/hooks/use-theme';
 import { usePlannerStore } from '@/store/use-planner-store';
 
@@ -53,21 +53,29 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
       if (!focused && !event.defaultPrevented) navigation.navigate(route.name);
     };
 
-    const inactiveColor = scheme === 'dark' ? theme.textSecondary : theme.textTertiary;
+    const inactiveColor = scheme === 'dark' ? theme.textSecondary : theme.textQuaternary;
 
     return (
       <Pressable key={route.key} onPress={onPress} style={styles.tabBtn} hitSlop={6}>
-        <Icon size={27} color={focused ? theme.accent : inactiveColor} strokeWidth={1.8} />
-        <Text style={[styles.tabLabel, { color: focused ? theme.accent : inactiveColor }]}>{label}</Text>
+        {focused ? (
+          <View style={[styles.tabIconTile, { backgroundColor: theme.accentSoft }]}>
+            <Icon size={19} color={theme.accent} strokeWidth={1.8} />
+          </View>
+        ) : (
+          <Icon size={20} color={inactiveColor} strokeWidth={1.8} />
+        )}
+        <Text style={[styles.tabLabel, { color: focused ? theme.accent : inactiveColor, fontWeight: focused ? '600' : '500' }]}>{label}</Text>
       </Pressable>
     );
   });
 
   const fab = (
     <Pressable key="fab" onPress={() => router.push('/add-plan')} style={styles.fabWrap}>
-      <LinearGradient colors={[theme.accent, theme.accentStrong]} start={{ x: 0.2, y: 0 }} end={{ x: 0.8, y: 1 }} style={styles.fab}>
-        <PlusIcon size={26} color="#fff" strokeWidth={2.4} />
-      </LinearGradient>
+      <View style={[styles.fabRing, { backgroundColor: theme.navbarBg }]}>
+        <LinearGradient colors={[theme.accent, theme.accentLight]} start={{ x: 0.2, y: 0 }} end={{ x: 0.8, y: 1 }} style={styles.fab}>
+          <PlusIcon size={24} color="#fff" strokeWidth={2.4} />
+        </LinearGradient>
+      </View>
     </Pressable>
   );
 
@@ -119,20 +127,22 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 8,
   },
-  selectAction: { fontSize: Typography.heading, fontWeight: '700' },
-  tabBtn: { width: 60, alignItems: 'center', gap: 5, paddingVertical: 2 },
-  tabLabel: { fontSize: Typography.label, fontWeight: '600' },
-  fabWrap: { marginTop: -30 },
+  selectAction: { fontSize: Typography.rowLabel, fontWeight: '700' },
+  tabBtn: { width: 60, alignItems: 'center', gap: 4, paddingVertical: 2 },
+  tabIconTile: { width: 30, height: 30, borderRadius: Radii.iconTile, alignItems: 'center', justifyContent: 'center', marginBottom: 1 },
+  tabLabel: { fontSize: Typography.tabLabel },
+  fabWrap: { marginTop: -26 },
+  fabRing: { width: 62, height: 62, borderRadius: 31, alignItems: 'center', justifyContent: 'center' },
   fab: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#5B5FEF',
+    shadowColor: '#1B76E8',
     shadowOpacity: 0.42,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 10 },
+    shadowRadius: 11,
+    shadowOffset: { width: 0, height: 5 },
     elevation: 6,
   },
 });

@@ -14,12 +14,11 @@ import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
 import { TodoItem } from '@/components/todo-item';
 import { UpcomingList } from '@/components/upcoming-list';
-import { Radii, RowMinHeight, SwatchColors, Typography } from '@/constants/theme';
+import { Fonts, Radii, RowMinHeight, SwatchColors, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useToast } from '@/hooks/use-toast';
 import { usePlannerStore } from '@/store/use-planner-store';
 import type { Plan } from '@/store/types';
-import { findActiveLivePlans } from '@/utils/countdown';
 import { toISO } from '@/utils/dates';
 
 const SHARE_LINK = 'routine.app/cal/share/9f2ab1c';
@@ -55,7 +54,6 @@ export default function TodayScreen() {
   const toggleSelected = usePlannerStore((s) => s.toggleSelected);
   const pendingSaveToast = usePlannerStore((s) => s.pendingSaveToast);
   const setPendingSaveToast = usePlannerStore((s) => s.setPendingSaveToast);
-  const liveActivitiesEnabled = usePlannerStore((s) => s.settings.liveActivitiesEnabled);
 
   const [shareOpen, setShareOpen] = useState(false);
   const [colorsOpen, setColorsOpen] = useState(false);
@@ -99,8 +97,6 @@ export default function TodayScreen() {
     [now]
   );
 
-  const hasLiveActivity = liveActivitiesEnabled && findActiveLivePlans(plans).length > 0;
-
   const dayPlans = plans.filter((p) => p.date === todayISO);
   const hasManualOrder = dayPlans.some((p) => p.order !== undefined);
   const todays = dayPlans
@@ -116,7 +112,7 @@ export default function TodayScreen() {
     <>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Tickle size={34} mood={hasLiveActivity ? 'live' : 'idle'} animated />
+          <Tickle size={34} mood="idle" animated />
           <View>
             <Text style={[styles.greeting, { color: theme.textSecondary }]}>{greeting(now.getHours())}</Text>
             <Text style={[styles.h1, { color: theme.text }]}>{dateLabel}</Text>
@@ -139,7 +135,7 @@ export default function TodayScreen() {
             styles.chip,
             { borderColor: colorsOpen ? 'transparent' : theme.cardBorder, backgroundColor: colorsOpen ? theme.accentSoft : theme.surface },
           ]}>
-          <Text style={{ color: colorsOpen ? theme.accentStrong : theme.text, fontSize: 12, fontWeight: '700' }}>Colors</Text>
+          <Text style={{ color: colorsOpen ? theme.accentStrong : theme.text, fontSize: 12, fontWeight: '700', fontFamily: Fonts[700] }}>Colors</Text>
         </Pressable>
         {colorsMounted && (
           <Animated.View
@@ -156,7 +152,7 @@ export default function TodayScreen() {
                 styles.chip,
                 { borderColor: filterColor === null ? 'transparent' : theme.cardBorder, backgroundColor: filterColor === null ? theme.accentSoft : theme.surface },
               ]}>
-              <Text style={{ color: filterColor === null ? theme.accentStrong : theme.text, fontSize: 12, fontWeight: '700' }}>All</Text>
+              <Text style={{ color: filterColor === null ? theme.accentStrong : theme.text, fontSize: 12, fontWeight: '700', fontFamily: Fonts[700] }}>All</Text>
             </Pressable>
             {SwatchColors.map((c) => (
               <Pressable
@@ -178,7 +174,7 @@ export default function TodayScreen() {
               styles.chip,
               { borderColor: filterGroupId === null ? 'transparent' : theme.cardBorder, backgroundColor: filterGroupId === null ? theme.accentSoft : theme.surface },
             ]}>
-            <Text style={{ color: filterGroupId === null ? theme.accentStrong : theme.text, fontSize: 12, fontWeight: '700' }}>All</Text>
+            <Text style={{ color: filterGroupId === null ? theme.accentStrong : theme.text, fontSize: 12, fontWeight: '700', fontFamily: Fonts[700] }}>All</Text>
           </Pressable>
           {groups.map((g) => (
             <Pressable
@@ -189,7 +185,7 @@ export default function TodayScreen() {
                 { borderColor: theme.cardBorder, backgroundColor: filterGroupId === g.id ? g.color : theme.surface },
               ]}>
               {filterGroupId !== g.id && <View style={[styles.chipDot, { backgroundColor: g.color }]} />}
-              <Text style={{ color: filterGroupId === g.id ? '#fff' : theme.text, fontSize: 12, fontWeight: '700' }}>
+              <Text style={{ color: filterGroupId === g.id ? '#fff' : theme.text, fontSize: 12, fontWeight: '700', fontFamily: Fonts[700] }}>
                 {g.name}
               </Text>
             </Pressable>
@@ -200,7 +196,7 @@ export default function TodayScreen() {
       <LiveActivityCard />
 
       <View style={styles.sectionRow}>
-        <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>TODAY</Text>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>TODAY</Text>
         <Pressable onPress={() => setSelectMode(!selectMode)} hitSlop={8}>
           <Text style={[styles.editBtn, { color: theme.accentStrong }]}>{selectMode ? 'Done' : 'Edit'}</Text>
         </Pressable>
@@ -212,7 +208,7 @@ export default function TodayScreen() {
     <>
       {lastDeletedSnapshot && !selectMode && (
         <Pressable onPress={undoDelete} style={[styles.undoBar, { backgroundColor: theme.surface2, borderColor: theme.cardBorder }]}>
-          <Text style={{ color: theme.textSecondary, fontSize: Typography.rowValue }}>Undo last delete</Text>
+          <Text style={{ color: theme.textSecondary, fontSize: Typography.rowValue, fontFamily: Fonts[500] }}>Undo last delete</Text>
         </Pressable>
       )}
 
@@ -222,7 +218,7 @@ export default function TodayScreen() {
   );
 
   return (
-    <View style={[styles.screen, { backgroundColor: theme.bg }]}>
+    <View style={[styles.screen, { backgroundColor: theme.surface }]}>
       <DraggableFlatList
         data={todays}
         keyExtractor={(item) => item.id}
@@ -233,7 +229,7 @@ export default function TodayScreen() {
         ListFooterComponent={footer}
         ListEmptyComponent={
           <View style={[styles.empty, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
-            <Text style={{ color: theme.textSecondary, fontSize: Typography.rowLabel }}>
+            <Text style={{ color: theme.textSecondary, fontSize: Typography.rowLabel, fontFamily: Fonts[500] }}>
               {filterGroupId || filterColor ? 'Nothing matches this filter today.' : 'Nothing planned for today.'}
             </Text>
           </View>
@@ -262,26 +258,26 @@ export default function TodayScreen() {
         title="Share Calendar"
         left={
           <Pressable onPress={() => setShareOpen(false)} hitSlop={8}>
-            <Text style={{ color: theme.textSecondary, fontSize: Typography.rowLabel, fontWeight: '600' }}>Cancel</Text>
+            <Text style={{ color: theme.textSecondary, fontSize: Typography.rowLabel, fontWeight: '600', fontFamily: Fonts[600] }}>Cancel</Text>
           </Pressable>
         }
         right={
           <Pressable onPress={() => setShareOpen(false)} hitSlop={8}>
-            <Text style={{ color: theme.accentStrong, fontSize: Typography.rowLabel, fontWeight: '700' }}>Done</Text>
+            <Text style={{ color: theme.accentStrong, fontSize: Typography.rowLabel, fontWeight: '700', fontFamily: Fonts[700] }}>Done</Text>
           </Pressable>
         }>
-        <Text style={[styles.shareNote, { color: theme.textSecondary }]}>
+        <Text style={[styles.shareNote, { color: theme.textSecondary, fontFamily: Fonts[500] }]}>
           People you add can view your full calendar but can&apos;t add, edit, or remove plans — viewer access only.
         </Text>
         <View style={[styles.list, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
           {SHARE_CONTACTS.map((c, i) => (
             <View key={c.name} style={[styles.listRow, i > 0 && styles.listRowBorder, { borderColor: theme.divider }]}>
               <View style={[styles.contactAvatar, { backgroundColor: theme.accentSoft }]}>
-                <Text style={{ color: theme.accent, fontSize: Typography.rowValue, fontWeight: '700' }}>{c.initials}</Text>
+                <Text style={{ color: theme.accent, fontSize: Typography.rowValue, fontWeight: '700', fontFamily: Fonts[700] }}>{c.initials}</Text>
               </View>
-              <Text style={{ color: theme.text, fontSize: Typography.rowLabel, fontWeight: '600', flex: 1 }}>{c.name}</Text>
+              <Text style={{ color: theme.text, fontSize: Typography.rowLabel, fontWeight: '600', fontFamily: Fonts[600], flex: 1 }}>{c.name}</Text>
               <View style={[styles.rolePill, { backgroundColor: theme.surface2, borderColor: theme.cardBorder }]}>
-                <Text style={{ color: theme.textSecondary, fontSize: Typography.caption, fontWeight: '700' }}>Viewer</Text>
+                <Text style={{ color: theme.textSecondary, fontSize: Typography.caption, fontWeight: '700', fontFamily: Fonts[700] }}>Viewer</Text>
               </View>
             </View>
           ))}
@@ -289,17 +285,17 @@ export default function TodayScreen() {
             onPress={() => showToast('Invite sent')}
             style={[styles.listRow, styles.listRowBorder, { borderColor: theme.divider }]}>
             <View style={[styles.contactAvatar, styles.dashedAvatar, { borderColor: theme.dividerStrong }]}>
-              <Text style={{ color: theme.textTertiary, fontSize: 16, fontWeight: '700' }}>+</Text>
+              <Text style={{ color: theme.textTertiary, fontSize: 16, fontWeight: '700', fontFamily: Fonts[700] }}>+</Text>
             </View>
-            <Text style={{ color: theme.accentStrong, fontSize: Typography.rowLabel, fontWeight: '600' }}>Add someone</Text>
+            <Text style={{ color: theme.accentStrong, fontSize: Typography.rowLabel, fontWeight: '600', fontFamily: Fonts[600] }}>Add someone</Text>
           </Pressable>
         </View>
         <View style={[styles.shareLinkRow, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
-          <Text style={{ color: theme.textSecondary, fontSize: Typography.rowValue, flex: 1 }} numberOfLines={1}>
+          <Text style={{ color: theme.textSecondary, fontSize: Typography.rowValue, fontFamily: Fonts[500], flex: 1 }} numberOfLines={1}>
             {SHARE_LINK}
           </Text>
           <Pressable onPress={handleCopyLink} style={[styles.copyBtn, { backgroundColor: theme.accent }]}>
-            <Text style={{ color: '#fff', fontSize: Typography.rowValue, fontWeight: '700' }}>Copy Link</Text>
+            <Text style={{ color: '#fff', fontSize: Typography.rowValue, fontWeight: '700', fontFamily: Fonts[700] }}>Copy Link</Text>
           </Pressable>
         </View>
       </BottomSheet>
@@ -313,8 +309,8 @@ const styles = StyleSheet.create({
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   headerActions: { flexDirection: 'row', gap: 8 },
   iconBtn: { width: 38, height: 38, borderRadius: 19, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  greeting: { fontSize: Typography.label, fontWeight: '500', marginBottom: 2 },
-  h1: { fontSize: Typography.headerDate, fontWeight: '700', letterSpacing: -0.2 },
+  greeting: { fontSize: Typography.label, fontWeight: '500', fontFamily: Fonts[500], marginBottom: 2 },
+  h1: { fontSize: Typography.headerDate, fontWeight: '700', fontFamily: Fonts[700], letterSpacing: -0.2 },
   chipRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 22, paddingTop: 14, paddingBottom: 2 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 7, paddingHorizontal: 13, borderRadius: Radii.chip + 6, borderWidth: 1 },
   chipDot: { width: 7, height: 7, borderRadius: 3.5 },
@@ -345,8 +341,8 @@ const styles = StyleSheet.create({
     paddingTop: 22,
     paddingBottom: 10,
   },
-  sectionTitle: { fontSize: Typography.caption, fontWeight: '700', letterSpacing: 0.9 },
-  editBtn: { fontSize: Typography.rowValue, fontWeight: '700' },
+  sectionTitle: { fontSize: Typography.caption, fontWeight: '700', fontFamily: Fonts[700], letterSpacing: 0.9 },
+  editBtn: { fontSize: Typography.rowValue, fontWeight: '700', fontFamily: Fonts[700] },
   empty: {
     marginHorizontal: 22,
     minHeight: RowMinHeight,

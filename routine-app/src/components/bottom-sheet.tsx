@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Animated, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Typography } from '@/constants/theme';
+import { Fonts, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 interface BottomSheetProps {
@@ -86,5 +86,5 @@ const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 4 },
   headSide: { minWidth: 44 },
   headSideRight: { alignItems: 'flex-end' },
-  title: { fontSize: Typography.title, fontWeight: '800', flex: 1, textAlign: 'center' },
+  title: { fontSize: Typography.title, fontWeight: '800', fontFamily: Fonts[800], flex: 1, textAlign: 'center' },
 });

@@ -2,6 +2,21 @@ import type { Plan } from '@/store/types';
 import { fromISO, toISO } from '@/utils/dates';
 import { deviceTimeZone, zonedWallTimeToDate } from '@/utils/timezone';
 
+/** Elapsed time since a session started, "m:ss" (or "h:mm:ss" past an hour) — no "in"/"ago" framing. */
+export function formatElapsedClock(diffSec: number): string {
+  const s = Math.max(0, Math.round(diffSec));
+  const hh = Math.floor(s / 3600);
+  const mm = Math.floor((s % 3600) / 60);
+  const ss = s % 60;
+  return hh > 0 ? `${hh}:${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}` : `${mm}:${String(ss).padStart(2, '0')}`;
+}
+
+/** "37 min left" from a count of seconds remaining. */
+export function formatMinutesLeft(diffSec: number): string {
+  const m = Math.max(0, Math.ceil(diffSec / 60));
+  return `${m} min left`;
+}
+
 /** Live Activity countdown logic ported from planner-app-prototype.html. */
 
 export function planDateTime(plan: Plan): Date {
@@ -12,10 +27,32 @@ export function secondsUntilPlan(plan: Plan): number {
   return Math.round((planDateTime(plan).getTime() - Date.now()) / 1000);
 }
 
-/** Every upcoming (or just-started, within a 60s grace window) live-toggled plan, nearest first. */
+export function planEndDateTime(plan: Plan): Date | null {
+  if (!plan.endTime) return null;
+  return zonedWallTimeToDate(plan.date, plan.endTime, plan.timezone ?? deviceTimeZone());
+}
+
+/** Seconds until `plan.endTime`, or null for a plan with no end time set. */
+export function secondsUntilPlanEnd(plan: Plan): number | null {
+  const end = planEndDateTime(plan);
+  return end ? Math.round((end.getTime() - Date.now()) / 1000) : null;
+}
+
+/**
+ * Every live-toggled plan that's either still upcoming, or actually running right now — nearest
+ * first. A plan with an end time stays "running" (and its Live Activity card visible) for its
+ * real duration plus a 60s grace window past the end; one without an end time falls back to the
+ * previous behaviour, a flat 60s grace window past its start.
+ */
 export function findActiveLivePlans(plans: Plan[]): Plan[] {
   return plans
-    .filter((p) => p.live && !p.completed && secondsUntilPlan(p) > -60)
+    .filter((p) => {
+      if (!p.live || p.completed) return false;
+      const untilStart = secondsUntilPlan(p);
+      if (untilStart > 0) return true;
+      const untilEnd = secondsUntilPlanEnd(p);
+      return untilEnd !== null ? untilEnd > -60 : untilStart > -60;
+    })
     .sort((a, b) => secondsUntilPlan(a) - secondsUntilPlan(b));
 }
 

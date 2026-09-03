@@ -1,13 +1,12 @@
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef } from 'react';
-import { Alert, Animated, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CalendarIcon, ChartIcon, HomeIcon, PersonIcon, PlusIcon } from '@/components/icon';
-import { Radii, Typography } from '@/constants/theme';
+import { Fonts, Radii, Typography } from '@/constants/theme';
 import { useEffectiveScheme, useTheme } from '@/hooks/use-theme';
 import { usePlannerStore } from '@/store/use-planner-store';
 
@@ -58,13 +57,19 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
     return (
       <Pressable key={route.key} onPress={onPress} style={styles.tabBtn} hitSlop={6}>
         {focused ? (
-          <View style={[styles.tabIconTile, { backgroundColor: theme.accentSoft }]}>
-            <Icon size={19} color={theme.accent} strokeWidth={1.8} />
+          <View style={[styles.tabIconPill, { backgroundColor: theme.accentSoft }]}>
+            <Icon size={23} color={theme.accent} strokeWidth={1.9} />
           </View>
         ) : (
-          <Icon size={20} color={inactiveColor} strokeWidth={1.8} />
+          <Icon size={23} color={inactiveColor} strokeWidth={1.8} />
         )}
-        <Text style={[styles.tabLabel, { color: focused ? theme.accent : inactiveColor, fontWeight: focused ? '600' : '500' }]}>{label}</Text>
+        <Text
+          style={[
+            styles.tabLabel,
+            { color: focused ? theme.accentStrong : inactiveColor, fontWeight: focused ? '600' : '500', fontFamily: focused ? Fonts[600] : Fonts[500] },
+          ]}>
+          {label}
+        </Text>
       </Pressable>
     );
   });
@@ -73,20 +78,17 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
     <Pressable key="fab" onPress={() => router.push('/add-plan')} style={styles.fabWrap}>
       <View style={[styles.fabRing, { backgroundColor: theme.navbarBg }]}>
         <LinearGradient colors={[theme.accent, theme.accentLight]} start={{ x: 0.2, y: 0 }} end={{ x: 0.8, y: 1 }} style={styles.fab}>
-          <PlusIcon size={24} color="#fff" strokeWidth={2.4} />
+          <PlusIcon size={28} color="#fff" strokeWidth={2.5} />
         </LinearGradient>
       </View>
     </Pressable>
   );
 
   return (
-    <BlurView
-      intensity={8}
-      tint={scheme === 'dark' ? 'dark' : 'light'}
-      experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
+    <View
       style={[
         styles.bar,
-        { paddingBottom: Math.max(insets.bottom, 10), borderTopColor: theme.divider, backgroundColor: theme.navbarBg },
+        { paddingBottom: Math.max(insets.bottom, 10), borderTopColor: theme.divider, backgroundColor: theme.surface },
       ]}>
       <Animated.View
         style={[styles.row, { opacity: fade.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }]}
@@ -108,13 +110,22 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
           <Text style={[styles.selectAction, { color: theme.danger, opacity: selectedIds.length === 0 ? 0.4 : 1 }]}>Delete</Text>
         </Pressable>
       </Animated.View>
-    </BlurView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  bar: { borderTopWidth: StyleSheet.hairlineWidth },
-  row: { flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-start', gap: 16, paddingTop: 12, paddingBottom: 8 },
+  bar: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    shadowColor: '#10203A',
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: -4 },
+    elevation: 12,
+  },
+  // Fixed-width lanes with a modest gap, centered — not `space-around`, which stretches the gaps
+  // to fill the bar and reads as too far apart on a phone wider than the design's 320pt reference.
+  row: { flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-start', gap: 14, paddingTop: 12, paddingBottom: 8 },
   selectRow: {
     position: 'absolute',
     left: 0,
@@ -127,16 +138,21 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 8,
   },
-  selectAction: { fontSize: Typography.rowLabel, fontWeight: '700' },
+  selectAction: { fontSize: Typography.rowLabel, fontWeight: '700', fontFamily: Fonts[700] },
   tabBtn: { width: 60, alignItems: 'center', gap: 4, paddingVertical: 2 },
-  tabIconTile: { width: 30, height: 30, borderRadius: Radii.iconTile, alignItems: 'center', justifyContent: 'center', marginBottom: 1 },
+  tabIconPill: { paddingHorizontal: 13, paddingVertical: 6, borderRadius: Radii.chip, alignItems: 'center', justifyContent: 'center', marginBottom: 1 },
   tabLabel: { fontSize: Typography.tabLabel },
   fabWrap: { marginTop: -26 },
-  fabRing: { width: 62, height: 62, borderRadius: 31, alignItems: 'center', justifyContent: 'center' },
+  // Rounded square, not a circle — design_handoff_tickle_draft2's section 08 token reference
+  // swatches the FAB at radius 14 (this app's `chip` radius), matching the "18 banner/button"
+  // radius family rather than a true circle; every in-screen FAB instance in that same file uses
+  // radius:27 on a 54pt box (a full circle) instead, an inconsistency in the source file itself —
+  // going with the token reference + a squircle look per direct feedback on how the draft reads.
+  fabRing: { width: 62, height: 62, borderRadius: Radii.card + 2, alignItems: 'center', justifyContent: 'center' },
   fab: {
     width: 54,
     height: 54,
-    borderRadius: 27,
+    borderRadius: Radii.button,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#1B76E8',

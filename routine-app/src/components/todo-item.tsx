@@ -3,7 +3,7 @@ import { Alert, Animated, Easing, Pressable, StyleSheet, Text, View } from 'reac
 import { BorderlessButton, RectButton, Swipeable } from 'react-native-gesture-handler';
 
 import { CheckIcon, ClockIcon, TrashIcon } from '@/components/icon';
-import { Radii, RowMinHeight, Typography } from '@/constants/theme';
+import { Fonts, Radii, RowMinHeight, Typography } from '@/constants/theme';
 import type { Group, Plan } from '@/store/types';
 import { useTheme } from '@/hooks/use-theme';
 import { secondsUntilPlan } from '@/utils/countdown';
@@ -226,8 +226,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   main: { flex: 1, minWidth: 0 },
-  name: { fontSize: Typography.rowLabel, fontWeight: '600', marginBottom: 2 },
+  name: { fontSize: Typography.rowLabel, fontWeight: '600', fontFamily: Fonts[600], marginBottom: 2 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, flexWrap: 'wrap' },
-  metaText: { fontSize: Typography.label, fontWeight: '500' },
-  metaBold: { fontWeight: '700' },
+  metaText: { fontSize: Typography.label, fontWeight: '500', fontFamily: Fonts[500] },
+  metaBold: { fontWeight: '700', fontFamily: Fonts[700] },
 });

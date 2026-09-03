@@ -148,6 +148,22 @@ export const Typography = new Proxy(BASE_TYPOGRAPHY, {
 
 export const Spacing = { xs: 4, sm: 8, md: 14, lg: 20, xl: 28, cardGap: 9 } as const;
 
+/**
+ * Maps the four numeric `fontWeight`s the Tickle draft-2 type ramp uses to the loaded Anuphan
+ * static font file for that weight (see `_layout.tsx`'s `useFonts`). RN doesn't synthesize bold
+ * from a single custom font file the way it does for system fonts, so a custom-font `<Text>` needs
+ * both `fontWeight` (for layout-time metrics) *and* the matching `fontFamily` from this map, or it
+ * silently renders in whichever one weight happened to load. Google Fonts ships no ExtraBold/Black
+ * cut of Anuphan (700 Bold is the heaviest static weight available), so 800 falls back to 700 Bold
+ * — one step lighter than the design file's spec, the closest available match.
+ */
+export const Fonts = {
+  500: 'Anuphan_500Medium',
+  600: 'Anuphan_600SemiBold',
+  700: 'Anuphan_700Bold',
+  800: 'Anuphan_700Bold',
+} as const;
+
 /** Task/group/plan color swatches — the 7 plan hues from the Tickle draft-2 design tokens. */
 export const SwatchColors = ['#7B61FF', '#A455D6', '#17A8A0', '#F0A32E', '#E86A7C', '#35B978', '#8A8FA3'] as const;
 

@@ -1,8 +1,9 @@
 import { useRouter } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { TodoItem } from '@/components/todo-item';
-import { Typography } from '@/constants/theme';
+import { Fonts, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { usePlannerStore } from '@/store/use-planner-store';
 import { findPastPlans } from '@/utils/countdown';
@@ -11,6 +12,9 @@ import { fromISO } from '@/utils/dates';
 function shortDateLabel(dateISO: string) {
   return fromISO(dateISO).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 }
+
+const DEFAULT_WINDOW_DAYS = 30;
+const SEE_ALL_WINDOW_DAYS = 365;
 
 export function PastActivityList() {
   const theme = useTheme();
@@ -24,7 +28,8 @@ export function PastActivityList() {
   const toggleSelected = usePlannerStore((s) => s.toggleSelected);
   const filterGroupId = usePlannerStore((s) => s.filterGroupId);
   const filterColor = usePlannerStore((s) => s.filterColor);
-  const past = findPastPlans(plans).filter(
+  const [seeAll, setSeeAll] = useState(false);
+  const past = findPastPlans(plans, seeAll ? SEE_ALL_WINDOW_DAYS : DEFAULT_WINDOW_DAYS).filter(
     (p) => (!filterGroupId || p.groupId === filterGroupId) && (!filterColor || p.color === filterColor)
   );
 
@@ -33,7 +38,13 @@ export function PastActivityList() {
   return (
     <>
       <View style={styles.sectionRow}>
-        <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>PAST ACTIVITY</Text>
+        <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>PAST ACTIVITY</Text>
+        <View style={[styles.divider, { backgroundColor: theme.divider }]} />
+        {!seeAll && (
+          <Pressable onPress={() => setSeeAll(true)} hitSlop={8}>
+            <Text style={[styles.seeAll, { color: theme.accentStrong }]}>See all</Text>
+          </Pressable>
+        )}
       </View>
       {past.map((plan) => (
         <TodoItem
@@ -55,6 +66,8 @@ export function PastActivityList() {
 }
 
 const styles = StyleSheet.create({
-  sectionRow: { paddingHorizontal: 22, paddingTop: 22, paddingBottom: 10 },
-  sectionTitle: { fontSize: Typography.label, fontWeight: '700', letterSpacing: 0.6 },
+  sectionRow: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: 22, paddingTop: 22, paddingBottom: 10 },
+  sectionTitle: { fontSize: Typography.caption, fontWeight: '700', fontFamily: Fonts[700], letterSpacing: 0.9 },
+  divider: { flex: 1, height: 1 },
+  seeAll: { fontSize: Typography.rowValue, fontWeight: '600', fontFamily: Fonts[600] },
 });

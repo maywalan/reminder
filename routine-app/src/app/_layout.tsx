@@ -1,5 +1,4 @@
-import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold, Inter_800ExtraBold } from '@expo-google-fonts/inter';
-import { InterTight_700Bold, InterTight_800ExtraBold } from '@expo-google-fonts/inter-tight';
+import { Anuphan_500Medium, Anuphan_600SemiBold, Anuphan_700Bold } from '@expo-google-fonts/anuphan';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
@@ -27,13 +26,9 @@ export default function RootLayout() {
   // first paint after a settings change is already correct, not just the one after.
   setFontScale(fontScale);
   const [fontsLoaded] = useFonts({
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold,
-    Inter_800ExtraBold,
-    InterTight_700Bold,
-    InterTight_800ExtraBold,
+    Anuphan_500Medium,
+    Anuphan_600SemiBold,
+    Anuphan_700Bold,
   });
 
   useEffect(() => {

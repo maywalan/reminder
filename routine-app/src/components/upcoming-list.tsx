@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { TodoItem } from '@/components/todo-item';
-import { Typography } from '@/constants/theme';
+import { Fonts, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { usePlannerStore } from '@/store/use-planner-store';
 import { findFuturePlans } from '@/utils/countdown';
@@ -30,10 +30,16 @@ export function UpcomingList() {
 
   if (upcoming.length === 0) return null;
 
+  const nearestDayMarker = fromISO(upcoming[0].date)
+    .toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' })
+    .toUpperCase();
+
   return (
     <>
       <View style={styles.sectionRow}>
-        <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>UPCOMING</Text>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>UPCOMING</Text>
+        <View style={[styles.divider, { backgroundColor: theme.divider }]} />
+        <Text style={[styles.dayMarker, { color: theme.textTertiary }]}>{nearestDayMarker}</Text>
       </View>
       {upcoming.map((plan) => (
         <TodoItem
@@ -55,6 +61,8 @@ export function UpcomingList() {
 }
 
 const styles = StyleSheet.create({
-  sectionRow: { paddingHorizontal: 22, paddingTop: 22, paddingBottom: 10 },
-  sectionTitle: { fontSize: Typography.label, fontWeight: '700', letterSpacing: 0.6 },
+  sectionRow: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: 22, paddingTop: 22, paddingBottom: 10 },
+  sectionTitle: { fontSize: Typography.caption, fontWeight: '700', fontFamily: Fonts[700], letterSpacing: 0.9 },
+  divider: { flex: 1, height: 1 },
+  dayMarker: { fontSize: Typography.label, fontWeight: '500', fontFamily: Fonts[500] },
 });

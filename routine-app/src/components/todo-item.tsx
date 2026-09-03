@@ -3,9 +3,10 @@ import { Alert, Animated, Easing, Pressable, StyleSheet, Text, View } from 'reac
 import { BorderlessButton, RectButton, Swipeable } from 'react-native-gesture-handler';
 
 import { CheckIcon, ClockIcon, TrashIcon } from '@/components/icon';
-import { Radii, Typography } from '@/constants/theme';
+import { Fonts, Radii, RowMinHeight, Typography } from '@/constants/theme';
 import type { Group, Plan } from '@/store/types';
 import { useTheme } from '@/hooks/use-theme';
+import { secondsUntilPlan } from '@/utils/countdown';
 import { fmtTime12 } from '@/utils/dates';
 
 interface Props {
@@ -38,9 +39,10 @@ export function TodoItem({
 }: Props) {
   const theme = useTheme();
   const taskColor = plan.color || group?.color || theme.accent;
+  const overdue = !plan.completed && !selectMode && !plan.allDay && secondsUntilPlan(plan) < 0;
 
-  const checkBg = selectMode ? (selected ? theme.accent : theme.surface) : plan.completed ? theme.success : theme.surface;
-  const checkBorder = selectMode ? (selected ? theme.accent : theme.dividerStrong) : plan.completed ? theme.success : theme.dividerStrong;
+  const checkBg = selectMode ? (selected ? theme.accent : theme.surface) : plan.completed ? theme.accent : theme.surface;
+  const checkBorder = selectMode ? (selected ? theme.accent : theme.textFaint) : plan.completed ? theme.accent : theme.textFaint;
 
   // Completing a task washes the row in its color from the left edge, then fades that wash away
   // to reveal the (now-completed) row underneath — only on the incomplete -> complete transition.
@@ -89,14 +91,14 @@ export function TodoItem({
           {plan.name}
         </Text>
         <View style={styles.metaRow}>
-          <ClockIcon size={12} color={theme.textSecondary} strokeWidth={2} />
-          <Text style={[styles.metaText, { color: theme.textSecondary }]}>
+          <ClockIcon size={12} color={overdue ? theme.due : theme.textSecondary} strokeWidth={2} />
+          <Text style={[styles.metaText, { color: overdue ? theme.due : theme.textSecondary }]}>
             {dateLabel ? `${dateLabel} · ` : ''}
             {plan.allDay ? 'All Day' : plan.endTime ? `${fmtTime12(plan.time)} – ${fmtTime12(plan.endTime)}` : fmtTime12(plan.time)}
           </Text>
-          {plan.live && <Text style={[styles.metaText, styles.metaBold, { color: theme.success }]}> · Live</Text>}
+          {plan.live && <Text style={[styles.metaText, styles.metaBold, { color: theme.successLive }]}> · Live</Text>}
           {plan.alerts.length > 0 && (
-            <Text style={[styles.metaText, { color: theme.textSecondary }]}>
+            <Text style={[styles.metaText, { color: overdue ? theme.due : theme.textSecondary }]}>
               {' '}
               · {plan.alerts.length > 1 ? `${plan.alerts.length} Alerts` : 'Alert'}
             </Text>
@@ -124,7 +126,7 @@ export function TodoItem({
     styles.row,
     {
       backgroundColor: theme.surface,
-      borderColor: theme.divider,
+      borderColor: theme.cardBorder,
       borderLeftColor: taskColor,
       opacity: plan.completed ? 0.5 : isActive ? 0.9 : 1,
     },
@@ -172,16 +174,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    borderRadius: Radii.md,
+    minHeight: RowMinHeight,
+    borderRadius: Radii.card,
     borderWidth: 1,
     borderLeftWidth: 4,
-    paddingVertical: 13,
+    paddingVertical: 10,
     paddingHorizontal: 12,
     marginHorizontal: 16,
     marginBottom: 10,
   },
   rowActive: {
-    shadowColor: '#000',
+    shadowColor: '#10203A',
     shadowOpacity: 0.18,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },
@@ -191,7 +194,7 @@ const styles = StyleSheet.create({
     width: 72,
     marginRight: 16,
     marginBottom: 10,
-    borderRadius: Radii.md,
+    borderRadius: Radii.card,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -207,7 +210,7 @@ const styles = StyleSheet.create({
     right: -1,
     bottom: -1,
     left: -4,
-    borderRadius: Radii.md,
+    borderRadius: Radii.card,
     overflow: 'hidden',
   },
   completeFill: {
@@ -215,16 +218,16 @@ const styles = StyleSheet.create({
     transformOrigin: 'left',
   },
   check: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 1.8,
     alignItems: 'center',
     justifyContent: 'center',
   },
   main: { flex: 1, minWidth: 0 },
-  name: { fontSize: Typography.heading, fontWeight: '600', marginBottom: 2 },
+  name: { fontSize: Typography.rowLabel, fontWeight: '600', fontFamily: Fonts[600], marginBottom: 2 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, flexWrap: 'wrap' },
-  metaText: { fontSize: Typography.body, fontWeight: '500' },
-  metaBold: { fontWeight: '700' },
+  metaText: { fontSize: Typography.label, fontWeight: '500', fontFamily: Fonts[500] },
+  metaBold: { fontWeight: '700', fontFamily: Fonts[700] },
 });

@@ -22,7 +22,8 @@ export const Colors = {
     textFaint: 'rgba(16,32,58,0.3)', // "ink-30" — chevrons
     accent: '#1B76E8', // "azure-500" — fills, icon strokes, active states
     accentStrong: '#0F5FC4', // "azure-600" — every blue *word* (Save, Done, Log In, links)
-    accentSoft: '#EAF2FE', // "azure-50" — icon tiles, selected chip fill
+    accentSoft: '#EAF2FE', // "azure-50" — icon tiles, selected chip fill, active tab pill
+    accentLight: '#5AA0F5', // "azure-400" — FAB gradient end only
     success: '#35B978',
     successLive: '#4FC98A', // live dot / running-session pulse
     successSoft: '#ECF7F1',
@@ -52,6 +53,7 @@ export const Colors = {
     accent: '#4C9AFB',
     accentStrong: '#7FB4FC',
     accentSoft: 'rgba(27,118,232,0.18)',
+    accentLight: '#8FC1FE',
     success: '#3FCB86',
     successLive: '#4FC98A',
     successSoft: 'rgba(63,203,134,0.14)',
@@ -145,6 +147,22 @@ export const Typography = new Proxy(BASE_TYPOGRAPHY, {
 }) as typeof BASE_TYPOGRAPHY;
 
 export const Spacing = { xs: 4, sm: 8, md: 14, lg: 20, xl: 28, cardGap: 9 } as const;
+
+/**
+ * Maps the four numeric `fontWeight`s the Tickle draft-2 type ramp uses to the loaded Anuphan
+ * static font file for that weight (see `_layout.tsx`'s `useFonts`). RN doesn't synthesize bold
+ * from a single custom font file the way it does for system fonts, so a custom-font `<Text>` needs
+ * both `fontWeight` (for layout-time metrics) *and* the matching `fontFamily` from this map, or it
+ * silently renders in whichever one weight happened to load. Google Fonts ships no ExtraBold/Black
+ * cut of Anuphan (700 Bold is the heaviest static weight available), so 800 falls back to 700 Bold
+ * — one step lighter than the design file's spec, the closest available match.
+ */
+export const Fonts = {
+  500: 'Anuphan_500Medium',
+  600: 'Anuphan_600SemiBold',
+  700: 'Anuphan_700Bold',
+  800: 'Anuphan_700Bold',
+} as const;
 
 /** Task/group/plan color swatches — the 7 plan hues from the Tickle draft-2 design tokens. */
 export const SwatchColors = ['#7B61FF', '#A455D6', '#17A8A0', '#F0A32E', '#E86A7C', '#35B978', '#8A8FA3'] as const;

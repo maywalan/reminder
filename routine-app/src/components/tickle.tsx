@@ -52,12 +52,20 @@ const G = {
   mouthTopOfBody: 54 / 82,
 };
 
+type BubbleMotionKind = 'float' | 'pulse' | 'hop' | 'drift';
+
 interface TickleProps {
   /** Container size in pt (width == height). Below 34 only the bubble renders; the mouth drops below 40 (see design_handoff_tickle_draft2/README.md). */
   size: number;
   mood?: TickleMood;
   /** Idle "breathe" + mood-matched bubble loop. Off by default for small/inline uses. */
   animated?: boolean;
+  /**
+   * Overrides the mood's default bubble animation while keeping its bubble colour — e.g. the
+   * New Plan screen's Live Activity row wants the `live` mood's green dot but running `hop`
+   * (design_handoff_tickle_draft2/README.md's section 07), a pairing no mood preset covers.
+   */
+  bubbleMotion?: BubbleMotionKind;
 }
 
 /**
@@ -66,17 +74,18 @@ interface TickleProps {
  * blink eyes) comes from `src/utils/motion.ts`, the shared 14-curve library ported from the
  * design file's motion section.
  */
-export function Tickle({ size, mood = 'idle', animated = false }: TickleProps) {
+export function Tickle({ size, mood = 'idle', animated = false, bubbleMotion }: TickleProps) {
   const breathe = useBreathe(animated && BODY_MOTION[mood] === 'breathe');
   const sink = useSink(animated && BODY_MOTION[mood] === 'sink');
   const bodyMotionStyle = BODY_MOTION[mood] === 'sink' ? sink : breathe;
 
-  const float = useFloat(animated && BUBBLE_MOTION[mood] === 'float');
-  const pulse = usePulse(animated && BUBBLE_MOTION[mood] === 'pulse');
-  const hop = useHop(animated && BUBBLE_MOTION[mood] === 'hop');
-  const drift = useDrift(animated && BUBBLE_MOTION[mood] === 'drift');
+  const resolvedBubbleMotion = bubbleMotion ?? BUBBLE_MOTION[mood];
+  const float = useFloat(animated && resolvedBubbleMotion === 'float');
+  const pulse = usePulse(animated && resolvedBubbleMotion === 'pulse');
+  const hop = useHop(animated && resolvedBubbleMotion === 'hop');
+  const drift = useDrift(animated && resolvedBubbleMotion === 'drift');
   const bubbleMotionStyle =
-    BUBBLE_MOTION[mood] === 'pulse' ? pulse : BUBBLE_MOTION[mood] === 'hop' ? hop : BUBBLE_MOTION[mood] === 'drift' ? drift : float;
+    resolvedBubbleMotion === 'pulse' ? pulse : resolvedBubbleMotion === 'hop' ? hop : resolvedBubbleMotion === 'drift' ? drift : float;
 
   const blink = useBlink(animated);
 

@@ -87,6 +87,9 @@ export const Radii = {
   chip: 14,
   iconTile: 10,
   switchTrack: 13,
+  // Large content surfaces (Calendar's month grid card) — measured off the live design file,
+  // not in the README's own radius table, but consistent across every month-card instance there.
+  panel: 24,
 } as const;
 
 /** Row min-height + touch target floor from the Tickle draft-2 spacing spec. */

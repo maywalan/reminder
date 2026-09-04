@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Typography } from '@/constants/theme';
+import { Radii, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 interface Props<T extends string> {
@@ -13,15 +13,15 @@ export function SegmentedControl<T extends string>({ options, value, onChange }:
   const theme = useTheme();
 
   return (
-    <View style={[styles.wrap, { backgroundColor: theme.dividerStrong }]}>
+    <View style={[styles.wrap, { backgroundColor: theme.bg, borderColor: theme.divider }]}>
       {options.map((opt) => {
         const active = opt.value === value;
         return (
           <Pressable
             key={opt.value}
             onPress={() => onChange(opt.value)}
-            style={[styles.btn, active && { backgroundColor: theme.surface }]}>
-            <Text style={[styles.label, { color: active ? theme.text : theme.textSecondary }]}>{opt.label}</Text>
+            style={[styles.btn, active && { backgroundColor: theme.accent }]}>
+            <Text style={[styles.label, { color: active ? '#fff' : theme.textSecondary }]}>{opt.label}</Text>
           </Pressable>
         );
       })}
@@ -30,7 +30,7 @@ export function SegmentedControl<T extends string>({ options, value, onChange }:
 }
 
 const styles = StyleSheet.create({
-  wrap: { flexDirection: 'row', borderRadius: 11, padding: 3, marginHorizontal: 22, marginTop: 14, marginBottom: 4 },
-  btn: { flex: 1, paddingVertical: 7, borderRadius: 9, alignItems: 'center' },
-  label: { fontSize: Typography.body, fontWeight: '600' },
+  wrap: { flexDirection: 'row', borderRadius: Radii.switchTrack, borderWidth: 1, padding: 3, marginHorizontal: 22, marginTop: 14, marginBottom: 4 },
+  btn: { flex: 1, paddingVertical: 7, borderRadius: Radii.iconTile, alignItems: 'center' },
+  label: { fontSize: Typography.label, fontWeight: '700' },
 });

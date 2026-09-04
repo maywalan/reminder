@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
   navLabel: { fontSize: Typography.title, fontWeight: '800', letterSpacing: -0.2 },
   arrows: { flexDirection: 'row', gap: 8 },
   arrowBtn: { width: 30, height: 30, borderRadius: 15, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  block: { borderRadius: Radii.md, borderWidth: 1, overflow: 'hidden', marginHorizontal: 14, marginBottom: 12 },
+  block: { borderRadius: Radii.button, borderWidth: 1, overflow: 'hidden', marginHorizontal: 14, marginBottom: 12 },
   blockHead: { paddingVertical: 10, paddingHorizontal: 14, borderBottomWidth: 1 },
   blockHeadText: { fontSize: Typography.body, fontWeight: '700' },
   empty: { padding: 14, fontSize: Typography.body },

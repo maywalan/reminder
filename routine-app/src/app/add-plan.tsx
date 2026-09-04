@@ -56,6 +56,13 @@ function alertLabel(value: string) {
   return ALERT_OPTIONS.find((o) => o.value === value)?.label ?? 'None';
 }
 
+/** Alerts fire in the order of how far ahead of the plan they are — "1 week before" happens
+ * chronologically first, "at time of event" last — so the row order (Alert / Second Alert / Third
+ * Alert) always reflects that, regardless of which order the user picked them in. */
+function sortAlertsByEarliness(values: string[]) {
+  return [...values].sort((a, b) => Number(b) - Number(a));
+}
+
 function combineDateAndTime(dateISO: string, time: string) {
   const d = fromISO(dateISO);
   const [h, m] = time.split(':').map(Number);
@@ -94,12 +101,12 @@ export default function AddPlanScreen() {
   const [color, setColor] = useState(editing?.color ?? SwatchColors[0]);
   const [groupId] = useState<string | null>(editing?.groupId ?? null);
   const [live, setLive] = useState(editing?.live ?? false);
-  const [alert1, setAlert1] = useState(editing?.alerts?.[0] ?? '5');
-  const [alert2, setAlert2] = useState(editing?.alerts?.[1] ?? 'none');
-  const [alert3, setAlert3] = useState(editing?.alerts?.[2] ?? 'none');
-  // Alert1 defaults to '5' even on a brand-new plan, but Second Alert should only reveal once
-  // the user has actually gone through the picker for Alert -- not just because of that preset.
-  const [alert1Touched, setAlert1Touched] = useState(() => (editing?.alerts?.length ?? 0) > 0);
+  // Sorted earliest-first (see sortAlertsByEarliness) so row position always matches how far
+  // ahead of the plan each alert fires, regardless of the order they were picked in. A brand-new
+  // plan (and any plan saved before it had alerts) defaults to a single 5-minutes-before alert.
+  const [alerts, setAlerts] = useState<string[]>(() =>
+    sortAlertsByEarliness(editing?.alerts?.length ? editing.alerts : ['5'])
+  );
   const [alertSlot, setAlertSlot] = useState<1 | 2 | 3 | null>(null);
   const [repeatType, setRepeatType] = useState<RepeatType>('none');
   const [repeatOpen, setRepeatOpen] = useState(false);
@@ -179,7 +186,7 @@ export default function AddPlanScreen() {
       color,
       groupId,
       live,
-      alerts: [alert1, alert2, alert3].filter((a) => a !== 'none'),
+      alerts,
       notes: notes.trim() || undefined,
       location: location.trim() || undefined,
       photoUris,
@@ -243,29 +250,25 @@ export default function AddPlanScreen() {
   }
 
   function selectAlert(value: string) {
-    if (alertSlot === 1) {
-      setAlert1(value);
-      setAlert1Touched(value !== 'none');
-      if (value === 'none') {
-        setAlert2('none');
-        setAlert3('none');
+    if (alertSlot === null) return;
+    const rowIndex = alertSlot - 1;
+    setAlerts((prev) => {
+      const next = [...prev];
+      if (rowIndex < next.length) {
+        // Editing a row that already has a value.
+        if (value === 'none') next.splice(rowIndex, 1);
+        else next[rowIndex] = value;
+      } else if (value !== 'none') {
+        // The row being edited is the next open slot -- add a new alert.
+        next.push(value);
       }
-    } else if (alertSlot === 2) {
-      setAlert2(value);
-      if (value === 'none') setAlert3('none');
-    } else if (alertSlot === 3) {
-      setAlert3(value);
-    }
+      return sortAlertsByEarliness(next);
+    });
     setAlertSlot(null);
   }
 
-  function removeAlert(slot: 2 | 3) {
-    if (slot === 2) {
-      setAlert2('none');
-      setAlert3('none');
-    } else {
-      setAlert3('none');
-    }
+  function removeAlert(rowIndex: number) {
+    setAlerts((prev) => prev.filter((_, i) => i !== rowIndex));
   }
 
   return (
@@ -277,7 +280,11 @@ export default function AddPlanScreen() {
           </Pressable>
         </View>
         <Text style={{ color: theme.text, fontSize: Typography.title, fontWeight: '800' }}>{editing ? 'Edit Plan' : 'New Plan'}</Text>
-        <View style={styles.headSide} />
+        <View style={[styles.headSide, styles.headSideEnd]}>
+          <Pressable onPress={handleSave} hitSlop={8}>
+            <Text style={{ color: theme.accent, fontSize: Typography.heading, fontWeight: '700' }}>Save</Text>
+          </Pressable>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
@@ -530,41 +537,25 @@ export default function AddPlanScreen() {
             </>
           )}
 
-          <Pressable onPress={() => setAlertSlot(1)} style={[styles.fieldRow, styles.fieldBorder, { borderColor: theme.divider }]}>
-            <Text style={{ flex: 1, color: theme.text, fontSize: Typography.heading, fontWeight: '600' }}>Alert</Text>
-            <Text style={{ color: alert1 === 'none' ? theme.textTertiary : theme.accentStrong, fontSize: Typography.heading, fontWeight: alert1 === 'none' ? '400' : '700' }}>
-              {alertLabel(alert1)}
-            </Text>
-            <ChevronRightIcon size={16} color={theme.textTertiary} strokeWidth={2} />
-          </Pressable>
-          {alert1Touched && (
-            <Pressable onPress={() => setAlertSlot(2)} style={[styles.fieldRow, styles.fieldBorder, { borderColor: theme.divider }]}>
-              <Text style={{ flex: 1, color: theme.text, fontSize: Typography.heading, fontWeight: '600' }}>Second Alert</Text>
-              <Text style={{ color: alert2 === 'none' ? theme.textTertiary : theme.accentStrong, fontSize: Typography.heading, fontWeight: alert2 === 'none' ? '400' : '700' }}>
-                {alertLabel(alert2)}
-              </Text>
-              {alert2 !== 'none' && (
-                <Pressable onPress={() => removeAlert(2)} hitSlop={8} style={styles.removeAlertBtn}>
-                  <XIcon size={14} color={theme.textTertiary} strokeWidth={2.2} />
-                </Pressable>
-              )}
-              <ChevronRightIcon size={16} color={theme.textTertiary} strokeWidth={2} />
-            </Pressable>
-          )}
-          {alert1Touched && alert2 !== 'none' && (
-            <Pressable onPress={() => setAlertSlot(3)} style={[styles.fieldRow, styles.fieldBorder, { borderColor: theme.divider }]}>
-              <Text style={{ flex: 1, color: theme.text, fontSize: Typography.heading, fontWeight: '600' }}>Third Alert</Text>
-              <Text style={{ color: alert3 === 'none' ? theme.textTertiary : theme.accentStrong, fontSize: Typography.heading, fontWeight: alert3 === 'none' ? '400' : '700' }}>
-                {alertLabel(alert3)}
-              </Text>
-              {alert3 !== 'none' && (
-                <Pressable onPress={() => removeAlert(3)} hitSlop={8} style={styles.removeAlertBtn}>
-                  <XIcon size={14} color={theme.textTertiary} strokeWidth={2.2} />
-                </Pressable>
-              )}
-              <ChevronRightIcon size={16} color={theme.textTertiary} strokeWidth={2} />
-            </Pressable>
-          )}
+          {[0, 1, 2].map((rowIndex) => {
+            if (rowIndex > alerts.length) return null;
+            const value = alerts[rowIndex] as string | undefined;
+            const label = rowIndex === 0 ? 'Alert' : rowIndex === 1 ? 'Second Alert' : 'Third Alert';
+            return (
+              <Pressable key={rowIndex} onPress={() => setAlertSlot((rowIndex + 1) as 1 | 2 | 3)} style={[styles.fieldRow, styles.fieldBorder, { borderColor: theme.divider }]}>
+                <Text style={{ flex: 1, color: theme.text, fontSize: Typography.heading, fontWeight: '600' }}>{label}</Text>
+                <Text style={{ color: value ? theme.accentStrong : theme.textTertiary, fontSize: Typography.heading, fontWeight: value ? '700' : '400' }}>
+                  {value ? alertLabel(value) : 'None'}
+                </Text>
+                {rowIndex > 0 && value && (
+                  <Pressable onPress={() => removeAlert(rowIndex)} hitSlop={8} style={styles.removeAlertBtn}>
+                    <XIcon size={14} color={theme.textTertiary} strokeWidth={2.2} />
+                  </Pressable>
+                )}
+                <ChevronRightIcon size={16} color={theme.textTertiary} strokeWidth={2} />
+              </Pressable>
+            );
+          })}
         </View>
 
         {editing && (
@@ -696,7 +687,7 @@ export default function AddPlanScreen() {
               onPress={() => selectAlert(opt.value)}
               style={[styles.sheetRow, i > 0 && styles.fieldBorder, { borderColor: theme.divider }]}>
               <Text style={[styles.sheetRowLabel, { color: theme.text }]}>{opt.label}</Text>
-              {(alertSlot === 1 ? alert1 : alertSlot === 2 ? alert2 : alert3) === opt.value && (
+              {(alertSlot !== null ? (alerts[alertSlot - 1] ?? 'none') : undefined) === opt.value && (
                 <CheckIcon size={16} color={theme.accent} strokeWidth={3} />
               )}
             </Pressable>
@@ -861,6 +852,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, paddingHorizontal: 20 },
   head: { flexDirection: 'row', alignItems: 'center', paddingVertical: 4, marginBottom: 20 },
   headSide: { flex: 1 },
+  headSideEnd: { alignItems: 'flex-end' },
   group: { borderRadius: Radii.card, borderWidth: 1, overflow: 'hidden', marginBottom: 14 },
   field: { paddingHorizontal: 14, paddingVertical: 12 },
   fieldBorder: { borderTopWidth: 1 },

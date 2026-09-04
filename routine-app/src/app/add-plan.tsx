@@ -56,11 +56,11 @@ function alertLabel(value: string) {
   return ALERT_OPTIONS.find((o) => o.value === value)?.label ?? 'None';
 }
 
-/** Alerts fire in the order of how far ahead of the plan they are — "1 week before" happens
- * chronologically first, "at time of event" last — so the row order (Alert / Second Alert / Third
- * Alert) always reflects that, regardless of which order the user picked them in. */
+/** Row order (Alert / Second Alert / Third Alert) always matches ascending alert value — the
+ * smallest unit ("5 minutes before") sits above larger ones ("1 hour before", "1 week before") —
+ * regardless of which order the user picked them in. */
 function sortAlertsByEarliness(values: string[]) {
-  return [...values].sort((a, b) => Number(b) - Number(a));
+  return [...values].sort((a, b) => Number(a) - Number(b));
 }
 
 function combineDateAndTime(dateISO: string, time: string) {

@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BottomSheet } from '@/components/bottom-sheet';
 import { CameraIcon, CheckIcon, ChevronRightIcon, XIcon } from '@/components/icon';
+import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
 import { Radii, SwatchColors, Typography } from '@/constants/theme';
 import { usePlaceSearch } from '@/hooks/use-place-search';
@@ -270,13 +271,13 @@ export default function AddPlanScreen() {
   return (
     <View style={[styles.screen, { backgroundColor: theme.bg, paddingTop: insets.top, paddingBottom: insets.bottom + 16 }]}>
       <View style={styles.head}>
-        <Pressable onPress={() => router.back()} hitSlop={8}>
-          <Text style={{ color: theme.textSecondary, fontSize: Typography.heading, fontWeight: '600' }}>Cancel</Text>
-        </Pressable>
+        <View style={styles.headSide}>
+          <Pressable onPress={() => router.back()} hitSlop={8}>
+            <Text style={{ color: theme.textSecondary, fontSize: Typography.heading, fontWeight: '600' }}>Cancel</Text>
+          </Pressable>
+        </View>
         <Text style={{ color: theme.text, fontSize: Typography.title, fontWeight: '800' }}>{editing ? 'Edit Plan' : 'New Plan'}</Text>
-        <Pressable onPress={handleSave} hitSlop={8}>
-          <Text style={{ color: theme.accent, fontSize: Typography.heading, fontWeight: '700' }}>Save</Text>
-        </Pressable>
+        <View style={styles.headSide} />
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
@@ -318,7 +319,7 @@ export default function AddPlanScreen() {
                   setLocation(s.secondaryText ? `${s.primaryText}, ${s.secondaryText}` : s.primaryText);
                   setLocationFocused(false);
                 }}
-                style={[styles.sheetRow, styles.fieldBorder, { borderColor: theme.divider }]}>
+                style={[styles.sheetRow, styles.fieldBorder, { borderColor: theme.divider, backgroundColor: theme.surface2 }]}>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.sheetRowLabel, { color: theme.text }]} numberOfLines={1}>
                     {s.primaryText}
@@ -491,15 +492,57 @@ export default function AddPlanScreen() {
             <ChevronRightIcon size={16} color={theme.textTertiary} strokeWidth={2} />
           </Pressable>
 
+          {!editing && (
+            <>
+              <Pressable onPress={() => setRepeatOpen(true)} style={[styles.field, styles.fieldBorder, { borderColor: theme.divider }]}>
+                <Text style={[styles.label, { color: theme.textTertiary }]}>REPEAT</Text>
+                <View style={styles.pickerRow}>
+                  <Text style={[styles.input, styles.pickerValue, { color: theme.text, borderColor: 'transparent' }]}>
+                    {repeatType === 'custom' ? customRepeatLabel(customRepeat) : (REPEAT_OPTIONS.find((o) => o.value === repeatType)?.label ?? 'Does not repeat')}
+                  </Text>
+                  <ChevronRightIcon size={16} color={theme.textTertiary} strokeWidth={2} />
+                </View>
+              </Pressable>
+              {repeatType !== 'none' && (
+                <View style={[styles.field, styles.fieldBorder, { borderColor: theme.divider }]}>
+                  <Text style={[styles.label, { color: theme.textTertiary }]}>REPEAT UNTIL</Text>
+                  {Platform.OS === 'ios' ? (
+                    <View style={styles.iosPickerRow}>
+                      <DateTimePicker
+                        value={repeatUntil ?? dateTime}
+                        mode="date"
+                        display="compact"
+                        minimumDate={dateTime}
+                        themeVariant={scheme}
+                        accentColor={theme.accent}
+                        onChange={onChangeRepeatUntil}
+                      />
+                    </View>
+                  ) : (
+                    <Pressable onPress={() => setShowRepeatUntilPicker(true)}>
+                      <Text style={[styles.input, { color: theme.text, borderColor: 'transparent' }]}>
+                        {(repeatUntil ?? dateTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </Text>
+                    </Pressable>
+                  )}
+                </View>
+              )}
+            </>
+          )}
+
           <Pressable onPress={() => setAlertSlot(1)} style={[styles.fieldRow, styles.fieldBorder, { borderColor: theme.divider }]}>
             <Text style={{ flex: 1, color: theme.text, fontSize: Typography.heading, fontWeight: '600' }}>Alert</Text>
-            <Text style={{ color: theme.textTertiary, fontSize: Typography.heading }}>{alertLabel(alert1)}</Text>
+            <Text style={{ color: alert1 === 'none' ? theme.textTertiary : theme.accentStrong, fontSize: Typography.heading, fontWeight: alert1 === 'none' ? '400' : '700' }}>
+              {alertLabel(alert1)}
+            </Text>
             <ChevronRightIcon size={16} color={theme.textTertiary} strokeWidth={2} />
           </Pressable>
           {alert1Touched && (
             <Pressable onPress={() => setAlertSlot(2)} style={[styles.fieldRow, styles.fieldBorder, { borderColor: theme.divider }]}>
               <Text style={{ flex: 1, color: theme.text, fontSize: Typography.heading, fontWeight: '600' }}>Second Alert</Text>
-              <Text style={{ color: theme.textTertiary, fontSize: Typography.heading }}>{alertLabel(alert2)}</Text>
+              <Text style={{ color: alert2 === 'none' ? theme.textTertiary : theme.accentStrong, fontSize: Typography.heading, fontWeight: alert2 === 'none' ? '400' : '700' }}>
+                {alertLabel(alert2)}
+              </Text>
               {alert2 !== 'none' && (
                 <Pressable onPress={() => removeAlert(2)} hitSlop={8} style={styles.removeAlertBtn}>
                   <XIcon size={14} color={theme.textTertiary} strokeWidth={2.2} />
@@ -511,7 +554,9 @@ export default function AddPlanScreen() {
           {alert1Touched && alert2 !== 'none' && (
             <Pressable onPress={() => setAlertSlot(3)} style={[styles.fieldRow, styles.fieldBorder, { borderColor: theme.divider }]}>
               <Text style={{ flex: 1, color: theme.text, fontSize: Typography.heading, fontWeight: '600' }}>Third Alert</Text>
-              <Text style={{ color: theme.textTertiary, fontSize: Typography.heading }}>{alertLabel(alert3)}</Text>
+              <Text style={{ color: alert3 === 'none' ? theme.textTertiary : theme.accentStrong, fontSize: Typography.heading, fontWeight: alert3 === 'none' ? '400' : '700' }}>
+                {alertLabel(alert3)}
+              </Text>
               {alert3 !== 'none' && (
                 <Pressable onPress={() => removeAlert(3)} hitSlop={8} style={styles.removeAlertBtn}>
                   <XIcon size={14} color={theme.textTertiary} strokeWidth={2.2} />
@@ -522,6 +567,12 @@ export default function AddPlanScreen() {
           )}
         </View>
 
+        {editing && (
+          <Text style={[styles.footnote, { color: theme.textTertiary }]}>
+            Repeat can only be set when creating a new plan. This edits just this occurrence.
+          </Text>
+        )}
+
         {Platform.OS === 'android' && showDatePicker && (
           <DateTimePicker value={dateTime} mode="date" display="default" onChange={onChangeDate} />
         )}
@@ -531,49 +582,6 @@ export default function AddPlanScreen() {
         {Platform.OS === 'android' && showEndTimePicker && (
           <DateTimePicker value={endDateTime} mode="time" display="default" is24Hour={false} onChange={onChangeEndTime} />
         )}
-
-        {editing ? (
-          <Text style={[styles.footnote, { color: theme.textTertiary }]}>
-            Repeat can only be set when creating a new plan. This edits just this occurrence.
-          </Text>
-        ) : (
-          <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
-            <Pressable onPress={() => setRepeatOpen(true)} style={styles.field}>
-              <Text style={[styles.label, { color: theme.textTertiary }]}>REPEAT</Text>
-              <View style={styles.pickerRow}>
-                <Text style={[styles.input, styles.pickerValue, { color: theme.text, borderColor: 'transparent' }]}>
-                  {repeatType === 'custom' ? customRepeatLabel(customRepeat) : (REPEAT_OPTIONS.find((o) => o.value === repeatType)?.label ?? 'Does not repeat')}
-                </Text>
-                <ChevronRightIcon size={16} color={theme.textTertiary} strokeWidth={2} />
-              </View>
-            </Pressable>
-            {repeatType !== 'none' && (
-              <View style={[styles.field, styles.fieldBorder, { borderColor: theme.divider }]}>
-                <Text style={[styles.label, { color: theme.textTertiary }]}>REPEAT UNTIL</Text>
-                {Platform.OS === 'ios' ? (
-                  <View style={styles.iosPickerRow}>
-                    <DateTimePicker
-                      value={repeatUntil ?? dateTime}
-                      mode="date"
-                      display="compact"
-                      minimumDate={dateTime}
-                      themeVariant={scheme}
-                      accentColor={theme.accent}
-                      onChange={onChangeRepeatUntil}
-                    />
-                  </View>
-                ) : (
-                  <Pressable onPress={() => setShowRepeatUntilPicker(true)}>
-                    <Text style={[styles.input, { color: theme.text, borderColor: 'transparent' }]}>
-                      {(repeatUntil ?? dateTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                    </Text>
-                  </Pressable>
-                )}
-              </View>
-            )}
-          </View>
-        )}
-
         {Platform.OS === 'android' && showRepeatUntilPicker && (
           <DateTimePicker
             value={repeatUntil ?? dateTime}
@@ -584,37 +592,16 @@ export default function AddPlanScreen() {
           />
         )}
 
-        <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
+        <View style={[styles.group, styles.liveActivityGroup, { backgroundColor: theme.surface, borderColor: theme.accentBorder }]}>
           <View style={styles.fieldRow}>
+            <Tickle size={38} mood="live" bubbleMotion="hop" animated />
             <View style={{ flex: 1 }}>
               <Text style={{ color: theme.text, fontSize: Typography.heading, fontWeight: '600' }}>Live Activity</Text>
               <Text style={{ color: theme.textSecondary, fontSize: Typography.body, marginTop: 2 }}>
-                Show a live countdown on the home screen as this plan approaches.
+                Tickle counts down on your home screen as this plan approaches.
               </Text>
             </View>
             <Switch value={live} onValueChange={setLive} trackColor={{ true: theme.success }} />
-          </View>
-        </View>
-
-        <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
-          <View style={styles.labelRow}>
-            <Text style={[styles.label, { color: theme.textTertiary, marginBottom: 0 }]}>PHOTOS</Text>
-          </View>
-          <View style={styles.photoRow}>
-            {photoUris.map((uri) => (
-              <View key={uri} style={styles.photoThumbWrap}>
-                <Image source={{ uri }} style={styles.photoThumb} />
-                <Pressable onPress={() => removePhoto(uri)} style={[styles.photoRemoveDot, { backgroundColor: theme.danger }]}>
-                  <Text style={{ color: '#fff', fontSize: 13, fontWeight: '800', lineHeight: 16 }}>×</Text>
-                </Pressable>
-              </View>
-            ))}
-            {photoUris.length < MAX_PHOTOS && (
-              <Pressable onPress={handlePickPhoto} style={[styles.photoPicker, { borderColor: theme.dividerStrong }]}>
-                <CameraIcon size={18} color={theme.textTertiary} strokeWidth={1.8} />
-                <Text style={{ color: theme.textSecondary, fontSize: Typography.label, fontWeight: '600', marginTop: 4 }}>Add</Text>
-              </Pressable>
-            )}
           </View>
         </View>
 
@@ -633,6 +620,33 @@ export default function AddPlanScreen() {
         </View>
 
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
+          <View style={styles.labelRow}>
+            <Text style={[styles.label, { color: theme.textTertiary, marginBottom: 0 }]}>PHOTOS</Text>
+            {photoUris.length > 0 && (
+              <Text style={{ color: theme.textTertiary, fontSize: Typography.body }}>
+                {photoUris.length} of {MAX_PHOTOS}
+              </Text>
+            )}
+          </View>
+          <View style={styles.photoRow}>
+            {photoUris.map((uri) => (
+              <View key={uri} style={styles.photoThumbWrap}>
+                <Image source={{ uri }} style={styles.photoThumb} />
+                <Pressable onPress={() => removePhoto(uri)} style={styles.photoRemoveDot}>
+                  <Text style={{ color: '#fff', fontSize: 13, fontWeight: '800', lineHeight: 16 }}>×</Text>
+                </Pressable>
+              </View>
+            ))}
+            {photoUris.length < MAX_PHOTOS && (
+              <Pressable onPress={handlePickPhoto} style={[styles.photoPicker, { borderColor: theme.dividerStrong }]}>
+                <CameraIcon size={18} color={theme.textTertiary} strokeWidth={1.8} />
+                <Text style={{ color: theme.textSecondary, fontSize: Typography.label, fontWeight: '600', marginTop: 4 }}>Add</Text>
+              </Pressable>
+            )}
+          </View>
+        </View>
+
+        <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
           <View style={styles.field}>
             <Text style={[styles.label, { color: theme.textTertiary }]}>DETAILS</Text>
             <TextInput
@@ -646,10 +660,20 @@ export default function AddPlanScreen() {
           </View>
         </View>
 
-        {editing && (
-          <Pressable onPress={handleDuplicate} style={[styles.deleteBtn, { backgroundColor: theme.surface, borderColor: theme.divider, borderWidth: 1, marginBottom: 10 }]}>
-            <Text style={{ color: theme.accent, fontSize: Typography.heading, fontWeight: '700' }}>Duplicate Plan</Text>
-          </Pressable>
+        <Pressable onPress={handleSave} style={styles.saveBtn}>
+          <Text style={{ color: '#fff', fontSize: Typography.heading, fontWeight: '700' }}>Save plan</Text>
+        </Pressable>
+
+        {editing ? (
+          <>
+            <Pressable onPress={handleDuplicate} style={[styles.deleteBtn, { backgroundColor: theme.surface, borderColor: theme.divider, borderWidth: 1, marginBottom: 10, marginTop: 14 }]}>
+              <Text style={{ color: theme.accent, fontSize: Typography.heading, fontWeight: '700' }}>Duplicate Plan</Text>
+            </Pressable>
+          </>
+        ) : (
+          <Text style={[styles.footnote, { color: theme.textTertiary, textAlign: 'center', marginTop: 12 }]}>
+            Editing an existing plan adds Duplicate and Delete below this button.
+          </Text>
         )}
 
         {editing && (
@@ -835,8 +859,9 @@ export default function AddPlanScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, paddingHorizontal: 20 },
-  head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4, marginBottom: 20 },
-  group: { borderRadius: Radii.md, borderWidth: 1, overflow: 'hidden', marginBottom: 14 },
+  head: { flexDirection: 'row', alignItems: 'center', paddingVertical: 4, marginBottom: 20 },
+  headSide: { flex: 1 },
+  group: { borderRadius: Radii.card, borderWidth: 1, overflow: 'hidden', marginBottom: 14 },
   field: { paddingHorizontal: 14, paddingVertical: 12 },
   fieldBorder: { borderTopWidth: 1 },
   fieldRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 13, gap: 12 },
@@ -874,8 +899,8 @@ const styles = StyleSheet.create({
   timeRangeCol: { flex: 1, paddingHorizontal: 14, paddingVertical: 12 },
   timeRangeColBorder: { borderLeftWidth: 1 },
   photoRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, padding: 14 },
-  photoThumbWrap: { width: 84, height: 84 },
-  photoThumb: { width: 84, height: 84, borderRadius: Radii.sm },
+  photoThumbWrap: { width: 74, height: 74 },
+  photoThumb: { width: 74, height: 74, borderRadius: Radii.chip },
   photoRemoveDot: {
     position: 'absolute',
     top: -6,
@@ -885,14 +910,34 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#E0616F',
   },
   photoPicker: {
-    width: 84,
-    height: 84,
+    width: 74,
+    height: 74,
     borderWidth: 1.5,
     borderStyle: 'dashed',
-    borderRadius: Radii.sm,
+    borderRadius: Radii.chip,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  liveActivityGroup: {
+    shadowColor: '#1B76E8',
+    shadowOpacity: 0.07,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  saveBtn: {
+    height: 48,
+    borderRadius: Radii.button,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1B76E8',
+    shadowColor: '#1B76E8',
+    shadowOpacity: 0.28,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 4,
   },
 });

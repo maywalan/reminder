@@ -584,8 +584,8 @@ export default function AddPlanScreen() {
         )}
 
         <View style={[styles.group, styles.liveActivityGroup, { backgroundColor: theme.surface, borderColor: theme.accentBorder }]}>
-          <View style={styles.fieldRow}>
-            <Tickle size={38} mood="live" bubbleMotion="hop" animated />
+          <View style={[styles.fieldRow, styles.liveActivityRow]}>
+            <Tickle size={46} mood="live" bubbleMotion="hop" animated />
             <View style={{ flex: 1 }}>
               <Text style={{ color: theme.text, fontSize: Typography.heading, fontWeight: '600' }}>Live Activity</Text>
               <Text style={{ color: theme.textSecondary, fontSize: Typography.body, marginTop: 2 }}>
@@ -919,6 +919,11 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
+  },
+  liveActivityRow: {
+    paddingVertical: 18,
+    paddingHorizontal: 16,
+    gap: 14,
   },
   saveBtn: {
     height: 48,

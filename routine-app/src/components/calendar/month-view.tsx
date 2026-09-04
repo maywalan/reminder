@@ -142,7 +142,7 @@ export function MonthView({ year, month, todayISO, selectedDate, plans, colorFor
 }
 
 const styles = StyleSheet.create({
-  surface: { borderRadius: Radii.lg, borderWidth: 1, marginHorizontal: 14, paddingBottom: 6 },
+  surface: { borderRadius: Radii.panel, borderWidth: 1, marginHorizontal: 14, paddingBottom: 6 },
   nav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingTop: 16, paddingBottom: 8 },
   navLabel: { fontSize: Typography.title, fontWeight: '800', letterSpacing: -0.2 },
   arrows: { flexDirection: 'row', gap: 8 },

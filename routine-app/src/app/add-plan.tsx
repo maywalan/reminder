@@ -886,7 +886,7 @@ const styles = StyleSheet.create({
   deleteBtn: { padding: 14, borderRadius: Radii.md, alignItems: 'center' },
   notesInput: { minHeight: 70, textAlignVertical: 'top' },
   segmentRow: { flexDirection: 'row', gap: 8 },
-  segment: { flex: 1, paddingVertical: 9, borderRadius: 10, borderWidth: 1, alignItems: 'center' },
+  segment: { flex: 1, paddingVertical: 9, borderRadius: Radii.button, borderWidth: 1, alignItems: 'center' },
   timeRangeRow: { flexDirection: 'row' },
   timeRangeCol: { flex: 1, paddingHorizontal: 14, paddingVertical: 12 },
   timeRangeColBorder: { borderLeftWidth: 1 },

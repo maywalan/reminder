@@ -143,16 +143,13 @@ const styles = StyleSheet.create({
   tabIconPill: { paddingHorizontal: 13, paddingVertical: 6, borderRadius: Radii.chip, alignItems: 'center', justifyContent: 'center', marginBottom: 1 },
   tabLabel: { fontSize: Typography.tabLabel },
   fabWrap: { marginTop: -26 },
-  // Rounded square, not a circle — design_handoff_tickle_draft2's section 08 token reference
-  // swatches the FAB at radius 14 (this app's `chip` radius), matching the "18 banner/button"
-  // radius family rather than a true circle; every in-screen FAB instance in that same file uses
-  // radius:27 on a 54pt box (a full circle) instead, an inconsistency in the source file itself —
-  // going with the token reference + a squircle look per direct feedback on how the draft reads.
-  fabRing: { width: 62, height: 62, borderRadius: Radii.card + 2, alignItems: 'center', justifyContent: 'center' },
+  // Full circle, matching every in-screen FAB instance in design_handoff_tickle_draft2 (radius:27
+  // on a 54pt box) — not the section 08 token-reference swatch, which uses radius 14.
+  fabRing: { width: 62, height: 62, borderRadius: 31, alignItems: 'center', justifyContent: 'center' },
   fab: {
     width: 54,
     height: 54,
-    borderRadius: Radii.button,
+    borderRadius: 27,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#1B76E8',

@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
   },
   runningText: { flex: 1, minWidth: 0 },
   runningLabel: { fontSize: 9.5, fontWeight: '600', fontFamily: Fonts[600], letterSpacing: 0.4, color: 'rgba(255,255,255,0.6)' },
-  runningTitle: { fontSize: Typography.rowLabel, fontWeight: '700', fontFamily: Fonts[700], color: '#fff', marginTop: 1 },
+  runningTitle: { fontSize: Typography.sheetTitle, fontWeight: '700', fontFamily: Fonts[700], color: '#fff', marginTop: 1 },
   runningProgressRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
   runningTrack: { flex: 1, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.16)', overflow: 'hidden' },
   runningFill: { height: '100%', borderRadius: 2 },

@@ -90,6 +90,9 @@ export const Radii = {
   // Large content surfaces (Calendar's month grid card) — measured off the live design file,
   // not in the README's own radius table, but consistent across every month-card instance there.
   panel: 24,
+  // Progress screen's secondary white cards (chart, streak, by-color) — same provenance as
+  // `panel`: not in the README's radius table, but consistent across every one of those cards.
+  subcard: 22,
 } as const;
 
 /** Row min-height + touch target floor from the Tickle draft-2 spacing spec. */

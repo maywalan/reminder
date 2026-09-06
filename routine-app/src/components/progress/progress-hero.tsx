@@ -1,27 +1,71 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { Circle, Svg } from 'react-native-svg';
 
-import { Radii, Typography } from '@/constants/theme';
+import { Radii } from '@/constants/theme';
+
+const RING_SIZE = 76;
+const RING_STROKE = 9;
+const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2;
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+const HOLE_SIZE = 58;
 
 interface Props {
-  periodLabel: string;
+  eyebrow: string;
   completed: number;
+  total: number;
+  completionRate: number;
   deltaPct: number;
+  compareLabel: string;
 }
 
-export function ProgressHero({ periodLabel, completed, deltaPct }: Props) {
+/** Progress screen's hero card — 15a's dark conic-ring, ported to react-native-svg (a stroked circle standing in for the CSS conic-gradient, since RN has no native conic paint). */
+export function ProgressHero({ eyebrow, completed, total, completionRate, deltaPct, compareLabel }: Props) {
+  const pct = Math.max(0, Math.min(1, completionRate / 100));
   const up = deltaPct >= 0;
+
   return (
     <View style={styles.card}>
-      <View style={styles.glow} />
-      <Text style={styles.label}>{periodLabel.toUpperCase()}</Text>
-      <Text style={styles.value}>{completed}</Text>
-      <View style={styles.subRow}>
-        <Text style={styles.sub}>tasks completed</Text>
-        <View style={[styles.pill, up ? styles.pillUp : styles.pillDown]}>
-          <Text style={[styles.pillText, { color: up ? '#6FE39B' : '#FF8079' }]}>
-            {up ? '▲' : '▼'} {Math.abs(deltaPct)}% vs last period
-          </Text>
+      <View style={styles.ringWrap}>
+        <Svg width={RING_SIZE} height={RING_SIZE} style={StyleSheet.absoluteFill}>
+          <Circle
+            cx={RING_SIZE / 2}
+            cy={RING_SIZE / 2}
+            r={RING_RADIUS}
+            stroke="rgba(255,255,255,0.14)"
+            strokeWidth={RING_STROKE}
+            fill="none"
+          />
+          {pct > 0 && (
+            <Circle
+              cx={RING_SIZE / 2}
+              cy={RING_SIZE / 2}
+              r={RING_RADIUS}
+              stroke="#4FC98A"
+              strokeWidth={RING_STROKE}
+              strokeLinecap="round"
+              strokeDasharray={`${RING_CIRCUMFERENCE * pct} ${RING_CIRCUMFERENCE}`}
+              fill="none"
+              rotation={-90}
+              origin={`${RING_SIZE / 2}, ${RING_SIZE / 2}`}
+            />
+          )}
+        </Svg>
+        <View style={styles.hole}>
+          <Text style={styles.holeValue}>{completionRate}</Text>
+          <Text style={styles.holeCaption}>PERCENT</Text>
         </View>
+      </View>
+
+      <View style={styles.text}>
+        <Text style={styles.eyebrow} numberOfLines={1}>
+          {eyebrow}
+        </Text>
+        <Text style={styles.line} numberOfLines={1}>
+          {completed} of {total} done
+        </Text>
+        <Text style={styles.delta} numberOfLines={1}>
+          {up ? 'Up' : 'Down'} {Math.abs(deltaPct)} points on {compareLabel}.
+        </Text>
       </View>
     </View>
   );
@@ -29,29 +73,33 @@ export function ProgressHero({ periodLabel, completed, deltaPct }: Props) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#0F0F12',
-    borderRadius: Radii.lg,
-    padding: 20,
-    marginHorizontal: 22,
-    marginTop: 6,
-    overflow: 'hidden',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    borderRadius: Radii.panel,
+    backgroundColor: '#10203A',
+    padding: 15,
+    marginHorizontal: 14,
+    marginTop: 14,
+    shadowColor: '#10203A',
+    shadowOpacity: 0.2,
+    shadowRadius: 26,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 8,
   },
-  glow: {
-    position: 'absolute',
-    top: -46,
-    right: -46,
-    width: 170,
-    height: 170,
-    borderRadius: 85,
-    backgroundColor: '#5B5FEF',
-    opacity: 0.35,
+  ringWrap: { width: RING_SIZE, height: RING_SIZE, alignItems: 'center', justifyContent: 'center' },
+  hole: {
+    width: HOLE_SIZE,
+    height: HOLE_SIZE,
+    borderRadius: HOLE_SIZE / 2,
+    backgroundColor: '#10203A',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  label: { color: 'rgba(255,255,255,0.55)', fontSize: Typography.label, fontWeight: '700', letterSpacing: 0.6, marginBottom: 6 },
-  value: { color: '#fff', fontSize: 44, fontWeight: '800', letterSpacing: -0.5 },
-  subRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginTop: 8 },
-  sub: { color: 'rgba(255,255,255,0.7)', fontSize: Typography.body },
-  pill: { paddingVertical: 3, paddingHorizontal: 9, borderRadius: 20 },
-  pillUp: { backgroundColor: 'rgba(48,209,88,0.22)' },
-  pillDown: { backgroundColor: 'rgba(255,69,58,0.20)' },
-  pillText: { fontSize: 12, fontWeight: '700' },
+  holeValue: { fontWeight: '500', fontSize: 18, color: '#fff' },
+  holeCaption: { fontWeight: '600', fontSize: 8.5, color: 'rgba(255,255,255,0.55)', letterSpacing: 0.4 },
+  text: { flex: 1, minWidth: 0 },
+  eyebrow: { fontWeight: '600', fontSize: 10, color: 'rgba(255,255,255,0.55)', letterSpacing: 0.5 },
+  line: { fontWeight: '700', fontSize: 16, color: '#fff', marginTop: 3, lineHeight: 21 },
+  delta: { fontWeight: '500', fontSize: 11.5, color: 'rgba(255,255,255,0.6)', marginTop: 4 },
 });

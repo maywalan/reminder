@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 
 import { Radii, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -7,13 +7,14 @@ interface Props<T extends string> {
   options: { label: string; value: T }[];
   value: T;
   onChange: (value: T) => void;
+  style?: StyleProp<ViewStyle>;
 }
 
-export function SegmentedControl<T extends string>({ options, value, onChange }: Props<T>) {
+export function SegmentedControl<T extends string>({ options, value, onChange, style }: Props<T>) {
   const theme = useTheme();
 
   return (
-    <View style={[styles.wrap, { backgroundColor: theme.bg, borderColor: theme.divider }]}>
+    <View style={[styles.wrap, { backgroundColor: theme.bg, borderColor: theme.divider }, style]}>
       {options.map((opt) => {
         const active = opt.value === value;
         return (

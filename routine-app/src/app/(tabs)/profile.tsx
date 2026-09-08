@@ -90,7 +90,7 @@ export default function ProfileScreen() {
           <View style={[styles.banner, { backgroundColor: theme.successSoft, borderColor: theme.successBorder }]}>
             <ShieldIcon size={18} color={theme.success} strokeWidth={1.8} />
             <Text style={[styles.bannerText, { color: theme.text }]} numberOfLines={1}>
-              Signed in as {authUser.email}
+              Signed in as <Text style={{ fontWeight: '500', color: theme.textSecondary }}>{authUser.email}</Text>
             </Text>
           </View>
         ) : (
@@ -129,7 +129,7 @@ export default function ProfileScreen() {
           </View>
           <Pressable onPress={() => setNotifOptionsOpen(true)} style={[styles.row, styles.rowBorder, { borderColor: theme.divider }]}>
             <View style={[styles.rowIcon, { backgroundColor: theme.accentSoft }]}>
-              <BellIcon size={16} color={theme.accent} strokeWidth={2} />
+              <GridIcon size={16} color={theme.accent} strokeWidth={2} />
             </View>
             <Text style={[styles.rowLabel, { color: theme.text }]}>Notification Options</Text>
             <ChevronRightIcon size={16} color={theme.textFaint} strokeWidth={2} />

@@ -129,5 +129,5 @@ const styles = StyleSheet.create({
   spark: { position: 'absolute' },
   text: { flex: 1, minWidth: 0 },
   title: { fontSize: Typography.heading, fontWeight: '700' },
-  subtitle: { fontSize: Typography.body, fontWeight: '500', marginTop: 2, lineHeight: 16 },
+  subtitle: { fontSize: Typography.body, fontWeight: '500', marginTop: 4, lineHeight: 16 },
 });

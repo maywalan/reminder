@@ -1,13 +1,15 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppleLogoIcon, GoogleLogoIcon } from '@/components/icon';
+import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
-import { Radii, Typography } from '@/constants/theme';
+import { Fonts, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useToast } from '@/hooks/use-toast';
+import { useOnboardingStore } from '@/store/use-onboarding-store';
 import { useAuthStore } from '@/store/use-auth-store';
 
 type Mode = 'signIn' | 'signUp';
@@ -25,8 +27,19 @@ export default function LoginScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<'email' | 'google' | 'apple' | null>(null);
+
+  // Reaching the sign-in screen — by any path (onboarding's Skip, finishing step 3, or Profile's
+  // Log In row) — means onboarding is behind us; never show the carousel again on this device.
+  useEffect(() => {
+    useOnboardingStore.getState().completeOnboarding();
+  }, []);
+
+  function goHome() {
+    router.replace('/');
+  }
 
   async function handleEmailSubmit() {
     if (mode === 'signUp' && !name.trim()) {
@@ -51,7 +64,7 @@ export default function LoginScreen() {
       showToast('Check your email to confirm your account');
       return;
     }
-    router.back();
+    goHome();
   }
 
   async function handleGoogle() {
@@ -63,50 +76,50 @@ export default function LoginScreen() {
       setError(authError);
       return;
     }
-    // The OAuth redirect deep link pushes an extra /auth/callback route onto the stack (on top
-    // of this modal) before landing here — dismissAll clears both in one go, back() would only
-    // clear one.
-    if (router.canDismiss()) router.dismissAll();
+    goHome();
+  }
+
+  function handleGuest() {
+    useOnboardingStore.getState().chooseGuest();
+    goHome();
   }
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={[styles.screen, { backgroundColor: theme.bg, paddingTop: insets.top + 8, paddingBottom: insets.bottom + 16 }]}>
-        <View style={styles.head}>
-          <Pressable onPress={() => router.back()} hitSlop={8}>
-            <Text style={{ color: theme.textSecondary, fontSize: Typography.heading, fontWeight: '600' }}>Cancel</Text>
-          </Pressable>
-          <Text style={{ color: theme.text, fontSize: Typography.title, fontWeight: '800' }}>{mode === 'signIn' ? 'Log In' : 'Create Account'}</Text>
-          <View style={{ width: 46 }} />
-        </View>
-
+      <View style={[styles.screen, { backgroundColor: theme.surface, paddingTop: insets.top + 22, paddingBottom: insets.bottom + 16 }]}>
         <ScrollView contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
-          <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
+          <View style={styles.head}>
+            <Tickle size={52} mood="idle" animated />
+            <Text style={[styles.title, { color: theme.text }]}>{mode === 'signIn' ? 'Welcome back' : 'Create your account'}</Text>
+            <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+              {mode === 'signIn' ? 'Your plans sync across devices.' : 'Takes a minute — your plans sync everywhere after.'}
+            </Text>
+          </View>
+
+          <View style={styles.fields}>
             {mode === 'signUp' && (
-              <View style={styles.field}>
-                <Text style={[styles.label, { color: theme.textTertiary }]}>NAME</Text>
+              <View style={[styles.field, { backgroundColor: theme.bg, borderColor: theme.cardBorder }]}>
                 <TextInput
                   value={name}
                   onChangeText={(t) => {
                     setName(t);
                     setError(null);
                   }}
-                  placeholder="Your name"
+                  placeholder="Name"
                   placeholderTextColor={theme.textTertiary}
                   autoComplete="name"
                   style={[styles.input, { color: theme.text }]}
                 />
               </View>
             )}
-            <View style={[styles.field, mode === 'signUp' && { borderTopWidth: 1, borderTopColor: theme.divider }]}>
-              <Text style={[styles.label, { color: theme.textTertiary }]}>EMAIL</Text>
+            <View style={[styles.field, { backgroundColor: theme.bg, borderColor: theme.cardBorder }]}>
               <TextInput
                 value={email}
                 onChangeText={(t) => {
                   setEmail(t);
                   setError(null);
                 }}
-                placeholder="you@example.com"
+                placeholder="Email"
                 placeholderTextColor={theme.textTertiary}
                 autoCapitalize="none"
                 autoComplete="email"
@@ -114,20 +127,22 @@ export default function LoginScreen() {
                 style={[styles.input, { color: theme.text }]}
               />
             </View>
-            <View style={[styles.field, { borderTopWidth: 1, borderTopColor: theme.divider }]}>
-              <Text style={[styles.label, { color: theme.textTertiary }]}>PASSWORD</Text>
+            <View style={[styles.field, styles.fieldRow, { backgroundColor: theme.bg, borderColor: theme.cardBorder }]}>
               <TextInput
                 value={password}
                 onChangeText={(t) => {
                   setPassword(t);
                   setError(null);
                 }}
-                placeholder="••••••••"
+                placeholder="Password"
                 placeholderTextColor={theme.textTertiary}
-                secureTextEntry
+                secureTextEntry={!showPassword}
                 autoComplete={mode === 'signIn' ? 'current-password' : 'new-password'}
-                style={[styles.input, { color: theme.text }]}
+                style={[styles.input, { flex: 1, color: theme.text }]}
               />
+              <Pressable onPress={() => setShowPassword((v) => !v)} hitSlop={8}>
+                <Text style={{ fontSize: 10, fontWeight: '600', fontFamily: Fonts[600], color: theme.textTertiary }}>{showPassword ? 'hide' : 'show'}</Text>
+              </Pressable>
             </View>
           </View>
 
@@ -137,15 +152,22 @@ export default function LoginScreen() {
             onPress={handleEmailSubmit}
             disabled={busy !== null}
             style={[styles.primaryButton, { backgroundColor: theme.accent, opacity: busy && busy !== 'email' ? 0.5 : 1 }]}>
-            {busy === 'email' ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryButtonText}>{mode === 'signIn' ? 'Log In' : 'Create Account'}</Text>}
+            {busy === 'email' ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryButtonText}>{mode === 'signIn' ? 'Sign in' : 'Create Account'}</Text>}
           </Pressable>
 
-          <Pressable onPress={() => setMode(mode === 'signIn' ? 'signUp' : 'signIn')} hitSlop={6} style={styles.switchMode}>
-            <Text style={{ color: theme.textSecondary, fontSize: Typography.body }}>
-              {mode === 'signIn' ? "Don't have an account? " : 'Already have an account? '}
-              <Text style={{ color: theme.accentStrong, fontWeight: '700' }}>{mode === 'signIn' ? 'Create one' : 'Log in'}</Text>
-            </Text>
-          </Pressable>
+          <View style={styles.linkRow}>
+            <Pressable onPress={() => setMode(mode === 'signIn' ? 'signUp' : 'signIn')} hitSlop={6}>
+              <Text style={{ color: theme.textSecondary, fontSize: Typography.body }}>
+                {mode === 'signIn' ? "Don't have an account? " : 'Already have an account? '}
+                <Text style={{ color: theme.accentStrong, fontWeight: '700' }}>{mode === 'signIn' ? 'Create one' : 'Log in'}</Text>
+              </Text>
+            </Pressable>
+            {mode === 'signIn' && (
+              <Pressable onPress={() => showToast('Password reset is coming soon')} hitSlop={6}>
+                <Text style={{ color: theme.accentStrong, fontSize: Typography.body, fontWeight: '600' }}>Forgot password?</Text>
+              </Pressable>
+            )}
+          </View>
 
           <View style={styles.dividerRow}>
             <View style={[styles.dividerLine, { backgroundColor: theme.divider }]} />
@@ -156,7 +178,7 @@ export default function LoginScreen() {
           <Pressable
             onPress={handleGoogle}
             disabled={busy !== null}
-            style={[styles.oauthButton, { backgroundColor: theme.surface, borderColor: theme.divider, opacity: busy && busy !== 'google' ? 0.5 : 1 }]}>
+            style={[styles.oauthButton, { backgroundColor: theme.surface, borderColor: theme.cardBorder, opacity: busy && busy !== 'google' ? 0.5 : 1 }]}>
             {busy === 'google' ? (
               <ActivityIndicator color={theme.text} />
             ) : (
@@ -169,13 +191,13 @@ export default function LoginScreen() {
 
           <Pressable
             onPress={() => showToast('Apple Sign-In is coming soon')}
-            style={[styles.oauthButton, { backgroundColor: theme.surface, borderColor: theme.divider, opacity: 0.5 }]}>
+            style={[styles.oauthButton, { backgroundColor: theme.surface, borderColor: theme.cardBorder, opacity: 0.5 }]}>
             <AppleLogoIcon size={18} color={theme.text} />
             <Text style={[styles.oauthButtonText, { color: theme.text }]}>Continue with Apple</Text>
           </Pressable>
 
-          <Pressable onPress={() => router.back()} hitSlop={6} style={styles.guestLink}>
-            <Text style={{ color: theme.textTertiary, fontSize: Typography.body, fontWeight: '600' }}>Continue as Guest</Text>
+          <Pressable onPress={handleGuest} hitSlop={6} style={styles.guestLink}>
+            <Text style={{ color: theme.accentStrong, fontSize: Typography.body, fontWeight: '600' }}>Keep using without an account</Text>
           </Pressable>
         </ScrollView>
 
@@ -186,16 +208,18 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, paddingHorizontal: 20 },
-  head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10, marginBottom: 16 },
-  group: { borderRadius: Radii.md, borderWidth: 1, overflow: 'hidden', marginBottom: 8 },
-  field: { paddingHorizontal: 14, paddingVertical: 10 },
-  label: { fontSize: Typography.label, fontWeight: '700', letterSpacing: 0.4, marginBottom: 4 },
-  input: { fontSize: Typography.heading, fontWeight: '600', paddingVertical: 2 },
+  screen: { flex: 1, paddingHorizontal: 24 },
+  head: { alignItems: 'flex-start', gap: 8, marginBottom: 22 },
+  title: { fontSize: 22, fontWeight: '700', fontFamily: Fonts[700], letterSpacing: -0.3 },
+  subtitle: { fontSize: Typography.body, fontWeight: '500', fontFamily: Fonts[500] },
+  fields: { gap: 10, marginBottom: 4 },
+  field: { height: 52, borderRadius: 16, borderWidth: 1, justifyContent: 'center', paddingHorizontal: 16 },
+  fieldRow: { flexDirection: 'row', alignItems: 'center' },
+  input: { fontSize: Typography.heading, fontWeight: '400' },
   error: { fontSize: Typography.body, fontWeight: '600', marginTop: 8, marginHorizontal: 2 },
-  primaryButton: { borderRadius: Radii.md, paddingVertical: 14, alignItems: 'center', justifyContent: 'center', marginTop: 16 },
+  primaryButton: { height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center', marginTop: 16 },
   primaryButtonText: { color: '#fff', fontSize: Typography.heading, fontWeight: '700' },
-  switchMode: { alignItems: 'center', paddingVertical: 14 },
+  linkRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14 },
   dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: 8 },
   dividerLine: { flex: 1, height: StyleSheet.hairlineWidth },
   dividerLabel: { fontSize: Typography.label, fontWeight: '700', letterSpacing: 0.6 },
@@ -204,9 +228,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
-    borderRadius: Radii.md,
+    borderRadius: 25,
     borderWidth: 1,
-    paddingVertical: 14,
+    height: 50,
     marginTop: 10,
   },
   oauthButtonText: { fontSize: Typography.heading, fontWeight: '700' },

@@ -1,7 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { Animated, View } from 'react-native';
 
-import { useBlink, useBreathe, useDrift, useFloat, useHop, usePulse, useSink } from '@/utils/motion';
+import { useBlink, useBreathe, useDrift, useFloat, useHop, usePulse, useSink, useSquash, useTap } from '@/utils/motion';
 
 export type TickleMood = 'idle' | 'live' | 'due' | 'off';
 
@@ -52,7 +52,8 @@ const G = {
   mouthTopOfBody: 54 / 82,
 };
 
-type BubbleMotionKind = 'float' | 'pulse' | 'hop' | 'drift';
+type BubbleMotionKind = 'float' | 'pulse' | 'hop' | 'drift' | 'tap';
+type BodyMotionKind = 'breathe' | 'sink' | 'squash' | 'none';
 
 interface TickleProps {
   /** Container size in pt (width == height). Below 34 only the bubble renders; the mouth drops below 40 (see design_handoff_tickle_draft2/README.md). */
@@ -66,6 +67,12 @@ interface TickleProps {
    * (design_handoff_tickle_draft2/README.md's section 07), a pairing no mood preset covers.
    */
   bubbleMotion?: BubbleMotionKind;
+  /**
+   * Overrides the mood's default body animation — e.g. onboarding step 2's Tickle runs `squash`
+   * (the "set it and it repeats" beat) instead of any mood's default `breathe`/`sink`. `'none'`
+   * keeps the body static, for a decorative mini-instance where only the bubble should move.
+   */
+  bodyMotion?: BodyMotionKind;
 }
 
 /**
@@ -74,18 +81,29 @@ interface TickleProps {
  * blink eyes) comes from `src/utils/motion.ts`, the shared 14-curve library ported from the
  * design file's motion section.
  */
-export function Tickle({ size, mood = 'idle', animated = false, bubbleMotion }: TickleProps) {
-  const breathe = useBreathe(animated && BODY_MOTION[mood] === 'breathe');
-  const sink = useSink(animated && BODY_MOTION[mood] === 'sink');
-  const bodyMotionStyle = BODY_MOTION[mood] === 'sink' ? sink : breathe;
+export function Tickle({ size, mood = 'idle', animated = false, bubbleMotion, bodyMotion }: TickleProps) {
+  const resolvedBodyMotion = bodyMotion ?? BODY_MOTION[mood];
+  const breathe = useBreathe(animated && resolvedBodyMotion === 'breathe');
+  const sink = useSink(animated && resolvedBodyMotion === 'sink');
+  const squash = useSquash(animated && resolvedBodyMotion === 'squash');
+  const bodyMotionStyle = resolvedBodyMotion === 'sink' ? sink : resolvedBodyMotion === 'squash' ? squash : resolvedBodyMotion === 'none' ? undefined : breathe;
 
   const resolvedBubbleMotion = bubbleMotion ?? BUBBLE_MOTION[mood];
   const float = useFloat(animated && resolvedBubbleMotion === 'float');
   const pulse = usePulse(animated && resolvedBubbleMotion === 'pulse');
   const hop = useHop(animated && resolvedBubbleMotion === 'hop');
   const drift = useDrift(animated && resolvedBubbleMotion === 'drift');
+  const tap = useTap(animated && resolvedBubbleMotion === 'tap');
   const bubbleMotionStyle =
-    resolvedBubbleMotion === 'pulse' ? pulse : resolvedBubbleMotion === 'hop' ? hop : resolvedBubbleMotion === 'drift' ? drift : float;
+    resolvedBubbleMotion === 'pulse'
+      ? pulse
+      : resolvedBubbleMotion === 'hop'
+        ? hop
+        : resolvedBubbleMotion === 'drift'
+          ? drift
+          : resolvedBubbleMotion === 'tap'
+            ? tap
+            : float;
 
   const blink = useBlink(animated);
 

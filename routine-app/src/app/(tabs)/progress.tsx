@@ -8,15 +8,28 @@ import { ProgressCategories } from '@/components/progress/progress-categories';
 import { ProgressChart } from '@/components/progress/progress-chart';
 import { ProgressHero } from '@/components/progress/progress-hero';
 import { ProgressStats } from '@/components/progress/progress-stats';
+import { ProgressStreakCard } from '@/components/progress/progress-streak-card';
 import { SegmentedControl } from '@/components/segmented-control';
 import { Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuthStore } from '@/store/use-auth-store';
 import { usePlannerStore } from '@/store/use-planner-store';
 import { toISO } from '@/utils/dates';
-import { bestWeekday, colorBreakdown, currentStreak, datesInRange, formatPeriodLabel, pctDelta, progressRange, sumHistory, type Period } from '@/utils/progress';
-
-const WEEKDAY_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+import {
+  bestWeekday,
+  colorBreakdown,
+  currentStreak,
+  datesInRange,
+  formatPeriodLabel,
+  heroEyebrow,
+  longestStreak,
+  pctDelta,
+  previousPeriodLabel,
+  progressRange,
+  sumHistory,
+  WEEKDAY_FULL,
+  type Period,
+} from '@/utils/progress';
 
 export default function ProgressScreen() {
   const theme = useTheme();
@@ -49,6 +62,7 @@ export default function ProgressScreen() {
 
   const completionRate = cur.total > 0 ? Math.round((cur.completed / cur.total) * 100) : 0;
   const streak = currentStreak(todayISO, plans);
+  const longest = useMemo(() => longestStreak(plans), [plans]);
   const best = bestWeekday(dates, todayISO, plans);
   const colors = colorBreakdown(dates, plans);
 
@@ -56,9 +70,20 @@ export default function ProgressScreen() {
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.bg }]}>
-      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 22, paddingBottom: 130 }}>
-        <View style={styles.headerRow}>
-          <Text style={[styles.h1, { color: theme.text }]}>Progress</Text>
+      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 14, paddingBottom: 130 }}>
+        <View style={styles.headerTop}>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.h1, { color: theme.text }]}>Progress</Text>
+            <View style={styles.periodNav}>
+              <Pressable onPress={() => setOffset((o) => o + 1)} disabled={!canGoPrev} hitSlop={8} style={{ opacity: canGoPrev ? 1 : 0.3 }}>
+                <ChevronLeftIcon size={13} color={theme.textSecondary} strokeWidth={2.6} />
+              </Pressable>
+              <Text style={[styles.periodLabel, { color: theme.textSecondary }]}>{formatPeriodLabel(period, range)}</Text>
+              <Pressable onPress={() => setOffset((o) => o - 1)} hitSlop={8}>
+                <ChevronRightIcon size={13} color={theme.textSecondary} strokeWidth={2.6} />
+              </Pressable>
+            </View>
+          </View>
           <View style={styles.headerActions}>
             {offset !== 0 && (
               <Pressable onPress={() => setOffset(0)} hitSlop={8}>
@@ -67,8 +92,8 @@ export default function ProgressScreen() {
             )}
             <Pressable
               onPress={() => router.push({ pathname: '/recap', params: { period, offset: String(offset) } })}
-              style={[styles.recapBtn, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
-              <SparkleIcon size={18} color={theme.text} strokeWidth={1.6} />
+              style={[styles.recapBtn, { backgroundColor: theme.divider }]}>
+              <SparkleIcon size={17} color={theme.text} strokeWidth={1.5} />
             </Pressable>
           </View>
         </View>
@@ -81,32 +106,24 @@ export default function ProgressScreen() {
             { label: 'Month', value: 'month' },
             { label: 'Year', value: 'year' },
           ]}
+          style={styles.periodSwitch}
         />
 
-        <View style={styles.navRow}>
-          <Pressable
-            onPress={() => setOffset((o) => o + 1)}
-            disabled={!canGoPrev}
-            hitSlop={8}
-            style={[styles.navBtn, { backgroundColor: theme.surface, borderColor: theme.divider, opacity: canGoPrev ? 1 : 0.3 }]}>
-            <ChevronLeftIcon size={17} color={theme.text} strokeWidth={2.2} />
-          </Pressable>
-          <Text style={[styles.navLabel, { color: theme.text }]}>{formatPeriodLabel(period, range)}</Text>
-          <Pressable
-            onPress={() => setOffset((o) => o - 1)}
-            hitSlop={8}
-            style={[styles.navBtn, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
-            <ChevronRightIcon size={17} color={theme.text} strokeWidth={2.2} />
-          </Pressable>
-        </View>
+        <ProgressHero
+          eyebrow={heroEyebrow(period, range, offset)}
+          completed={cur.completed}
+          total={cur.total}
+          completionRate={completionRate}
+          deltaPct={delta}
+          compareLabel={previousPeriodLabel(period, range)}
+        />
 
-        <ProgressHero periodLabel={formatPeriodLabel(period, range)} completed={cur.completed} deltaPct={delta} />
         <ProgressStats completed={cur.completed} completionRate={completionRate} streak={streak} bestDay={WEEKDAY_FULL[best]} />
 
-        <Text style={[styles.sectionLabel, { color: theme.textTertiary }]}>TREND</Text>
         <ProgressChart period={period} startISO={range.start} endISO={range.end} todayISO={todayISO} plans={plans} />
 
-        <Text style={[styles.sectionLabel, { color: theme.textTertiary }]}>BY COLOR</Text>
+        <ProgressStreakCard streak={streak} longest={longest} />
+
         <ProgressCategories rows={colors} />
       </ScrollView>
     </View>
@@ -115,13 +132,12 @@ export default function ProgressScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 22, marginBottom: 2 },
-  h1: { fontSize: Typography.display, fontWeight: '800', letterSpacing: -0.4 },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  todayBtn: { fontSize: Typography.body, fontWeight: '700' },
-  recapBtn: { width: 38, height: 38, borderRadius: 19, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  navRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 22, marginTop: 16, marginBottom: 18 },
-  navBtn: { width: 30, height: 30, borderRadius: 15, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  navLabel: { fontSize: Typography.heading, fontWeight: '700', textAlign: 'center' },
-  sectionLabel: { fontSize: Typography.label, fontWeight: '700', letterSpacing: 0.6, paddingHorizontal: 22, marginTop: 20, marginBottom: 8 },
+  headerTop: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', paddingHorizontal: 20, gap: 12 },
+  h1: { fontSize: 20, fontWeight: '700', letterSpacing: -0.2 },
+  periodNav: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 5 },
+  periodLabel: { fontSize: Typography.body, fontWeight: '500' },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  todayBtn: { fontSize: Typography.rowValue, fontWeight: '700' },
+  recapBtn: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
+  periodSwitch: { marginHorizontal: 20, marginTop: 12, marginBottom: 0 },
 });

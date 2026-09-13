@@ -30,6 +30,16 @@ export async function requestNotificationPermissions(): Promise<boolean> {
   return status === 'granted';
 }
 
+/**
+ * iOS only ever shows its native permission popup once per install — a second
+ * requestPermissionsAsync() after a denial just silently re-returns 'denied', no dialog. Callers
+ * use `canAskAgain` to tell "never asked" (safe to call requestNotificationPermissions) apart
+ * from "already denied" (must send the user to Settings instead).
+ */
+export async function getNotificationPermissionStatus() {
+  return Notifications.getPermissionsAsync();
+}
+
 function alertBody(offsetMinutes: number): string {
   if (offsetMinutes === 0) return 'Starting now';
   if (offsetMinutes < 60) return `Starting in ${offsetMinutes} min`;

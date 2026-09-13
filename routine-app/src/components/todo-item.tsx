@@ -1,11 +1,13 @@
-import { useRef } from 'react';
+import * as Haptics from 'expo-haptics';
+import { useEffect, useRef } from 'react';
 import { Alert, Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import { BorderlessButton, RectButton, Swipeable } from 'react-native-gesture-handler';
 
-import { CheckIcon, ClockIcon, TrashIcon } from '@/components/icon';
-import { Radii, Typography } from '@/constants/theme';
+import { CheckIcon, ClockIcon, GripIcon, TrashIcon } from '@/components/icon';
+import { Fonts, Radii, RowMinHeight, Typography } from '@/constants/theme';
 import type { Group, Plan } from '@/store/types';
 import { useTheme } from '@/hooks/use-theme';
+import { secondsUntilPlan } from '@/utils/countdown';
 import { fmtTime12 } from '@/utils/dates';
 
 interface Props {
@@ -38,9 +40,10 @@ export function TodoItem({
 }: Props) {
   const theme = useTheme();
   const taskColor = plan.color || group?.color || theme.accent;
+  const overdue = !plan.completed && !selectMode && !plan.allDay && secondsUntilPlan(plan) < 0;
 
-  const checkBg = selectMode ? (selected ? theme.accent : theme.surface) : plan.completed ? theme.success : theme.surface;
-  const checkBorder = selectMode ? (selected ? theme.accent : theme.dividerStrong) : plan.completed ? theme.success : theme.dividerStrong;
+  const checkBg = selectMode ? (selected ? theme.accent : theme.surface) : plan.completed ? theme.accent : theme.surface;
+  const checkBorder = selectMode ? (selected ? theme.accent : theme.textFaint) : plan.completed ? theme.accent : theme.textFaint;
 
   // Completing a task washes the row in its color from the left edge, then fades that wash away
   // to reveal the (now-completed) row underneath — only on the incomplete -> complete transition.
@@ -51,6 +54,23 @@ export function TodoItem({
   // the row is completely covered instead of popping visibly mid-sweep.
   const completeFillScale = useRef(new Animated.Value(0)).current;
   const completeFillOpacity = useRef(new Animated.Value(1)).current;
+
+  // Lift the row with a spring scale-up (plus the shadow already in rowActive below) the moment
+  // a drag picks it up, and spring it back down on drop — with a matching haptic tick on each
+  // edge. Native-driven (transform only) so it runs on the UI thread independent of the reorder
+  // math happening on drop.
+  const dragScale = useRef(new Animated.Value(1)).current;
+  const wasActive = useRef(false);
+  useEffect(() => {
+    if (isActive && !wasActive.current) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      Animated.spring(dragScale, { toValue: 1.045, useNativeDriver: true, speed: 20, bounciness: 6 }).start();
+    } else if (!isActive && wasActive.current) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      Animated.spring(dragScale, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 6 }).start();
+    }
+    wasActive.current = !!isActive;
+  }, [isActive, dragScale]);
 
   function handleToggleComplete() {
     if (plan.completed) {
@@ -89,14 +109,14 @@ export function TodoItem({
           {plan.name}
         </Text>
         <View style={styles.metaRow}>
-          <ClockIcon size={12} color={theme.textSecondary} strokeWidth={2} />
-          <Text style={[styles.metaText, { color: theme.textSecondary }]}>
+          <ClockIcon size={12} color={overdue ? theme.due : theme.textSecondary} strokeWidth={2} />
+          <Text style={[styles.metaText, { color: overdue ? theme.due : theme.textSecondary }]}>
             {dateLabel ? `${dateLabel} · ` : ''}
             {plan.allDay ? 'All Day' : plan.endTime ? `${fmtTime12(plan.time)} – ${fmtTime12(plan.endTime)}` : fmtTime12(plan.time)}
           </Text>
-          {plan.live && <Text style={[styles.metaText, styles.metaBold, { color: theme.success }]}> · Live</Text>}
+          {plan.live && <Text style={[styles.metaText, styles.metaBold, { color: theme.successLive }]}> · Live</Text>}
           {plan.alerts.length > 0 && (
-            <Text style={[styles.metaText, { color: theme.textSecondary }]}>
+            <Text style={[styles.metaText, { color: overdue ? theme.due : theme.textSecondary }]}>
               {' '}
               · {plan.alerts.length > 1 ? `${plan.alerts.length} Alerts` : 'Alert'}
             </Text>
@@ -104,6 +124,15 @@ export function TodoItem({
           {group && <Text style={[styles.metaText, styles.metaBold, { color: group.color }]}> · {group.name}</Text>}
         </View>
       </View>
+
+      {selectMode && (
+        <BorderlessButton
+          onActiveStateChange={(active) => active && onDrag()}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          style={styles.dragHandle}>
+          <GripIcon size={18} color={theme.textFaint} strokeWidth={2} />
+        </BorderlessButton>
+      )}
 
       <View pointerEvents="none" style={styles.completeFillClip}>
         <Animated.View
@@ -124,7 +153,7 @@ export function TodoItem({
     styles.row,
     {
       backgroundColor: theme.surface,
-      borderColor: theme.divider,
+      borderColor: theme.cardBorder,
       borderLeftColor: taskColor,
       opacity: plan.completed ? 0.5 : isActive ? 0.9 : 1,
     },
@@ -140,30 +169,34 @@ export function TodoItem({
 
   if (selectMode) {
     return (
-      <RectButton onPress={onToggleSelect} style={rowStyle} rippleColor={theme.divider} underlayColor={theme.divider}>
-        {rowContent}
-      </RectButton>
+      <Animated.View style={{ transform: [{ scale: dragScale }] }}>
+        <RectButton onPress={onToggleSelect} style={rowStyle} rippleColor={theme.divider} underlayColor={theme.divider}>
+          {rowContent}
+        </RectButton>
+      </Animated.View>
     );
   }
 
   return (
-    <Swipeable
-      renderRightActions={(_progress, dragX) => {
-        const scale = dragX.interpolate({ inputRange: [-80, 0], outputRange: [1, 0.4], extrapolate: 'clamp' });
-        return (
-          <Pressable onPress={confirmDelete} style={[styles.deleteAction, { backgroundColor: theme.danger }]}>
-            <Animated.View style={{ transform: [{ scale }] }}>
-              <TrashIcon size={20} color="#fff" strokeWidth={2} />
-            </Animated.View>
-          </Pressable>
-        );
-      }}
-      overshootRight={false}
-      rightThreshold={40}>
-      <RectButton onPress={onPress} onLongPress={onDrag} style={rowStyle} rippleColor={theme.divider} underlayColor={theme.divider}>
-        {rowContent}
-      </RectButton>
-    </Swipeable>
+    <Animated.View style={{ transform: [{ scale: dragScale }] }}>
+      <Swipeable
+        renderRightActions={(_progress, dragX) => {
+          const scale = dragX.interpolate({ inputRange: [-80, 0], outputRange: [1, 0.4], extrapolate: 'clamp' });
+          return (
+            <Pressable onPress={confirmDelete} style={[styles.deleteAction, { backgroundColor: theme.danger }]}>
+              <Animated.View style={{ transform: [{ scale }] }}>
+                <TrashIcon size={20} color="#fff" strokeWidth={2} />
+              </Animated.View>
+            </Pressable>
+          );
+        }}
+        overshootRight={false}
+        rightThreshold={40}>
+        <RectButton onPress={onPress} onLongPress={onDrag} style={rowStyle} rippleColor={theme.divider} underlayColor={theme.divider}>
+          {rowContent}
+        </RectButton>
+      </Swipeable>
+    </Animated.View>
   );
 }
 
@@ -172,16 +205,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    borderRadius: Radii.md,
+    minHeight: RowMinHeight,
+    borderRadius: Radii.card,
     borderWidth: 1,
     borderLeftWidth: 4,
-    paddingVertical: 13,
+    paddingVertical: 10,
     paddingHorizontal: 12,
     marginHorizontal: 16,
     marginBottom: 10,
   },
   rowActive: {
-    shadowColor: '#000',
+    shadowColor: '#10203A',
     shadowOpacity: 0.18,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },
@@ -191,7 +225,7 @@ const styles = StyleSheet.create({
     width: 72,
     marginRight: 16,
     marginBottom: 10,
-    borderRadius: Radii.md,
+    borderRadius: Radii.card,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -207,7 +241,7 @@ const styles = StyleSheet.create({
     right: -1,
     bottom: -1,
     left: -4,
-    borderRadius: Radii.md,
+    borderRadius: Radii.card,
     overflow: 'hidden',
   },
   completeFill: {
@@ -215,16 +249,22 @@ const styles = StyleSheet.create({
     transformOrigin: 'left',
   },
   check: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 1.8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dragHandle: {
+    width: 26,
+    height: 26,
     alignItems: 'center',
     justifyContent: 'center',
   },
   main: { flex: 1, minWidth: 0 },
-  name: { fontSize: Typography.heading, fontWeight: '600', marginBottom: 2 },
+  name: { fontSize: Typography.rowLabel, fontWeight: '600', fontFamily: Fonts[600], marginBottom: 2 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, flexWrap: 'wrap' },
-  metaText: { fontSize: Typography.body, fontWeight: '500' },
-  metaBold: { fontWeight: '700' },
+  metaText: { fontSize: Typography.label, fontWeight: '500', fontFamily: Fonts[500] },
+  metaBold: { fontWeight: '700', fontFamily: Fonts[700] },
 });

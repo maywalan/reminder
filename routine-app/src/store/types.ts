@@ -38,6 +38,9 @@ export type AlertStyle = 'banners' | 'persistent';
 export type Language = 'en' | 'th' | 'zh';
 export type CalendarDensity = 'compact' | 'detailed';
 
+/** Entitlement state for the Subscription status screen — see `mockSubscriptionState` on the planner store. */
+export type SubscriptionState = 'trial' | 'monthly' | 'annual' | 'ending' | 'free';
+
 export interface Settings {
   notificationsEnabled: boolean;
   liveActivitiesEnabled: boolean;

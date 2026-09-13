@@ -18,9 +18,6 @@ export function ProgressCategories({ rows }: { rows: ColorRow[] }) {
           {rows.map((r) => (
             <View key={r.color} style={styles.row}>
               <View style={[styles.dot, { backgroundColor: r.color }]} />
-              <Text numberOfLines={1} style={[styles.name, { color: theme.text }]}>
-                {r.label}
-              </Text>
               <View style={[styles.track, { backgroundColor: theme.divider }]}>
                 <View style={[styles.fill, { width: `${r.pct}%`, backgroundColor: r.color }]} />
               </View>
@@ -40,7 +37,6 @@ const styles = StyleSheet.create({
   rows: { gap: 11, marginTop: 11 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   dot: { width: 9, height: 9, borderRadius: 4.5 },
-  name: { fontSize: Typography.body, fontWeight: '600', width: 52 },
   track: { flex: 1, height: 7, borderRadius: 4, overflow: 'hidden' },
   fill: { height: '100%', borderRadius: 4 },
   pct: { fontSize: 10.5, fontWeight: '500', width: 32, textAlign: 'right' },

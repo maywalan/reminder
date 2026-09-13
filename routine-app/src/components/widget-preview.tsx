@@ -31,7 +31,7 @@ export function WidgetPreview({ variant }: WidgetPreviewProps) {
       <View style={styles.head}>
         <LinearGradient colors={[Colors.light.accent, Colors.light.accentStrong]} style={styles.appIcon} />
         <Text style={styles.appName} numberOfLines={1}>
-          Routine
+          Tickle
         </Text>
         <Text style={styles.dateLabel} numberOfLines={1}>
           {dateLabel}

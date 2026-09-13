@@ -151,17 +151,43 @@ Not ready yet. What's in place vs. still needed:
 - ✅ `ios.bundleIdentifier` / `android.package` set to `com.maywalan.routineapp` in `app.json`.
 - ✅ `eas.json` build profiles configured (development/preview/production).
 - ✅ Hosted privacy policy, linked in-app.
-- ❌ Apple Developer Program enrollment — not done yet; nothing below can ship without it.
+- ❌ **Apple Developer Program enrollment — still not done as of 2026-09-13; nothing below can
+  ship without it.** No signing credentials, no App Store Connect app record, no TestFlight until
+  this happens.
 - ✅ EAS project linked — `@maywalan/routine-app`, https://expo.dev/accounts/maywalan/projects/routine-app
   (`extra.eas.projectId` in `app.json`).
+- ✅ **`preview`/`production` EAS environments now have `EXPO_PUBLIC_SUPABASE_URL` /
+  `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` set (fixed 2026-09-13)** — previously only the
+  `development` environment had them, so any `preview`/`production` build would have shipped with
+  `undefined` Supabase config and silently broken auth/sync for every tester. Verify with
+  `eas env:list --environment production` if this is ever in doubt.
 - ✅ Google OAuth fixed — works in a real dev-client/standalone build (see Known Issues above).
   Still needed before submitting: Apple Sign-In alongside it, since Apple requires offering Sign
   in with Apple whenever another third-party login is offered (Guideline 4.8) — blocked on Apple
-  Developer Program enrollment above.
+  Developer Program enrollment above. Not required for *internal* TestFlight testers (people added
+  directly to the App Store Connect team skip Beta App Review); only matters once external testers
+  or the Store are involved.
+- ✅ **App renamed to "Tickle" in `app.json` (2026-09-13)** — was "Routine" (the mascot/redesign
+  codename, now the product name). Updated every user-visible "Routine" string found in `src/`
+  (Profile's widget instructions, the widget preview mockup, the photo-library permission string).
+  **Not renamed**: the `routineapp://` URL scheme, `com.maywalan.routineapp` bundle id, the
+  `routine-app` EAS project slug/GitHub repo — those are technical identifiers wired into Google/
+  Supabase OAuth redirect config and the EAS project; changing them is a separate, bigger decision.
+- ✅ **Splash screen fixed (2026-09-13)** — the native cold-launch splash was still the
+  pre-redesign purple (`#5B5FEF`) with an old white logo mark, while the JS-rendered `TickleSplash`
+  that takes over moments later is white/dark per theme — every launch visibly flashed
+  purple-then-white. Generated a new `splash-icon.png` (Tickle's gradient body/eyes/mouth/bubble,
+  geometry ported from `tickle.tsx`'s ratios) and added a `dark` variant to the
+  `expo-splash-screen` plugin config (`#FFFFFF` light / `#141D30` dark, matching
+  `Colors.light/dark.surface`).
 - ❌ App Store Connect's "App Privacy" questionnaire still needs to be filled out (separate from
   the hosted privacy policy page) — covers what Supabase collects: account email, user-generated
   reminder content.
 - ❌ No App Store listing assets yet (screenshots, description, keywords, support URL).
+- ❌ Paywall/Subscription screens (`src/app/paywall.tsx`, `src/app/subscription.tsx`, added
+  2026-09-13) have **no real StoreKit/Play Billing wiring** — no IAP library, no App Store Connect
+  subscription products, purchase flow is a local simulation. Fine for testing the redesign; not
+  ready if a TestFlight round is meant to test monetization.
 
 ## Location autocomplete
 

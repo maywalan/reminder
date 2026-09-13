@@ -31,6 +31,7 @@ import { useOnboardingStore } from '@/store/use-onboarding-store';
 import { usePlannerStore } from '@/store/use-planner-store';
 import type { AlertStyle, Language, ThemeMode } from '@/store/types';
 import { profileInitials } from '@/utils/profile';
+import { SUBSCRIPTION_STATES, SUBSCRIPTION_STATE_LABEL } from '@/utils/subscription';
 
 const THEME_LABEL: Record<ThemeMode, string> = { light: 'Light', dark: 'Dark', system: 'System' };
 const LANGUAGE_LABEL: Record<Language, string> = { en: 'English', th: 'ไทย', zh: '中文' };
@@ -45,6 +46,8 @@ export default function ProfileScreen() {
   const settings = usePlannerStore((s) => s.settings);
   const updateSettings = usePlannerStore((s) => s.updateSettings);
   const resetData = usePlannerStore((s) => s.resetData);
+  const mockSubscriptionState = usePlannerStore((s) => s.mockSubscriptionState);
+  const setMockSubscriptionState = usePlannerStore((s) => s.setMockSubscriptionState);
   const authUser = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
   const { toastMessage, showToast } = useToast();
@@ -99,6 +102,7 @@ export default function ProfileScreen() {
   const [notifOptionsOpen, setNotifOptionsOpen] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [widgetsOpen, setWidgetsOpen] = useState(false);
+  const [subscriptionStateOpen, setSubscriptionStateOpen] = useState(false);
 
   const recapHourLabel = settings.recapHour === 12 ? '12 PM' : `${settings.recapHour} AM`;
 
@@ -203,6 +207,18 @@ export default function ProfileScreen() {
           </Pressable>
         </View>
 
+        <Text style={[styles.sectionLabel, { color: theme.textTertiary }]}>SUBSCRIPTION</Text>
+        <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
+          <Pressable onPress={() => router.push('/subscription')} style={styles.row}>
+            <View style={[styles.rowIcon, { backgroundColor: theme.accentSoft }]}>
+              <SparkleIcon size={16} color={theme.accent} strokeWidth={1.8} />
+            </View>
+            <Text style={[styles.rowLabel, { color: theme.text }]}>Manage Subscription</Text>
+            <Text style={[styles.rowValue, { color: theme.textTertiary }]}>{SUBSCRIPTION_STATE_LABEL[mockSubscriptionState]}</Text>
+            <ChevronRightIcon size={16} color={theme.textFaint} strokeWidth={2} />
+          </Pressable>
+        </View>
+
         <Text style={[styles.sectionLabel, { color: theme.textTertiary }]}>IOS WIDGETS</Text>
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
           <Pressable onPress={() => setWidgetsOpen(true)} style={styles.row}>
@@ -223,6 +239,16 @@ export default function ProfileScreen() {
             <Text style={[styles.rowLabel, { color: theme.text }]}>Replay Onboarding</Text>
             <ChevronRightIcon size={16} color={theme.textFaint} strokeWidth={2} />
           </Pressable>
+          {/* No real StoreKit/Play Billing wiring yet — this just previews the Subscription
+              screen's 5 entitlement states. Remove once real purchases drive that screen. */}
+          <Pressable onPress={() => setSubscriptionStateOpen(true)} style={[styles.row, styles.rowBorder, { borderColor: theme.divider }]}>
+            <View style={[styles.rowIcon, { backgroundColor: theme.accentSoft }]}>
+              <SparkleIcon size={16} color={theme.accent} strokeWidth={1.8} />
+            </View>
+            <Text style={[styles.rowLabel, { color: theme.text }]}>Subscription State</Text>
+            <Text style={[styles.rowValue, { color: theme.textTertiary }]}>{SUBSCRIPTION_STATE_LABEL[mockSubscriptionState]}</Text>
+            <ChevronRightIcon size={16} color={theme.textFaint} strokeWidth={2} />
+          </Pressable>
         </View>
 
         {authUser && (
@@ -238,6 +264,26 @@ export default function ProfileScreen() {
       </ScrollView>
 
       <Toast message={toastMessage} />
+
+      <BottomSheet visible={subscriptionStateOpen} onClose={() => setSubscriptionStateOpen(false)} title="Subscription State">
+        <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.cardBorder, marginTop: 10 }]}>
+          {SUBSCRIPTION_STATES.map((s, i) => (
+            <Pressable
+              key={s}
+              onPress={() => {
+                setMockSubscriptionState(s);
+                setSubscriptionStateOpen(false);
+              }}
+              style={[styles.row, i > 0 && styles.rowBorder, { borderColor: theme.divider }]}>
+              <Text style={[styles.rowLabel, { color: theme.text, flex: 1 }]}>{SUBSCRIPTION_STATE_LABEL[s]}</Text>
+              {mockSubscriptionState === s && <CheckIcon size={16} color={theme.accent} strokeWidth={3} />}
+            </Pressable>
+          ))}
+        </View>
+        <Text style={[styles.footnote, { color: theme.textTertiary }]}>
+          Testing only — previews the Subscription screen&apos;s 5 states. No real purchase is ever made.
+        </Text>
+      </BottomSheet>
 
       <BottomSheet visible={appearanceOpen} onClose={() => setAppearanceOpen(false)} title="Appearance">
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.cardBorder, marginTop: 10 }]}>
@@ -429,7 +475,7 @@ export default function ProfileScreen() {
         <ScrollView showsVerticalScrollIndicator={false}>
           <Text style={[styles.footnote, { color: theme.textSecondary, marginTop: 10 }]}>
             Preview only for now — real home-screen widgets need a native build (not available in Expo Go). Once added,
-            long-press an empty area on your Home Screen, tap the + button, then search for Routine.
+            long-press an empty area on your Home Screen, tap the + button, then search for Tickle.
           </Text>
           <Text style={[styles.sectionLabel, { color: theme.textTertiary, paddingHorizontal: 4 }]}>MINI — TODAY&apos;S LIST</Text>
           <View style={styles.widgetWrap}>

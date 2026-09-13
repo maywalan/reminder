@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Routine",
+    "name": "Tickle",
     "slug": "routine-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -37,16 +37,19 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#5B5FEF",
+          "backgroundColor": "#FFFFFF",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "imageWidth": 130,
+          "dark": {
+            "backgroundColor": "#141D30"
+          }
         }
       ],
       "@react-native-community/datetimepicker",
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Routine to access your photos to attach one to a plan.",
+          "photosPermission": "Allow Tickle to access your photos to attach one to a plan.",
           "cameraPermission": false,
           "microphonePermission": false
         }

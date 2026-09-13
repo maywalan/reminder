@@ -39,6 +39,10 @@ import { COMMON_TIME_ZONES, deviceTimeZone, listTimeZones, timeZoneCityLabel, ti
 
 const MAX_PHOTOS = 3;
 
+// Azure leads this screen's own color picker (matches the app's accent + `DefaultTaskColor`) —
+// other screens reusing `SwatchColors` (Edit Profile, Today's filter chips) keep the base order.
+const COLOR_PICKER_ORDER = [SwatchColors[7], ...SwatchColors.slice(0, 7)];
+
 const ALERT_OPTIONS = [
   { value: 'none', label: 'None' },
   { value: '0', label: 'At time of event' },
@@ -599,7 +603,7 @@ export default function AddPlanScreen() {
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
           <Text style={[styles.label, { color: theme.textTertiary, paddingHorizontal: 14, paddingTop: 12 }]}>COLOR</Text>
           <View style={styles.swatchRow}>
-            {SwatchColors.map((c) => (
+            {COLOR_PICKER_ORDER.map((c) => (
               <Pressable
                 key={c}
                 onPress={() => setColor(c)}

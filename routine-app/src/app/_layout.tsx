@@ -126,6 +126,8 @@ export default function RootLayout() {
           <Stack.Screen name="add-plan" options={{ presentation: 'modal' }} />
           <Stack.Screen name="recap" options={{ presentation: 'modal' }} />
           <Stack.Screen name="edit-profile" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="subscription" />
         </Stack>
       </ThemeProvider>
     </GestureHandlerRootView>

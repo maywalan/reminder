@@ -3,7 +3,7 @@ import * as Crypto from 'expo-crypto';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-import type { Group, Plan, Profile, Settings } from './types';
+import type { Group, Plan, Profile, Settings, SubscriptionState } from './types';
 import { syncClearAll, syncDeletePlan, syncDeletePlans, syncUpdateProfile, syncUpdateSettings, syncUpsertGroup, syncUpsertPlan, syncUpsertPlans } from '@/lib/sync';
 import { findFuturePlans, findPastPlans } from '@/utils/countdown';
 import { toISO } from '@/utils/dates';
@@ -51,6 +51,15 @@ interface PlannerState {
   /** ISO date this device first used the app — bounds how far back guest-mode Progress can navigate. */
   firstUsedAt: string | null;
   ensureFirstUsedAt: () => void;
+  /**
+   * Placeholder entitlement for the Subscription status screen — there is no real StoreKit/Play
+   * Billing wiring yet, so this is a locally-set stand-in (see Profile > Testing > Subscription
+   * State), not a synced purchase record. Must be replaced by real entitlement data (derived from
+   * `isInTrial`/`willRenew`/`expirationDate`/`productId` per the design_handoff_tickle_subscription
+   * README) before this screen can be trusted to reflect an actual subscription.
+   */
+  mockSubscriptionState: SubscriptionState;
+  setMockSubscriptionState: (state: SubscriptionState) => void;
   setPendingSaveToast: (message: string | null) => void;
   addPlan: (plan: Omit<Plan, 'id' | 'completed'>) => void;
   addPlans: (plans: Omit<Plan, 'id' | 'completed'>[]) => void;
@@ -86,10 +95,13 @@ export const usePlannerStore = create<PlannerState>()(
       selectedIds: [],
       pendingSaveToast: null,
       firstUsedAt: null,
+      mockSubscriptionState: 'free',
 
       ensureFirstUsedAt: () => {
         if (!get().firstUsedAt) set({ firstUsedAt: toISO(new Date()) });
       },
+
+      setMockSubscriptionState: (state) => set({ mockSubscriptionState: state }),
 
       setPendingSaveToast: (message) => set({ pendingSaveToast: message }),
 
@@ -247,6 +259,7 @@ export const usePlannerStore = create<PlannerState>()(
         profile: state.profile,
         settings: state.settings,
         firstUsedAt: state.firstUsedAt,
+        mockSubscriptionState: state.mockSubscriptionState,
       }),
       version: 3,
       migrate: (persisted) => {

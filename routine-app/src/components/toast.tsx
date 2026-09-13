@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import { CheckIcon } from '@/components/icon';
-import { Radii, Typography } from '@/constants/theme';
+import { Fonts, Radii, Typography } from '@/constants/theme';
 
 interface ToastProps {
   message: string | null;
@@ -33,5 +33,5 @@ const styles = StyleSheet.create({
     borderRadius: Radii.chip + 2,
     overflow: 'hidden',
   },
-  text: { color: '#fff', fontSize: Typography.rowValue, fontWeight: '600' },
+  text: { color: '#fff', fontSize: Typography.rowValue, fontWeight: '600', fontFamily: Fonts[600] },
 });

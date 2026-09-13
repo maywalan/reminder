@@ -1,9 +1,10 @@
 import { useFocusEffect } from '@react-navigation/native';
 import * as Clipboard from 'expo-clipboard';
+import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import DraggableFlatList from 'react-native-draggable-flatlist';
+import { NestableDraggableFlatList, NestableScrollContainer } from 'react-native-draggable-flatlist';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BottomSheet } from '@/components/bottom-sheet';
@@ -219,36 +220,38 @@ export default function TodayScreen() {
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.surface }]}>
-      <DraggableFlatList
-        data={todays}
-        keyExtractor={(item) => item.id}
-        containerStyle={{ flex: 1 }}
-        contentContainerStyle={{ paddingTop: insets.top + 22, paddingBottom: 130 }}
-        onDragEnd={({ data }) => reorderPlans(todayISO, data.map((p) => p.id))}
-        ListHeaderComponent={header}
-        ListFooterComponent={footer}
-        ListEmptyComponent={
+      <NestableScrollContainer contentContainerStyle={{ paddingTop: insets.top + 22, paddingBottom: 130 }}>
+        {header}
+        {todays.length === 0 ? (
           <View style={[styles.empty, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
             <Text style={{ color: theme.textSecondary, fontSize: Typography.rowLabel, fontFamily: Fonts[500] }}>
               {filterGroupId || filterColor ? 'Nothing matches this filter today.' : 'Nothing planned for today.'}
             </Text>
           </View>
-        }
-        renderItem={({ item, drag, isActive }: { item: Plan; drag: () => void; isActive: boolean }) => (
-          <TodoItem
-            plan={item}
-            group={groups.find((g) => g.id === item.groupId)}
-            selectMode={selectMode}
-            selected={selectedIds.includes(item.id)}
-            isActive={isActive}
-            onToggleComplete={() => toggleComplete(item.id)}
-            onToggleSelect={() => toggleSelected(item.id)}
-            onPress={() => router.push({ pathname: '/add-plan', params: { id: item.id } })}
-            onDelete={() => deletePlan(item.id)}
-            onDrag={drag}
+        ) : (
+          <NestableDraggableFlatList
+            data={todays}
+            keyExtractor={(item) => item.id}
+            onDragEnd={({ data }) => reorderPlans(todayISO, data.map((p) => p.id))}
+            onPlaceholderIndexChange={() => Haptics.selectionAsync()}
+            renderItem={({ item, drag, isActive }: { item: Plan; drag: () => void; isActive: boolean }) => (
+              <TodoItem
+                plan={item}
+                group={groups.find((g) => g.id === item.groupId)}
+                selectMode={selectMode}
+                selected={selectedIds.includes(item.id)}
+                isActive={isActive}
+                onToggleComplete={() => toggleComplete(item.id)}
+                onToggleSelect={() => toggleSelected(item.id)}
+                onPress={() => router.push({ pathname: '/add-plan', params: { id: item.id } })}
+                onDelete={() => deletePlan(item.id)}
+                onDrag={drag}
+              />
+            )}
           />
         )}
-      />
+        {footer}
+      </NestableScrollContainer>
 
       <Toast message={toastMessage} />
 

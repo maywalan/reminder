@@ -20,7 +20,7 @@ import { BottomSheet } from '@/components/bottom-sheet';
 import { CameraIcon, CheckIcon, ChevronRightIcon, XIcon } from '@/components/icon';
 import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
-import { Radii, SwatchColors, Typography } from '@/constants/theme';
+import { DefaultTaskColor, Radii, SwatchColors, Typography } from '@/constants/theme';
 import { usePlaceSearch } from '@/hooks/use-place-search';
 import { useEffectiveScheme, useTheme } from '@/hooks/use-theme';
 import { useToast } from '@/hooks/use-toast';
@@ -98,7 +98,7 @@ export default function AddPlanScreen() {
     combineDateAndTime(initialDate, editing?.endTime ?? editing?.time ?? '10:00')
   );
   const [showEndTimePicker, setShowEndTimePicker] = useState(false);
-  const [color, setColor] = useState(editing?.color ?? SwatchColors[0]);
+  const [color, setColor] = useState(editing?.color ?? DefaultTaskColor);
   const [groupId] = useState<string | null>(editing?.groupId ?? null);
   const [live, setLive] = useState(editing?.live ?? false);
   // Sorted earliest-first (see sortAlertsByEarliness) so row position always matches how far

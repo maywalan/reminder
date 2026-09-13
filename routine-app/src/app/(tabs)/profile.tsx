@@ -15,6 +15,7 @@ import {
   GridIcon,
   PencilIcon,
   ShieldIcon,
+  SparkleIcon,
   TrashIcon,
   WarningIcon,
 } from '@/components/icon';
@@ -24,7 +25,9 @@ import { WidgetPreview } from '@/components/widget-preview';
 import { FONT_SCALE_OPTIONS, Radii, RowMinHeight, Spacing, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useToast } from '@/hooks/use-toast';
+import { getNotificationPermissionStatus, requestNotificationPermissions } from '@/lib/notifications';
 import { useAuthStore } from '@/store/use-auth-store';
+import { useOnboardingStore } from '@/store/use-onboarding-store';
 import { usePlannerStore } from '@/store/use-planner-store';
 import type { AlertStyle, Language, ThemeMode } from '@/store/types';
 import { profileInitials } from '@/utils/profile';
@@ -45,6 +48,36 @@ export default function ProfileScreen() {
   const authUser = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
   const { toastMessage, showToast } = useToast();
+
+  // The switch only ever reflects our own `notificationsEnabled` setting, not the OS grant — so
+  // turning it on must check (and if needed request, or send the user to Settings for) the real
+  // permission, or the switch would show "on" while nothing ever actually fires.
+  async function handleNotificationsToggle(value: boolean) {
+    if (!value) {
+      updateSettings({ notificationsEnabled: false });
+      return;
+    }
+    const { status, canAskAgain } = await getNotificationPermissionStatus();
+    if (status === 'granted') {
+      updateSettings({ notificationsEnabled: true });
+      return;
+    }
+    if (canAskAgain) {
+      const granted = await requestNotificationPermissions();
+      updateSettings({ notificationsEnabled: granted });
+      return;
+    }
+    Alert.alert('Notifications Are Off', 'Turn on notifications for Tickle in Settings to get reminders.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Open Settings', onPress: () => Linking.openSettings() },
+    ]);
+  }
+
+  // TODO remove before shipping — lets Launch-flow work get replayed without reinstalling.
+  function handleReplayOnboarding() {
+    useOnboardingStore.setState({ hasCompletedOnboarding: false, hasChosenGuest: false });
+    router.replace('/onboarding-1');
+  }
 
   function handleClearData() {
     Alert.alert('Clear All Data?', 'This deletes every plan and group on this device. This can’t be undone.', [
@@ -90,7 +123,7 @@ export default function ProfileScreen() {
           <View style={[styles.banner, { backgroundColor: theme.successSoft, borderColor: theme.successBorder }]}>
             <ShieldIcon size={18} color={theme.success} strokeWidth={1.8} />
             <Text style={[styles.bannerText, { color: theme.text }]} numberOfLines={1}>
-              Signed in as {authUser.email}
+              Signed in as <Text style={{ fontWeight: '500', color: theme.textSecondary }}>{authUser.email}</Text>
             </Text>
           </View>
         ) : (
@@ -112,7 +145,7 @@ export default function ProfileScreen() {
             <Text style={[styles.rowLabel, { color: theme.text }]}>Notifications</Text>
             <Switch
               value={settings.notificationsEnabled}
-              onValueChange={(v) => updateSettings({ notificationsEnabled: v })}
+              onValueChange={handleNotificationsToggle}
               trackColor={{ true: theme.success, false: theme.switchOff }}
             />
           </View>
@@ -129,7 +162,7 @@ export default function ProfileScreen() {
           </View>
           <Pressable onPress={() => setNotifOptionsOpen(true)} style={[styles.row, styles.rowBorder, { borderColor: theme.divider }]}>
             <View style={[styles.rowIcon, { backgroundColor: theme.accentSoft }]}>
-              <BellIcon size={16} color={theme.accent} strokeWidth={2} />
+              <GridIcon size={16} color={theme.accent} strokeWidth={2} />
             </View>
             <Text style={[styles.rowLabel, { color: theme.text }]}>Notification Options</Text>
             <ChevronRightIcon size={16} color={theme.textFaint} strokeWidth={2} />
@@ -177,6 +210,17 @@ export default function ProfileScreen() {
               <GridIcon size={16} color={theme.accent} strokeWidth={2} />
             </View>
             <Text style={[styles.rowLabel, { color: theme.text }]}>Home Screen Widgets</Text>
+            <ChevronRightIcon size={16} color={theme.textFaint} strokeWidth={2} />
+          </Pressable>
+        </View>
+
+        <Text style={[styles.sectionLabel, { color: theme.textTertiary }]}>TESTING</Text>
+        <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
+          <Pressable onPress={handleReplayOnboarding} style={styles.row}>
+            <View style={[styles.rowIcon, { backgroundColor: theme.accentSoft }]}>
+              <SparkleIcon size={16} color={theme.accent} strokeWidth={1.8} />
+            </View>
+            <Text style={[styles.rowLabel, { color: theme.text }]}>Replay Onboarding</Text>
             <ChevronRightIcon size={16} color={theme.textFaint} strokeWidth={2} />
           </Pressable>
         </View>

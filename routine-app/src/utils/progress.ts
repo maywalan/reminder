@@ -52,6 +52,21 @@ export function currentStreak(todayISO: string, plans: Plan[]): number {
   return streak;
 }
 
+/** Longest run of consecutive calendar dates with at least one completed plan, ever — the "record" the streak card measures itself against. */
+export function longestStreak(plans: Plan[]): number {
+  const completedDates = Array.from(new Set(plans.filter((p) => p.completed).map((p) => p.date))).sort();
+  let best = 0;
+  let run = 0;
+  let prev: Date | null = null;
+  for (const iso of completedDates) {
+    const d = fromISO(iso);
+    run = prev && Math.round((d.getTime() - prev.getTime()) / 86400000) === 1 ? run + 1 : 1;
+    best = Math.max(best, run);
+    prev = d;
+  }
+  return best;
+}
+
 export function bestWeekday(dates: string[], todayISO: string, plans: Plan[]): number {
   const totals = [0, 0, 0, 0, 0, 0, 0];
   const counts = [0, 0, 0, 0, 0, 0, 0];
@@ -149,7 +164,9 @@ export function pctDelta(cur: number, prev: number): number {
   return Math.round(((cur - prev) / prev) * 100);
 }
 
-const MONTH_LONG = [
+export const WEEKDAY_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+export const MONTH_LONG = [
   'January',
   'February',
   'March',
@@ -163,7 +180,23 @@ const MONTH_LONG = [
   'November',
   'December',
 ];
-const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+export const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** Hero card's uppercase eyebrow line — "THIS WEEK" / "AUGUST" / "2026 SO FAR". */
+export function heroEyebrow(period: Period, range: RangeResult, offset: number): string {
+  const start = fromISO(range.start);
+  if (period === 'week') return offset === 0 ? 'THIS WEEK' : 'THAT WEEK';
+  if (period === 'month') return MONTH_LONG[start.getMonth()].toUpperCase();
+  return offset === 0 ? `${start.getFullYear()} SO FAR` : String(start.getFullYear());
+}
+
+/** Hero card's delta line target — "last week" / "July" / "2025". */
+export function previousPeriodLabel(period: Period, range: RangeResult): string {
+  if (period === 'week') return 'last week';
+  const prevStart = fromISO(range.prevStart);
+  if (period === 'month') return MONTH_LONG[prevStart.getMonth()];
+  return String(prevStart.getFullYear());
+}
 
 /** The nav-bar label for whichever period is currently in view, e.g. "Aug 19 – 25, 2026". */
 export function formatPeriodLabel(period: Period, range: RangeResult): string {

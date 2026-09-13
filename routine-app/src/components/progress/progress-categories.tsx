@@ -9,33 +9,39 @@ export function ProgressCategories({ rows }: { rows: ColorRow[] }) {
   const hasData = rows.some((r) => r.count > 0);
 
   return (
-    <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
+    <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
+      <Text style={[styles.title, { color: theme.text }]}>By color</Text>
       {!hasData ? (
-        <Text style={{ color: theme.textTertiary, fontSize: Typography.body, textAlign: 'center', paddingVertical: 10 }}>No data yet</Text>
+        <Text style={[styles.empty, { color: theme.textTertiary }]}>No data yet</Text>
       ) : (
-        rows.map((r) => (
-          <View key={r.color} style={styles.row}>
-            <View style={[styles.dot, { backgroundColor: r.color }]} />
-            <Text numberOfLines={1} style={[styles.name, { color: theme.text }]}>
-              {r.label}
-            </Text>
-            <View style={[styles.track, { backgroundColor: theme.divider }]}>
-              <View style={[styles.fill, { width: `${r.pct}%`, backgroundColor: r.color }]} />
+        <View style={styles.rows}>
+          {rows.map((r) => (
+            <View key={r.color} style={styles.row}>
+              <View style={[styles.dot, { backgroundColor: r.color }]} />
+              <Text numberOfLines={1} style={[styles.name, { color: theme.text }]}>
+                {r.label}
+              </Text>
+              <View style={[styles.track, { backgroundColor: theme.divider }]}>
+                <View style={[styles.fill, { width: `${r.pct}%`, backgroundColor: r.color }]} />
+              </View>
+              <Text style={[styles.pct, { color: theme.textSecondary }]}>{r.pct}%</Text>
             </View>
-            <Text style={[styles.pct, { color: theme.textSecondary }]}>{r.pct}%</Text>
-          </View>
-        ))
+          ))}
+        </View>
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: Radii.md, borderWidth: 1, marginHorizontal: 22, marginTop: 8, paddingHorizontal: 14, paddingVertical: 6 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 9 },
+  card: { borderRadius: Radii.subcard, borderWidth: 1, marginHorizontal: 14, marginTop: 14, padding: 13 },
+  title: { fontSize: Typography.rowLabel, fontWeight: '700' },
+  empty: { fontSize: Typography.body, textAlign: 'center', paddingVertical: 10 },
+  rows: { gap: 11, marginTop: 11 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   dot: { width: 9, height: 9, borderRadius: 4.5 },
-  name: { fontSize: Typography.body, fontWeight: '600', width: 70 },
-  track: { flex: 1, height: 8, borderRadius: 5, overflow: 'hidden' },
-  fill: { height: '100%', borderRadius: 5 },
-  pct: { fontSize: 12, fontWeight: '700', width: 34, textAlign: 'right' },
+  name: { fontSize: Typography.body, fontWeight: '600', width: 52 },
+  track: { flex: 1, height: 7, borderRadius: 4, overflow: 'hidden' },
+  fill: { height: '100%', borderRadius: 4 },
+  pct: { fontSize: 10.5, fontWeight: '500', width: 32, textAlign: 'right' },
 });

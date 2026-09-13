@@ -271,6 +271,15 @@ export function TrashIcon({ size = 24, color, strokeWidth = 1.8 }: IconProps) {
   );
 }
 
+/** Drag handle for reordering rows (three grip lines) — not in the original prototype, added for Edit-mode reorder. */
+export function GripIcon({ size = 24, color, strokeWidth = 2 }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M4 7h16M4 12h16M4 17h16" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
 /** Google's brand "G" mark — fixed brand colors, not themeable (per Google's sign-in button guidelines). */
 export function GoogleLogoIcon({ size = 24 }: { size?: number }) {
   return (

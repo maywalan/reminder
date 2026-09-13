@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ChevronLeftIcon, ChevronRightIcon } from '@/components/icon';
-import { Typography } from '@/constants/theme';
+import { Radii, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { Plan } from '@/store/types';
 import { buildMonthGrid, MONTHS, WEEKDAY_LETTER } from '@/utils/calendar';
@@ -23,10 +23,10 @@ export function YearView({ year, todayISO, plans, onShiftYear, onPressMonth }: P
       <View style={styles.nav}>
         <Text style={[styles.navLabel, { color: theme.text }]}>{year}</Text>
         <View style={styles.arrows}>
-          <Pressable onPress={() => onShiftYear(-1)} style={[styles.arrowBtn, { borderColor: theme.divider }]}>
+          <Pressable onPress={() => onShiftYear(-1)} style={[styles.arrowBtn, { borderColor: theme.cardBorder }]}>
             <ChevronLeftIcon size={14} color={theme.text} strokeWidth={2.3} />
           </Pressable>
-          <Pressable onPress={() => onShiftYear(1)} style={[styles.arrowBtn, { borderColor: theme.divider }]}>
+          <Pressable onPress={() => onShiftYear(1)} style={[styles.arrowBtn, { borderColor: theme.cardBorder }]}>
             <ChevronRightIcon size={14} color={theme.text} strokeWidth={2.3} />
           </Pressable>
         </View>
@@ -39,7 +39,7 @@ export function YearView({ year, todayISO, plans, onShiftYear, onPressMonth }: P
             <Pressable
               key={m}
               onPress={() => onPressMonth(m)}
-              style={[styles.mini, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
+              style={[styles.mini, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
               <Text style={[styles.miniTitle, { color: theme.text }]}>{name}</Text>
               <View style={styles.miniDow}>
                 {WEEKDAY_LETTER.map((l, i) => (
@@ -77,8 +77,8 @@ const styles = StyleSheet.create({
   navLabel: { fontSize: Typography.title, fontWeight: '800', letterSpacing: -0.2 },
   arrows: { flexDirection: 'row', gap: 8 },
   arrowBtn: { width: 30, height: 30, borderRadius: 15, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 10, gap: 12 },
-  mini: { width: '46%', borderRadius: 14, borderWidth: 1, padding: 10 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingHorizontal: 14, rowGap: 12 },
+  mini: { width: '47%', borderRadius: Radii.chip, borderWidth: 1, padding: 10 },
   miniTitle: { fontSize: Typography.body, fontWeight: '700', marginBottom: 6 },
   miniDow: { flexDirection: 'row', marginBottom: 2 },
   miniDowText: { flex: 1, textAlign: 'center', fontSize: 7, fontWeight: '700' },

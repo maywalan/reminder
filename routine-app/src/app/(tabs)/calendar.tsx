@@ -71,6 +71,12 @@ export default function CalendarScreen() {
     setSelectedDate(toISO(d));
   }
 
+  function goToTodayMonth() {
+    setCalMonth(now.getMonth());
+    setCalYear(now.getFullYear());
+    handleSelectDate(todayISO);
+  }
+
   const getColor = (p: (typeof plans)[number]) => colorForPlan(p, groups, theme.accent);
 
   const selectedDayPlans = plans.filter((p) => p.date === selectedDate).sort((a, b) => a.time.localeCompare(b.time));
@@ -104,6 +110,7 @@ export default function CalendarScreen() {
                 { label: 'Compact', value: 'compact' },
                 { label: 'Detailed', value: 'detailed' },
               ]}
+              style={styles.densitySwitch}
             />
             <MonthView
               year={calYear}
@@ -114,6 +121,7 @@ export default function CalendarScreen() {
               colorForPlan={getColor}
               onSelectDate={handleSelectDate}
               onShiftMonth={shiftMonth}
+              onToday={goToTodayMonth}
               density={calendarDensity}
               holidayByDate={holidays}
             />
@@ -163,6 +171,7 @@ export default function CalendarScreen() {
             plans={plans}
             colorForPlan={getColor}
             onShiftWeek={shiftWeek}
+            onToday={() => setSelectedDate(todayISO)}
             onPressPlan={(id) => router.push({ pathname: '/add-plan', params: { id } })}
           />
         )}
@@ -187,6 +196,7 @@ export default function CalendarScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   h1: { fontSize: Typography.display, fontWeight: '800', letterSpacing: -0.4, paddingHorizontal: 22, marginBottom: 4 },
+  densitySwitch: { marginTop: 9, marginBottom: 10 },
   dayDetail: { marginTop: 16 },
   dayDetailHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 22, marginBottom: 10 },
   dayDetailTitle: { fontSize: Typography.heading, fontWeight: '700' },

@@ -4,8 +4,8 @@ import { AppState } from 'react-native';
 import {
   cancelAllPlanAlerts,
   cancelDailyRecap,
+  getNotificationPermissionStatus,
   refreshDailyRecap,
-  requestNotificationPermissions,
   rescheduleAllPlanAlerts,
 } from '@/lib/notifications';
 import { usePlannerStore } from '@/store/use-planner-store';
@@ -27,8 +27,13 @@ export function useNotificationsSync() {
         await cancelDailyRecap();
         return;
       }
-      const granted = await requestNotificationPermissions();
-      if (!granted) return;
+      // Never requests here — only reads the existing status. Requesting must stay confined to
+      // explicit user moments (onboarding step 3, the Profile toggle), or it fires at app launch
+      // for every new install (notificationsEnabled defaults to true) and silently resolves the
+      // OS permission before the user ever sees the onboarding "Turn on reminders" step — iOS
+      // does not show its native popup a second time after that.
+      const { status } = await getNotificationPermissionStatus();
+      if (status !== 'granted') return;
       await rescheduleAllPlanAlerts(plans);
       await refreshDailyRecap(plans, settings);
     }

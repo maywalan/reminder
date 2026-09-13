@@ -5,6 +5,7 @@ import { Radii, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { CalendarDensity, Plan } from '@/store/types';
 import { buildMonthGrid, MONTHS, WEEKDAY_LETTER } from '@/utils/calendar';
+import { fromISO } from '@/utils/dates';
 
 interface Props {
   year: number;
@@ -15,29 +16,39 @@ interface Props {
   colorForPlan: (p: Plan) => string;
   onSelectDate: (iso: string) => void;
   onShiftMonth: (delta: number) => void;
+  onToday: () => void;
   density: CalendarDensity;
   holidayByDate: Record<string, string>;
 }
 
 const DETAILED_CHIP_LIMIT = 2;
 
-export function MonthView({ year, month, todayISO, selectedDate, plans, colorForPlan, onSelectDate, onShiftMonth, density, holidayByDate }: Props) {
+export function MonthView({ year, month, todayISO, selectedDate, plans, colorForPlan, onSelectDate, onShiftMonth, onToday, density, holidayByDate }: Props) {
   const theme = useTheme();
   const cells = buildMonthGrid(year, month);
+  const today = fromISO(todayISO);
+  const isCurrentMonth = year === today.getFullYear() && month === today.getMonth();
 
   return (
-    <View style={[styles.surface, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
+    <View style={[styles.surface, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
       <View style={styles.nav}>
         <Text style={[styles.navLabel, { color: theme.text }]}>
           {MONTHS[month]} {year}
         </Text>
-        <View style={styles.arrows}>
-          <Pressable onPress={() => onShiftMonth(-1)} style={[styles.arrowBtn, { borderColor: theme.divider }]}>
-            <ChevronLeftIcon size={14} color={theme.text} strokeWidth={2.3} />
-          </Pressable>
-          <Pressable onPress={() => onShiftMonth(1)} style={[styles.arrowBtn, { borderColor: theme.divider }]}>
-            <ChevronRightIcon size={14} color={theme.text} strokeWidth={2.3} />
-          </Pressable>
+        <View style={styles.navActions}>
+          {!isCurrentMonth && (
+            <Pressable onPress={onToday} hitSlop={8}>
+              <Text style={[styles.todayBtn, { color: theme.accentStrong }]}>Today</Text>
+            </Pressable>
+          )}
+          <View style={styles.arrows}>
+            <Pressable onPress={() => onShiftMonth(-1)} style={[styles.arrowBtn, { borderColor: theme.cardBorder }]}>
+              <ChevronLeftIcon size={14} color={theme.text} strokeWidth={2.3} />
+            </Pressable>
+            <Pressable onPress={() => onShiftMonth(1)} style={[styles.arrowBtn, { borderColor: theme.cardBorder }]}>
+              <ChevronRightIcon size={14} color={theme.text} strokeWidth={2.3} />
+            </Pressable>
+          </View>
         </View>
       </View>
 
@@ -54,7 +65,11 @@ export function MonthView({ year, month, todayISO, selectedDate, plans, colorFor
           if (cell.muted || !cell.date) {
             return (
               <View key={i} style={[styles.cell, density === 'detailed' && styles.cellDetailed]}>
-                <Text style={[styles.dayNum, { color: theme.textTertiary }]}>{cell.day}</Text>
+                <View style={styles.dayNumRow}>
+                  <View style={styles.dayNumWrap}>
+                    <Text style={[styles.dayNum, { color: theme.textTertiary }]}>{cell.day}</Text>
+                  </View>
+                </View>
               </View>
             );
           }
@@ -142,9 +157,11 @@ export function MonthView({ year, month, todayISO, selectedDate, plans, colorFor
 }
 
 const styles = StyleSheet.create({
-  surface: { borderRadius: Radii.lg, borderWidth: 1, marginHorizontal: 14, paddingBottom: 6 },
+  surface: { borderRadius: Radii.panel, borderWidth: 1, marginHorizontal: 14, paddingBottom: 6 },
   nav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingTop: 16, paddingBottom: 8 },
   navLabel: { fontSize: Typography.title, fontWeight: '800', letterSpacing: -0.2 },
+  navActions: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  todayBtn: { fontSize: Typography.body, fontWeight: '700' },
   arrows: { flexDirection: 'row', gap: 8 },
   arrowBtn: { width: 30, height: 30, borderRadius: 15, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   dowRow: { flexDirection: 'row', paddingHorizontal: 10, marginBottom: 4 },

@@ -24,6 +24,7 @@ export const Colors = {
     accentStrong: '#0F5FC4', // "azure-600" — every blue *word* (Save, Done, Log In, links)
     accentSoft: '#EAF2FE', // "azure-50" — icon tiles, selected chip fill, active tab pill
     accentLight: '#5AA0F5', // "azure-400" — FAB gradient end only
+    accentBorder: '#E0EBFB', // blue-tinted card border — New Plan's Live Activity card only
     success: '#35B978',
     successLive: '#4FC98A', // live dot / running-session pulse
     successSoft: '#ECF7F1',
@@ -54,6 +55,7 @@ export const Colors = {
     accentStrong: '#7FB4FC',
     accentSoft: 'rgba(27,118,232,0.18)',
     accentLight: '#8FC1FE',
+    accentBorder: 'rgba(76,154,251,0.28)',
     success: '#3FCB86',
     successLive: '#4FC98A',
     successSoft: 'rgba(63,203,134,0.14)',

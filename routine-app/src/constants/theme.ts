@@ -172,8 +172,8 @@ export const Fonts = {
   800: 'Anuphan_700Bold',
 } as const;
 
-/** Task/group/plan color swatches — the 7 plan hues from the Tickle draft-2 design tokens. */
-export const SwatchColors = ['#7B61FF', '#A455D6', '#17A8A0', '#F0A32E', '#E86A7C', '#35B978', '#8A8FA3'] as const;
+/** Task/group/plan color swatches — the 7 plan hues from the Tickle draft-2 design tokens, plus azure. */
+export const SwatchColors = ['#7B61FF', '#A455D6', '#17A8A0', '#F0A32E', '#E86A7C', '#35B978', '#8A8FA3', '#1B76E8'] as const;
 
 /** Display names for SwatchColors, keyed by hex — used anywhere a color needs a human label (e.g. Progress's by-color breakdown). */
 export const SwatchColorNames: Record<string, string> = {
@@ -184,4 +184,8 @@ export const SwatchColorNames: Record<string, string> = {
   '#E86A7C': 'Coral',
   '#35B978': 'Green',
   '#8A8FA3': 'Slate',
+  '#1B76E8': 'Azure',
 };
+
+/** Default color for a newly created task — azure-500, matching the app's own accent color. */
+export const DefaultTaskColor = SwatchColors[7];

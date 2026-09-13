@@ -1,8 +1,9 @@
-import { useRef } from 'react';
+import * as Haptics from 'expo-haptics';
+import { useEffect, useRef } from 'react';
 import { Alert, Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import { BorderlessButton, RectButton, Swipeable } from 'react-native-gesture-handler';
 
-import { CheckIcon, ClockIcon, TrashIcon } from '@/components/icon';
+import { CheckIcon, ClockIcon, GripIcon, TrashIcon } from '@/components/icon';
 import { Fonts, Radii, RowMinHeight, Typography } from '@/constants/theme';
 import type { Group, Plan } from '@/store/types';
 import { useTheme } from '@/hooks/use-theme';
@@ -53,6 +54,23 @@ export function TodoItem({
   // the row is completely covered instead of popping visibly mid-sweep.
   const completeFillScale = useRef(new Animated.Value(0)).current;
   const completeFillOpacity = useRef(new Animated.Value(1)).current;
+
+  // Lift the row with a spring scale-up (plus the shadow already in rowActive below) the moment
+  // a drag picks it up, and spring it back down on drop — with a matching haptic tick on each
+  // edge. Native-driven (transform only) so it runs on the UI thread independent of the reorder
+  // math happening on drop.
+  const dragScale = useRef(new Animated.Value(1)).current;
+  const wasActive = useRef(false);
+  useEffect(() => {
+    if (isActive && !wasActive.current) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      Animated.spring(dragScale, { toValue: 1.045, useNativeDriver: true, speed: 20, bounciness: 6 }).start();
+    } else if (!isActive && wasActive.current) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      Animated.spring(dragScale, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 6 }).start();
+    }
+    wasActive.current = !!isActive;
+  }, [isActive, dragScale]);
 
   function handleToggleComplete() {
     if (plan.completed) {
@@ -107,6 +125,15 @@ export function TodoItem({
         </View>
       </View>
 
+      {selectMode && (
+        <BorderlessButton
+          onActiveStateChange={(active) => active && onDrag()}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          style={styles.dragHandle}>
+          <GripIcon size={18} color={theme.textFaint} strokeWidth={2} />
+        </BorderlessButton>
+      )}
+
       <View pointerEvents="none" style={styles.completeFillClip}>
         <Animated.View
           style={[
@@ -142,30 +169,34 @@ export function TodoItem({
 
   if (selectMode) {
     return (
-      <RectButton onPress={onToggleSelect} style={rowStyle} rippleColor={theme.divider} underlayColor={theme.divider}>
-        {rowContent}
-      </RectButton>
+      <Animated.View style={{ transform: [{ scale: dragScale }] }}>
+        <RectButton onPress={onToggleSelect} style={rowStyle} rippleColor={theme.divider} underlayColor={theme.divider}>
+          {rowContent}
+        </RectButton>
+      </Animated.View>
     );
   }
 
   return (
-    <Swipeable
-      renderRightActions={(_progress, dragX) => {
-        const scale = dragX.interpolate({ inputRange: [-80, 0], outputRange: [1, 0.4], extrapolate: 'clamp' });
-        return (
-          <Pressable onPress={confirmDelete} style={[styles.deleteAction, { backgroundColor: theme.danger }]}>
-            <Animated.View style={{ transform: [{ scale }] }}>
-              <TrashIcon size={20} color="#fff" strokeWidth={2} />
-            </Animated.View>
-          </Pressable>
-        );
-      }}
-      overshootRight={false}
-      rightThreshold={40}>
-      <RectButton onPress={onPress} onLongPress={onDrag} style={rowStyle} rippleColor={theme.divider} underlayColor={theme.divider}>
-        {rowContent}
-      </RectButton>
-    </Swipeable>
+    <Animated.View style={{ transform: [{ scale: dragScale }] }}>
+      <Swipeable
+        renderRightActions={(_progress, dragX) => {
+          const scale = dragX.interpolate({ inputRange: [-80, 0], outputRange: [1, 0.4], extrapolate: 'clamp' });
+          return (
+            <Pressable onPress={confirmDelete} style={[styles.deleteAction, { backgroundColor: theme.danger }]}>
+              <Animated.View style={{ transform: [{ scale }] }}>
+                <TrashIcon size={20} color="#fff" strokeWidth={2} />
+              </Animated.View>
+            </Pressable>
+          );
+        }}
+        overshootRight={false}
+        rightThreshold={40}>
+        <RectButton onPress={onPress} onLongPress={onDrag} style={rowStyle} rippleColor={theme.divider} underlayColor={theme.divider}>
+          {rowContent}
+        </RectButton>
+      </Swipeable>
+    </Animated.View>
   );
 }
 
@@ -222,6 +253,12 @@ const styles = StyleSheet.create({
     height: 26,
     borderRadius: 13,
     borderWidth: 1.8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dragHandle: {
+    width: 26,
+    height: 26,
     alignItems: 'center',
     justifyContent: 'center',
   },

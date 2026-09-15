@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;family=Anuphan:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><style>body{margin:0;background:#F3F2F0;font-family:'Plus Jakarta Sans',system-ui,sans-serif}a{color:#0F5FC4;text-decoration:none}a:hover{color:#1B76E8}
+@keyframes tk-breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.035,.985)}}
+@keyframes tk-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes tk-blink{0%,93%,100%{transform:scaleY(1)}96.5%{transform:scaleY(.12)}}
+@keyframes tk-hop{0%,100%{transform:translateY(0) scale(1)}22%{transform:translateY(-13px) scale(1.04,.96)}45%{transform:translateY(0) scale(.97,1.03)}62%{transform:translateY(-4px) scale(1.01)}}
+@keyframes tk-sheen{0%,62%{left:-40%}100%{left:120%}}
+@keyframes tk-fadea{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+@keyframes tk-fadeb{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){*{animation:none !important}}</style></helmet>
+
+<template id="__bundler_thumbnail" data-bg-color="#10203A">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <rect x="400" y="180" width="400" height="170" rx="30" fill="#1B76E8"></rect>
+    <rect x="400" y="390" width="400" height="60" rx="20" fill="#F7FAFF"></rect>
+    <rect x="400" y="480" width="400" height="60" rx="20" fill="#F7FAFF"></rect>
+  </svg>
+</template>
+
+<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:28px 20px 34px;background:#F3F2F0">
+
+  <div data-screen-label="Subscription status" style="width:320px;height:676px;background:#F7FAFF;border:1px solid #E7EDF6;border-radius:30px;box-shadow:0 8px 24px rgba(16,32,58,.07);overflow:hidden;display:flex;flex-direction:column;font-family:'Anuphan',sans-serif">
+    <div style="height:38px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:8px 18px 0;font-weight:600;font-size:10.5px;color:#10203A"><span>9:41</span><span style="opacity:.45">▮▮▮ ▮</span></div>
+    <div style="flex:none;display:flex;align-items:center;gap:10px;padding:6px 16px 0">
+      <div style="width:30px;height:30px;border-radius:15px;background:rgba(16,32,58,.06);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#3A4759;cursor:pointer;transition:background .2s,transform .2s" style-hover="background:rgba(16,32,58,.12);transform:translateX(-2px)">←</div>
+      <div style="font-weight:700;font-size:16px;color:#10203A;letter-spacing:-.2px">Subscription</div>
+    </div>
+
+    <div style="flex:1;display:flex;flex-direction:column;gap:11px;padding:12px 16px 0;overflow:hidden">
+
+      <div style="{{ heroWrap }}">
+        <div style="{{ heroStyle }}">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+            <div style="display:flex;flex-direction:column;gap:7px;min-width:0;animation:{{ swapAnim }}">
+              <div style="{{ pillStyle }}">{{ pillLabel }}</div>
+              <div style="font-weight:700;font-size:17px;line-height:1.1;color:{{ heroInk }}">{{ planName }}</div>
+              <div style="font:500 11px/1.2 'JetBrains Mono',monospace;color:{{ heroInkSoft }};font-variant-numeric:tabular-nums">{{ priceLine }}</div>
+            </div>
+            <div style="width:46px;height:42px;position:relative;flex:none;transform-origin:50% 90%;animation:{{ mascotAnim }}">
+              <div style="position:absolute;left:5px;top:11px;width:34px;height:30px;border-radius:17px 17px 15px 15px;background:linear-gradient(150deg,#E3F0FE,#B9D8FA)"></div>
+              <div style="position:absolute;left:13px;top:23px;width:6px;height:6px;border-radius:3px;background:#10203A;animation:tk-blink 6s ease-in-out infinite"></div>
+              <div style="position:absolute;left:25px;top:23px;width:6px;height:6px;border-radius:3px;background:#10203A;animation:tk-blink 6s ease-in-out infinite"></div>
+              <div style="position:absolute;left:34px;top:1px;width:11px;height:11px;border-radius:6px;background:#1B76E8;animation:tk-float 4s ease-in-out infinite"></div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:7px;animation:{{ swapAnim }}">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;font-weight:500;font-size:10.5px;color:{{ heroInkSoft }}"><span>{{ meterLabel }}</span><span style="font-family:'JetBrains Mono',monospace;font-size:10px">{{ meterValue }}</span></div>
+            <div style="height:6px;border-radius:3px;background:{{ trackColor }};overflow:hidden"><div style="{{ barStyle }}"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="{{ listWrap }}">
+        <div style="background:#fff;border:1px solid #E7EDF6;border-radius:20px;padding:14px 14px;display:flex;flex-direction:column;gap:10px">
+          <div style="font-weight:700;font-size:11px;letter-spacing:.2px;color:#10203A">{{ listTitle }}</div>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <div style="display:flex;align-items:center;gap:9px"><div style="{{ dotStyle }}">✓</div><div style="font-weight:500;font-size:11px;color:{{ rowInk }}">Unlimited plans &amp; custom recurrence</div></div>
+            <div style="display:flex;align-items:center;gap:9px"><div style="{{ dotStyle }}">✓</div><div style="font-weight:500;font-size:11px;color:{{ rowInk }}">Full calendar, history &amp; export</div></div>
+            <div style="display:flex;align-items:center;gap:9px"><div style="{{ dotStyle }}">✓</div><div style="font-weight:500;font-size:11px;color:{{ rowInk }}">Smart reminders, themes &amp; widgets</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="{{ billWrap }}">
+        <div style="background:#fff;border:1px solid #E7EDF6;border-radius:20px;padding:6px 14px;display:flex;flex-direction:column">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #F1F5FB"><span style="font-weight:500;font-size:11px;color:#5A6A80">Plan</span><span style="font-weight:600;font-size:11px;color:#10203A;animation:{{ swapAnim }}">{{ rPlan }}</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #F1F5FB"><span style="font-weight:500;font-size:11px;color:#5A6A80">Next charge</span><span style="font:500 11px 'JetBrains Mono',monospace;color:#10203A;animation:{{ swapAnim }}">{{ rNext }}</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #F1F5FB"><span style="font-weight:500;font-size:11px;color:#5A6A80">Payment</span><span style="font-weight:600;font-size:11px;color:#10203A;animation:{{ swapAnim }}">{{ rPay }}</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0"><span style="font-weight:500;font-size:11px;color:#5A6A80">Member since</span><span style="font:500 11px 'JetBrains Mono',monospace;color:#10203A">13 Mar 2026</span></div>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="flex:none;padding:12px 16px 20px;display:flex;flex-direction:column;gap:10px">
+      <div style="{{ ctaWrap }}">
+        <div onClick="{{ press }}" style="{{ ctaStyle }}" style-hover="transform:translateY(-1px);box-shadow:0 14px 28px rgba(27,118,232,.4)" style-active="transform:scale(.978)">
+          <div style="position:absolute;top:0;bottom:0;left:-40%;width:35%;background:linear-gradient(100deg,rgba(255,255,255,0),rgba(255,255,255,.32),rgba(255,255,255,0));animation:tk-sheen 3.4s ease-in-out infinite"></div>
+          <span style="position:relative;flex:none;white-space:nowrap">{{ ctaLabel }}</span>
+        </div>
+      </div>
+      <div style="{{ footWrap }}">
+        <div style="display:flex;flex-direction:column;gap:9px;align-items:center">
+          <div style="font-weight:600;font-size:11.5px;color:{{ minorInk }};cursor:pointer">{{ minorLabel }}</div>
+          <div style="display:flex;justify-content:center;gap:12px;font-weight:500;font-size:10.5px;color:#5A6A80"><span>Restore</span><span>·</span><span>Terms</span><span>·</span><span>Privacy</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;width:340px">
+    <div onClick="{{ setTrial }}" style="{{ cTrial }}">Trial</div>
+    <div onClick="{{ setMonthly }}" style="{{ cMonthly }}">Monthly</div>
+    <div onClick="{{ setAnnual }}" style="{{ cAnnual }}">Annual</div>
+    <div onClick="{{ setExpiring }}" style="{{ cExpiring }}">Ending</div>
+    <div onClick="{{ setFree }}" style="{{ cFree }}">Free</div>
+    <div onClick="{{ run }}" style="padding:7px 12px;border-radius:13px;background:#14183A;color:#fff;font:600 11px 'Plus Jakarta Sans',sans-serif;cursor:pointer">Replay</div>
+  </div>
+
+  <div style="width:340px;font:500 10.5px/1.5 'Plus Jakarta Sans',sans-serif;color:#5A6A80;text-align:center">Five states of one screen — tap a chip to switch. Paywall: <a href="./Tickle paywall screen.dc.html">Tickle paywall screen</a>.</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:380,&quot;height&quot;:830},&quot;state&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Trial&quot;,&quot;Monthly&quot;,&quot;Annual&quot;,&quot;Expiring&quot;,&quot;Free&quot;],&quot;default&quot;:&quot;Annual&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Content&quot;}}">
+class Component extends DCLogic {
+  state = { step: 0, mode: 'annual', pulse: 0, hop: false };
+  timers = [];
+
+  componentDidMount() { this.run(); }
+  componentWillUnmount() { this.clear(); }
+  clear() { this.timers.forEach(clearTimeout); this.timers = []; }
+
+  run = () => {
+    this.clear();
+    this.setState({ step: 0, mode: this.props.state ? String(this.props.state).toLowerCase() : 'annual' });
+    [110, 250, 390, 530, 650].forEach((t, i) =>
+      this.timers.push(setTimeout(() => this.setState({ step: i + 1 }), t)));
+  };
+
+  go(mode) {
+    this.setState(s => ({ mode: mode, pulse: s.pulse + 1, hop: true }));
+    this.timers.push(setTimeout(() => this.setState({ hop: false }), 950));
+  }
+
+  enter(n) {
+    const shown = this.state.step >= n;
+    return 'width:100%;transition:opacity .5s cubic-bezier(.22,1,.36,1),transform .5s cubic-bezier(.22,1,.36,1);'
+      + (shown ? 'opacity:1;transform:none' : 'opacity:0;transform:translateY(13px)');
+  }
+
+  data() {
+    const m = this.state.mode;
+    if (m === 'trial') return {
+      pill: 'TRIAL · 4 DAYS LEFT', pillBg: '#1B76E8', pillInk: '#fff', dark: true,
+      plan: 'Premium — Annual', price: '$16.67 / yr after trial',
+      meterLabel: 'Trial ends 17 Sep 2026', meterValue: 'day 3 of 7', pct: 43, barColor: '#1B76E8',
+      rPlan: 'Premium annual', rNext: '17 Sep 2026', rPay: 'Apple Pay',
+      cta: 'Manage in App Store', minor: 'Cancel trial', minorInk: '#5A6A80', accentCta: true
+    };
+    if (m === 'monthly') return {
+      pill: 'ACTIVE', pillBg: 'rgba(79,216,164,.2)', pillInk: '#8FEAC4', dark: true,
+      plan: 'Premium — Monthly', price: '$2.67 / month',
+      meterLabel: 'Renews 13 Oct 2026', meterValue: '$32.04 / yr at this rate', pct: 100, barColor: '#1B76E8',
+      rPlan: 'Premium monthly', rNext: '13 Oct 2026', rPay: 'Visa ·· 4242',
+      cta: 'Switch to annual · save 48%', minor: 'Cancel subscription', minorInk: '#5A6A80', accentCta: true
+    };
+    if (m === 'expiring') return {
+      pill: 'ENDS 13 OCT', pillBg: 'rgba(184,134,43,.22)', pillInk: '#EFC985', dark: true,
+      plan: 'Premium — Monthly', price: 'Cancelled · no further charges',
+      meterLabel: 'Premium until 13 Oct 2026, then Free', meterValue: '27 days left', pct: 68, barColor: '#D9A356',
+      rPlan: 'Premium monthly', rNext: '—', rPay: 'Visa ·· 4242',
+      cta: 'Keep Premium', minor: 'What changes on Free?', minorInk: '#0F5FC4', accentCta: true
+    };
+    if (m === 'free') return {
+      pill: 'FREE PLAN', pillBg: '#EEF3FA', pillInk: '#3A4759', dark: false,
+      plan: 'Free', price: '$0 forever',
+      meterLabel: 'Active plans used', meterValue: '5 of 5', pct: 100, barColor: '#D9A356',
+      rPlan: 'Free', rNext: '—', rPay: '—',
+      cta: 'Start free trial', minor: 'Restore purchases', minorInk: '#5A6A80', accentCta: true
+    };
+    return {
+      pill: 'ACTIVE', pillBg: 'rgba(79,216,164,.2)', pillInk: '#8FEAC4', dark: true,
+      plan: 'Premium — Annual', price: '$16.67 / yr (≈ $1.39/mo)',
+      meterLabel: 'Renews 13 Sep 2027', meterValue: '≈ $1.39 / mo', pct: 100, barColor: '#1B76E8',
+      rPlan: 'Premium annual', rNext: '13 Sep 2027', rPay: 'Apple Pay',
+      cta: 'Manage in App Store', minor: 'Cancel subscription', minorInk: '#5A6A80', accentCta: true
+    };
+  }
+
+  renderVals() {
+    const d = this.data();
+    const { mode, pulse, hop, step } = this.state;
+    const chip = (on) => 'padding:7px 12px;border-radius:13px;cursor:pointer;font:600 11px "Plus Jakarta Sans",sans-serif;transition:background .22s,color .22s;'
+      + (on ? 'background:#1B76E8;color:#fff' : 'background:rgba(20,24,58,.07);color:#3A4759');
+
+    return {
+      run: this.run,
+      press: () => this.go(mode === 'free' ? 'trial' : (mode === 'monthly' ? 'annual' : (mode === 'expiring' ? 'monthly' : mode))),
+      setTrial: () => this.go('trial'),
+      setMonthly: () => this.go('monthly'),
+      setAnnual: () => this.go('annual'),
+      setExpiring: () => this.go('expiring'),
+      setFree: () => this.go('free'),
+
+      heroWrap: this.enter(1),
+      listWrap: this.enter(2),
+      billWrap: this.enter(3),
+      ctaWrap: this.enter(4),
+      footWrap: this.enter(5),
+      swapAnim: (pulse % 2 ? 'tk-fadea' : 'tk-fadeb') + ' .34s cubic-bezier(.22,1,.36,1)',
+      mascotAnim: hop ? 'tk-hop .9s cubic-bezier(.3,1.2,.4,1)' : 'tk-breathe 4s ease-in-out infinite',
+
+      heroStyle: 'box-sizing:border-box;width:100%;border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:14px;transition:background .35s,box-shadow .35s;'
+        + (d.dark ? 'background:#10203A;box-shadow:0 14px 30px rgba(16,32,58,.24)' : 'background:#fff;border:1px solid #E7EDF6;box-shadow:0 6px 18px rgba(16,32,58,.07)'),
+      heroInk: d.dark ? '#FFFFFF' : '#10203A',
+      heroInkSoft: d.dark ? '#C6D6EA' : '#5A6A80',
+      pillStyle: 'align-self:flex-start;padding:4px 9px;border-radius:9px;font-weight:700;font-size:9px;letter-spacing:.4px;white-space:nowrap;transition:background .3s,color .3s;'
+        + 'background:' + d.pillBg + ';color:' + d.pillInk,
+      pillLabel: d.pill,
+      planName: d.plan,
+      priceLine: d.price,
+      meterLabel: d.meterLabel,
+      meterValue: d.meterValue,
+      trackColor: d.dark ? 'rgba(255,255,255,.14)' : '#EEF3FA',
+      barStyle: 'height:100%;border-radius:3px;transition:width .6s cubic-bezier(.22,1,.36,1),background .35s;'
+        + 'background:' + d.barColor + ';width:' + (step >= 1 ? d.pct : 0) + '%',
+
+      listTitle: mode === 'free' ? 'Unlock with Premium' : 'Included in your plan',
+      dotStyle: 'width:16px;height:16px;border-radius:8px;flex:none;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;transition:background .3s,color .3s;'
+        + (mode === 'free' ? 'background:#EEF3FA;color:#8A99AC' : 'background:#1B76E8;color:#fff'),
+      rowInk: mode === 'free' ? '#5A6A80' : '#3A4759',
+
+      rPlan: d.rPlan,
+      rNext: d.rNext,
+      rPay: d.rPay,
+
+      ctaStyle: 'position:relative;overflow:hidden;cursor:pointer;height:50px;border-radius:25px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;'
+        + 'transition:background .3s,transform .18s,box-shadow .25s;background:#1B76E8;box-shadow:0 10px 22px rgba(27,118,232,.3)',
+      ctaLabel: d.cta,
+      minorLabel: d.minor,
+      minorInk: d.minorInk,
+
+      cTrial: chip(mode === 'trial'),
+      cMonthly: chip(mode === 'monthly'),
+      cAnnual: chip(mode === 'annual'),
+      cExpiring: chip(mode === 'expiring'),
+      cFree: chip(mode === 'free'),
+    };
+  }
+}
+</script>
+</body>
+</html>

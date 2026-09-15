@@ -56,18 +56,18 @@ Cards are equal height by construction — both contain: name, price, period lin
 
 | Billing | USD | THB |
 |---|---|---|
-| Monthly | `$2.67` — "per month" | `฿89` — "per month" |
-| Annual | `$16.67` — "per year · ≈$1.39/mo" | `฿555` — "per year · ≈฿46.25/mo" |
+| Monthly | `$2.69` — "per month" | `฿89` — "per month" |
+| Annual | `$16.99` — "per year · ≈$1.42/mo" | `฿555` — "per year · ≈฿46.25/mo" |
 
-Annual saves ~48% vs monthly → `SAVE 48%` badge on the Annual segment.
+Special launch pricing (was $3.99 / $24.99, ฿132 / ฿827). Annual saves ~48% vs monthly → `SAVE 48%` badge on the Annual segment.
 
 Fine print, by state:
-- Annual USD — "Annual billed as one payment of $16.67/yr (≈ $1.39/mo). Cancel anytime from account settings."
-- Annual THB — "Annual billed as one payment of ฿555/yr (≈ ฿46.25/mo). Converted at ≈ ฿33.30/$1 — App Store price may round. Cancel anytime."
-- Monthly USD — "Billed $2.67 each month. Cancel anytime from account settings."
-- Monthly THB — "Billed ฿89 each month. Converted at ≈ ฿33.30/$1 — App Store price may round. Cancel anytime."
+- Annual USD — "Special launch pricing — annual billed as one payment of $16.99/yr (≈ $1.42/mo). Cancel anytime from account settings."
+- Annual THB — "Special launch pricing — annual billed as one payment of ฿555/yr (≈ ฿46/mo), about 48% off paying monthly all year. Cancel anytime from account settings."
+- Monthly USD — "Billed $2.69 each month. Cancel anytime from account settings."
+- Monthly THB — "Billed ฿89 each month. Local pricing — App Store price may vary slightly. Cancel anytime."
 
-THB figures are a display conversion at ≈ ฿33.30/$1 (Sept 2026). **In the app, read localized prices from StoreKit / Play Billing instead of hardcoding**; keep these strings as fallback copy only.
+USD and THB are independently-set launch prices (not a strict currency conversion). **In the app, read localized prices from StoreKit / Play Billing instead of hardcoding**; keep these strings as fallback copy only.
 
 ## CTA states
 

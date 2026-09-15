@@ -140,15 +140,15 @@ class Component extends DCLogic {
     const m = this.state.mode;
     if (m === 'trial') return {
       pill: 'TRIAL · 4 DAYS LEFT', pillBg: '#1B76E8', pillInk: '#fff', dark: true,
-      plan: 'Premium — Annual', price: '$16.67 / yr after trial',
+      plan: 'Premium — Annual', price: '$16.99 / yr after trial',
       meterLabel: 'Trial ends 17 Sep 2026', meterValue: 'day 3 of 7', pct: 43, barColor: '#1B76E8',
       rPlan: 'Premium annual', rNext: '17 Sep 2026', rPay: 'Apple Pay',
       cta: 'Manage in App Store', minor: 'Cancel trial', minorInk: '#5A6A80', accentCta: true
     };
     if (m === 'monthly') return {
       pill: 'ACTIVE', pillBg: 'rgba(79,216,164,.2)', pillInk: '#8FEAC4', dark: true,
-      plan: 'Premium — Monthly', price: '$2.67 / month',
-      meterLabel: 'Renews 13 Oct 2026', meterValue: '$32.04 / yr at this rate', pct: 100, barColor: '#1B76E8',
+      plan: 'Premium — Monthly', price: '$2.69 / month',
+      meterLabel: 'Renews 13 Oct 2026', meterValue: '$32.28 / yr at this rate', pct: 100, barColor: '#1B76E8',
       rPlan: 'Premium monthly', rNext: '13 Oct 2026', rPay: 'Visa ·· 4242',
       cta: 'Switch to annual · save 48%', minor: 'Cancel subscription', minorInk: '#5A6A80', accentCta: true
     };
@@ -168,8 +168,8 @@ class Component extends DCLogic {
     };
     return {
       pill: 'ACTIVE', pillBg: 'rgba(79,216,164,.2)', pillInk: '#8FEAC4', dark: true,
-      plan: 'Premium — Annual', price: '$16.67 / yr (≈ $1.39/mo)',
-      meterLabel: 'Renews 13 Sep 2027', meterValue: '≈ $1.39 / mo', pct: 100, barColor: '#1B76E8',
+      plan: 'Premium — Annual', price: '$16.99 / yr (≈ $1.42/mo)',
+      meterLabel: 'Renews 13 Sep 2027', meterValue: '≈ $1.42 / mo', pct: 100, barColor: '#1B76E8',
       rPlan: 'Premium annual', rNext: '13 Sep 2027', rPay: 'Apple Pay',
       cta: 'Manage in App Store', minor: 'Cancel subscription', minorInk: '#5A6A80', accentCta: true
     };

@@ -178,17 +178,17 @@ class Component extends DCLogic {
       + (on ? 'background:#1B76E8;border:1.5px solid #1B76E8;transform:scale(1)'
             : 'background:transparent;border:1.5px solid ' + (dark ? 'rgba(255,255,255,.3)' : '#D5E2F5') + ';transform:scale(.88)');
 
-    const price = usd ? (annual ? '$16.67' : '$2.67') : (annual ? '฿555' : '฿89');
+    const price = usd ? (annual ? '$16.99' : '$2.69') : (annual ? '฿555' : '฿89');
     const period = annual
-      ? (usd ? 'per year · ≈$1.39/mo' : 'per year · ≈฿46.25/mo')
+      ? (usd ? 'per year · ≈$1.42/mo' : 'per year · ≈฿46.25/mo')
       : (usd ? 'per month' : 'per month');
     const fine = annual
       ? (usd
-        ? 'Annual billed as one payment of $16.67/yr (≈ $1.39/mo). Cancel anytime from account settings.'
-        : 'Annual billed as one payment of ฿555/yr (≈ ฿46.25/mo). Converted at ≈ ฿33.30/$1 — App Store price may round. Cancel anytime.')
+        ? 'Special launch pricing — annual billed as one payment of $16.99/yr (≈ $1.42/mo). Cancel anytime from account settings.'
+        : 'Special launch pricing — annual billed as one payment of ฿555/yr (≈ ฿46/mo), about 48% off paying monthly all year. Cancel anytime from account settings.')
       : (usd
-        ? 'Billed $2.67 each month. Cancel anytime from account settings.'
-        : 'Billed ฿89 each month. Converted at ≈ ฿33.30/$1 — App Store price may round. Cancel anytime.');
+        ? 'Billed $2.69 each month. Cancel anytime from account settings.'
+        : 'Billed ฿89 each month. Local pricing — App Store price may vary slightly. Cancel anytime.');
 
     return {
       showControls: this.props.showControls ?? true,

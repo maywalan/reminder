@@ -45,9 +45,9 @@ Hero is dark (`#10203A`) for every entitled state and white for Free.
 
 | State | Pill | Plan / price | Meter label · value · fill | Primary | Minor |
 |---|---|---|---|---|---|
-| Trial | `TRIAL · 4 DAYS LEFT` — azure `#1B76E8` on white ink | Premium — Annual · `$16.67 / yr after trial` | Trial ends 17 Sep 2026 · day 3 of 7 · 43% azure | Manage in App Store | Cancel trial |
-| Monthly | `ACTIVE` — green `rgba(79,216,164,.2)` / `#8FEAC4` | Premium — Monthly · `$2.67 / month` | Renews 13 Oct 2026 · $32.04 / yr at this rate · 100% azure | Switch to annual · save 48% | Cancel subscription |
-| Annual | `ACTIVE` — green | Premium — Annual · `$16.67 / yr (≈ $1.39/mo)` | Renews 13 Sep 2027 · ≈ $1.39 / mo · 100% azure | Manage in App Store | Cancel subscription |
+| Trial | `TRIAL · 4 DAYS LEFT` — azure `#1B76E8` on white ink | Premium — Annual · `$16.99 / yr after trial` | Trial ends 17 Sep 2026 · day 3 of 7 · 43% azure | Manage in App Store | Cancel trial |
+| Monthly | `ACTIVE` — green `rgba(79,216,164,.2)` / `#8FEAC4` | Premium — Monthly · `$2.69 / month` | Renews 13 Oct 2026 · $32.28 / yr at this rate · 100% azure | Switch to annual · save 48% | Cancel subscription |
+| Annual | `ACTIVE` — green | Premium — Annual · `$16.99 / yr (≈ $1.42/mo)` | Renews 13 Sep 2027 · ≈ $1.42 / mo · 100% azure | Manage in App Store | Cancel subscription |
 | Ending | `ENDS 13 OCT` — warm `rgba(184,134,43,.22)` / `#EFC985` | Premium — Monthly · `Cancelled · no further charges` | Premium until 13 Oct 2026, then Free · 27 days left · 68% warm `#D9A356` | Keep Premium | What changes on Free? |
 | Free | `FREE PLAN` — `#EEF3FA` / `#3A4759` | Free · `$0 forever` | Active plans used · 5 of 5 · 100% warm | Start free trial → paywall | Restore purchases |
 
@@ -58,7 +58,7 @@ Billing rows by state — Plan: `Premium annual` / `Premium monthly` / `Free`; N
 ## Data & platform notes
 
 - Derive the state from the store entitlement, not local flags: `isInTrial`, `willRenew`, `expirationDate`, `productId`, `periodType`. "Ending" = entitled **and** `willRenew == false`.
-- Prices, currency and renewal dates come from StoreKit / Play Billing localized product info — the strings above are fallback copy. THB display follows `Tickle-Pricing-README.md` (≈ ฿33.30/$1, Sept 2026).
+- Prices, currency and renewal dates come from StoreKit / Play Billing localized product info — the strings above are fallback copy. Pricing (independent USD/THB launch prices, not a strict conversion) follows `Tickle-Pricing-README.md`.
 - Cancel and payment-method changes are **deep links to the store's manage-subscriptions sheet**; the app never cancels directly. "Switch to annual" is an in-app upgrade/proration purchase.
 - Refresh entitlement on app foreground and after returning from the store sheet, animating any state change.
 - Free state's primary action opens the paywall (see `Tickle paywall (standalone).html`).

@@ -39,14 +39,14 @@ CTA button label: **Start free trial**
 
 ## Pricing
 
-| Billing | USD | THB (≈ ฿33.30 / $1, Sept 2026) |
+| Billing | USD | THB |
 |---|---|---|
-| Monthly | $2.67 / month | ฿89 / month |
-| Annual | $16.67 / year (≈ $1.39/mo) | ฿555 / year (≈ ฿46.25/mo) |
+| Monthly | $2.69 / month | ฿89 / month |
+| Annual | $16.99 / year (≈ $1.42/mo) | ฿555 / year (≈ ฿46.25/mo) |
 
-Annual saves ~48% versus paying monthly all year — shown as a **"Save 48%"** badge on the Annual toggle option.
+Special launch pricing (was $3.99 / $24.99). Annual saves ~48% versus paying monthly all year — shown as a **"Save 48%"** badge on the Annual toggle option.
 
-Footer / fine print copy: "Annual billed as one payment of $16.67/yr (≈ $1.39/mo). Cancel anytime from account settings." (THB version: "Annual billed as one payment of ฿555/yr (≈ ฿46.25/mo). Converted at ≈ ฿33.30/$1 (Sept 2026) — actual App Store price may round differently. Cancel anytime from account settings.")
+Footer / fine print copy: "Special launch pricing — annual billed as one payment of $16.99/yr (≈ $1.42/mo). Cancel anytime from account settings." (THB version: "Special launch pricing — annual billed as one payment of ฿555/yr (≈ ฿46/mo), about 48% off paying monthly all year. Cancel anytime from account settings.")
 
 Page header copy: "Simple pricing, built to keep routines going" / "Start free with the full core loop. Upgrade when you want more plans, deeper history, and finer control over reminders."
 

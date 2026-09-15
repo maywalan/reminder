@@ -25,21 +25,21 @@ const PREMIUM_FEATURES = ['Unlimited plans', 'Custom recurrence', 'Full calendar
 // storefront hasn't loaded yet — the live screen must read localized prices from StoreKit / Play
 // Billing instead of these once purchases are wired up.
 const PRICE: Record<Currency, Record<Billing, string>> = {
-  usd: { monthly: '$2.67', annual: '$16.67' },
+  usd: { monthly: '$2.69', annual: '$16.99' },
   thb: { monthly: '฿89', annual: '฿555' },
 };
 const PERIOD: Record<Currency, Record<Billing, string>> = {
-  usd: { monthly: 'per month', annual: 'per year · ≈$1.39/mo' },
+  usd: { monthly: 'per month', annual: 'per year · ≈$1.42/mo' },
   thb: { monthly: 'per month', annual: 'per year · ≈฿46.25/mo' },
 };
 const FINE_PRINT: Record<Currency, Record<Billing, string>> = {
   usd: {
-    monthly: 'Billed $2.67 each month. Cancel anytime from account settings.',
-    annual: 'Annual billed as one payment of $16.67/yr (≈ $1.39/mo). Cancel anytime from account settings.',
+    monthly: 'Billed $2.69 each month. Cancel anytime from account settings.',
+    annual: 'Annual billed as one payment of $16.99/yr (≈ $1.42/mo). Cancel anytime from account settings.',
   },
   thb: {
-    monthly: 'Billed ฿89 each month. Converted at ≈ ฿33.30/$1 — App Store price may round. Cancel anytime.',
-    annual: 'Annual billed as one payment of ฿555/yr (≈ ฿46.25/mo). Converted at ≈ ฿33.30/$1 — App Store price may round. Cancel anytime.',
+    monthly: 'Billed ฿89 each month. Local pricing — App Store price may vary slightly. Cancel anytime.',
+    annual: 'Annual billed as one payment of ฿555/yr (≈ ฿46.25/mo). Local pricing — App Store price may vary slightly. Cancel anytime.',
   },
 };
 

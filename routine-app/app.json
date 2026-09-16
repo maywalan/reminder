@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "routineapp",
+    "scheme": "tickle",
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": {
@@ -13,13 +13,13 @@
         "dark": "./assets/images/icon-dark.png",
         "tinted": "./assets/images/icon-tinted.png"
       },
-      "bundleIdentifier": "com.maywalan.routineapp",
+      "bundleIdentifier": "com.maywalan.tickle",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "package": "com.maywalan.routineapp",
+      "package": "com.maywalan.tickle",
       "adaptiveIcon": {
         "backgroundColor": "#1B76E8",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

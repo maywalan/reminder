@@ -29,6 +29,7 @@ function planToRow(plan: Plan, userId: string) {
     time: plan.time,
     end_time: plan.endTime ?? null,
     all_day: plan.allDay ?? false,
+    timezone: plan.timezone ?? null,
     alerts: plan.alerts,
     notes: plan.notes ?? null,
     location: plan.location ?? null,
@@ -51,6 +52,7 @@ function rowToPlan(row: Record<string, any>): Plan {
     time: row.time,
     endTime: row.end_time ?? undefined,
     allDay: row.all_day ?? undefined,
+    timezone: row.timezone ?? undefined,
     alerts: row.alerts ?? [],
     notes: row.notes ?? undefined,
     location: row.location ?? undefined,
@@ -82,6 +84,10 @@ function settingsToRow(patch: Partial<Settings>) {
   if (patch.badgesEnabled !== undefined) row.badges_enabled = patch.badgesEnabled;
   if (patch.alertStyle !== undefined) row.alert_style = patch.alertStyle;
   if (patch.language !== undefined) row.language = patch.language;
+  if (patch.calendarDensity !== undefined) row.calendar_density = patch.calendarDensity;
+  if (patch.fontScale !== undefined) row.font_scale = patch.fontScale;
+  if (patch.recapEnabled !== undefined) row.recap_enabled = patch.recapEnabled;
+  if (patch.recapHour !== undefined) row.recap_hour = patch.recapHour;
   return row;
 }
 
@@ -94,7 +100,6 @@ function rowToSettings(row: Record<string, any>): Settings {
     badgesEnabled: row.badges_enabled,
     alertStyle: row.alert_style as AlertStyle,
     language: row.language as Language,
-    // Not in the Supabase schema yet — these stay device-local for now.
     calendarDensity: (row.calendar_density as CalendarDensity) ?? 'compact',
     fontScale: (row.font_scale as FontScale) ?? 1,
     recapEnabled: row.recap_enabled ?? true,

@@ -120,7 +120,7 @@ Sign in with Apple alongside any other third-party login), then group creation.
 - **Google OAuth redirect fails in Expo Go** ("Safari cannot open the page") — **fixed in a real
   dev-client build.** Root cause confirmed: it was an Expo-Go-only limitation (every Expo Go
   project on a device shares the `exp://` scheme, which the redirect hand-back mishandled). A
-  standalone dev-client build using the app's own registered `routineapp://` scheme (`npx expo
+  standalone dev-client build using the app's own registered `tickle://` scheme (`npx expo
   install expo-dev-client`, `eas build --profile development --platform ios`) resolves it —
   verified by completing Google sign-in in that build on the iOS Simulator. Expo Go itself will
   still show the old failure, since that's inherent to Expo Go's shared scheme, not something
@@ -148,7 +148,7 @@ Sign in with Apple alongside any other third-party login), then group creation.
 
 Not ready yet. What's in place vs. still needed:
 
-- ✅ `ios.bundleIdentifier` / `android.package` set to `com.maywalan.routineapp` in `app.json`.
+- ✅ `ios.bundleIdentifier` / `android.package` set to `com.maywalan.tickle` in `app.json`.
 - ✅ `eas.json` build profiles configured (development/preview/production).
 - ✅ Hosted privacy policy, linked in-app.
 - ❌ **Apple Developer Program enrollment — still not done as of 2026-09-13; nothing below can
@@ -170,9 +170,16 @@ Not ready yet. What's in place vs. still needed:
 - ✅ **App renamed to "Tickle" in `app.json` (2026-09-13)** — was "Routine" (the mascot/redesign
   codename, now the product name). Updated every user-visible "Routine" string found in `src/`
   (Profile's widget instructions, the widget preview mockup, the photo-library permission string).
-  **Not renamed**: the `routineapp://` URL scheme, `com.maywalan.routineapp` bundle id, the
-  `routine-app` EAS project slug/GitHub repo — those are technical identifiers wired into Google/
-  Supabase OAuth redirect config and the EAS project; changing them is a separate, bigger decision.
+- ✅ **URL scheme + bundle id renamed (2026-09-16)**: `routineapp://` → `tickle://`,
+  `com.maywalan.routineapp` → `com.maywalan.tickle`. Safe to do now since no App Store Connect
+  record exists yet (bundle id can't change after submission). Supabase Auth's redirect-URL
+  allowlist updated to match (`tickle://**`, old `routineapp://**` entry removed) — Google OAuth
+  re-verified working after the change. **Not renamed**: the `routine-app` EAS project slug/GitHub
+  repo — the EAS slug can't be renamed in place (would need a brand-new EAS project, losing the
+  linked build history), and it's an internal identifier not shown to users, so left as-is by
+  choice. The local `ios/` folder (gitignored, generated) still has the old bundle id baked in from
+  a prior `expo run:ios`/prebuild — run `npx expo prebuild --clean` (or delete `ios/` and re-run)
+  before the next native build so it picks up `com.maywalan.tickle`.
 - ✅ **Splash screen fixed (2026-09-13)** — the native cold-launch splash was still the
   pre-redesign purple (`#5B5FEF`) with an old white logo mark, while the JS-rendered `TickleSplash`
   that takes over moments later is white/dark per theme — every launch visibly flashed

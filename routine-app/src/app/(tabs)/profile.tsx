@@ -22,7 +22,7 @@ import {
 import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
 import { WidgetPreview } from '@/components/widget-preview';
-import { FONT_SCALE_OPTIONS, Radii, RowMinHeight, Spacing, Typography } from '@/constants/theme';
+import { Radii, RowMinHeight, Spacing, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useToast } from '@/hooks/use-toast';
 import { getNotificationPermissionStatus, requestNotificationPermissions } from '@/lib/notifications';
@@ -35,7 +35,8 @@ import { SUBSCRIPTION_STATES, SUBSCRIPTION_STATE_LABEL } from '@/utils/subscript
 
 const THEME_LABEL: Record<ThemeMode, string> = { light: 'Light', dark: 'Dark', system: 'System' };
 const LANGUAGE_LABEL: Record<Language, string> = { en: 'English', th: 'ไทย', zh: '中文' };
-const LANGUAGE_SUB: Record<Language, string> = { en: 'English', th: 'Thai', zh: 'Chinese' };
+const LANGUAGE_FLAG: Record<Language, string> = { en: '🇺🇸', th: '🇹🇭', zh: '🇨🇳' };
+const SELECTABLE_LANGUAGES: Language[] = ['en', 'th'];
 const RECAP_HOURS = [6, 7, 8, 9, 10];
 
 export default function ProfileScreen() {
@@ -97,7 +98,6 @@ export default function ProfileScreen() {
   }
 
   const [appearanceOpen, setAppearanceOpen] = useState(false);
-  const [fontSizeOpen, setFontSizeOpen] = useState(false);
   const [languageOpen, setLanguageOpen] = useState(false);
   const [notifOptionsOpen, setNotifOptionsOpen] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
@@ -182,21 +182,14 @@ export default function ProfileScreen() {
             <Text style={[styles.rowLabel, { color: theme.text }]}>Appearance</Text>
             <Text style={[styles.rowValue, { color: theme.textTertiary }]}>{THEME_LABEL[settings.themeMode]}</Text>
           </Pressable>
-          <Pressable onPress={() => setFontSizeOpen(true)} style={[styles.row, styles.rowBorder, { borderColor: theme.divider }]}>
-            <View style={[styles.rowIcon, { backgroundColor: theme.accentSoft }]}>
-              <Text style={{ color: theme.accent, fontSize: 13, fontWeight: '800' }}>A</Text>
-            </View>
-            <Text style={[styles.rowLabel, { color: theme.text }]}>Font Size</Text>
-            <Text style={[styles.rowValue, { color: theme.textTertiary }]}>
-              {FONT_SCALE_OPTIONS.find((o) => o.value === settings.fontScale)?.label}
-            </Text>
-          </Pressable>
           <Pressable onPress={() => setLanguageOpen(true)} style={[styles.row, styles.rowBorder, { borderColor: theme.divider }]}>
             <View style={[styles.rowIcon, { backgroundColor: theme.accentSoft }]}>
               <GlobeIcon size={16} color={theme.accent} strokeWidth={2} />
             </View>
             <Text style={[styles.rowLabel, { color: theme.text }]}>Language</Text>
-            <Text style={[styles.rowValue, { color: theme.textTertiary }]}>{LANGUAGE_LABEL[settings.language]}</Text>
+            <Text style={[styles.rowValue, { color: theme.textTertiary }]}>
+              {LANGUAGE_FLAG[settings.language]} {LANGUAGE_LABEL[settings.language]}
+            </Text>
           </Pressable>
           <Pressable onPress={() => setPrivacyOpen(true)} style={[styles.row, styles.rowBorder, { borderColor: theme.divider }]}>
             <View style={[styles.rowIcon, { backgroundColor: theme.accentSoft }]}>
@@ -302,27 +295,9 @@ export default function ProfileScreen() {
         </View>
       </BottomSheet>
 
-      <BottomSheet visible={fontSizeOpen} onClose={() => setFontSizeOpen(false)} title="Font Size">
-        <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.cardBorder, marginTop: 10 }]}>
-          {FONT_SCALE_OPTIONS.map((opt, i) => (
-            <Pressable
-              key={opt.value}
-              onPress={() => {
-                updateSettings({ fontScale: opt.value });
-                setFontSizeOpen(false);
-              }}
-              style={[styles.row, i > 0 && styles.rowBorder, { borderColor: theme.divider }]}>
-              <Text style={[styles.rowLabel, { color: theme.text, fontSize: Typography.rowLabel * opt.value, flex: 1 }]}>{opt.label}</Text>
-              {settings.fontScale === opt.value && <CheckIcon size={16} color={theme.accent} strokeWidth={3} />}
-            </Pressable>
-          ))}
-        </View>
-        <Text style={[styles.footnote, { color: theme.textTertiary }]}>Applies throughout the app.</Text>
-      </BottomSheet>
-
       <BottomSheet visible={languageOpen} onClose={() => setLanguageOpen(false)} title="Language">
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.cardBorder, marginTop: 10 }]}>
-          {(['th', 'en', 'zh'] as Language[]).map((lang, i) => (
+          {SELECTABLE_LANGUAGES.map((lang, i) => (
             <Pressable
               key={lang}
               onPress={() => {
@@ -330,12 +305,8 @@ export default function ProfileScreen() {
                 setLanguageOpen(false);
               }}
               style={[styles.row, i > 0 && styles.rowBorder, { borderColor: theme.divider }]}>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.rowLabel, { color: theme.text }]}>{LANGUAGE_LABEL[lang]}</Text>
-                <Text style={{ color: theme.text, fontSize: Typography.rowLabel, fontWeight: '600', marginTop: 4 }}>
-                  {LANGUAGE_SUB[lang]}
-                </Text>
-              </View>
+              <Text style={styles.languageFlag}>{LANGUAGE_FLAG[lang]}</Text>
+              <Text style={[styles.rowLabel, { color: theme.text }]}>{LANGUAGE_LABEL[lang]}</Text>
               {settings.language === lang && <CheckIcon size={16} color={theme.accent} strokeWidth={3} />}
             </Pressable>
           ))}
@@ -518,6 +489,7 @@ const styles = StyleSheet.create({
   rowBorder: { borderTopWidth: 1 },
   rowIcon: { width: 30, height: 30, borderRadius: Radii.iconTile, alignItems: 'center', justifyContent: 'center' },
   rowLabel: { fontSize: Typography.rowLabel, fontWeight: '600', flex: 1 },
+  languageFlag: { fontSize: 20 },
   rowValue: { fontSize: Typography.rowValue, marginRight: 4 },
   privacyText: { fontSize: Typography.rowValue, lineHeight: 20, marginTop: 12 },
   clearDataBtn: { flexDirection: 'row', gap: 8, padding: 14, borderRadius: Radii.button, borderWidth: 1, alignItems: 'center', justifyContent: 'center', marginTop: 16 },

@@ -9,3 +9,13 @@ drift apart and conflict.
 
 See `README.md` in this folder for current feature status and architecture — that's kept up to
 date as the authoritative source, not duplicated here.
+
+## Searching this repo
+
+When searching or listing files with find/grep/bash, always exclude these folders — they're huge and not useful to search:
+- node_modules
+- ios/Pods
+- ios/build
+- android/build
+- .git
+- dist

@@ -1,3 +1,4 @@
+import { useIAP } from 'expo-iap';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import { Alert, Animated, Easing, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -7,6 +8,7 @@ import { ChevronLeftIcon } from '@/components/icon';
 import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
 import { useToast } from '@/hooks/use-toast';
+import { PREMIUM_SKU_LIST, subscriptionStateForSku } from '@/lib/iap';
 import { usePlannerStore } from '@/store/use-planner-store';
 import { getSubscriptionContent } from '@/utils/subscription';
 import { fromISO } from '@/utils/dates';
@@ -69,9 +71,23 @@ export default function SubscriptionScreen() {
   const { toastMessage, showToast } = useToast();
 
   const state = usePlannerStore((s) => s.mockSubscriptionState);
+  const setMockSubscriptionState = usePlannerStore((s) => s.setMockSubscriptionState);
   const firstUsedAt = usePlannerStore((s) => s.firstUsedAt);
   const content = getSubscriptionContent(state);
   const memberSince = firstUsedAt ? fmtDateLong(firstUsedAt) : '—';
+
+  const { restorePurchases, hasActiveSubscriptions, getActiveSubscriptions, activeSubscriptions } = useIAP();
+
+  useEffect(() => {
+    getActiveSubscriptions(PREMIUM_SKU_LIST);
+  }, [getActiveSubscriptions]);
+
+  useEffect(() => {
+    const active = activeSubscriptions[0];
+    if (!active) return;
+    const nextState = subscriptionStateForSku(active.productId);
+    if (nextState) setMockSubscriptionState(nextState);
+  }, [activeSubscriptions, setMockSubscriptionState]);
 
   const heroEnter = useEntrance(ENTER_DELAY.hero);
   const listEnter = useEntrance(ENTER_DELAY.list);
@@ -89,13 +105,24 @@ export default function SubscriptionScreen() {
     openSubscriptionManagement();
   }
 
+  async function handleRestore() {
+    try {
+      await restorePurchases();
+      const has = await hasActiveSubscriptions(PREMIUM_SKU_LIST);
+      if (has) await getActiveSubscriptions(PREMIUM_SKU_LIST);
+      showToast(has ? 'Purchases restored' : 'No purchase to restore');
+    } catch {
+      showToast('Restore failed');
+    }
+  }
+
   function handleMinor() {
     if (content.minorAction === 'store') {
       openSubscriptionManagement();
       return;
     }
     if (content.minorAction === 'restore') {
-      showToast('No purchase to restore');
+      handleRestore();
       return;
     }
     Alert.alert(
@@ -192,7 +219,7 @@ export default function SubscriptionScreen() {
           <Text style={[styles.minorLabel, { color: content.minorInk }]}>{content.minorLabel}</Text>
         </Pressable>
         <View style={styles.footerLinks}>
-          <Pressable onPress={() => showToast('No purchase to restore')} hitSlop={6}>
+          <Pressable onPress={handleRestore} hitSlop={6}>
             <Text style={styles.footerLink}>Restore</Text>
           </Pressable>
           <Text style={styles.footerDot}>·</Text>

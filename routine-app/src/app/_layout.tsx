@@ -11,6 +11,7 @@ import { TickleSplash } from '@/components/onboarding/tickle-splash';
 import { Colors, setFontScale } from '@/constants/theme';
 import { useEffectiveScheme } from '@/hooks/use-theme';
 import { useNotificationsSync } from '@/hooks/use-notifications-sync';
+import { useWidgetSync } from '@/hooks/use-widget-sync';
 import { useAuthStore } from '@/store/use-auth-store';
 import { useOnboardingStore } from '@/store/use-onboarding-store';
 import { usePlannerStore } from '@/store/use-planner-store';
@@ -90,6 +91,7 @@ export default function RootLayout() {
   }, [plannerHydrated, onboardingHydrated]);
 
   useNotificationsSync();
+  useWidgetSync();
 
   const ready = fontsLoaded && !authInitializing && plannerHydrated && onboardingHydrated && minDurationElapsed;
 

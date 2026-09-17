@@ -1,4 +1,5 @@
 import * as Haptics from 'expo-haptics';
+import { finishTransaction, useIAP } from 'expo-iap';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -8,6 +9,8 @@ import { CheckIcon, XIcon } from '@/components/icon';
 import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
 import { useToast } from '@/hooks/use-toast';
+import { PREMIUM_SKU_LIST, PREMIUM_SKUS, subscriptionStateForSku } from '@/lib/iap';
+import { usePlannerStore } from '@/store/use-planner-store';
 import { useThink } from '@/utils/motion';
 
 type Billing = 'monthly' | 'annual';
@@ -137,6 +140,27 @@ export default function PaywallScreen() {
   const [cta, setCta] = useState<CtaState>('idle');
   const [trackWidth, setTrackWidth] = useState(0);
 
+  const setMockSubscriptionState = usePlannerStore((s) => s.setMockSubscriptionState);
+  const { requestPurchase, restorePurchases, hasActiveSubscriptions, getActiveSubscriptions, activeSubscriptions } = useIAP({
+    onPurchaseSuccess: async (purchase) => {
+      await finishTransaction({ purchase, isConsumable: false });
+      const state = subscriptionStateForSku(purchase.productId);
+      if (state) setMockSubscriptionState(state);
+      setCta('done');
+    },
+    onPurchaseError: (error) => {
+      setCta('idle');
+      showToast(error.message || 'Purchase failed');
+    },
+  });
+
+  useEffect(() => {
+    const active = activeSubscriptions[0];
+    if (!active) return;
+    const state = subscriptionStateForSku(active.productId);
+    if (state) setMockSubscriptionState(state);
+  }, [activeSubscriptions, setMockSubscriptionState]);
+
   const headerEnter = useEntrance(ENTER_DELAY.header);
   const toggleEnter = useEntrance(ENTER_DELAY.toggle);
   const premiumEnter = useEntrance(ENTER_DELAY.premium);
@@ -183,7 +207,7 @@ export default function PaywallScreen() {
     setCurrency(next);
   }
 
-  function handlePrimaryPress() {
+  async function handlePrimaryPress() {
     if (tier === 'free') {
       router.back();
       return;
@@ -191,7 +215,24 @@ export default function PaywallScreen() {
     if (cta !== 'idle') return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setCta('loading');
-    setTimeout(() => setCta('done'), 1100);
+    try {
+      // Result arrives async via onPurchaseSuccess/onPurchaseError above, not this promise.
+      await requestPurchase({ request: { apple: { sku: PREMIUM_SKUS[billing] } }, type: 'subs' });
+    } catch (e) {
+      setCta('idle');
+      showToast(e instanceof Error ? e.message : 'Purchase failed');
+    }
+  }
+
+  async function handleRestore() {
+    try {
+      await restorePurchases();
+      const has = await hasActiveSubscriptions(PREMIUM_SKU_LIST);
+      if (has) await getActiveSubscriptions(PREMIUM_SKU_LIST);
+      showToast(has ? 'Purchases restored' : 'No purchase to restore');
+    } catch {
+      showToast('Restore failed');
+    }
   }
 
   const segWidth = trackWidth > 0 ? (trackWidth - 8) / 2 : 0;
@@ -312,7 +353,7 @@ export default function PaywallScreen() {
       <Animated.View style={fineEnter}>
         <Text style={styles.fine}>{FINE_PRINT[currency][billing]}</Text>
         <View style={styles.footerLinks}>
-          <Pressable onPress={() => showToast('No purchase to restore')} hitSlop={6}>
+          <Pressable onPress={handleRestore} hitSlop={6}>
             <Text style={styles.footerLink}>Restore</Text>
           </Pressable>
           <Text style={styles.footerDot}>·</Text>

@@ -16,6 +16,11 @@
       "bundleIdentifier": "com.maywalan.tickle",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
+      },
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "group.com.maywalan.tickle"
+        ]
       }
     },
     "android": {
@@ -62,7 +67,10 @@
           "color": "#1B76E8"
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      "@bacons/apple-targets",
+      "expo-iap",
+      "./plugins/withStoreKitConfig"
     ],
     "experiments": {
       "typedRoutes": true,

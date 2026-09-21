@@ -1,9 +1,10 @@
 import { useFocusEffect } from '@react-navigation/native';
+import { BlurView } from 'expo-blur';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import { useCallback, useMemo, useRef, useState } from 'react';
-import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { NestableDraggableFlatList, NestableScrollContainer } from 'react-native-draggable-flatlist';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -16,11 +17,13 @@ import { Toast } from '@/components/toast';
 import { TodoItem } from '@/components/todo-item';
 import { UpcomingList } from '@/components/upcoming-list';
 import { Fonts, Radii, RowMinHeight, SwatchColors, Typography } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { useEffectiveScheme, useTheme } from '@/hooks/use-theme';
 import { useToast } from '@/hooks/use-toast';
 import { usePlannerStore } from '@/store/use-planner-store';
 import type { Plan } from '@/store/types';
 import { toISO } from '@/utils/dates';
+
+const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
 
 const SHARE_LINK = 'routine.app/cal/share/9f2ab1c';
 const SHARE_CONTACTS = [
@@ -34,8 +37,52 @@ function greeting(hour: number) {
   return 'Good evening';
 }
 
+const EASE = Easing.bezier(0.22, 1, 0.36, 1);
+const BLUR_START = 22;
+
+// Entrance for the three task lists only (Today, Upcoming, Past Activity) — 100ms apart, same style
+// of animation as src/app/subscription.tsx's per-section entrance. playToken changes on every screen
+// focus (including the first), so it replays each time the user comes back to Today — not just on
+// mount. Drives both the fade/slide-up (native driver) and a dissolving BlurView veil on top
+// (JS-driven — `intensity` isn't an animatable style prop, so it can't ride the same native-driven
+// timing).
+const TASKS_ENTER_DELAY = { today: 50, upcoming: 150, past: 250 };
+function useEntrance(delayMs: number, playToken: number) {
+  const v = useRef(new Animated.Value(0)).current;
+  const blur = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!playToken) return;
+    v.setValue(0);
+    blur.setValue(0);
+    const t = setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(v, { toValue: 1, duration: 320, easing: EASE, useNativeDriver: true }),
+        Animated.timing(blur, { toValue: 1, duration: 320, easing: EASE, useNativeDriver: false }),
+      ]).start();
+    }, delayMs);
+    return () => clearTimeout(t);
+  }, [v, blur, delayMs, playToken]);
+  return {
+    style: { opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [13, 0] }) }] },
+    blurIntensity: blur.interpolate({ inputRange: [0, 1], outputRange: [BLUR_START, 0] }),
+  };
+}
+
+type Entrance = ReturnType<typeof useEntrance>;
+
+/** Wraps a section with the fade/slide-up entrance plus a frosted-glass veil that clears as it lands. */
+function EntranceBox({ entrance, blurTint, children }: { entrance: Entrance; blurTint: 'light' | 'dark'; children: ReactNode }) {
+  return (
+    <Animated.View style={entrance.style}>
+      {children}
+      <AnimatedBlurView pointerEvents="none" tint={blurTint} intensity={entrance.blurIntensity} style={StyleSheet.absoluteFill} />
+    </Animated.View>
+  );
+}
+
 export default function TodayScreen() {
   const theme = useTheme();
+  const blurTint = useEffectiveScheme() === 'dark' ? 'dark' : 'light';
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const plans = usePlannerStore((s) => s.plans);
@@ -61,6 +108,17 @@ export default function TodayScreen() {
   const [colorsMounted, setColorsMounted] = useState(false);
   const colorAnim = useRef(new Animated.Value(0)).current;
   const { toastMessage, showToast } = useToast();
+
+  const [enterToken, setEnterToken] = useState(0);
+  useFocusEffect(
+    useCallback(() => {
+      setEnterToken(Date.now());
+    }, [])
+  );
+
+  const todayEnter = useEntrance(TASKS_ENTER_DELAY.today, enterToken);
+  const upcomingEnter = useEntrance(TASKS_ENTER_DELAY.upcoming, enterToken);
+  const pastEnter = useEntrance(TASKS_ENTER_DELAY.past, enterToken);
 
   function toggleColors() {
     if (!colorsOpen) {
@@ -207,14 +265,19 @@ export default function TodayScreen() {
 
   const footer = (
     <>
-      {lastDeletedSnapshot && !selectMode && (
-        <Pressable onPress={undoDelete} style={[styles.undoBar, { backgroundColor: theme.surface2, borderColor: theme.cardBorder }]}>
-          <Text style={{ color: theme.textSecondary, fontSize: Typography.rowValue, fontFamily: Fonts[500] }}>Undo last delete</Text>
-        </Pressable>
-      )}
+      <EntranceBox entrance={upcomingEnter} blurTint={blurTint}>
+        {lastDeletedSnapshot && !selectMode && (
+          <Pressable onPress={undoDelete} style={[styles.undoBar, { backgroundColor: theme.surface2, borderColor: theme.cardBorder }]}>
+            <Text style={{ color: theme.textSecondary, fontSize: Typography.rowValue, fontFamily: Fonts[500] }}>Undo last delete</Text>
+          </Pressable>
+        )}
 
-      <UpcomingList />
-      <PastActivityList />
+        <UpcomingList />
+      </EntranceBox>
+
+      <EntranceBox entrance={pastEnter} blurTint={blurTint}>
+        <PastActivityList />
+      </EntranceBox>
     </>
   );
 
@@ -222,34 +285,36 @@ export default function TodayScreen() {
     <View style={[styles.screen, { backgroundColor: theme.surface }]}>
       <NestableScrollContainer contentContainerStyle={{ paddingTop: insets.top + 22, paddingBottom: 130 }}>
         {header}
-        {todays.length === 0 ? (
-          <View style={[styles.empty, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
-            <Text style={{ color: theme.textSecondary, fontSize: Typography.rowLabel, fontFamily: Fonts[500] }}>
-              {filterGroupId || filterColor ? 'Nothing matches this filter today.' : 'Nothing planned for today.'}
-            </Text>
-          </View>
-        ) : (
-          <NestableDraggableFlatList
-            data={todays}
-            keyExtractor={(item) => item.id}
-            onDragEnd={({ data }) => reorderPlans(todayISO, data.map((p) => p.id))}
-            onPlaceholderIndexChange={() => Haptics.selectionAsync()}
-            renderItem={({ item, drag, isActive }: { item: Plan; drag: () => void; isActive: boolean }) => (
-              <TodoItem
-                plan={item}
-                group={groups.find((g) => g.id === item.groupId)}
-                selectMode={selectMode}
-                selected={selectedIds.includes(item.id)}
-                isActive={isActive}
-                onToggleComplete={() => toggleComplete(item.id)}
-                onToggleSelect={() => toggleSelected(item.id)}
-                onPress={() => router.push({ pathname: '/add-plan', params: { id: item.id } })}
-                onDelete={() => deletePlan(item.id)}
-                onDrag={drag}
-              />
-            )}
-          />
-        )}
+        <EntranceBox entrance={todayEnter} blurTint={blurTint}>
+          {todays.length === 0 ? (
+            <View style={[styles.empty, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
+              <Text style={{ color: theme.textSecondary, fontSize: Typography.rowLabel, fontFamily: Fonts[500] }}>
+                {filterGroupId || filterColor ? 'Nothing matches this filter today.' : 'Nothing planned for today.'}
+              </Text>
+            </View>
+          ) : (
+            <NestableDraggableFlatList
+              data={todays}
+              keyExtractor={(item) => item.id}
+              onDragEnd={({ data }) => reorderPlans(todayISO, data.map((p) => p.id))}
+              onPlaceholderIndexChange={() => Haptics.selectionAsync()}
+              renderItem={({ item, drag, isActive }: { item: Plan; drag: () => void; isActive: boolean }) => (
+                <TodoItem
+                  plan={item}
+                  group={groups.find((g) => g.id === item.groupId)}
+                  selectMode={selectMode}
+                  selected={selectedIds.includes(item.id)}
+                  isActive={isActive}
+                  onToggleComplete={() => toggleComplete(item.id)}
+                  onToggleSelect={() => toggleSelected(item.id)}
+                  onPress={() => router.push({ pathname: '/add-plan', params: { id: item.id } })}
+                  onDelete={() => deletePlan(item.id)}
+                  onDrag={drag}
+                />
+              )}
+            />
+          )}
+        </EntranceBox>
         {footer}
       </NestableScrollContainer>
 

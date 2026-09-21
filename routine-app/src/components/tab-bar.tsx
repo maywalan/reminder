@@ -2,7 +2,7 @@ import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef } from 'react';
-import { Alert, Animated, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Animated, Easing, Pressable, StyleSheet, Text, View, type LayoutRectangle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CalendarIcon, ChartIcon, HomeIcon, PersonIcon, PlusIcon } from '@/components/icon';
@@ -16,6 +16,13 @@ const ROUTE_ICONS: Record<string, typeof HomeIcon> = {
   progress: ChartIcon,
   profile: PersonIcon,
 };
+
+const EASE = Easing.bezier(0.22, 1, 0.36, 1);
+const ICON_SIZE = 23;
+const PILL_H_PAD = 13;
+const PILL_V_PAD = 6;
+const PILL_WIDTH = ICON_SIZE + PILL_H_PAD * 2;
+const PILL_HEIGHT = ICON_SIZE + PILL_V_PAD * 2;
 
 export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const theme = useTheme();
@@ -39,6 +46,47 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
     ]);
   }
 
+  // One accent pill slides/morphs behind the icons to whichever tab is tapped, instead of each tab
+  // instantly toggling its own background. tabLayouts holds each tab button's measured x/width
+  // within `row` (from onLayout — depends on the centered, FAB-interrupted layout, so it can't be
+  // computed ahead of time). Early layout passes can report a transient position before the row
+  // settles, so any layout update for the CURRENTLY focused tab keeps silently re-snapping the pill
+  // (no animation) rather than locking in after the first one — only an actual tab change animates.
+  const focusedIndex = state.index;
+  const tabLayouts = useRef<(LayoutRectangle | null)[]>([null, null, null, null]).current;
+  const pillReady = useRef(false);
+  const pillX = useRef(new Animated.Value(0)).current;
+  const pillOpacity = useRef(new Animated.Value(0)).current;
+
+  function pillTargetX(layout: LayoutRectangle) {
+    return layout.x + (layout.width - PILL_WIDTH) / 2;
+  }
+
+  function applyPillPosition(layout: LayoutRectangle, animate: boolean) {
+    const targetX = pillTargetX(layout);
+    if (animate) {
+      Animated.timing(pillX, { toValue: targetX, duration: 320, easing: EASE, useNativeDriver: true }).start();
+    } else {
+      pillX.setValue(targetX);
+    }
+    if (!pillReady.current) {
+      pillReady.current = true;
+      Animated.timing(pillOpacity, { toValue: 1, duration: 180, useNativeDriver: true }).start();
+    }
+  }
+
+  function handleTabLayout(index: number, layout: LayoutRectangle) {
+    tabLayouts[index] = layout;
+    if (index === focusedIndex) applyPillPosition(layout, false);
+  }
+
+  useEffect(() => {
+    const layout = tabLayouts[focusedIndex];
+    if (!layout) return; // not measured yet — handleTabLayout will place it once its own layout arrives
+    applyPillPosition(layout, pillReady.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusedIndex]);
+
   // Prototype order: Today, Calendar, [FAB], Progress, Profile — the FAB is not a route,
   // it's inserted visually between the 2nd and 3rd tab.
   const items = state.routes.map((route, index) => {
@@ -55,14 +103,15 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
     const inactiveColor = scheme === 'dark' ? theme.textSecondary : theme.textQuaternary;
 
     return (
-      <Pressable key={route.key} onPress={onPress} style={styles.tabBtn} hitSlop={6}>
-        {focused ? (
-          <View style={[styles.tabIconPill, { backgroundColor: theme.accentSoft }]}>
-            <Icon size={23} color={theme.accent} strokeWidth={1.9} />
-          </View>
-        ) : (
-          <Icon size={23} color={inactiveColor} strokeWidth={1.8} />
-        )}
+      <Pressable
+        key={route.key}
+        onPress={onPress}
+        onLayout={(e) => handleTabLayout(index, e.nativeEvent.layout)}
+        style={styles.tabBtn}
+        hitSlop={6}>
+        <View style={styles.tabIconSlot}>
+          <Icon size={ICON_SIZE} color={focused ? theme.accent : inactiveColor} strokeWidth={focused ? 1.9 : 1.8} />
+        </View>
         <Text
           style={[
             styles.tabLabel,
@@ -93,6 +142,10 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
       <Animated.View
         style={[styles.row, { opacity: fade.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }]}
         pointerEvents={selectMode ? 'none' : 'auto'}>
+        <Animated.View
+          pointerEvents="none"
+          style={[styles.slidingPill, { backgroundColor: theme.accentSoft, opacity: pillOpacity, transform: [{ translateX: pillX }] }]}
+        />
         {items[0]}
         {items[1]}
         {fab}
@@ -140,7 +193,13 @@ const styles = StyleSheet.create({
   },
   selectAction: { fontSize: Typography.rowLabel, fontWeight: '700', fontFamily: Fonts[700] },
   tabBtn: { width: 60, alignItems: 'center', gap: 4, paddingVertical: 2 },
-  tabIconPill: { paddingHorizontal: 13, paddingVertical: 6, borderRadius: Radii.chip, alignItems: 'center', justifyContent: 'center', marginBottom: 1 },
+  tabIconSlot: { paddingHorizontal: PILL_H_PAD, paddingVertical: PILL_V_PAD, alignItems: 'center', justifyContent: 'center', marginBottom: 1 },
+  // The one traveling pill that slides/morphs behind whichever tab is focused — sized and offset to
+  // land exactly under tabIconSlot's content box. `top` = row's own paddingTop (12) + tabBtn's
+  // paddingVertical (2): absolutely positioned children measure `top` from the parent's border edge,
+  // not its padding edge, so row's paddingTop has to be added back in explicitly or the pill sits
+  // too high relative to tabBtn's normal-flow content (which does get pushed down by that padding).
+  slidingPill: { position: 'absolute', top: 14, left: 0, width: PILL_WIDTH, height: PILL_HEIGHT, borderRadius: Radii.chip },
   tabLabel: { fontSize: Typography.tabLabel },
   fabWrap: { marginTop: -26 },
   // Full circle, matching every in-screen FAB instance in design_handoff_tickle_draft2 (radius:27

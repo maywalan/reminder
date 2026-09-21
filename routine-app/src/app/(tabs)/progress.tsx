@@ -1,6 +1,8 @@
+import { useFocusEffect } from '@react-navigation/native';
+import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ChevronLeftIcon, ChevronRightIcon, SparkleIcon } from '@/components/icon';
@@ -11,7 +13,7 @@ import { ProgressStats } from '@/components/progress/progress-stats';
 import { ProgressStreakCard } from '@/components/progress/progress-streak-card';
 import { SegmentedControl } from '@/components/segmented-control';
 import { Typography } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { useEffectiveScheme, useTheme } from '@/hooks/use-theme';
 import { useAuthStore } from '@/store/use-auth-store';
 import { usePlannerStore } from '@/store/use-planner-store';
 import { toISO } from '@/utils/dates';
@@ -31,8 +33,50 @@ import {
   type Period,
 } from '@/utils/progress';
 
+const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
+const EASE = Easing.bezier(0.22, 1, 0.36, 1);
+const BLUR_START = 22;
+
+// Same staggered entrance as Today's tasks lists (src/app/(tabs)/index.tsx) — 100ms apart, applied
+// to every card below the header (title/date-nav/recap icon are left alone). playToken changes on
+// every screen focus (including the first), so it replays each time the user comes back to this tab.
+const ENTER_DELAY = { switcher: 50, hero: 150, stats: 250, chart: 350, streak: 450, categories: 550 };
+
+function useEntrance(delayMs: number, playToken: number) {
+  const v = useRef(new Animated.Value(0)).current;
+  const blur = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!playToken) return;
+    v.setValue(0);
+    blur.setValue(0);
+    const t = setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(v, { toValue: 1, duration: 320, easing: EASE, useNativeDriver: true }),
+        Animated.timing(blur, { toValue: 1, duration: 320, easing: EASE, useNativeDriver: false }),
+      ]).start();
+    }, delayMs);
+    return () => clearTimeout(t);
+  }, [v, blur, delayMs, playToken]);
+  return {
+    style: { opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [13, 0] }) }] },
+    blurIntensity: blur.interpolate({ inputRange: [0, 1], outputRange: [BLUR_START, 0] }),
+  };
+}
+
+type Entrance = ReturnType<typeof useEntrance>;
+
+function EntranceBox({ entrance, blurTint, children }: { entrance: Entrance; blurTint: 'light' | 'dark'; children: ReactNode }) {
+  return (
+    <Animated.View style={entrance.style}>
+      {children}
+      <AnimatedBlurView pointerEvents="none" tint={blurTint} intensity={entrance.blurIntensity} style={StyleSheet.absoluteFill} />
+    </Animated.View>
+  );
+}
+
 export default function ProgressScreen() {
   const theme = useTheme();
+  const blurTint = useEffectiveScheme() === 'dark' ? 'dark' : 'light';
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const plans = usePlannerStore((s) => s.plans);
@@ -42,6 +86,20 @@ export default function ProgressScreen() {
   const [period, setPeriod] = useState<Period>('week');
   const [offset, setOffset] = useState(0);
   const todayISO = useMemo(() => toISO(new Date()), []);
+
+  const [enterToken, setEnterToken] = useState(0);
+  useFocusEffect(
+    useCallback(() => {
+      setEnterToken(Date.now());
+    }, [])
+  );
+
+  const switcherEnter = useEntrance(ENTER_DELAY.switcher, enterToken);
+  const heroEnter = useEntrance(ENTER_DELAY.hero, enterToken);
+  const statsEnter = useEntrance(ENTER_DELAY.stats, enterToken);
+  const chartEnter = useEntrance(ENTER_DELAY.chart, enterToken);
+  const streakEnter = useEntrance(ENTER_DELAY.streak, enterToken);
+  const categoriesEnter = useEntrance(ENTER_DELAY.categories, enterToken);
 
   // Guest mode is bounded by when this device first opened the app; a signed-in account is
   // bounded by when that account was created, so browsing history never goes further back than
@@ -98,33 +156,45 @@ export default function ProgressScreen() {
           </View>
         </View>
 
-        <SegmentedControl
-          value={period}
-          onChange={changePeriod}
-          options={[
-            { label: 'Week', value: 'week' },
-            { label: 'Month', value: 'month' },
-            { label: 'Year', value: 'year' },
-          ]}
-          style={styles.periodSwitch}
-        />
+        <EntranceBox entrance={switcherEnter} blurTint={blurTint}>
+          <SegmentedControl
+            value={period}
+            onChange={changePeriod}
+            options={[
+              { label: 'Week', value: 'week' },
+              { label: 'Month', value: 'month' },
+              { label: 'Year', value: 'year' },
+            ]}
+            style={styles.periodSwitch}
+          />
+        </EntranceBox>
 
-        <ProgressHero
-          eyebrow={heroEyebrow(period, range, offset)}
-          completed={cur.completed}
-          total={cur.total}
-          completionRate={completionRate}
-          deltaPct={delta}
-          compareLabel={previousPeriodLabel(period, range)}
-        />
+        <EntranceBox entrance={heroEnter} blurTint={blurTint}>
+          <ProgressHero
+            eyebrow={heroEyebrow(period, range, offset)}
+            completed={cur.completed}
+            total={cur.total}
+            completionRate={completionRate}
+            deltaPct={delta}
+            compareLabel={previousPeriodLabel(period, range)}
+          />
+        </EntranceBox>
 
-        <ProgressStats completed={cur.completed} completionRate={completionRate} streak={streak} bestDay={WEEKDAY_FULL[best]} />
+        <EntranceBox entrance={statsEnter} blurTint={blurTint}>
+          <ProgressStats completed={cur.completed} completionRate={completionRate} streak={streak} bestDay={WEEKDAY_FULL[best]} />
+        </EntranceBox>
 
-        <ProgressChart period={period} startISO={range.start} endISO={range.end} todayISO={todayISO} plans={plans} />
+        <EntranceBox entrance={chartEnter} blurTint={blurTint}>
+          <ProgressChart period={period} startISO={range.start} endISO={range.end} todayISO={todayISO} plans={plans} />
+        </EntranceBox>
 
-        <ProgressStreakCard streak={streak} longest={longest} />
+        <EntranceBox entrance={streakEnter} blurTint={blurTint}>
+          <ProgressStreakCard streak={streak} longest={longest} />
+        </EntranceBox>
 
-        <ProgressCategories rows={colors} />
+        <EntranceBox entrance={categoriesEnter} blurTint={blurTint}>
+          <ProgressCategories rows={colors} />
+        </EntranceBox>
       </ScrollView>
     </View>
   );

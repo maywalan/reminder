@@ -119,7 +119,7 @@ export default function RootLayout() {
             <Stack.Screen name="onboarding-3" />
           </Stack.Protected>
           <Stack.Protected guard={canEnterApp}>
-            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
           </Stack.Protected>
           {/* Falls back to the app's initial route whenever neither group above is guarded in —
               onboarded, no session, never chose guest. Always reachable directly too (Profile's
@@ -129,7 +129,7 @@ export default function RootLayout() {
           <Stack.Screen name="recap" options={{ presentation: 'modal' }} />
           <Stack.Screen name="edit-profile" options={{ presentation: 'modal' }} />
           <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="subscription" />
+          <Stack.Screen name="subscription" options={{ animation: 'fade' }} />
         </Stack>
       </ThemeProvider>
     </GestureHandlerRootView>

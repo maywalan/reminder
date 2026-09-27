@@ -21,6 +21,7 @@ import { CameraIcon, CheckIcon, ChevronRightIcon, XIcon } from '@/components/ico
 import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
 import { DefaultTaskColor, Radii, SwatchColors, Typography } from '@/constants/theme';
+import { findPastPlans } from '@/utils/countdown';
 import { usePlaceSearch } from '@/hooks/use-place-search';
 import { useEffectiveScheme, useTheme } from '@/hooks/use-theme';
 import { useToast } from '@/hooks/use-toast';
@@ -92,7 +93,31 @@ export default function AddPlanScreen() {
   const editing = useMemo(() => plans.find((p) => p.id === id), [plans, id]);
   const initialDate = editing?.date ?? prefillDate ?? toISO(new Date());
 
+  // Title suggestions: every distinct past-plan name (any plan whose date has already passed,
+  // completed or not), ranked most-frequent first. Only surfaced once the user starts typing and
+  // their input partially matches a past title — this is a typeahead, not a list shown up front.
+  // Each entry also carries the time/color/alerts of its most-recent occurrence (findPastPlans
+  // returns most-recent-first, so the first match seen per title wins that role) so picking a
+  // suggestion can prefill those fields too, not just the name.
+  const pastTitleFrequency = useMemo(() => {
+    const counts = new Map<string, { label: string; count: number; time: string; color: string; alerts: string[] }>();
+    for (const p of findPastPlans(plans, Infinity)) {
+      const key = p.name.trim().toLowerCase();
+      if (!key) continue;
+      const existing = counts.get(key);
+      if (existing) existing.count += 1;
+      else counts.set(key, { label: p.name.trim(), count: 1, time: p.time, color: p.color, alerts: p.alerts });
+    }
+    return [...counts.values()].sort((a, b) => b.count - a.count);
+  }, [plans]);
+
   const [name, setName] = useState(editing?.name ?? '');
+  const [titleFocused, setTitleFocused] = useState(false);
+  const titleSuggestions = useMemo(() => {
+    const query = name.trim().toLowerCase();
+    if (!query) return [];
+    return pastTitleFrequency.filter((t) => t.label.toLowerCase() !== query && t.label.toLowerCase().includes(query)).slice(0, 6);
+  }, [pastTitleFrequency, name]);
   const [dateTime, setDateTime] = useState(() => combineDateAndTime(initialDate, editing?.time ?? '09:00'));
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
@@ -300,11 +325,31 @@ export default function AddPlanScreen() {
                 setName(t);
                 setError(false);
               }}
+              onFocus={() => setTitleFocused(true)}
+              onBlur={() => setTimeout(() => setTitleFocused(false), 150)}
               placeholder="Title"
               placeholderTextColor={theme.textTertiary}
               style={[styles.input, { color: theme.text, borderColor: error ? theme.danger : 'transparent' }]}
             />
           </View>
+          {titleFocused &&
+            titleSuggestions.map((s) => (
+              <Pressable
+                key={s.label.toLowerCase()}
+                onPress={() => {
+                  setName(s.label);
+                  setError(false);
+                  setColor(s.color);
+                  if (s.alerts.length) setAlerts(sortAlertsByEarliness(s.alerts));
+                  setDateTime((d) => combineDateAndTime(toISO(d), s.time));
+                  setTitleFocused(false);
+                }}
+                style={[styles.sheetRow, styles.fieldBorder, { borderColor: theme.divider, backgroundColor: theme.surface2 }]}>
+                <Text style={[styles.sheetRowLabel, { color: theme.text }]} numberOfLines={1}>
+                  {s.label}
+                </Text>
+              </Pressable>
+            ))}
           <View style={[styles.field, styles.fieldBorder, { borderColor: theme.divider }]}>
             <TextInput
               value={location}

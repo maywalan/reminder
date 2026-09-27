@@ -127,7 +127,7 @@ export default function ProgressScreen() {
   const canGoPrev = range.start > boundISO;
 
   return (
-    <View style={[styles.screen, { backgroundColor: theme.bg }]}>
+    <View style={[styles.screen, { backgroundColor: theme.surface }]}>
       <ScrollView contentContainerStyle={{ paddingTop: insets.top + 14, paddingBottom: 130 }}>
         <View style={styles.headerTop}>
           <View style={{ flex: 1 }}>

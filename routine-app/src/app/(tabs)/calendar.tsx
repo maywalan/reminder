@@ -144,7 +144,7 @@ export default function CalendarScreen() {
   });
 
   return (
-    <View style={[styles.screen, { backgroundColor: theme.bg }]}>
+    <View style={[styles.screen, { backgroundColor: theme.surface }]}>
       <ScrollView ref={scrollRef} contentContainerStyle={{ paddingTop: insets.top + 22, paddingBottom: 130 }}>
         <Text style={[styles.h1, { color: theme.text }]}>Calendar</Text>
 

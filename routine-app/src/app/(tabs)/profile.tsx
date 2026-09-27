@@ -107,12 +107,12 @@ export default function ProfileScreen() {
   const recapHourLabel = settings.recapHour === 12 ? '12 PM' : `${settings.recapHour} AM`;
 
   return (
-    <View style={[styles.screen, { backgroundColor: theme.bg }]}>
+    <View style={[styles.screen, { backgroundColor: theme.surface }]}>
       <ScrollView contentContainerStyle={{ paddingTop: insets.top + 22, paddingBottom: 130 }}>
         <View style={styles.profileHeader}>
           <Pressable onPress={() => router.push('/edit-profile')} style={[styles.avatar, { backgroundColor: profile.avatarColor }]}>
             <Text style={styles.avatarInitials}>{profileInitials(profile.name)}</Text>
-            <View style={[styles.avatarEdit, { backgroundColor: theme.surface, borderColor: theme.bg }]}>
+            <View style={[styles.avatarEdit, { backgroundColor: theme.surface, borderColor: theme.surface }]}>
               <CameraIcon size={13} color={theme.accent} strokeWidth={2} />
             </View>
           </Pressable>

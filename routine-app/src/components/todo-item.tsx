@@ -81,12 +81,12 @@ export function TodoItem({
     completeFillOpacity.setValue(1);
     Animated.timing(completeFillScale, {
       toValue: 1,
-      duration: 420,
+      duration: 340,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
     }).start(() => {
       onToggleComplete();
-      Animated.timing(completeFillOpacity, { toValue: 0, duration: 320, delay: 180, useNativeDriver: true }).start();
+      Animated.timing(completeFillOpacity, { toValue: 0, duration: 260, delay: 150, useNativeDriver: true }).start();
     });
   }
 

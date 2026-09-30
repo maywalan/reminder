@@ -638,7 +638,7 @@ export default function AddPlanScreen() {
             <View style={{ flex: 1 }}>
               <Text style={{ color: theme.text, fontSize: Typography.heading, fontWeight: '600' }}>Live Activity</Text>
               <Text style={{ color: theme.textSecondary, fontSize: Typography.body, marginTop: 2 }}>
-                Tickle counts down on your home screen as this plan approaches.
+                Counts down on your Lock Screen and Dynamic Island from an hour before it starts.
               </Text>
             </View>
             <Switch value={live} onValueChange={setLive} trackColor={{ true: theme.success }} />

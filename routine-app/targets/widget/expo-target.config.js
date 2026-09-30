@@ -8,7 +8,7 @@ module.exports = {
     $widgetBackground: '#2A2A2E',
   },
   deploymentTarget: '15.1',
-  frameworks: ['WidgetKit', 'SwiftUI'],
+  frameworks: ['WidgetKit', 'SwiftUI', 'ActivityKit', 'AppIntents'],
   // An explicit (even empty) `entitlements` object is required to trigger this plugin's
   // App Groups auto-sync from app.json's ios.entitlements — omitting the key entirely skips it.
   entitlements: {},

@@ -1,35 +1,26 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { BlurView } from 'expo-blur';
-import * as Clipboard from 'expo-clipboard';
-import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { NestableDraggableFlatList, NestableScrollContainer } from 'react-native-draggable-flatlist';
+import { NestableScrollContainer } from 'react-native-draggable-flatlist';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { BottomSheet } from '@/components/bottom-sheet';
-import { CheckIcon, ShareIcon } from '@/components/icon';
-import { LiveActivityCard } from '@/components/live-activity-card';
-import { PastActivityList } from '@/components/past-activity-list';
+import { EarlierBlock, UpcomingBlock } from '@/components/home/feed-sections';
+import { TodaySheet } from '@/components/home/today-sheet';
+import { useHomeTokens, useHomeType } from '@/components/home/tokens';
+import { CheckIcon } from '@/components/icon';
 import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
-import { TodoItem } from '@/components/todo-item';
-import { UpcomingList } from '@/components/upcoming-list';
-import { Fonts, Radii, RowMinHeight, SwatchColors, Typography } from '@/constants/theme';
+import { Fonts, Radii, SwatchColors, Typography } from '@/constants/theme';
 import { useEffectiveScheme, useTheme } from '@/hooks/use-theme';
 import { useToast } from '@/hooks/use-toast';
 import { usePlannerStore } from '@/store/use-planner-store';
 import type { Plan } from '@/store/types';
 import { toISO } from '@/utils/dates';
+import { addMinutesToTime, buildHomeFeed, findLiveActivityPlan } from '@/utils/home-feed';
 
 const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
-
-const SHARE_LINK = 'routine.app/cal/share/9f2ab1c';
-const SHARE_CONTACTS = [
-  { initials: 'JL', name: 'Jamie Lin' },
-  { initials: 'MP', name: 'Marcus Patel' },
-];
 
 function greeting(hour: number) {
   if (hour < 12) return 'Good morning';
@@ -37,16 +28,42 @@ function greeting(hour: number) {
   return 'Good evening';
 }
 
+/** "Wed, 14 May" */
+function dateLine(d: Date) {
+  const weekday = d.toLocaleDateString('en-US', { weekday: 'short' });
+  const month = d.toLocaleDateString('en-US', { month: 'short' });
+  return `${weekday}, ${d.getDate()} ${month}`;
+}
+
+/**
+ * Wall clock for the feed: ticks every second while a session is live (for its countdown),
+ * otherwise once a minute on the minute (for the Now line and live/missed transitions).
+ */
+function useClock(fast: boolean) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    const tick = () => {
+      const t = Date.now();
+      setNow(t);
+      timer = setTimeout(tick, fast ? 1000 - (t % 1000) : 60_000 - (t % 60_000));
+    };
+    tick();
+    return () => clearTimeout(timer);
+  }, [fast]);
+  return now;
+}
+
 const EASE = Easing.bezier(0.22, 1, 0.36, 1);
 const BLUR_START = 22;
 
-// Entrance for the three task lists only (Today, Upcoming, Past Activity) — 100ms apart, same style
+// Entrance for the three feed blocks (Today sheet, Upcoming, Earlier) — 100ms apart, same style
 // of animation as src/app/subscription.tsx's per-section entrance. playToken changes on every screen
 // focus (including the first), so it replays each time the user comes back to Today — not just on
 // mount. Drives both the fade/slide-up (native driver) and a dissolving BlurView veil on top
 // (JS-driven — `intensity` isn't an animatable style prop, so it can't ride the same native-driven
 // timing).
-const TASKS_ENTER_DELAY = { today: 50, upcoming: 150, past: 250 };
+const ENTER_DELAY = { today: 50, upcoming: 150, earlier: 250 };
 function useEntrance(delayMs: number, playToken: number) {
   const v = useRef(new Animated.Value(0)).current;
   const blur = useRef(new Animated.Value(0)).current;
@@ -80,14 +97,19 @@ function EntranceBox({ entrance, blurTint, children }: { entrance: Entrance; blu
   );
 }
 
+/** Home — design_handoff_tickle_home_7 (7a live / 7b idle / 7c ranges). */
 export default function TodayScreen() {
   const theme = useTheme();
+  const k = useHomeTokens();
+  const t = useHomeType();
   const blurTint = useEffectiveScheme() === 'dark' ? 'dark' : 'light';
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const plans = usePlannerStore((s) => s.plans);
   const groups = usePlannerStore((s) => s.groups);
+  const profileName = usePlannerStore((s) => s.profile.name);
   const toggleComplete = usePlannerStore((s) => s.toggleComplete);
+  const updatePlan = usePlannerStore((s) => s.updatePlan);
   const deletePlan = usePlannerStore((s) => s.deletePlan);
   const reorderPlans = usePlannerStore((s) => s.reorderPlans);
   const undoDelete = usePlannerStore((s) => s.undoDelete);
@@ -102,10 +124,11 @@ export default function TodayScreen() {
   const toggleSelected = usePlannerStore((s) => s.toggleSelected);
   const pendingSaveToast = usePlannerStore((s) => s.pendingSaveToast);
   const setPendingSaveToast = usePlannerStore((s) => s.setPendingSaveToast);
+  const liveActivitiesEnabled = usePlannerStore((s) => s.settings.liveActivitiesEnabled);
 
-  const [shareOpen, setShareOpen] = useState(false);
   const [colorsOpen, setColorsOpen] = useState(false);
   const [colorsMounted, setColorsMounted] = useState(false);
+  const [seeAll, setSeeAll] = useState(false);
   const colorAnim = useRef(new Animated.Value(0)).current;
   const { toastMessage, showToast } = useToast();
 
@@ -116,9 +139,9 @@ export default function TodayScreen() {
     }, [])
   );
 
-  const todayEnter = useEntrance(TASKS_ENTER_DELAY.today, enterToken);
-  const upcomingEnter = useEntrance(TASKS_ENTER_DELAY.upcoming, enterToken);
-  const pastEnter = useEntrance(TASKS_ENTER_DELAY.past, enterToken);
+  const todayEnter = useEntrance(ENTER_DELAY.today, enterToken);
+  const upcomingEnter = useEntrance(ENTER_DELAY.upcoming, enterToken);
+  const earlierEnter = useEntrance(ENTER_DELAY.earlier, enterToken);
 
   function toggleColors() {
     if (!colorsOpen) {
@@ -149,276 +172,171 @@ export default function TodayScreen() {
     }, [pendingSaveToast])
   );
 
-  const now = useMemo(() => new Date(), []);
-  const todayISO = useMemo(() => toISO(now), [now]);
-  const dateLabel = useMemo(
-    () => now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),
-    [now]
+  // The clock's speed depends on whether anything is live or counting down, which depends on the
+  // clock — either starting is caught by the next minute tick, which then speeds the clock up.
+  const [fastClock, setFastClock] = useState(false);
+  const nowMs = useClock(fastClock);
+  const matches = useCallback(
+    (p: Plan) => (!filterGroupId || p.groupId === filterGroupId) && (!filterColor || p.color === filterColor),
+    [filterGroupId, filterColor]
   );
-
-  const dayPlans = plans.filter((p) => p.date === todayISO);
-  const hasManualOrder = dayPlans.some((p) => p.order !== undefined);
-  const todays = dayPlans
-    .filter((p) => (!filterGroupId || p.groupId === filterGroupId) && (!filterColor || p.color === filterColor))
-    .sort((a, b) => (hasManualOrder ? (a.order ?? Infinity) - (b.order ?? Infinity) : a.time.localeCompare(b.time)));
-
-  async function handleCopyLink() {
-    await Clipboard.setStringAsync(SHARE_LINK);
-    showToast('Link copied');
-  }
-
-  const header = (
-    <>
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Tickle size={34} mood="idle" animated />
-          <View>
-            <Text style={[styles.greeting, { color: theme.textSecondary }]}>{greeting(now.getHours())}</Text>
-            <Text style={[styles.h1, { color: theme.text }]}>{dateLabel}</Text>
-          </View>
-        </View>
-        <View style={styles.headerActions}>
-          <Pressable
-            onPress={() => setShareOpen(true)}
-            hitSlop={8}
-            style={[styles.iconBtn, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
-            <ShareIcon size={18} color={theme.text} strokeWidth={1.9} />
-          </Pressable>
-        </View>
-      </View>
-
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-        <Pressable
-          onPress={toggleColors}
-          style={[
-            styles.chip,
-            { borderColor: colorsOpen ? 'transparent' : theme.cardBorder, backgroundColor: colorsOpen ? theme.accentSoft : theme.surface },
-          ]}>
-          <Text style={{ color: colorsOpen ? theme.accentStrong : theme.text, fontSize: 12, fontWeight: '700', fontFamily: Fonts[700] }}>Colors</Text>
-        </Pressable>
-        {colorsMounted && (
-          <Animated.View
-            style={[
-              styles.colorRevealRow,
-              {
-                opacity: colorAnim,
-                transform: [{ translateX: colorAnim.interpolate({ inputRange: [0, 1], outputRange: [-24, 0] }) }],
-              },
-            ]}>
-            <Pressable
-              onPress={() => setFilterColor(null)}
-              style={[
-                styles.chip,
-                { borderColor: filterColor === null ? 'transparent' : theme.cardBorder, backgroundColor: filterColor === null ? theme.accentSoft : theme.surface },
-              ]}>
-              <Text style={{ color: filterColor === null ? theme.accentStrong : theme.text, fontSize: 12, fontWeight: '700', fontFamily: Fonts[700] }}>All</Text>
-            </Pressable>
-            {SwatchColors.map((c) => (
-              <Pressable
-                key={c}
-                onPress={() => setFilterColor(filterColor === c ? null : c)}
-                style={[styles.colorSwatch, { backgroundColor: c, borderColor: filterColor === c ? theme.text : 'transparent' }]}>
-                {filterColor === c && <CheckIcon size={14} color="#fff" strokeWidth={3} />}
-              </Pressable>
-            ))}
-          </Animated.View>
-        )}
-      </ScrollView>
-
-      {groups.length > 0 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-          <Pressable
-            onPress={() => setFilterGroupId(null)}
-            style={[
-              styles.chip,
-              { borderColor: filterGroupId === null ? 'transparent' : theme.cardBorder, backgroundColor: filterGroupId === null ? theme.accentSoft : theme.surface },
-            ]}>
-            <Text style={{ color: filterGroupId === null ? theme.accentStrong : theme.text, fontSize: 12, fontWeight: '700', fontFamily: Fonts[700] }}>All</Text>
-          </Pressable>
-          {groups.map((g) => (
-            <Pressable
-              key={g.id}
-              onPress={() => setFilterGroupId(filterGroupId === g.id ? null : g.id)}
-              style={[
-                styles.chip,
-                { borderColor: theme.cardBorder, backgroundColor: filterGroupId === g.id ? g.color : theme.surface },
-              ]}>
-              {filterGroupId !== g.id && <View style={[styles.chipDot, { backgroundColor: g.color }]} />}
-              <Text style={{ color: filterGroupId === g.id ? '#fff' : theme.text, fontSize: 12, fontWeight: '700', fontFamily: Fonts[700] }}>
-                {g.name}
-              </Text>
-            </Pressable>
-          ))}
-        </ScrollView>
-      )}
-
-      <LiveActivityCard />
-
-      <View style={styles.sectionRow}>
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>TODAY</Text>
-        <Pressable onPress={() => setSelectMode(!selectMode)} hitSlop={8}>
-          <Text style={[styles.editBtn, { color: theme.accentStrong }]}>{selectMode ? 'Done' : 'Edit'}</Text>
-        </Pressable>
-      </View>
-    </>
+  const feed = useMemo(() => buildHomeFeed(plans, nowMs, matches), [plans, nowMs, matches]);
+  const liveActivity = useMemo(
+    () => (liveActivitiesEnabled ? findLiveActivityPlan(plans.filter(matches), nowMs) : null),
+    [liveActivitiesEnabled, plans, matches, nowMs]
   );
+  const countdownPlanId = liveActivity?.phase === 'upcoming' ? liveActivity.plan.id : null;
+  const fast = !!feed.live || !!countdownPlanId;
+  useEffect(() => setFastClock(fast), [fast]);
 
-  const footer = (
-    <>
-      <EntranceBox entrance={upcomingEnter} blurTint={blurTint}>
-        {lastDeletedSnapshot && !selectMode && (
-          <Pressable onPress={undoDelete} style={[styles.undoBar, { backgroundColor: theme.surface2, borderColor: theme.cardBorder }]}>
-            <Text style={{ color: theme.textSecondary, fontSize: Typography.rowValue, fontFamily: Fonts[500] }}>Undo last delete</Text>
-          </Pressable>
-        )}
+  const now = new Date(nowMs);
+  const todayISO = toISO(now);
+  const firstName = profileName.trim().split(/\s+/)[0];
 
-        <UpcomingList />
-      </EntranceBox>
+  const openPlan = (id: string) => router.push({ pathname: '/add-plan', params: { id } });
+  const filtering = !!filterGroupId || !!filterColor;
+  const emptyText = filtering
+    ? 'Nothing matches this filter today.'
+    : feed.earlier.length > 0
+      ? 'All done for today.'
+      : 'Nothing planned for today.';
 
-      <EntranceBox entrance={pastEnter} blurTint={blurTint}>
-        <PastActivityList />
-      </EntranceBox>
-    </>
-  );
+  const selectProps = { selectMode, selectedIds, onToggleSelect: toggleSelected, onOpen: openPlan };
+
+  const chipText = (active: boolean) => ({
+    color: active ? theme.accentStrong : theme.text,
+    fontSize: 12,
+    fontWeight: '700' as const,
+    fontFamily: Fonts[700],
+  });
 
   return (
-    <View style={[styles.screen, { backgroundColor: theme.surface }]}>
-      <NestableScrollContainer contentContainerStyle={{ paddingTop: insets.top + 22, paddingBottom: 130 }}>
-        {header}
-        <EntranceBox entrance={todayEnter} blurTint={blurTint}>
-          {todays.length === 0 ? (
-            <View style={[styles.empty, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
-              <Text style={{ color: theme.textSecondary, fontSize: Typography.rowLabel, fontFamily: Fonts[500] }}>
-                {filterGroupId || filterColor ? 'Nothing matches this filter today.' : 'Nothing planned for today.'}
+    <View style={[styles.screen, { backgroundColor: k.page }]}>
+      <NestableScrollContainer contentContainerStyle={{ paddingTop: insets.top, paddingBottom: 130 }}>
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <Tickle size={34} mood="idle" animated />
+            <View style={styles.headerText}>
+              <Text numberOfLines={1} style={[t.greeting, { color: k.ink50 }]}>
+                {greeting(now.getHours())}
+                {firstName ? `, ${firstName}` : ''}
               </Text>
+              <Text style={[t.date, { color: k.ink }]}>{dateLine(now)}</Text>
             </View>
-          ) : (
-            <NestableDraggableFlatList
-              data={todays}
-              keyExtractor={(item) => item.id}
-              onDragEnd={({ data }) => reorderPlans(todayISO, data.map((p) => p.id))}
-              onPlaceholderIndexChange={() => Haptics.selectionAsync()}
-              renderItem={({ item, drag, isActive }: { item: Plan; drag: () => void; isActive: boolean }) => (
-                <TodoItem
-                  plan={item}
-                  group={groups.find((g) => g.id === item.groupId)}
-                  selectMode={selectMode}
-                  selected={selectedIds.includes(item.id)}
-                  isActive={isActive}
-                  onToggleComplete={() => toggleComplete(item.id)}
-                  onToggleSelect={() => toggleSelected(item.id)}
-                  onPress={() => router.push({ pathname: '/add-plan', params: { id: item.id } })}
-                  onDelete={() => deletePlan(item.id)}
-                  onDrag={drag}
-                />
-              )}
-            />
+          </View>
+          <Pressable onPress={() => setSelectMode(!selectMode)} hitSlop={10}>
+            <Text style={[t.link, styles.editBtn, { color: k.link }]}>{selectMode ? 'Done' : 'Edit'}</Text>
+          </Pressable>
+        </View>
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+          <Pressable
+            onPress={toggleColors}
+            style={[styles.chip, { borderColor: colorsOpen ? 'transparent' : theme.cardBorder, backgroundColor: colorsOpen ? theme.accentSoft : theme.surface }]}>
+            <Text style={chipText(colorsOpen)}>Colors</Text>
+          </Pressable>
+          {colorsMounted && (
+            <Animated.View
+              style={[
+                styles.colorRevealRow,
+                {
+                  opacity: colorAnim,
+                  transform: [{ translateX: colorAnim.interpolate({ inputRange: [0, 1], outputRange: [-24, 0] }) }],
+                },
+              ]}>
+              <Pressable
+                onPress={() => setFilterColor(null)}
+                style={[
+                  styles.chip,
+                  { borderColor: filterColor === null ? 'transparent' : theme.cardBorder, backgroundColor: filterColor === null ? theme.accentSoft : theme.surface },
+                ]}>
+                <Text style={chipText(filterColor === null)}>All</Text>
+              </Pressable>
+              {SwatchColors.map((c) => (
+                <Pressable
+                  key={c}
+                  onPress={() => setFilterColor(filterColor === c ? null : c)}
+                  style={[styles.colorSwatch, { backgroundColor: c, borderColor: filterColor === c ? theme.text : 'transparent' }]}>
+                  {filterColor === c && <CheckIcon size={14} color="#fff" strokeWidth={3} />}
+                </Pressable>
+              ))}
+            </Animated.View>
           )}
-        </EntranceBox>
-        {footer}
+          {groups.length > 0 && (
+            <>
+              <View style={[styles.chipDivider, { backgroundColor: theme.cardBorder }]} />
+              {groups.map((g) => (
+                <Pressable
+                  key={g.id}
+                  onPress={() => setFilterGroupId(filterGroupId === g.id ? null : g.id)}
+                  style={[styles.chip, { borderColor: theme.cardBorder, backgroundColor: filterGroupId === g.id ? g.color : theme.surface }]}>
+                  {filterGroupId !== g.id && <View style={[styles.chipDot, { backgroundColor: g.color }]} />}
+                  <Text style={[chipText(false), filterGroupId === g.id && { color: '#fff' }]}>{g.name}</Text>
+                </Pressable>
+              ))}
+            </>
+          )}
+        </ScrollView>
+
+        <View style={styles.feed}>
+          <EntranceBox entrance={todayEnter} blurTint={blurTint}>
+            <TodaySheet
+              feed={feed}
+              nowMs={nowMs}
+              groups={groups}
+              emptyText={emptyText}
+              countdownPlanId={countdownPlanId}
+              selectMode={selectMode}
+              selectedIds={selectedIds}
+              onToggleComplete={toggleComplete}
+              onToggleSelect={toggleSelected}
+              onOpen={openPlan}
+              onDelete={deletePlan}
+              onExtend={(p) => p.endTime && updatePlan(p.id, { endTime: addMinutesToTime(p.endTime, 10) })}
+              onReorder={(ids) => reorderPlans(todayISO, ids)}
+            />
+          </EntranceBox>
+
+          {lastDeletedSnapshot && !selectMode && (
+            <Pressable onPress={undoDelete} style={[styles.undoBar, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
+              <Text style={{ color: theme.textSecondary, fontSize: Typography.rowValue, fontFamily: Fonts[500] }}>Undo last delete</Text>
+            </Pressable>
+          )}
+
+          <EntranceBox entrance={upcomingEnter} blurTint={blurTint}>
+            <UpcomingBlock items={feed.upcoming} onCalendar={() => router.navigate('/calendar')} {...selectProps} />
+          </EntranceBox>
+
+          <EntranceBox entrance={earlierEnter} blurTint={blurTint}>
+            <EarlierBlock
+              items={feed.earlier}
+              older={feed.older}
+              seeAll={seeAll}
+              onToggleSeeAll={() => setSeeAll((v) => !v)}
+              onRedo={openPlan}
+              {...selectProps}
+            />
+          </EntranceBox>
+        </View>
       </NestableScrollContainer>
 
       <Toast message={toastMessage} />
-
-      <BottomSheet
-        visible={shareOpen}
-        onClose={() => setShareOpen(false)}
-        title="Share Calendar"
-        left={
-          <Pressable onPress={() => setShareOpen(false)} hitSlop={8}>
-            <Text style={{ color: theme.textSecondary, fontSize: Typography.rowLabel, fontWeight: '600', fontFamily: Fonts[600] }}>Cancel</Text>
-          </Pressable>
-        }
-        right={
-          <Pressable onPress={() => setShareOpen(false)} hitSlop={8}>
-            <Text style={{ color: theme.accentStrong, fontSize: Typography.rowLabel, fontWeight: '700', fontFamily: Fonts[700] }}>Done</Text>
-          </Pressable>
-        }>
-        <Text style={[styles.shareNote, { color: theme.textSecondary, fontFamily: Fonts[500] }]}>
-          People you add can view your full calendar but can&apos;t add, edit, or remove plans — viewer access only.
-        </Text>
-        <View style={[styles.list, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
-          {SHARE_CONTACTS.map((c, i) => (
-            <View key={c.name} style={[styles.listRow, i > 0 && styles.listRowBorder, { borderColor: theme.divider }]}>
-              <View style={[styles.contactAvatar, { backgroundColor: theme.accentSoft }]}>
-                <Text style={{ color: theme.accent, fontSize: Typography.rowValue, fontWeight: '700', fontFamily: Fonts[700] }}>{c.initials}</Text>
-              </View>
-              <Text style={{ color: theme.text, fontSize: Typography.rowLabel, fontWeight: '600', fontFamily: Fonts[600], flex: 1 }}>{c.name}</Text>
-              <View style={[styles.rolePill, { backgroundColor: theme.surface2, borderColor: theme.cardBorder }]}>
-                <Text style={{ color: theme.textSecondary, fontSize: Typography.caption, fontWeight: '700', fontFamily: Fonts[700] }}>Viewer</Text>
-              </View>
-            </View>
-          ))}
-          <Pressable
-            onPress={() => showToast('Invite sent')}
-            style={[styles.listRow, styles.listRowBorder, { borderColor: theme.divider }]}>
-            <View style={[styles.contactAvatar, styles.dashedAvatar, { borderColor: theme.dividerStrong }]}>
-              <Text style={{ color: theme.textTertiary, fontSize: 16, fontWeight: '700', fontFamily: Fonts[700] }}>+</Text>
-            </View>
-            <Text style={{ color: theme.accentStrong, fontSize: Typography.rowLabel, fontWeight: '600', fontFamily: Fonts[600] }}>Add someone</Text>
-          </Pressable>
-        </View>
-        <View style={[styles.shareLinkRow, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
-          <Text style={{ color: theme.textSecondary, fontSize: Typography.rowValue, fontFamily: Fonts[500], flex: 1 }} numberOfLines={1}>
-            {SHARE_LINK}
-          </Text>
-          <Pressable onPress={handleCopyLink} style={[styles.copyBtn, { backgroundColor: theme.accent }]}>
-            <Text style={{ color: '#fff', fontSize: Typography.rowValue, fontWeight: '700', fontFamily: Fonts[700] }}>Copy Link</Text>
-          </Pressable>
-        </View>
-      </BottomSheet>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 22, marginBottom: 4 },
-  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  headerActions: { flexDirection: 'row', gap: 8 },
-  iconBtn: { width: 38, height: 38, borderRadius: 19, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  greeting: { fontSize: Typography.label, fontWeight: '500', fontFamily: Fonts[500], marginBottom: 2 },
-  h1: { fontSize: Typography.headerDate, fontWeight: '700', fontFamily: Fonts[700], letterSpacing: -0.2 },
-  chipRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 22, paddingTop: 14, paddingBottom: 2 },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 7, paddingHorizontal: 13, borderRadius: Radii.chip + 6, borderWidth: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 8, paddingHorizontal: 22, paddingBottom: 16 },
+  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 },
+  headerText: { gap: 1, flexShrink: 1 },
+  editBtn: { fontSize: 12 },
+  chipRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingBottom: 14 },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 12, borderRadius: Radii.chip + 6, borderWidth: 1 },
   chipDot: { width: 7, height: 7, borderRadius: 3.5 },
-  colorSwatch: { width: 28, height: 28, borderRadius: 14, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  chipDivider: { width: 1, height: 18 },
+  colorSwatch: { width: 26, height: 26, borderRadius: 13, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   colorRevealRow: { flexDirection: 'row', gap: 8 },
-  list: { borderRadius: Radii.card, borderWidth: 1, overflow: 'hidden', marginTop: 14 },
-  listRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, paddingHorizontal: 14 },
-  listRowBorder: { borderTopWidth: 1 },
-  shareNote: { fontSize: Typography.rowValue, lineHeight: 18, marginTop: 12 },
-  contactAvatar: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
-  dashedAvatar: { borderWidth: 1, borderStyle: 'dashed', backgroundColor: 'transparent' },
-  rolePill: { paddingVertical: 3, paddingHorizontal: 9, borderRadius: Radii.chip, borderWidth: 1 },
-  shareLinkRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    borderRadius: Radii.card,
-    borderWidth: 1,
-    padding: 10,
-    marginTop: 12,
-  },
-  copyBtn: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: Radii.iconTile },
-  sectionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 22,
-    paddingTop: 22,
-    paddingBottom: 10,
-  },
-  sectionTitle: { fontSize: Typography.caption, fontWeight: '700', fontFamily: Fonts[700], letterSpacing: 0.9 },
-  editBtn: { fontSize: Typography.rowValue, fontWeight: '700', fontFamily: Fonts[700] },
-  empty: {
-    marginHorizontal: 22,
-    minHeight: RowMinHeight,
-    padding: 26,
-    borderRadius: Radii.card,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    alignItems: 'center',
-  },
-  undoBar: { marginHorizontal: 22, marginTop: 4, padding: 12, borderRadius: Radii.card, borderWidth: 1, alignItems: 'center' },
+  feed: { paddingHorizontal: 12, gap: 20 },
+  undoBar: { marginTop: -8, padding: 10, borderRadius: Radii.card, borderWidth: 1, alignItems: 'center' },
 });

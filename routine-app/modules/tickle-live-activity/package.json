@@ -1,0 +1,8 @@
+{
+  "name": "tickle-live-activity",
+  "version": "1.0.0",
+  "description": "Starts, updates and ends Tickle's Lock Screen / Dynamic Island Live Activity.",
+  "main": "index.ts",
+  "license": "UNLICENSED",
+  "private": true
+}

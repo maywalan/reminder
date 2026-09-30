@@ -157,7 +157,7 @@ export const Typography = new Proxy(BASE_TYPOGRAPHY, {
 export const Spacing = { xs: 4, sm: 8, md: 14, lg: 20, xl: 28, cardGap: 9 } as const;
 
 /**
- * Maps the four numeric `fontWeight`s the Tickle draft-2 type ramp uses to the loaded Anuphan
+ * Maps the numeric `fontWeight`s the Tickle draft-2 type ramp uses to the loaded Anuphan
  * static font file for that weight (see `_layout.tsx`'s `useFonts`). RN doesn't synthesize bold
  * from a single custom font file the way it does for system fonts, so a custom-font `<Text>` needs
  * both `fontWeight` (for layout-time metrics) *and* the matching `fontFamily` from this map, or it
@@ -166,6 +166,7 @@ export const Spacing = { xs: 4, sm: 8, md: 14, lg: 20, xl: 28, cardGap: 9 } as c
  * — one step lighter than the design file's spec, the closest available match.
  */
 export const Fonts = {
+  400: 'Anuphan_400Regular',
   500: 'Anuphan_500Medium',
   600: 'Anuphan_600SemiBold',
   700: 'Anuphan_700Bold',

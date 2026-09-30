@@ -48,7 +48,7 @@ struct TickleTimelineProvider: TimelineProvider {
   }
 }
 
-private extension Color {
+extension Color {
   init(hex: String) {
     var s = hex.trimmingCharacters(in: .whitespacesAndNewlines)
     if s.hasPrefix("#") { s.removeFirst() }
@@ -150,5 +150,8 @@ struct TickleWidget: Widget {
 struct TickleWidgetBundle: WidgetBundle {
   var body: some Widget {
     TickleWidget()
+    if #available(iOS 16.2, *) {
+      TickleLiveActivity()
+    }
   }
 }

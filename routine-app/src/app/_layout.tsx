@@ -1,4 +1,4 @@
-import { Anuphan_500Medium, Anuphan_600SemiBold, Anuphan_700Bold } from '@expo-google-fonts/anuphan';
+import { Anuphan_400Regular, Anuphan_500Medium, Anuphan_600SemiBold, Anuphan_700Bold } from '@expo-google-fonts/anuphan';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
@@ -10,6 +10,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { TickleSplash } from '@/components/onboarding/tickle-splash';
 import { Colors, setFontScale } from '@/constants/theme';
 import { useEffectiveScheme } from '@/hooks/use-theme';
+import { useLiveActivitySync } from '@/hooks/use-live-activity-sync';
 import { useNotificationsSync } from '@/hooks/use-notifications-sync';
 import { useWidgetSync } from '@/hooks/use-widget-sync';
 import { useAuthStore } from '@/store/use-auth-store';
@@ -44,6 +45,7 @@ export default function RootLayout() {
   // first paint after a settings change is already correct, not just the one after.
   setFontScale(fontScale);
   const [fontsLoaded] = useFonts({
+    Anuphan_400Regular,
     Anuphan_500Medium,
     Anuphan_600SemiBold,
     Anuphan_700Bold,
@@ -92,6 +94,7 @@ export default function RootLayout() {
 
   useNotificationsSync();
   useWidgetSync();
+  useLiveActivitySync();
 
   const ready = fontsLoaded && !authInitializing && plannerHydrated && onboardingHydrated && minDurationElapsed;
 

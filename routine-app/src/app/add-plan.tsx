@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text, TextInput } from '@/components/text';
 import { BottomSheet } from '@/components/bottom-sheet';
+import { PhotoViewer } from '@/components/photo-viewer';
 import { CameraIcon, CheckIcon, ChevronRightIcon, PlusIcon, XIcon } from '@/components/icon';
 import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
@@ -154,6 +155,7 @@ export default function AddPlanScreen() {
   const [locationFocused, setLocationFocused] = useState(false);
   const [photoUris, setPhotoUris] = useState<string[]>(editing?.photoUris ?? []);
   const [error, setError] = useState(false);
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
 
   const { suggestions: placeSuggestions, loading: placesLoading } = usePlaceSearch(location);
   const filteredTimeZones = useMemo(() => {
@@ -278,8 +280,9 @@ export default function AddPlanScreen() {
   }
 
   async function handlePickPhoto() {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') return;
+    // No photo-library permission request: the system picker (PHPicker) runs out of process and
+    // only hands back what the user picks, so it needs none — and asking first meant a user who'd
+    // once tapped "Don't Allow" could never open it again.
     const remaining = MAX_PHOTOS - photoUris.length;
     if (remaining <= 0) return;
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -287,6 +290,9 @@ export default function AddPlanScreen() {
       quality: 0.7,
       allowsMultipleSelection: true,
       selectionLimit: remaining,
+      // Full screen, not a sheet: this screen is itself a sheet, and the picker stacked as a second
+      // sheet on top of it didn't take taps on its Add button (iOS 18).
+      presentationStyle: ImagePicker.UIImagePickerPresentationStyle.FULL_SCREEN,
     });
     if (!result.canceled) {
       setPhotoUris((prev) => [...prev, ...result.assets.map((a) => a.uri)].slice(0, MAX_PHOTOS));
@@ -692,7 +698,7 @@ export default function AddPlanScreen() {
         </View>
 
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
-          <Text style={[styles.label, { color: theme.textTertiary, paddingHorizontal: 14, paddingTop: 12 }]}>COLOR</Text>
+          <Text style={[styles.label, { color: theme.textTertiary, paddingHorizontal: 14, paddingTop: 12 }]}>COLORS</Text>
           <View style={styles.swatchRow}>
             {COLOR_PICKER_ORDER.map((c) => (
               <Pressable
@@ -717,7 +723,9 @@ export default function AddPlanScreen() {
           <View style={styles.photoRow}>
             {photoUris.map((uri) => (
               <View key={uri} style={styles.photoThumbWrap}>
-                <Image source={{ uri }} style={styles.photoThumb} />
+                <Pressable onPress={() => setPreviewIndex(photoUris.indexOf(uri))} accessibilityLabel="Preview photo">
+                  <Image source={{ uri }} style={styles.photoThumb} />
+                </Pressable>
                 <Pressable onPress={() => removePhoto(uri)} style={styles.photoRemoveDot}>
                   <Text style={{ color: '#fff', fontSize: 13, fontWeight: '800', lineHeight: 16 }}>×</Text>
                 </Pressable>
@@ -770,6 +778,8 @@ export default function AddPlanScreen() {
       </ScrollView>
 
       <Toast message={toastMessage} />
+
+      <PhotoViewer uris={photoUris} index={previewIndex} onClose={() => setPreviewIndex(null)} />
 
       <BottomSheet
         visible={alertSlot !== null}

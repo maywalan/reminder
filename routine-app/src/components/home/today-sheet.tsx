@@ -1,10 +1,11 @@
 import * as Haptics from 'expo-haptics';
 import { useEffect, useRef, type ReactNode } from 'react';
-import { Alert, Animated, Easing, Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import { Alert, Animated, Easing, Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 import { BorderlessButton, RectButton, Swipeable } from 'react-native-gesture-handler';
 import { NestableDraggableFlatList } from 'react-native-draggable-flatlist';
 import { useReducedMotion } from 'react-native-reanimated';
 
+import { Text } from '@/components/text';
 import { CheckIcon, TrashIcon } from '@/components/icon';
 import { planPalette, useHomeTokens, useHomeType, type HomeTokens } from '@/components/home/tokens';
 import { useTheme } from '@/hooks/use-theme';
@@ -12,6 +13,7 @@ import type { Group, Plan } from '@/store/types';
 import { planDateTime } from '@/utils/countdown';
 import { pad } from '@/utils/dates';
 import {
+  dueProgress,
   durationMinutes,
   formatDuration,
   formatLiveCountdown,
@@ -81,13 +83,24 @@ function MetaLine({
   );
 }
 
+/** "Mon, 5 Oct" */
+function dateLine(d: Date) {
+  return `${d.toLocaleDateString('en-US', { weekday: 'short' })}, ${d.getDate()} ${d.toLocaleDateString('en-US', { month: 'short' })}`;
+}
+
+/** The idle Now marker: an azure "Now" badge (time under it) in the time column, the azure dot on the rail, and the Now line running off to the right. */
 function NowRow({ nowMs }: { nowMs: number }) {
   const k = useHomeTokens();
   const t = useHomeType();
   const d = new Date(nowMs);
   return (
     <Grid style={styles.nowRow}>
-      <Text style={[styles.timeCol, t.nowTime, { color: k.primary }]}>{`${pad(d.getHours())}:${pad(d.getMinutes())}`}</Text>
+      <View style={[styles.timeColBox, styles.nowBadgeCol]}>
+        <View style={[styles.nowBadge, { backgroundColor: k.primary }]}>
+          <Text style={[t.metaStrong, styles.nowBadgeLabel]}>Now</Text>
+          <Text style={[t.nowTime, styles.nowBadgeTime]}>{`${pad(d.getHours())}:${pad(d.getMinutes())}`}</Text>
+        </View>
+      </View>
       <View style={[styles.dot9, { backgroundColor: k.primary }]} />
       <View style={[styles.nowLine, { backgroundColor: k.nowLine }]} />
     </Grid>
@@ -205,7 +218,9 @@ function TaskRow({
       ) : (
         <View style={[styles.dot9, styles.ringDot, { borderColor: p.base, backgroundColor: k.sheet }]} />
       )}
-      <View style={styles.content}>
+      {/* The Live-Activity task counting down to its start gets the live card's tint, so it's
+          obvious which task the Lock Screen is counting down to. */}
+      <View style={[styles.content, soon?.live && [styles.countdownCard, { backgroundColor: p.cardTint }]]}>
         <View style={styles.contentText}>
           <Text numberOfLines={1} style={[t.title, { color: k.ink }]}>
             {plan.name}
@@ -259,15 +274,22 @@ function TaskRow({
   );
 }
 
-/** The running session: tinted card with progress, countdown, +10 min and Done. */
+/**
+ * The running session: tinted card with progress, countdown, +10 min and Done. A point reminder
+ * uses the same card while it's due — "due" instead of "ends", a count-up since its time, the bar
+ * filling over its 15-minute due window, and no +10 min.
+ */
 function LiveRow({ plan, group, nowMs, isActive, drag, h }: { plan: Plan; group?: Group; nowMs: number; isActive: boolean; drag: () => void; h: RowHandlers }) {
   const k = useHomeTokens();
   const t = useHomeType();
   const reduceMotion = useReducedMotion();
   const p = planPalette(plan.color, k.dark);
-  const { progress, secondsLeft } = liveProgress(plan, nowMs);
-  const over = secondsLeft < 0;
-  const pct = `${(over ? 1 : progress) * 100}%` as const;
+  const point = !plan.endTime;
+  const range = liveProgress(plan, nowMs);
+  const due = dueProgress(plan, nowMs);
+  const over = !point && range.secondsLeft < 0;
+  const pct = `${(point ? due.progress : over ? 1 : range.progress) * 100}%` as const;
+  const countdown = point ? formatLiveCountdown(-due.secondsOver) : formatLiveCountdown(range.secondsLeft);
 
   const pulse = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -275,11 +297,10 @@ function LiveRow({ plan, group, nowMs, isActive, drag, h }: { plan: Plan; group?
       pulse.setValue(0);
       return;
     }
+    // Sonar ripple: a ring grows out of the Now dot and fades, over and over — motion the eye
+    // catches from anywhere on the screen, unlike the old gentle opacity breathe.
     const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, { toValue: 1, duration: 900, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0, duration: 900, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-      ])
+      Animated.timing(pulse, { toValue: 1, duration: 1600, easing: Easing.out(Easing.ease), useNativeDriver: true })
     );
     loop.start();
     return () => loop.stop();
@@ -295,22 +316,30 @@ function LiveRow({ plan, group, nowMs, isActive, drag, h }: { plan: Plan; group?
       <Grid style={styles.liveRow}>
         <View style={[styles.timeColBox, styles.liveTimes]}>
           <Text style={[styles.timeRight, t.railTime, { color: k.ink }]}>{plan.time}</Text>
-          <Text style={[styles.timeRight, t.endTime, { color: k.ink50 }]}>{plan.endTime}</Text>
+          {!point && <Text style={[styles.timeRight, t.endTime, { color: k.ink50 }]}>{plan.endTime}</Text>}
         </View>
         <View style={styles.markerCol}>
-          <View style={[styles.liveLine, { backgroundColor: p.base, height: pct }]} />
           <View style={[styles.dot9, styles.liveStart, { backgroundColor: p.base }]} />
-          <Animated.View
-            style={[
-              styles.dot9,
-              styles.nowDot,
-              { top: pct, backgroundColor: k.liveDot },
-              {
-                opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 0.7] }),
-                transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.25] }) }],
-              },
-            ]}
-          />
+          {/* The Now dot travels this track (start marker → bottom of the card), so even at 100% it
+              stays beside its own card instead of sliding onto the next row. */}
+          <View style={styles.liveTrack}>
+            <View style={[styles.liveLine, { backgroundColor: p.base, height: pct }]} />
+            {!reduceMotion && (
+              <Animated.View
+                pointerEvents="none"
+                style={[
+                  styles.nowDot,
+                  styles.nowRipple,
+                  { top: pct, backgroundColor: k.liveDot },
+                  {
+                    opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.55, 0] }),
+                    transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 2.8] }) }],
+                  },
+                ]}
+              />
+            )}
+            <View style={[styles.nowDot, { top: pct, backgroundColor: k.liveDot, borderColor: k.sheet }]} />
+          </View>
         </View>
         <View
           style={[
@@ -319,21 +348,29 @@ function LiveRow({ plan, group, nowMs, isActive, drag, h }: { plan: Plan; group?
             h.selectMode && selected && { borderWidth: 1.5, borderColor: k.primary },
           ]}>
           <View style={styles.liveHead}>
-            <Text numberOfLines={1} style={[t.title, { color: k.ink }]}>
-              {plan.name}
-            </Text>
-            <MetaLine group={group} detail={`ends ${plan.endTime}`} palette={p.text} t={t} k={k} />
+            <View style={styles.liveTitleRow}>
+              <Text numberOfLines={1} style={[t.title, styles.liveTitle, { color: k.ink }]}>
+                {plan.name}
+              </Text>
+              <View style={[styles.liveBadge, { backgroundColor: over ? k.missedDot : k.liveDot }]}>
+                <View style={styles.liveBadgeDot} />
+                <Text style={[t.metaStrong, styles.liveBadgeText]}>{over ? 'OVERTIME' : point ? 'DUE NOW' : 'LIVE NOW'}</Text>
+              </View>
+            </View>
+            <MetaLine group={group} detail={point ? `due ${plan.time}` : `ends ${plan.endTime}`} palette={p.text} t={t} k={k} />
           </View>
           <View style={[styles.track, { backgroundColor: p.track }]}>
             <View style={[styles.track, { width: pct, backgroundColor: p.base }]} />
           </View>
           <View style={styles.actions}>
             <Text numberOfLines={1} style={[t.countdown, styles.countdown, { color: over ? k.missedText : p.text }]}>
-              {formatLiveCountdown(secondsLeft)}
+              {countdown}
             </Text>
-            <Pressable onPress={() => h.onExtend(plan)} hitSlop={10} disabled={h.selectMode}>
-              <Text style={[t.button, { color: k.ink50 }]}>+10 min</Text>
-            </Pressable>
+            {!point && (
+              <Pressable onPress={() => h.onExtend(plan)} hitSlop={10} disabled={h.selectMode}>
+                <Text style={[t.button, { color: k.ink50 }]}>+10 min</Text>
+              </Pressable>
+            )}
             <Pressable
               onPress={() => {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -374,7 +411,10 @@ export function TodaySheet({ feed, nowMs, groups, emptyText, countdownPlanId, on
   return (
     <View style={[styles.sheet, { backgroundColor: k.sheet, borderColor: k.sheetBorder }]}>
       <View style={styles.sheetHead}>
-        <Text style={[t.todayHeading, { color: k.ink }]}>Today</Text>
+        <Text numberOfLines={1} style={[t.todayHeading, styles.sheetTitle, { color: k.primary }]}>
+          Today
+          <Text style={[t.todayDate, { color: k.ink50 }]}>{`  ·  ${dateLine(new Date(nowMs))}`}</Text>
+        </Text>
         <Text numberOfLines={1} style={[t.meta, { color: k.ink50 }]}>
           {count}
         </Text>
@@ -435,6 +475,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     elevation: 2,
   },
+  sheetTitle: { flexShrink: 1 },
   sheetHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingLeft: 10, paddingRight: 4 },
   empty: { paddingHorizontal: 10, paddingVertical: 14 },
   list: { paddingRight: 4, paddingVertical: 4 },
@@ -447,6 +488,7 @@ const styles = StyleSheet.create({
   markerCol: { width: MARKER_COL },
   content: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 10 },
   contentText: { flex: 1, minWidth: 0 },
+  countdownCard: { borderRadius: 16, paddingVertical: 10, paddingHorizontal: 13, marginVertical: -4 },
 
   pointRow: { alignItems: 'center', paddingVertical: 10 },
   dot9: { width: 9, height: 9, borderRadius: 4.5 },
@@ -458,7 +500,24 @@ const styles = StyleSheet.create({
   bar: { flex: 1, width: 5, borderRadius: 3, borderWidth: 1.5 },
 
   gapRow: { alignItems: 'center', paddingVertical: 2 },
-  nowRow: { alignItems: 'center', paddingVertical: 4 },
+  nowRow: { alignItems: 'center', paddingVertical: 6 },
+  // Exactly the time column's width — the draggable list clips anything wider. Rail times are
+  // right-aligned and ~31pt wide, so nudging the badge 3.5pt right centres it over them, with an
+  // even overhang on both sides.
+  nowBadgeCol: { alignItems: 'stretch' },
+  nowBadge: {
+    transform: [{ translateX: 3.5 }],
+    paddingVertical: 4,
+    borderRadius: 10,
+    alignItems: 'center',
+    shadowColor: '#1B76E8',
+    shadowOpacity: 0.28,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 3,
+  },
+  nowBadgeLabel: { color: '#fff', fontSize: 12, lineHeight: 14 },
+  nowBadgeTime: { color: 'rgba(255,255,255,0.85)', lineHeight: 12 },
   nowLine: { flex: 1, height: 1 },
 
   ring: { width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, overflow: 'hidden' },
@@ -466,17 +525,30 @@ const styles = StyleSheet.create({
 
   liveRow: { alignItems: 'stretch', paddingVertical: 4 },
   liveTimes: { justifyContent: 'space-between', paddingVertical: 12 },
-  liveLine: { position: 'absolute', left: 4, top: 16, width: 1 },
+  liveTrack: { position: 'absolute', left: 0, right: 0, top: 20, bottom: 14 },
+  liveLine: { position: 'absolute', left: 4, top: 0, width: 1 },
   liveStart: { position: 'absolute', left: 0, top: 16 },
+  // 14pt dot centred on the 1pt live line (x = 4.5), ringed in the sheet colour so it lifts off
+  // the coloured rail, with a ripple of the same size behind it.
   nowDot: {
     position: 'absolute',
-    left: 0,
-    marginTop: 16,
+    left: -2.5,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    borderWidth: 2.5,
+    marginTop: -7,
     shadowColor: '#35B978',
-    shadowOpacity: 0.5,
-    shadowRadius: 3,
+    shadowOpacity: 0.7,
+    shadowRadius: 5,
     shadowOffset: { width: 0, height: 0 },
   },
+  nowRipple: { borderWidth: 0, shadowOpacity: 0 },
+  liveTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  liveTitle: { flexShrink: 1 },
+  liveBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 9 },
+  liveBadgeDot: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#fff' },
+  liveBadgeText: { color: '#fff', fontSize: 9.5, letterSpacing: 0.4 },
   liveCard: { flex: 1, minWidth: 0, borderRadius: 16, paddingVertical: 12, paddingHorizontal: 13, gap: 9 },
   liveHead: { gap: 1 },
   track: { height: 3, borderRadius: 2 },

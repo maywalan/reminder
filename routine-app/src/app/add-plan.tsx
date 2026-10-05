@@ -1,7 +1,7 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -10,14 +10,13 @@ import {
   ScrollView,
   StyleSheet,
   Switch,
-  Text,
-  TextInput,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Text, TextInput } from '@/components/text';
 import { BottomSheet } from '@/components/bottom-sheet';
-import { CameraIcon, CheckIcon, ChevronRightIcon, XIcon } from '@/components/icon';
+import { CameraIcon, CheckIcon, ChevronRightIcon, PlusIcon, XIcon } from '@/components/icon';
 import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
 import { DefaultTaskColor, Radii, SwatchColors, Typography } from '@/constants/theme';
@@ -89,6 +88,9 @@ export default function AddPlanScreen() {
   const deletePlan = usePlannerStore((s) => s.deletePlan);
   const duplicatePlan = usePlannerStore((s) => s.duplicatePlan);
   const setPendingSaveToast = usePlannerStore((s) => s.setPendingSaveToast);
+  const groups = usePlannerStore((s) => s.groups);
+  const pendingGroupPick = usePlannerStore((s) => s.pendingGroupPick);
+  const setPendingGroupPick = usePlannerStore((s) => s.setPendingGroupPick);
 
   const editing = useMemo(() => plans.find((p) => p.id === id), [plans, id]);
   const initialDate = editing?.date ?? prefillDate ?? toISO(new Date());
@@ -128,7 +130,8 @@ export default function AddPlanScreen() {
   );
   const [showEndTimePicker, setShowEndTimePicker] = useState(false);
   const [color, setColor] = useState(editing?.color ?? DefaultTaskColor);
-  const [groupId] = useState<string | null>(editing?.groupId ?? null);
+  const [groupId, setGroupId] = useState<string | null>(editing?.groupId ?? null);
+  const group = groups.find((g) => g.id === groupId);
   const [live, setLive] = useState(editing?.live ?? false);
   // Sorted earliest-first (see sortAlertsByEarliness) so row position always matches how far
   // ahead of the plan each alert fires, regardless of the order they were picked in. A brand-new
@@ -159,6 +162,22 @@ export default function AddPlanScreen() {
     return listTimeZones().filter((tz) => tz.toLowerCase().includes(q.replace(/\s+/g, '_')) || timeZoneCityLabel(tz).toLowerCase().includes(q));
   }, [timeZoneQuery]);
   const { toastMessage, showToast } = useToast();
+
+  // Back from Create Group (pushed on top of this form, so every field here is still as the user
+  // left it): take the group it picked or created, and adopt its color.
+  useFocusEffect(
+    useCallback(() => {
+      if (!pendingGroupPick) return;
+      const picked = usePlannerStore.getState().groups.find((g) => g.id === pendingGroupPick);
+      if (picked) {
+        setGroupId(picked.id);
+        setColor(picked.color);
+      }
+      setPendingGroupPick(null);
+    }, [pendingGroupPick, setPendingGroupPick])
+  );
+
+  const openCreateGroup = () => router.push({ pathname: '/create-group', params: { from: 'plan' } });
 
   const dateLabel = dateTime.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
   const timeLabel = fmtTime12(`${pad(dateTime.getHours())}:${pad(dateTime.getMinutes())}`);
@@ -388,6 +407,33 @@ export default function AddPlanScreen() {
                 </View>
               </Pressable>
             ))}
+        </View>
+
+        <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
+          <Pressable onPress={openCreateGroup} style={styles.fieldRow}>
+            <Text style={{ color: theme.text, fontSize: Typography.heading, fontWeight: '600' }}>Group</Text>
+            {group ? (
+              <>
+                <View style={styles.groupValue}>
+                  <View style={[styles.groupDot, { backgroundColor: group.color }]} />
+                  <Text style={{ color: theme.text, fontSize: Typography.heading, fontWeight: '600', flexShrink: 1 }} numberOfLines={1}>
+                    {group.name}
+                  </Text>
+                </View>
+                <Pressable onPress={() => setGroupId(null)} hitSlop={8} style={styles.removeAlertBtn}>
+                  <XIcon size={14} color={theme.textTertiary} strokeWidth={2.2} />
+                </Pressable>
+              </>
+            ) : (
+              <>
+                <Text style={{ flex: 1, textAlign: 'right', color: theme.textTertiary, fontSize: Typography.heading }}>No group</Text>
+                <View style={[styles.createGroupBtn, { backgroundColor: theme.accentSoft }]}>
+                  <PlusIcon size={12} color={theme.accentStrong} strokeWidth={2.6} />
+                  <Text style={{ color: theme.accentStrong, fontSize: Typography.body, fontWeight: '700' }}>Create group</Text>
+                </View>
+              </>
+            )}
+          </Pressable>
         </View>
 
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
@@ -638,7 +684,7 @@ export default function AddPlanScreen() {
             <View style={{ flex: 1 }}>
               <Text style={{ color: theme.text, fontSize: Typography.heading, fontWeight: '600' }}>Live Activity</Text>
               <Text style={{ color: theme.textSecondary, fontSize: Typography.body, marginTop: 2 }}>
-                Counts down on your Lock Screen and Dynamic Island from an hour before it starts.
+                Counts down on your Lock Screen and Dynamic Island until it starts.
               </Text>
             </View>
             <Switch value={live} onValueChange={setLive} trackColor={{ true: theme.success }} />
@@ -907,6 +953,9 @@ const styles = StyleSheet.create({
   fieldBorder: { borderTopWidth: 1 },
   fieldRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 13, gap: 12 },
   removeAlertBtn: { padding: 2 },
+  groupValue: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 8 },
+  groupDot: { width: 10, height: 10, borderRadius: 5 },
+  createGroupBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 6, paddingHorizontal: 11, borderRadius: 14 },
   label: { fontSize: Typography.label, fontWeight: '700', letterSpacing: 0.4, marginBottom: 4, textAlign: 'left' },
   labelRow: {
     flexDirection: 'row',

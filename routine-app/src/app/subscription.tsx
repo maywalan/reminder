@@ -1,9 +1,10 @@
 import { useIAP } from 'expo-iap';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef } from 'react';
-import { Alert, Animated, Easing, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Animated, Easing, Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Text } from '@/components/text';
 import { ChevronLeftIcon } from '@/components/icon';
 import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';

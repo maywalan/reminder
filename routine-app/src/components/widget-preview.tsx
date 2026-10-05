@@ -1,6 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
+import { Text } from '@/components/text';
 import { Colors } from '@/constants/theme';
 import { usePlannerStore } from '@/store/use-planner-store';
 import { fmtTime12, toISO } from '@/utils/dates';

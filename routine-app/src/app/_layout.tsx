@@ -129,6 +129,7 @@ export default function RootLayout() {
               Log In row, or a push from onboarding step 3). */}
           <Stack.Screen name="login" />
           <Stack.Screen name="add-plan" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="create-group" options={{ presentation: 'modal' }} />
           <Stack.Screen name="recap" options={{ presentation: 'modal' }} />
           <Stack.Screen name="edit-profile" options={{ presentation: 'modal' }} />
           <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />

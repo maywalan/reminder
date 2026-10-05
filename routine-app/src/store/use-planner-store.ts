@@ -61,6 +61,13 @@ interface PlannerState {
   mockSubscriptionState: SubscriptionState;
   setMockSubscriptionState: (state: SubscriptionState) => void;
   setPendingSaveToast: (message: string | null) => void;
+  /**
+   * A group the Create Group screen picked or created for the New/Edit Plan form underneath it.
+   * The form reads and clears it on focus — handing it over this way (instead of a route param)
+   * leaves the form mounted, so everything already typed into it survives the round trip.
+   */
+  pendingGroupPick: string | null;
+  setPendingGroupPick: (groupId: string | null) => void;
   addPlan: (plan: Omit<Plan, 'id' | 'completed'>) => void;
   addPlans: (plans: Omit<Plan, 'id' | 'completed'>[]) => void;
   updatePlan: (id: string, patch: Partial<Plan>) => void;
@@ -94,6 +101,7 @@ export const usePlannerStore = create<PlannerState>()(
       selectMode: false,
       selectedIds: [],
       pendingSaveToast: null,
+      pendingGroupPick: null,
       firstUsedAt: null,
       mockSubscriptionState: 'free',
 
@@ -104,6 +112,8 @@ export const usePlannerStore = create<PlannerState>()(
       setMockSubscriptionState: (state) => set({ mockSubscriptionState: state }),
 
       setPendingSaveToast: (message) => set({ pendingSaveToast: message }),
+
+      setPendingGroupPick: (groupId) => set({ pendingGroupPick: groupId }),
 
       addPlan: (plan) => {
         const order = nextOrderForDate(get().plans, plan.date);

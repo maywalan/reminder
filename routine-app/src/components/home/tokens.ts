@@ -54,8 +54,8 @@ export function useHomeType() {
     });
     return {
       todayHeading: { ...t(18, 700), letterSpacing: -0.2 },
-      date: { ...t(17, 700), letterSpacing: -0.2 },
-      greeting: t(11, 500),
+      greeting: { ...t(20, 700), letterSpacing: -0.3 },
+      todayDate: t(13, 500),
       title: t(13.5, 600),
       countdown: t(13, 600),
       smallTitle: t(12.5),

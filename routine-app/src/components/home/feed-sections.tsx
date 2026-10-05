@@ -1,9 +1,11 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import Reanimated, { FadeInUp, LinearTransition } from 'react-native-reanimated';
 
+import { Text } from '@/components/text';
 import { planPalette, useHomeTokens, useHomeType } from '@/components/home/tokens';
 import { useTheme } from '@/hooks/use-theme';
-import type { Plan } from '@/store/types';
+import type { Group, Plan } from '@/store/types';
+import type { SearchSection } from '@/utils/plan-search';
 import { fromISO, toISO } from '@/utils/dates';
 
 /**
@@ -60,7 +62,12 @@ function SmallRow({
   return (
     <Pressable
       onPress={() => (s.selectMode ? s.onToggleSelect(plan.id) : s.onOpen(plan.id))}
-      style={({ pressed }) => [styles.row, (pressed || selected) && { backgroundColor: selected ? theme.accentSoft : k.rail }]}>
+      style={({ pressed }) => [
+        styles.row,
+        (pressed || selected) && {
+          backgroundColor: selected ? theme.accentSoft : k.rail,
+        },
+      ]}>
       <Text style={[styles.time, t.dayLabel, { color: k.ink38 }]}>{timeLabel}</Text>
       <View style={styles.markerCol}>{marker}</View>
       <View style={styles.content}>
@@ -85,7 +92,17 @@ export function UpcomingBlock({ items, onCalendar, ...s }: SelectProps & { items
             plan={p}
             s={s}
             timeLabel={i === 0 || items[i - 1].date !== p.date ? dayLabel(p.date) : ''}
-            marker={<View style={[styles.dot7, { borderWidth: 1.5, borderColor: planPalette(p.color, k.dark).base }]} />}
+            marker={
+              <View
+                style={[
+                  styles.dot7,
+                  {
+                    borderWidth: 1.5,
+                    borderColor: planPalette(p.color, k.dark).base,
+                  },
+                ]}
+              />
+            }
             title={
               <Text numberOfLines={1} style={[t.smallTitle, styles.title, { color: k.ink }]}>
                 {p.name}
@@ -106,7 +123,13 @@ export function EarlierBlock({
   onToggleSeeAll,
   onRedo,
   ...s
-}: SelectProps & { items: Plan[]; older: Plan[]; seeAll: boolean; onToggleSeeAll: () => void; onRedo: (id: string) => void }) {
+}: SelectProps & {
+  items: Plan[];
+  older: Plan[];
+  seeAll: boolean;
+  onToggleSeeAll: () => void;
+  onRedo: (id: string) => void;
+}) {
   const k = useHomeTokens();
   const t = useHomeType();
   const todayISO = toISO(new Date());
@@ -132,7 +155,14 @@ export function EarlierBlock({
                 title={
                   <Text
                     numberOfLines={1}
-                    style={[t.smallTitle, styles.title, { color: done ? k.ink38 : k.ink, textDecorationLine: done ? 'line-through' : 'none' }]}>
+                    style={[
+                      t.smallTitle,
+                      styles.title,
+                      {
+                        color: done ? k.ink38 : k.ink,
+                        textDecorationLine: done ? 'line-through' : 'none',
+                      },
+                    ]}>
                     {p.name}
                   </Text>
                 }
@@ -155,16 +185,98 @@ export function EarlierBlock({
   );
 }
 
+/** Home's search results — every matching plan from any date, one block per day. */
+export function SearchResults({ sections, groups, ...s }: SelectProps & { sections: SearchSection[]; groups: Group[] }) {
+  const k = useHomeTokens();
+  const t = useHomeType();
+  if (sections.length === 0) {
+    return <Text style={[t.meta, styles.noResults, { color: k.ink50 }]}>No tasks match your search.</Text>;
+  }
+  return (
+    <View style={styles.results}>
+      {sections.map((section) => (
+        <View key={section.dateISO} style={styles.block}>
+          <View style={styles.header}>
+            <Text style={[t.sectionLabel, styles.headerTitle, { color: k.ink50 }]}>{section.title}</Text>
+          </View>
+          <View style={styles.rows}>
+            {section.plans.map((p) => {
+              const group = groups.find((g) => g.id === p.groupId);
+              return (
+                <SmallRow
+                  key={p.id}
+                  plan={p}
+                  s={s}
+                  timeLabel={p.allDay ? 'All day' : p.time}
+                  marker={
+                    <View
+                      style={[
+                        styles.dot7,
+                        p.completed
+                          ? { backgroundColor: k.doneDot }
+                          : {
+                              borderWidth: 1.5,
+                              borderColor: planPalette(p.color, k.dark).base,
+                            },
+                      ]}
+                    />
+                  }
+                  title={
+                    <Text
+                      numberOfLines={1}
+                      style={[
+                        t.smallTitle,
+                        styles.title,
+                        {
+                          color: p.completed ? k.ink38 : k.ink,
+                          textDecorationLine: p.completed ? 'line-through' : 'none',
+                        },
+                      ]}>
+                      {p.name}
+                    </Text>
+                  }
+                  right={
+                    group ? (
+                      <Text numberOfLines={1} style={[t.metaStrong, styles.groupTag, { color: planPalette(group.color, k.dark).text }]}>
+                        {group.name}
+                      </Text>
+                    ) : undefined
+                  }
+                />
+              );
+            })}
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   block: { gap: 2 },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10 },
   headerTitle: { flex: 1 },
   rows: { paddingHorizontal: 10 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 7, borderRadius: 10 },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 7,
+    borderRadius: 10,
+  },
   time: { width: 38, textAlign: 'right' },
   markerCol: { width: 9, paddingLeft: 1 },
   dot7: { width: 7, height: 7, borderRadius: 3.5 },
-  content: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  content: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   title: { flex: 1, minWidth: 0 },
   none: { paddingVertical: 7, paddingLeft: 57 },
+  results: { gap: 16 },
+  noResults: { textAlign: 'center', paddingVertical: 32 },
+  groupTag: { maxWidth: 110 },
 });

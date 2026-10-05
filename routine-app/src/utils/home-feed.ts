@@ -7,14 +7,17 @@ import { pad, timeToMinutes, toISO } from '@/utils/dates';
  * `completed`; everything else — live, overtime, missed — is derived from the clock:
  *
  * - A **time-range** task goes live on its own at its start time and stays live (overtime past its
- *   end) until checked off. Only one runs at a time: the earliest-started one. Any other range
- *   that has started meanwhile stays a normal rail row until the live one is done.
- * - A **point reminder** is missed once its time is 60s gone and it isn't checked off.
+ *   end) until checked off.
+ * - A **point reminder** goes live ("due now") at its time for 15 minutes, then counts as missed
+ *   if it isn't checked off.
+ * - Only one task is live at a time: the earliest-started one. Anything else that has started
+ *   meanwhile stays a normal rail row until the live one is done.
  * - An **all-day** task is never live or missed while its day lasts.
  * - A range left unfinished on a past day counts as missed.
  */
 
-const MISSED_GRACE_MS = 60_000;
+/** How long a point reminder stays live ("due now") past its time before it counts as missed. */
+export const POINT_DUE_MS = 15 * 60_000;
 
 /** Free time between two rail items at or above this many minutes shows as an "N hr free" row. */
 export const FREE_GAP_MIN = 60;
@@ -24,7 +27,7 @@ function hasStarted(plan: Plan, nowMs: number) {
 }
 
 function isMissedToday(plan: Plan, nowMs: number) {
-  return !plan.completed && !plan.allDay && !plan.endTime && planDateTime(plan).getTime() <= nowMs - MISSED_GRACE_MS;
+  return !plan.completed && !plan.allDay && !plan.endTime && planDateTime(plan).getTime() <= nowMs - POINT_DUE_MS;
 }
 
 export interface HomeFeed {
@@ -49,7 +52,7 @@ export function buildHomeFeed(plans: Plan[], nowMs: number, matches: (p: Plan) =
 
   const live =
     dayPlans
-      .filter((p) => !p.completed && !p.allDay && p.endTime && hasStarted(p, nowMs))
+      .filter((p) => !p.completed && !p.allDay && hasStarted(p, nowMs) && (p.endTime || !isMissedToday(p, nowMs)))
       .sort((a, b) => a.time.localeCompare(b.time))[0] ?? null;
 
   const hasManualOrder = dayPlans.some((p) => p.order !== undefined);
@@ -111,6 +114,12 @@ export function liveProgress(plan: Plan, nowMs: number): { progress: number; sec
   };
 }
 
+/** A due point reminder: how far into its 15-minute due window, [0, 1], and seconds since its time. */
+export function dueProgress(plan: Plan, nowMs: number): { progress: number; secondsOver: number } {
+  const elapsed = nowMs - planDateTime(plan).getTime();
+  return { progress: Math.min(1, Math.max(0, elapsed / POINT_DUE_MS)), secondsOver: Math.max(0, Math.round(elapsed / 1000)) };
+}
+
 /** "36:48", or "1:02:05" over an hour; overtime reads "+m:ss". */
 export function formatLiveCountdown(secondsLeft: number): string {
   const over = secondsLeft < 0;
@@ -121,31 +130,27 @@ export function formatLiveCountdown(secondsLeft: number): string {
   return over ? `+${clock}` : clock;
 }
 
-/** How early before its start a Live-Activity task begins counting down (Home + Lock Screen). */
-export const LIVE_ACTIVITY_LEAD_MIN = 60;
-
 /**
  * The one task that gets the Live Activity right now, if any — only tasks with their "Live
- * Activity" switch on. A running time-range session wins (the earliest-started, overtime
- * included, until checked off); otherwise the soonest task starting within the next hour. A point
- * reminder stays "upcoming" through its 60s grace window (the Lock Screen shows "Now"), then drops
- * out once it's missed.
+ * Activity" switch on. A running time-range session today wins (the earliest-started, overtime
+ * included, until checked off); otherwise the soonest switched-on task that hasn't started yet,
+ * on any day — it counts down from the moment its switch is on, not from a fixed lead time. A
+ * point reminder stays "upcoming" through its 15-minute due window (the Lock Screen shows
+ * "Now"), then drops out once it's missed.
  */
 export function findLiveActivityPlan(plans: Plan[], nowMs: number): { plan: Plan; phase: 'upcoming' | 'live' } | null {
   const todayISO = toISO(new Date(nowMs));
-  const candidates = plans.filter((p) => p.live && !p.completed && !p.allDay && p.date === todayISO);
+  const candidates = plans.filter((p) => p.live && !p.completed && !p.allDay && p.date >= todayISO);
 
   const running = candidates
-    .filter((p) => p.endTime && hasStarted(p, nowMs))
+    .filter((p) => p.date === todayISO && p.endTime && hasStarted(p, nowMs))
     .sort((a, b) => a.time.localeCompare(b.time))[0];
   if (running) return { plan: running, phase: 'live' };
 
   const upcoming = candidates
-    .filter((p) => {
-      const untilMs = planDateTime(p).getTime() - nowMs;
-      return untilMs <= LIVE_ACTIVITY_LEAD_MIN * 60_000 && (untilMs > 0 || (!p.endTime && untilMs > -MISSED_GRACE_MS));
-    })
-    .sort((a, b) => a.time.localeCompare(b.time))[0];
+    .map((p) => ({ p, untilMs: planDateTime(p).getTime() - nowMs }))
+    .filter(({ p, untilMs }) => untilMs > 0 || (!p.endTime && untilMs > -POINT_DUE_MS))
+    .sort((a, b) => a.untilMs - b.untilMs)[0]?.p;
   return upcoming ? { plan: upcoming, phase: 'upcoming' } : null;
 }
 

@@ -81,7 +81,7 @@ src/
 
 ## What's already ported vs. what's next
 
-**Done:** Today screen (greeting/date header, group filter chips, Filter/Share icon buttons and
+**Done:** Home screen (greeting/date header; always-visible search bar — matches title, group, time and date across every plan — with Colors (palette) and Groups (tag) icon buttons beside it; opening either collapses search into its icon and slides that filter's chips in; Create Group screen with tag-style search of existing groups + color, reachable from New Plan's Group row (form state kept) and from Home's Groups row; Filter/Share icon buttons and
 sheets, Live Activity card — stacks up to 3 concurrent live plans, scrollable beyond that, Past
 Activity list, task list with swipe-to-delete, "Edit" → multi-select → bulk delete with undo, tap
 a task to edit), Add/Edit Plan sheet (name, native date/time pickers, per-plan IANA time zone, up
@@ -106,14 +106,13 @@ schema, so they don't sync across a signed-in user's devices. Would need a migra
 
 | Feature | Where to look in `planner-app-prototype.html` |
 |---|---|
-| Group creation flow | `openNewGroupSheet()` |
 | Apple Sign-In | blocked on enrolling in the Apple Developer Program ($99/yr) — email/password and (broken) Google OAuth are the only sign-in methods right now |
 | Actual in-app translation | the Language sheet persists a choice, but text isn't retranslated yet — see the `LANG` object and `applyLanguage()` |
 | Real iOS Home Screen widgets | the Settings widgets sheet is a preview mockup (matching the prototype's own mock); a working WidgetKit widget needs a native dev build, which Expo Go can't provide |
 | Calendar customize sheet (background/font/colors) | `#overlay-cal-customize` |
 
 Suggested order: fix Google OAuth or drop it in favor of Apple Sign-In (Apple requires offering
-Sign in with Apple alongside any other third-party login), then group creation.
+Sign in with Apple alongside any other third-party login).
 
 ## Known issues
 

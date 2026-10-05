@@ -84,6 +84,45 @@ export function XIcon({ size = 24, color, strokeWidth = 2.2 }: IconProps) {
   );
 }
 
+export function SearchIcon({ size = 24, color, strokeWidth = 2 }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx="11" cy="11" r="7" stroke={color} strokeWidth={strokeWidth} />
+      <Path d="M20 20l-3.8-3.8" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+export function PaletteIcon({ size = 24, color, strokeWidth = 1.9 }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.9 1.8-1.9 0-.5-.2-.9-.5-1.3-.3-.3-.5-.8-.5-1.3 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4C21 6.6 17 3 12 3z"
+        stroke={color}
+        strokeWidth={strokeWidth}
+        strokeLinejoin="round"
+      />
+      <Circle cx="7.5" cy="11" r="1.3" fill={color} />
+      <Circle cx="10.5" cy="7.2" r="1.3" fill={color} />
+      <Circle cx="15.2" cy="7.8" r="1.3" fill={color} />
+    </Svg>
+  );
+}
+
+export function TagIcon({ size = 24, color, strokeWidth = 1.9 }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M3.5 12.3V4.8c0-.7.6-1.3 1.3-1.3h7.5c.4 0 .7.1.9.4l7.4 7.4c.5.5.5 1.3 0 1.8l-7.5 7.5c-.5.5-1.3.5-1.8 0l-7.4-7.4c-.3-.2-.4-.5-.4-.9z"
+        stroke={color}
+        strokeWidth={strokeWidth}
+        strokeLinejoin="round"
+      />
+      <Circle cx="8.2" cy="8.2" r="1.5" fill={color} />
+    </Svg>
+  );
+}
+
 export function ClockIcon({ size = 24, color, strokeWidth = 2 }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">

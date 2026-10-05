@@ -1,6 +1,7 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Circle, Svg } from 'react-native-svg';
 
+import { Text } from '@/components/text';
 import { Radii } from '@/constants/theme';
 
 const RING_SIZE = 76;

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { Animated, StyleSheet, View } from 'react-native';
 
+import { Text } from '@/components/text';
 import { Tickle } from '@/components/tickle';
 import { Fonts } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';

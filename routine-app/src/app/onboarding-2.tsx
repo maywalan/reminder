@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 
+import { Text } from '@/components/text';
 import { OnboardingShell } from '@/components/onboarding/onboarding-shell';
 import { Tickle } from '@/components/tickle';
 import { Fonts, Radii } from '@/constants/theme';

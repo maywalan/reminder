@@ -1,8 +1,9 @@
 import * as Haptics from 'expo-haptics';
 import { useEffect, useRef } from 'react';
-import { Alert, Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 import { BorderlessButton, RectButton, Swipeable } from 'react-native-gesture-handler';
 
+import { Text } from '@/components/text';
 import { CheckIcon, ClockIcon, GripIcon, TrashIcon } from '@/components/icon';
 import { Fonts, Radii, RowMinHeight, Typography } from '@/constants/theme';
 import type { Group, Plan } from '@/store/types';

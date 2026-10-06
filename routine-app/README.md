@@ -88,7 +88,7 @@ a task to edit), Add/Edit Plan sheet (name, native date/time pickers, per-plan I
 to 5 alerts that actually fire as real local notifications, color, group, repeat rules — presets
 plus a custom "every N days/weeks/months" rule with specific weekdays — with "repeat until",
 free-text details, optional location with OpenStreetMap autocomplete, optional photo,
-live-toggle), Calendar (Week/Month/Year; Month has a Compact/Detailed density toggle, pending-task
+live-toggle), Calendar (Week/Month/Year; Month shows task chips per day, pending-task
 badges, tap a date to create a plan pre-filled with it, auto-scroll to full day detail, and public
 holidays by device region), Progress (hero/trend/by-color breakdown, prev/next period nav), Recap
 sheet, full Settings screen (profile avatar/name editing, email/password + Google OAuth + guest

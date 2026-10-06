@@ -1,5 +1,6 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { BlurView } from 'expo-blur';
+import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Animated, Easing, Pressable, ScrollView, StyleSheet, View } from 'react-native';
@@ -16,7 +17,6 @@ import { Radii, Typography } from '@/constants/theme';
 import { useHolidays } from '@/hooks/use-holidays';
 import { useEffectiveScheme, useTheme } from '@/hooks/use-theme';
 import { usePlannerStore } from '@/store/use-planner-store';
-import type { CalendarDensity } from '@/store/types';
 import { toISO } from '@/utils/dates';
 import { colorForPlan } from '@/utils/plans';
 
@@ -30,7 +30,7 @@ const BLUR_START = 22;
 // progress.tsx) — 100ms apart, applied below the "Calendar" title, which is left alone. contentEnter
 // covers whichever of Month/Week/Year is showing — they're mutually exclusive, so reusing one
 // Animated pair across the three conditional branches is safe (only one ever mounts at a time).
-const ENTER_DELAY = { viewSwitch: 50, density: 150, content: 250, dayDetail: 350 };
+const ENTER_DELAY = { viewSwitch: 50, content: 150, dayDetail: 250 };
 
 function useEntrance(delayMs: number, playToken: number) {
   const v = useRef(new Animated.Value(0)).current;
@@ -73,8 +73,6 @@ export default function CalendarScreen() {
   const groups = usePlannerStore((s) => s.groups);
   const toggleComplete = usePlannerStore((s) => s.toggleComplete);
   const deletePlan = usePlannerStore((s) => s.deletePlan);
-  const calendarDensity = usePlannerStore((s) => s.settings.calendarDensity);
-  const updateSettings = usePlannerStore((s) => s.updateSettings);
 
   const [enterToken, setEnterToken] = useState(0);
   useFocusEffect(
@@ -84,7 +82,6 @@ export default function CalendarScreen() {
   );
 
   const viewSwitchEnter = useEntrance(ENTER_DELAY.viewSwitch, enterToken);
-  const densityEnter = useEntrance(ENTER_DELAY.density, enterToken);
   const contentEnter = useEntrance(ENTER_DELAY.content, enterToken);
   const dayDetailEnter = useEntrance(ENTER_DELAY.dayDetail, enterToken);
 
@@ -102,7 +99,17 @@ export default function CalendarScreen() {
   const dayDetailY = useRef(0);
 
   /** Tapping a date on the grid scrolls the packed dot/chip preview into full detail below. */
+  function openNewPlan(iso: string) {
+    Haptics.selectionAsync();
+    router.push({ pathname: '/add-plan', params: { date: iso } });
+  }
+
+  /** First tap selects a day and scrolls to its tasks; tapping the already-selected day adds a plan on it. */
   function handleSelectDate(iso: string) {
+    if (iso === selectedDate) {
+      openNewPlan(iso);
+      return;
+    }
     setSelectedDate(iso);
     requestAnimationFrame(() => {
       scrollRef.current?.scrollTo({ y: Math.max(dayDetailY.current - 16, 0), animated: true });
@@ -146,7 +153,7 @@ export default function CalendarScreen() {
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.surface }]}>
-      <ScrollView ref={scrollRef} contentContainerStyle={{ paddingTop: insets.top + 22, paddingBottom: 130 }}>
+      <ScrollView ref={scrollRef} contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: 130 }}>
         <Text style={[styles.h1, { color: theme.text }]}>Calendar</Text>
 
         <EntranceBox entrance={viewSwitchEnter} blurTint={blurTint}>
@@ -158,22 +165,12 @@ export default function CalendarScreen() {
               { label: 'Month', value: 'month' },
               { label: 'Year', value: 'year' },
             ]}
+            style={styles.viewSwitch}
           />
         </EntranceBox>
 
         {calView === 'month' && (
           <>
-            <EntranceBox entrance={densityEnter} blurTint={blurTint}>
-              <SegmentedControl
-                value={calendarDensity}
-                onChange={(v: CalendarDensity) => updateSettings({ calendarDensity: v })}
-                options={[
-                  { label: 'Compact', value: 'compact' },
-                  { label: 'Detailed', value: 'detailed' },
-                ]}
-                style={styles.densitySwitch}
-              />
-            </EntranceBox>
             <EntranceBox entrance={contentEnter} blurTint={blurTint}>
               <MonthView
                 year={calYear}
@@ -185,7 +182,6 @@ export default function CalendarScreen() {
                 onSelectDate={handleSelectDate}
                 onShiftMonth={shiftMonth}
                 onToday={goToTodayMonth}
-                density={calendarDensity}
                 holidayByDate={holidays}
               />
             </EntranceBox>
@@ -208,7 +204,7 @@ export default function CalendarScreen() {
                   </Pressable>
                 </View>
                 {selectedDayPlans.length === 0 ? (
-                  <Text style={{ color: theme.textTertiary, fontSize: Typography.body, paddingHorizontal: 22 }}>No plans on this day.</Text>
+                  <Text style={{ color: theme.textTertiary, fontSize: Typography.body, paddingHorizontal: 22 }}>No plans on this day. Tap the date again to add one.</Text>
                 ) : (
                   selectedDayPlans.map((p) => (
                     <TodoItem
@@ -240,6 +236,7 @@ export default function CalendarScreen() {
               onShiftWeek={shiftWeek}
               onToday={() => setSelectedDate(todayISO)}
               onPressPlan={(id) => router.push({ pathname: '/add-plan', params: { id } })}
+              onPressDay={openNewPlan}
             />
           </EntranceBox>
         )}
@@ -265,9 +262,10 @@ export default function CalendarScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  h1: { fontSize: Typography.display, fontWeight: '800', letterSpacing: -0.4, paddingHorizontal: 22, marginBottom: 4 },
-  densitySwitch: { marginTop: 9, marginBottom: 10 },
-  dayDetail: { marginTop: 16 },
+  h1: { fontSize: Typography.display, fontWeight: '800', letterSpacing: -0.4, paddingHorizontal: 20 },
+  // Same side inset as the month card / week blocks below it, so their edges line up.
+  viewSwitch: { marginHorizontal: 14, marginTop: 10, marginBottom: 12 },
+  dayDetail: { marginTop: 20 },
   dayDetailHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 22, marginBottom: 10 },
   dayDetailTitle: { fontSize: Typography.heading, fontWeight: '700' },
   holidayLabel: { fontSize: Typography.body, fontWeight: '600', marginTop: 2 },

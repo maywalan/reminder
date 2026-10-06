@@ -36,7 +36,6 @@ export interface Profile {
 export type ThemeMode = 'system' | 'light' | 'dark';
 export type AlertStyle = 'banners' | 'persistent';
 export type Language = 'en' | 'th' | 'zh';
-export type CalendarDensity = 'compact' | 'detailed';
 
 /** Entitlement state for the Subscription status screen — see `mockSubscriptionState` on the planner store. */
 export type SubscriptionState = 'trial' | 'monthly' | 'annual' | 'ending' | 'free';
@@ -49,7 +48,6 @@ export interface Settings {
   badgesEnabled: boolean;
   alertStyle: AlertStyle;
   language: Language;
-  calendarDensity: CalendarDensity;
   fontScale: FontScale;
   recapEnabled: boolean;
   recapHour: number; // 0-23, local time

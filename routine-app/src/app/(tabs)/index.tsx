@@ -118,8 +118,9 @@ export default function HomeScreen() {
   const reorderPlans = usePlannerStore((s) => s.reorderPlans);
   const undoDelete = usePlannerStore((s) => s.undoDelete);
   const lastDeletedSnapshot = usePlannerStore((s) => s.lastDeletedSnapshot);
-  const filterGroupId = usePlannerStore((s) => s.filterGroupId);
-  const setFilterGroupId = usePlannerStore((s) => s.setFilterGroupId);
+  const filterGroupIds = usePlannerStore((s) => s.filterGroupIds);
+  const toggleFilterGroup = usePlannerStore((s) => s.toggleFilterGroup);
+  const clearFilterGroups = usePlannerStore((s) => s.clearFilterGroups);
   const filterColor = usePlannerStore((s) => s.filterColor);
   const setFilterColor = usePlannerStore((s) => s.setFilterColor);
   const selectMode = usePlannerStore((s) => s.selectMode);
@@ -182,8 +183,9 @@ export default function HomeScreen() {
   const [fastClock, setFastClock] = useState(false);
   const nowMs = useClock(fastClock);
   const matches = useCallback(
-    (p: Plan) => (!filterGroupId || p.groupId === filterGroupId) && (!filterColor || p.color === filterColor),
-    [filterGroupId, filterColor]
+    (p: Plan) =>
+      (filterGroupIds.length === 0 || (!!p.groupId && filterGroupIds.includes(p.groupId))) && (!filterColor || p.color === filterColor),
+    [filterGroupIds, filterColor]
   );
   const feed = useMemo(() => buildHomeFeed(plans, nowMs, matches), [plans, nowMs, matches]);
   const searching = query.trim().length > 0;
@@ -207,8 +209,9 @@ export default function HomeScreen() {
   const firstName = profileName.trim().split(/\s+/)[0];
 
   const openPlan = (id: string) => router.push({ pathname: '/add-plan', params: { id } });
-  const filtering = !!filterGroupId || !!filterColor;
-  const activeGroup = groups.find((g) => g.id === filterGroupId);
+  const filtering = filterGroupIds.length > 0 || !!filterColor;
+  // The Groups button's dot shows the first selected group's color.
+  const activeGroup = groups.find((g) => filterGroupIds.includes(g.id));
   const emptyText = filtering
     ? 'Nothing matches this filter today.'
     : feed.earlier.length > 0
@@ -286,17 +289,39 @@ export default function HomeScreen() {
                     </BouncyPressable>
                   ) : (
                     <>
-                      {groups.map((g, i) => (
-                        <BouncyPressable
-                          key={g.id}
-                          entering={chipIn(i)}
-                          onPress={() => setFilterGroupId(filterGroupId === g.id ? null : g.id)}
-                          style={[styles.chip, { borderColor: theme.cardBorder, backgroundColor: filterGroupId === g.id ? g.color : theme.surface }]}>
-                          {filterGroupId !== g.id && <View style={[styles.chipDot, { backgroundColor: g.color }]} />}
-                          <Text style={[chipText(false), filterGroupId === g.id && { color: '#fff' }]}>{g.name}</Text>
-                        </BouncyPressable>
-                      ))}
-                      <BouncyPressable entering={chipIn(groups.length)} onPress={openCreateGroup} accessibilityLabel="Create group" style={[styles.chip, styles.dashedChip, { borderColor: theme.dividerStrong }]}>
+                      <BouncyPressable
+                        entering={chipIn(0)}
+                        onPress={clearFilterGroups}
+                        style={[
+                          styles.chip,
+                          {
+                            borderColor: filterGroupIds.length === 0 ? 'transparent' : theme.cardBorder,
+                            backgroundColor: filterGroupIds.length === 0 ? theme.accentSoft : theme.surface,
+                          },
+                        ]}>
+                        <Text style={chipText(filterGroupIds.length === 0)}>All</Text>
+                      </BouncyPressable>
+                      {groups.map((g, i) => {
+                        const on = filterGroupIds.includes(g.id);
+                        return (
+                          <BouncyPressable
+                            key={g.id}
+                            entering={chipIn(i + 1)}
+                            onPress={() => toggleFilterGroup(g.id)}
+                            accessibilityState={{ selected: on }}
+                            style={[styles.chip, { borderColor: on ? 'transparent' : theme.cardBorder, backgroundColor: on ? g.color : theme.surface }]}>
+                            {on ? (
+                              <Reanimated.View entering={ZoomIn.springify().damping(12)}>
+                                <CheckIcon size={11} color="#fff" strokeWidth={3} />
+                              </Reanimated.View>
+                            ) : (
+                              <View style={[styles.chipDot, { backgroundColor: g.color }]} />
+                            )}
+                            <Text style={[chipText(false), on && { color: '#fff' }]}>{g.name}</Text>
+                          </BouncyPressable>
+                        );
+                      })}
+                      <BouncyPressable entering={chipIn(groups.length + 1)} onPress={openCreateGroup} accessibilityLabel="Create group" style={[styles.chip, styles.dashedChip, { borderColor: theme.dividerStrong }]}>
                         <PlusIcon size={11} color={theme.accentStrong} strokeWidth={2.6} />
                         <Text style={chipText(true)}>New</Text>
                       </BouncyPressable>

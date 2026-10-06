@@ -28,7 +28,7 @@ export default function CreateGroupScreen() {
   const groups = usePlannerStore((s) => s.groups);
   const addGroup = usePlannerStore((s) => s.addGroup);
   const setPendingGroupPick = usePlannerStore((s) => s.setPendingGroupPick);
-  const setFilterGroupId = usePlannerStore((s) => s.setFilterGroupId);
+  const addFilterGroup = usePlannerStore((s) => s.addFilterGroup);
 
   const [name, setName] = useState(prefillName ?? '');
   // Default to the first swatch no existing group uses yet, so new groups tell apart at a glance.
@@ -44,7 +44,7 @@ export default function CreateGroupScreen() {
 
   function finish(group: Group) {
     if (fromPlan) setPendingGroupPick(group.id);
-    else setFilterGroupId(group.id);
+    else addFilterGroup(group.id);
     router.back();
   }
 

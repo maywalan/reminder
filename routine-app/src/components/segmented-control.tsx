@@ -34,5 +34,5 @@ export function SegmentedControl<T extends string>({ options, value, onChange, s
 const styles = StyleSheet.create({
   wrap: { flexDirection: 'row', borderRadius: Radii.switchTrack, borderWidth: 1, padding: 3, marginHorizontal: 22, marginTop: 14, marginBottom: 4 },
   btn: { flex: 1, paddingVertical: 7, borderRadius: Radii.iconTile, alignItems: 'center' },
-  label: { fontSize: Typography.label, fontWeight: '700' },
+  label: { fontSize: Typography.body, fontWeight: '700' },
 });

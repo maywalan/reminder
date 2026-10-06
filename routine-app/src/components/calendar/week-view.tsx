@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/text';
-import { ChevronLeftIcon, ChevronRightIcon } from '@/components/icon';
+import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from '@/components/icon';
 import { Radii, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { Plan } from '@/store/types';
@@ -16,9 +16,11 @@ interface Props {
   onShiftWeek: (deltaDays: number) => void;
   onToday: () => void;
   onPressPlan: (id: string) => void;
+  /** Tapping a day's header adds a plan on that date. */
+  onPressDay: (iso: string) => void;
 }
 
-export function WeekView({ selectedDate, todayISO, plans, colorForPlan, onShiftWeek, onToday, onPressPlan }: Props) {
+export function WeekView({ selectedDate, todayISO, plans, colorForPlan, onShiftWeek, onToday, onPressPlan, onPressDay }: Props) {
   const theme = useTheme();
   const weekDates = buildWeekDates(selectedDate, fromISO);
   const start = fromISO(weekDates[0]);
@@ -55,12 +57,20 @@ export function WeekView({ selectedDate, todayISO, plans, colorForPlan, onShiftW
 
         return (
           <View key={iso} style={[styles.block, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
-            <View style={[styles.blockHead, { backgroundColor: isToday ? theme.accentSoft : theme.surface2, borderColor: theme.cardBorder }]}>
+            <Pressable
+              onPress={() => onPressDay(iso)}
+              accessibilityRole="button"
+              accessibilityLabel={`Add a plan on ${WEEKDAY_SHORT[d.getDay()]} ${d.getDate()}`}
+              style={({ pressed }) => [
+                styles.blockHead,
+                { backgroundColor: pressed ? theme.divider : isToday ? theme.accentSoft : theme.surface2, borderColor: theme.cardBorder },
+              ]}>
               <Text style={[styles.blockHeadText, { color: isToday ? theme.accentStrong : theme.text }]}>
                 {WEEKDAY_SHORT[d.getDay()]} {d.getDate()}
                 {isToday ? ' · Today' : ''}
               </Text>
-            </View>
+              <PlusIcon size={13} color={theme.accentStrong} strokeWidth={2.6} />
+            </Pressable>
             {dayPlans.length === 0 ? (
               <Text style={[styles.empty, { color: theme.textTertiary }]}>No plans</Text>
             ) : (
@@ -91,7 +101,7 @@ const styles = StyleSheet.create({
   arrows: { flexDirection: 'row', gap: 8 },
   arrowBtn: { width: 30, height: 30, borderRadius: 15, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   block: { borderRadius: Radii.button, borderWidth: 1, overflow: 'hidden', marginHorizontal: 14, marginBottom: 12 },
-  blockHead: { paddingVertical: 10, paddingHorizontal: 14, borderBottomWidth: 1 },
+  blockHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10, paddingHorizontal: 14, borderBottomWidth: 1 },
   blockHeadText: { fontSize: Typography.body, fontWeight: '700' },
   empty: { padding: 14, fontSize: Typography.body },
   planRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 9, paddingHorizontal: 14, borderLeftWidth: 3, borderBottomWidth: 1 },

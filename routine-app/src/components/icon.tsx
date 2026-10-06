@@ -348,3 +348,12 @@ export function AppleLogoIcon({ size = 24, color }: IconProps) {
     </Svg>
   );
 }
+
+export function LockIcon({ size = 24, color, strokeWidth = 1.9 }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Rect x={5} y={10.5} width={14} height={10} rx={2.5} stroke={color} strokeWidth={strokeWidth} />
+      <Path d="M8 10.5V8a4 4 0 018 0v2.5" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+    </Svg>
+  );
+}

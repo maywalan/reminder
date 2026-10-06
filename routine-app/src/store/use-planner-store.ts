@@ -31,7 +31,6 @@ const SEED_SETTINGS: Settings = {
   badgesEnabled: true,
   alertStyle: 'banners',
   language: 'en',
-  calendarDensity: 'compact',
   fontScale: 1,
   recapEnabled: true,
   recapHour: 8,
@@ -43,7 +42,8 @@ interface PlannerState {
   profile: Profile;
   settings: Settings;
   lastDeletedSnapshot: Plan[] | null;
-  filterGroupId: string | null;
+  /** Home's Groups filter: a plan shows when it's in any of these. Empty = every group. */
+  filterGroupIds: string[];
   filterColor: string | null;
   selectMode: boolean;
   selectedIds: string[];
@@ -52,14 +52,18 @@ interface PlannerState {
   firstUsedAt: string | null;
   ensureFirstUsedAt: () => void;
   /**
-   * Placeholder entitlement for the Subscription status screen — there is no real StoreKit/Play
-   * Billing wiring yet, so this is a locally-set stand-in (see Profile > Testing > Subscription
-   * State), not a synced purchase record. Must be replaced by real entitlement data (derived from
-   * `isInTrial`/`willRenew`/`expirationDate`/`productId` per the design_handoff_tickle_subscription
-   * README) before this screen can be trusted to reflect an actual subscription.
+   * The user's entitlement. Refreshed from StoreKit at launch and on every return to the
+   * foreground (`useSubscriptionSync`), so it drops back to 'free' once a subscription lapses.
+   * Still device-local and not server-verified.
    */
   mockSubscriptionState: SubscriptionState;
   setMockSubscriptionState: (state: SubscriptionState) => void;
+  /** Set from Profile > Testing > Subscription State: StoreKit refreshes leave the state alone. */
+  subscriptionTestOverride: boolean;
+  setSubscriptionTestOverride: (on: boolean) => void;
+  /** When Profile's upgrade banner was last dismissed (epoch ms) — it stays hidden for 7 days. */
+  upgradeBannerDismissedAt: number | null;
+  dismissUpgradeBanner: () => void;
   setPendingSaveToast: (message: string | null) => void;
   /**
    * A group the Create Group screen picked or created for the New/Edit Plan form underneath it.
@@ -79,7 +83,9 @@ interface PlannerState {
   addGroup: (group: Omit<Group, 'id'>) => Group;
   setProfile: (patch: Partial<Profile>) => void;
   updateSettings: (patch: Partial<Settings>) => void;
-  setFilterGroupId: (groupId: string | null) => void;
+  toggleFilterGroup: (groupId: string) => void;
+  clearFilterGroups: () => void;
+  addFilterGroup: (groupId: string) => void;
   setFilterColor: (color: string | null) => void;
   resetData: () => void;
   setSelectMode: (on: boolean) => void;
@@ -96,7 +102,7 @@ export const usePlannerStore = create<PlannerState>()(
       profile: SEED_PROFILE,
       settings: SEED_SETTINGS,
       lastDeletedSnapshot: null,
-      filterGroupId: null,
+      filterGroupIds: [],
       filterColor: null,
       selectMode: false,
       selectedIds: [],
@@ -104,12 +110,18 @@ export const usePlannerStore = create<PlannerState>()(
       pendingGroupPick: null,
       firstUsedAt: null,
       mockSubscriptionState: 'free',
+      subscriptionTestOverride: false,
+      upgradeBannerDismissedAt: null,
 
       ensureFirstUsedAt: () => {
         if (!get().firstUsedAt) set({ firstUsedAt: toISO(new Date()) });
       },
 
       setMockSubscriptionState: (state) => set({ mockSubscriptionState: state }),
+
+      setSubscriptionTestOverride: (on) => set({ subscriptionTestOverride: on }),
+
+      dismissUpgradeBanner: () => set({ upgradeBannerDismissedAt: Date.now() }),
 
       setPendingSaveToast: (message) => set({ pendingSaveToast: message }),
 
@@ -211,7 +223,15 @@ export const usePlannerStore = create<PlannerState>()(
         syncUpdateSettings(patch);
       },
 
-      setFilterGroupId: (groupId) => set({ filterGroupId: groupId }),
+      toggleFilterGroup: (groupId) =>
+        set((state) => ({
+          filterGroupIds: state.filterGroupIds.includes(groupId)
+            ? state.filterGroupIds.filter((id) => id !== groupId)
+            : [...state.filterGroupIds, groupId],
+        })),
+      clearFilterGroups: () => set({ filterGroupIds: [] }),
+      addFilterGroup: (groupId) =>
+        set((state) => (state.filterGroupIds.includes(groupId) ? state : { filterGroupIds: [...state.filterGroupIds, groupId] })),
       setFilterColor: (color) => set({ filterColor: color }),
 
       resetData: () => {
@@ -219,7 +239,7 @@ export const usePlannerStore = create<PlannerState>()(
           plans: [],
           groups: [],
           lastDeletedSnapshot: null,
-          filterGroupId: null,
+          filterGroupIds: [],
           filterColor: null,
           selectMode: false,
           selectedIds: [],
@@ -237,9 +257,10 @@ export const usePlannerStore = create<PlannerState>()(
         })),
 
       selectAll: () => {
-        const { plans, filterGroupId, filterColor, selectedIds } = get();
+        const { plans, filterGroupIds, filterColor, selectedIds } = get();
         const todayISO = toISO(new Date());
-        const matchesFilter = (p: Plan) => (!filterGroupId || p.groupId === filterGroupId) && (!filterColor || p.color === filterColor);
+        const matchesFilter = (p: Plan) =>
+          (filterGroupIds.length === 0 || (!!p.groupId && filterGroupIds.includes(p.groupId))) && (!filterColor || p.color === filterColor);
         const todayIds = plans.filter((p) => p.date === todayISO && matchesFilter(p)).map((p) => p.id);
         const pastIds = findPastPlans(plans).filter(matchesFilter).map((p) => p.id);
         const futureIds = findFuturePlans(plans).filter(matchesFilter).map((p) => p.id);
@@ -270,6 +291,8 @@ export const usePlannerStore = create<PlannerState>()(
         settings: state.settings,
         firstUsedAt: state.firstUsedAt,
         mockSubscriptionState: state.mockSubscriptionState,
+        subscriptionTestOverride: state.subscriptionTestOverride,
+        upgradeBannerDismissedAt: state.upgradeBannerDismissedAt,
       }),
       version: 3,
       migrate: (persisted) => {

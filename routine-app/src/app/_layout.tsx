@@ -12,6 +12,7 @@ import { Colors, setFontScale } from '@/constants/theme';
 import { useEffectiveScheme } from '@/hooks/use-theme';
 import { useLiveActivitySync } from '@/hooks/use-live-activity-sync';
 import { useNotificationsSync } from '@/hooks/use-notifications-sync';
+import { useSubscriptionSync } from '@/hooks/use-subscription-sync';
 import { useWidgetSync } from '@/hooks/use-widget-sync';
 import { useAuthStore } from '@/store/use-auth-store';
 import { useOnboardingStore } from '@/store/use-onboarding-store';
@@ -95,6 +96,7 @@ export default function RootLayout() {
   useNotificationsSync();
   useWidgetSync();
   useLiveActivitySync();
+  useSubscriptionSync();
 
   const ready = fontsLoaded && !authInitializing && plannerHydrated && onboardingHydrated && minDurationElapsed;
 

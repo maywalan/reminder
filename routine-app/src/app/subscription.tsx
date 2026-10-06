@@ -9,7 +9,7 @@ import { ChevronLeftIcon } from '@/components/icon';
 import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
 import { useToast } from '@/hooks/use-toast';
-import { PREMIUM_SKU_LIST, subscriptionStateForSku } from '@/lib/iap';
+import { refreshSubscriptionState } from '@/lib/iap';
 import { usePlannerStore } from '@/store/use-planner-store';
 import { getSubscriptionContent } from '@/utils/subscription';
 import { fromISO } from '@/utils/dates';
@@ -72,23 +72,16 @@ export default function SubscriptionScreen() {
   const { toastMessage, showToast } = useToast();
 
   const state = usePlannerStore((s) => s.mockSubscriptionState);
-  const setMockSubscriptionState = usePlannerStore((s) => s.setMockSubscriptionState);
+  const setSubscriptionTestOverride = usePlannerStore((s) => s.setSubscriptionTestOverride);
   const firstUsedAt = usePlannerStore((s) => s.firstUsedAt);
   const content = getSubscriptionContent(state);
   const memberSince = firstUsedAt ? fmtDateLong(firstUsedAt) : '—';
 
-  const { restorePurchases, hasActiveSubscriptions, getActiveSubscriptions, activeSubscriptions } = useIAP();
+  const { restorePurchases } = useIAP();
 
   useEffect(() => {
-    getActiveSubscriptions(PREMIUM_SKU_LIST);
-  }, [getActiveSubscriptions]);
-
-  useEffect(() => {
-    const active = activeSubscriptions[0];
-    if (!active) return;
-    const nextState = subscriptionStateForSku(active.productId);
-    if (nextState) setMockSubscriptionState(nextState);
-  }, [activeSubscriptions, setMockSubscriptionState]);
+    refreshSubscriptionState();
+  }, []);
 
   const heroEnter = useEntrance(ENTER_DELAY.hero);
   const listEnter = useEntrance(ENTER_DELAY.list);
@@ -109,8 +102,9 @@ export default function SubscriptionScreen() {
   async function handleRestore() {
     try {
       await restorePurchases();
-      const has = await hasActiveSubscriptions(PREMIUM_SKU_LIST);
-      if (has) await getActiveSubscriptions(PREMIUM_SKU_LIST);
+      setSubscriptionTestOverride(false);
+      await refreshSubscriptionState();
+      const has = usePlannerStore.getState().mockSubscriptionState !== 'free';
       showToast(has ? 'Purchases restored' : 'No purchase to restore');
     } catch {
       showToast('Restore failed');

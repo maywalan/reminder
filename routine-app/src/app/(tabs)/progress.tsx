@@ -3,10 +3,12 @@ import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Animated, Easing, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import Reanimated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/text';
-import { ChevronLeftIcon, ChevronRightIcon, SparkleIcon } from '@/components/icon';
+import { BouncyPressable } from '@/components/bouncy-pressable';
+import { ChevronLeftIcon, ChevronRightIcon, LockIcon, SparkleIcon } from '@/components/icon';
 import { ProgressCategories } from '@/components/progress/progress-categories';
 import { ProgressChart } from '@/components/progress/progress-chart';
 import { ProgressHero } from '@/components/progress/progress-hero';
@@ -18,6 +20,7 @@ import { useEffectiveScheme, useTheme } from '@/hooks/use-theme';
 import { useAuthStore } from '@/store/use-auth-store';
 import { usePlannerStore } from '@/store/use-planner-store';
 import { toISO } from '@/utils/dates';
+import { isPeriodLocked } from '@/utils/premium';
 import {
   bestWeekday,
   colorBreakdown,
@@ -83,6 +86,7 @@ export default function ProgressScreen() {
   const plans = usePlannerStore((s) => s.plans);
   const firstUsedAt = usePlannerStore((s) => s.firstUsedAt);
   const authUser = useAuthStore((s) => s.user);
+  const subscriptionState = usePlannerStore((s) => s.mockSubscriptionState);
 
   const [period, setPeriod] = useState<Period>('week');
   const [offset, setOffset] = useState(0);
@@ -126,6 +130,7 @@ export default function ProgressScreen() {
   const colors = colorBreakdown(dates, plans);
 
   const canGoPrev = range.start > boundISO;
+  const locked = isPeriodLocked(period, subscriptionState);
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.surface }]}>
@@ -150,7 +155,9 @@ export default function ProgressScreen() {
               </Pressable>
             )}
             <Pressable
-              onPress={() => router.push({ pathname: '/recap', params: { period, offset: String(offset) } })}
+              onPress={() =>
+                locked ? router.push('/paywall') : router.push({ pathname: '/recap', params: { period, offset: String(offset) } })
+              }
               style={[styles.recapBtn, { backgroundColor: theme.divider }]}>
               <SparkleIcon size={17} color={theme.text} strokeWidth={1.5} />
             </Pressable>
@@ -170,6 +177,8 @@ export default function ProgressScreen() {
           />
         </EntranceBox>
 
+        <View>
+        <View pointerEvents={locked ? 'none' : 'auto'}>
         <EntranceBox entrance={heroEnter} blurTint={blurTint}>
           <ProgressHero
             eyebrow={heroEyebrow(period, range, offset)}
@@ -196,6 +205,31 @@ export default function ProgressScreen() {
         <EntranceBox entrance={categoriesEnter} blurTint={blurTint}>
           <ProgressCategories rows={colors} />
         </EntranceBox>
+        </View>
+
+        {locked && (
+          <View style={StyleSheet.absoluteFill}>
+            <BlurView intensity={28} tint={blurTint} style={StyleSheet.absoluteFill} />
+            <Reanimated.View
+              key={period}
+              entering={FadeInDown.springify().damping(14).stiffness(170)}
+              style={[styles.lockCard, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
+              <View style={[styles.lockIcon, { backgroundColor: theme.accentSoft }]}>
+                <LockIcon size={22} color={theme.accent} />
+              </View>
+              <Text style={[styles.lockTitle, { color: theme.text }]}>
+                {period === 'month' ? 'Monthly' : 'Yearly'} recap is Premium
+              </Text>
+              <Text style={[styles.lockBody, { color: theme.textSecondary }]}>
+                See your completion rate, streaks and best days across the whole {period}.
+              </Text>
+              <BouncyPressable pressedScale={0.94} onPress={() => router.push('/paywall')} style={[styles.unlockBtn, { backgroundColor: theme.accent }]}>
+                <Text style={styles.unlockText}>Unlock</Text>
+              </BouncyPressable>
+            </Reanimated.View>
+          </View>
+        )}
+        </View>
       </ScrollView>
     </View>
   );
@@ -211,4 +245,22 @@ const styles = StyleSheet.create({
   todayBtn: { fontSize: Typography.rowValue, fontWeight: '700' },
   recapBtn: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
   periodSwitch: { marginHorizontal: 20, marginTop: 12, marginBottom: 0 },
+  lockCard: {
+    marginHorizontal: 20,
+    marginTop: 40,
+    padding: 22,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    shadowColor: '#10203A',
+    shadowOpacity: 0.1,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 4,
+  },
+  lockIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  lockTitle: { fontSize: Typography.heading, fontWeight: '700', textAlign: 'center' },
+  lockBody: { fontSize: Typography.body, fontWeight: '500', textAlign: 'center', marginTop: 6, lineHeight: 19 },
+  unlockBtn: { marginTop: 16, height: 44, paddingHorizontal: 36, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  unlockText: { color: '#fff', fontSize: Typography.heading, fontWeight: '700' },
 });

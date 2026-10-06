@@ -17,11 +17,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, TextInput } from '@/components/text';
 import { BottomSheet } from '@/components/bottom-sheet';
 import { PhotoViewer } from '@/components/photo-viewer';
-import { CameraIcon, CheckIcon, ChevronRightIcon, PlusIcon, XIcon } from '@/components/icon';
+import { CameraIcon, CheckIcon, ChevronRightIcon, LockIcon, PlusIcon, XIcon } from '@/components/icon';
 import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
 import { DefaultTaskColor, Radii, SwatchColors, Typography } from '@/constants/theme';
 import { findPastPlans } from '@/utils/countdown';
+import { countActivePlans, FREE_ACTIVE_PLAN_LIMIT, isPremium } from '@/utils/premium';
 import { usePlaceSearch } from '@/hooks/use-place-search';
 import { useEffectiveScheme, useTheme } from '@/hooks/use-theme';
 import { useToast } from '@/hooks/use-toast';
@@ -92,8 +93,13 @@ export default function AddPlanScreen() {
   const groups = usePlannerStore((s) => s.groups);
   const pendingGroupPick = usePlannerStore((s) => s.pendingGroupPick);
   const setPendingGroupPick = usePlannerStore((s) => s.setPendingGroupPick);
+  const premium = usePlannerStore((s) => isPremium(s.mockSubscriptionState));
 
   const editing = useMemo(() => plans.find((p) => p.id === id), [plans, id]);
+  // Free tier caps active plans; a new plan past the cap (or a duplicate that would push past it)
+  // goes to the paywall instead. The form stays mounted underneath, so nothing typed is lost.
+  const activePlanCount = useMemo(() => countActivePlans(plans), [plans]);
+  const atPlanLimit = !premium && !editing && activePlanCount >= FREE_ACTIVE_PLAN_LIMIT;
   const initialDate = editing?.date ?? prefillDate ?? toISO(new Date());
 
   // Title suggestions: every distinct past-plan name (any plan whose date has already passed,
@@ -227,6 +233,10 @@ export default function AddPlanScreen() {
       showToast('Plan name required');
       return;
     }
+    if (atPlanLimit) {
+      router.push('/paywall');
+      return;
+    }
     const date = toISO(dateTime);
     const time = `${pad(dateTime.getHours())}:${pad(dateTime.getMinutes())}`;
     const endTime =
@@ -275,7 +285,13 @@ export default function AddPlanScreen() {
   }
 
   function handleDuplicate() {
-    if (editing) duplicatePlan(editing.id);
+    if (!editing) return;
+    const copy = { ...editing, id: 'duplicate', completed: false, repeatId: undefined };
+    if (!premium && countActivePlans([...plans, copy]) > FREE_ACTIVE_PLAN_LIMIT) {
+      router.push('/paywall');
+      return;
+    }
+    duplicatePlan(editing.id);
     router.back();
   }
 
@@ -754,8 +770,27 @@ export default function AddPlanScreen() {
           </View>
         </View>
 
+        {atPlanLimit && (
+          <Pressable
+            onPress={() => router.push('/paywall')}
+            style={[styles.limitRow, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
+            <View style={[styles.limitIcon, { backgroundColor: theme.accentSoft }]}>
+              <LockIcon size={17} color={theme.accent} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: theme.text, fontSize: Typography.heading, fontWeight: '700' }}>
+                {FREE_ACTIVE_PLAN_LIMIT} of {FREE_ACTIVE_PLAN_LIMIT} free plans in use
+              </Text>
+              <Text style={{ color: theme.textSecondary, fontSize: Typography.body, fontWeight: '500', marginTop: 2 }}>
+                Go Premium for unlimited plans
+              </Text>
+            </View>
+            <ChevronRightIcon size={14} color={theme.textTertiary} strokeWidth={2.4} />
+          </Pressable>
+        )}
+
         <Pressable onPress={handleSave} style={styles.saveBtn}>
-          <Text style={{ color: '#fff', fontSize: Typography.heading, fontWeight: '700' }}>Save plan</Text>
+          <Text style={{ color: '#fff', fontSize: Typography.heading, fontWeight: '700' }}>{atPlanLimit ? 'Upgrade to save' : 'Save plan'}</Text>
         </Pressable>
 
         {editing ? (
@@ -1033,6 +1068,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     gap: 14,
   },
+  limitRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 14,
+    marginBottom: 12,
+    borderRadius: Radii.card,
+    borderWidth: 1,
+  },
+  limitIcon: { width: 34, height: 34, borderRadius: Radii.iconTile, alignItems: 'center', justifyContent: 'center' },
   saveBtn: {
     height: 48,
     borderRadius: Radii.button,

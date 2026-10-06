@@ -22,10 +22,12 @@ import {
 } from '@/components/icon';
 import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
+import { UpgradeBanner } from '@/components/upgrade-banner';
 import { WidgetPreview } from '@/components/widget-preview';
 import { Radii, RowMinHeight, Spacing, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useToast } from '@/hooks/use-toast';
+import { refreshSubscriptionState } from '@/lib/iap';
 import { getNotificationPermissionStatus, requestNotificationPermissions } from '@/lib/notifications';
 import { useAuthStore } from '@/store/use-auth-store';
 import { useOnboardingStore } from '@/store/use-onboarding-store';
@@ -49,6 +51,8 @@ export default function ProfileScreen() {
   const updateSettings = usePlannerStore((s) => s.updateSettings);
   const resetData = usePlannerStore((s) => s.resetData);
   const mockSubscriptionState = usePlannerStore((s) => s.mockSubscriptionState);
+  const subscriptionTestOverride = usePlannerStore((s) => s.subscriptionTestOverride);
+  const setSubscriptionTestOverride = usePlannerStore((s) => s.setSubscriptionTestOverride);
   const setMockSubscriptionState = usePlannerStore((s) => s.setMockSubscriptionState);
   const authUser = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
@@ -140,6 +144,8 @@ export default function ProfileScreen() {
             </Pressable>
           </View>
         )}
+
+        <UpgradeBanner />
 
         <Text style={[styles.sectionLabel, { color: theme.textTertiary }]}>NOTIFICATIONS</Text>
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
@@ -233,14 +239,16 @@ export default function ProfileScreen() {
             <Text style={[styles.rowLabel, { color: theme.text }]}>Replay Onboarding</Text>
             <ChevronRightIcon size={16} color={theme.textFaint} strokeWidth={2} />
           </Pressable>
-          {/* No real StoreKit/Play Billing wiring yet — this just previews the Subscription
-              screen's 5 entitlement states. Remove once real purchases drive that screen. */}
+          {/* Testing only: forces an entitlement state over what StoreKit reports. Remove before
+              the App Store build. */}
           <Pressable onPress={() => setSubscriptionStateOpen(true)} style={[styles.row, styles.rowBorder, { borderColor: theme.divider }]}>
             <View style={[styles.rowIcon, { backgroundColor: theme.accentSoft }]}>
               <SparkleIcon size={16} color={theme.accent} strokeWidth={1.8} />
             </View>
             <Text style={[styles.rowLabel, { color: theme.text }]}>Subscription State</Text>
-            <Text style={[styles.rowValue, { color: theme.textTertiary }]}>{SUBSCRIPTION_STATE_LABEL[mockSubscriptionState]}</Text>
+            <Text style={[styles.rowValue, { color: theme.textTertiary }]}>
+              {subscriptionTestOverride ? SUBSCRIPTION_STATE_LABEL[mockSubscriptionState] : 'Real'}
+            </Text>
             <ChevronRightIcon size={16} color={theme.textFaint} strokeWidth={2} />
           </Pressable>
         </View>
@@ -261,21 +269,32 @@ export default function ProfileScreen() {
 
       <BottomSheet visible={subscriptionStateOpen} onClose={() => setSubscriptionStateOpen(false)} title="Subscription State">
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.cardBorder, marginTop: 10 }]}>
-          {SUBSCRIPTION_STATES.map((s, i) => (
+          <Pressable
+            onPress={() => {
+              setSubscriptionTestOverride(false);
+              refreshSubscriptionState();
+              setSubscriptionStateOpen(false);
+            }}
+            style={styles.row}>
+            <Text style={[styles.rowLabel, { color: theme.text, flex: 1 }]}>Real (from StoreKit)</Text>
+            {!subscriptionTestOverride && <CheckIcon size={16} color={theme.accent} strokeWidth={3} />}
+          </Pressable>
+          {SUBSCRIPTION_STATES.map((s) => (
             <Pressable
               key={s}
               onPress={() => {
+                setSubscriptionTestOverride(true);
                 setMockSubscriptionState(s);
                 setSubscriptionStateOpen(false);
               }}
-              style={[styles.row, i > 0 && styles.rowBorder, { borderColor: theme.divider }]}>
+              style={[styles.row, styles.rowBorder, { borderColor: theme.divider }]}>
               <Text style={[styles.rowLabel, { color: theme.text, flex: 1 }]}>{SUBSCRIPTION_STATE_LABEL[s]}</Text>
-              {mockSubscriptionState === s && <CheckIcon size={16} color={theme.accent} strokeWidth={3} />}
+              {subscriptionTestOverride && mockSubscriptionState === s && <CheckIcon size={16} color={theme.accent} strokeWidth={3} />}
             </Pressable>
           ))}
         </View>
         <Text style={[styles.footnote, { color: theme.textTertiary }]}>
-          Testing only — previews the Subscription screen&apos;s 5 states. No real purchase is ever made.
+          Testing only — forces a state over what StoreKit reports, so you can preview locks and the Subscription screen. Pick Real to go back.
         </Text>
       </BottomSheet>
 

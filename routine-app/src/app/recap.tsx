@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useMemo } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
@@ -9,6 +9,7 @@ import { Radii, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { usePlannerStore } from '@/store/use-planner-store';
 import { toISO } from '@/utils/dates';
+import { isPeriodLocked } from '@/utils/premium';
 import { bestWeekday, currentStreak, datesInRange, formatPeriodLabel, progressRange, sumHistory, type Period } from '@/utils/progress';
 
 const WEEKDAY_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -22,6 +23,7 @@ export default function RecapScreen() {
   const offset = Number(offsetParam ?? 0) || 0;
 
   const plans = usePlannerStore((s) => s.plans);
+  const subscriptionState = usePlannerStore((s) => s.mockSubscriptionState);
   const todayISO = useMemo(() => toISO(new Date()), []);
 
   const range = progressRange(period, todayISO, offset);
@@ -29,6 +31,11 @@ export default function RecapScreen() {
   const cur = sumHistory(dates, todayISO, plans);
   const streak = currentStreak(todayISO, plans);
   const best = bestWeekday(dates, todayISO, plans);
+
+  // Progress already routes a locked period to the paywall; this keeps any other way in honest.
+  if (isPeriodLocked(period, subscriptionState)) {
+    return <Redirect href="/paywall" />;
+  }
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.bg, paddingTop: insets.top + 8, paddingBottom: insets.bottom + 16 }]}>

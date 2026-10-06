@@ -10,7 +10,7 @@ import { CheckIcon, XIcon } from '@/components/icon';
 import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
 import { useToast } from '@/hooks/use-toast';
-import { PREMIUM_SKU_LIST, PREMIUM_SKUS, subscriptionStateForSku } from '@/lib/iap';
+import { PREMIUM_SKUS, refreshSubscriptionState } from '@/lib/iap';
 import { usePlannerStore } from '@/store/use-planner-store';
 import { useThink } from '@/utils/motion';
 
@@ -141,12 +141,13 @@ export default function PaywallScreen() {
   const [cta, setCta] = useState<CtaState>('idle');
   const [trackWidth, setTrackWidth] = useState(0);
 
-  const setMockSubscriptionState = usePlannerStore((s) => s.setMockSubscriptionState);
-  const { requestPurchase, restorePurchases, hasActiveSubscriptions, getActiveSubscriptions, activeSubscriptions } = useIAP({
+  const setSubscriptionTestOverride = usePlannerStore((s) => s.setSubscriptionTestOverride);
+  const { requestPurchase, restorePurchases } = useIAP({
     onPurchaseSuccess: async (purchase) => {
       await finishTransaction({ purchase, isConsumable: false });
-      const state = subscriptionStateForSku(purchase.productId);
-      if (state) setMockSubscriptionState(state);
+      // A real purchase wins over any testing override; StoreKit then decides trial vs paid.
+      setSubscriptionTestOverride(false);
+      await refreshSubscriptionState();
       setCta('done');
     },
     onPurchaseError: (error) => {
@@ -154,13 +155,6 @@ export default function PaywallScreen() {
       showToast(error.message || 'Purchase failed');
     },
   });
-
-  useEffect(() => {
-    const active = activeSubscriptions[0];
-    if (!active) return;
-    const state = subscriptionStateForSku(active.productId);
-    if (state) setMockSubscriptionState(state);
-  }, [activeSubscriptions, setMockSubscriptionState]);
 
   const headerEnter = useEntrance(ENTER_DELAY.header);
   const toggleEnter = useEntrance(ENTER_DELAY.toggle);
@@ -228,8 +222,9 @@ export default function PaywallScreen() {
   async function handleRestore() {
     try {
       await restorePurchases();
-      const has = await hasActiveSubscriptions(PREMIUM_SKU_LIST);
-      if (has) await getActiveSubscriptions(PREMIUM_SKU_LIST);
+      setSubscriptionTestOverride(false);
+      await refreshSubscriptionState();
+      const has = usePlannerStore.getState().mockSubscriptionState !== 'free';
       showToast(has ? 'Purchases restored' : 'No purchase to restore');
     } catch {
       showToast('Restore failed');

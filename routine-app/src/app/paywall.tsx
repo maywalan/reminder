@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/text';
 import { CheckIcon, XIcon } from '@/components/icon';
 import { Typography } from '@/constants/theme';
+import { t } from '@/i18n';
 import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
 import { useToast } from '@/hooks/use-toast';
@@ -22,8 +23,8 @@ type CtaState = 'idle' | 'loading' | 'done';
 
 const EASE = Easing.bezier(0.22, 1, 0.36, 1);
 
-const FREE_FEATURES = ['5 active plans', 'Daily & weekly', 'Calendar: this month', '1 reminder per plan', 'Today view & streak', 'Widgets, no expiry'];
-const PREMIUM_FEATURES = ['Unlimited plans', 'Custom recurrence', 'Full calendar + drag', 'Reminders & snooze', 'History & export', 'Themes & icons'];
+const FREE_FEATURES = ['feature.free.plans', 'feature.free.repeat', 'feature.free.calendar', 'feature.free.reminder', 'feature.free.today', 'feature.free.widgets'] as const;
+const PREMIUM_FEATURES = ['feature.pro.plans', 'feature.pro.repeat', 'feature.pro.calendar', 'feature.pro.reminders', 'feature.pro.history', 'feature.pro.themes'] as const;
 
 // Display-conversion fallback copy (design_handoff_tickle_paywall/README.md) for when a real
 // storefront hasn't loaded yet — the live screen must read localized prices from StoreKit / Play
@@ -32,20 +33,17 @@ const PRICE: Record<Currency, Record<Billing, string>> = {
   usd: { monthly: '$2.69', annual: '$16.99' },
   thb: { monthly: '฿89', annual: '฿555' },
 };
-const PERIOD: Record<Currency, Record<Billing, string>> = {
-  usd: { monthly: 'per month', annual: 'per year · ≈$1.42/mo' },
-  thb: { monthly: 'per month', annual: 'per year · ≈฿46.25/mo' },
-};
-const FINE_PRINT: Record<Currency, Record<Billing, string>> = {
-  usd: {
-    monthly: 'Billed $2.69 each month. Cancel anytime from account settings.',
-    annual: 'Annual billed as one payment of $16.99/yr (≈ $1.42/mo). Cancel anytime from account settings.',
-  },
-  thb: {
-    monthly: 'Billed ฿89 each month. Local pricing — App Store price may vary slightly. Cancel anytime.',
-    annual: 'Annual billed as one payment of ฿555/yr (≈ ฿46.25/mo). Local pricing — App Store price may vary slightly. Cancel anytime.',
-  },
-};
+const PER_MONTH: Record<Currency, string> = { usd: '$1.42', thb: '฿46.25' };
+
+function periodLine(currency: Currency, billing: Billing) {
+  return billing === 'monthly' ? t('paywall.perMonth') : t('paywall.perYear', { mo: PER_MONTH[currency] });
+}
+
+function finePrint(currency: Currency, billing: Billing) {
+  const price = PRICE[currency][billing];
+  const base = billing === 'monthly' ? t('paywall.fine.monthly', { price }) : t('paywall.fine.annual', { price, mo: PER_MONTH[currency] });
+  return currency === 'thb' ? `${base} ${t('paywall.fine.localNote')}` : base;
+}
 
 // Entrance stagger (design_handoff_tickle_paywall/README.md "Motion"): header -> toggle ->
 // Premium -> Free -> CTA -> fine print, 140ms apart starting at 120ms.
@@ -141,7 +139,7 @@ export default function PaywallScreen() {
     },
     onPurchaseError: (error) => {
       setCta('idle');
-      showToast(error.message || 'Purchase failed');
+      showToast(error.message || t('paywall.purchaseFailed'));
     },
   });
 
@@ -203,7 +201,7 @@ export default function PaywallScreen() {
       await requestPurchase({ request: { apple: { sku: PREMIUM_SKUS[billing] } }, type: 'subs' });
     } catch (e) {
       setCta('idle');
-      showToast(e instanceof Error ? e.message : 'Purchase failed');
+      showToast(e instanceof Error ? e.message : t('paywall.purchaseFailed'));
     }
   }
 
@@ -213,16 +211,16 @@ export default function PaywallScreen() {
       setSubscriptionTestOverride(false);
       await refreshSubscriptionState();
       const has = usePlannerStore.getState().mockSubscriptionState !== 'free';
-      showToast(has ? 'Purchases restored' : 'No purchase to restore');
+      showToast(t(has ? 'restore.done' : 'restore.none'));
     } catch {
-      showToast('Restore failed');
+      showToast(t('restore.failed'));
     }
   }
 
   const segWidth = trackWidth > 0 ? (trackWidth - 8) / 2 : 0;
   const thumbTranslate = thumbX.interpolate({ inputRange: [0, 1], outputRange: [0, segWidth] });
 
-  const ctaLabel = cta === 'done' ? '✓  Trial started' : tier === 'premium' ? 'Start free trial' : 'Your plan today';
+  const ctaLabel = cta === 'done' ? t('paywall.cta.done') : tier === 'premium' ? t('paywall.cta.trial') : t('paywall.cta.free');
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 16 }]}>
@@ -245,20 +243,20 @@ export default function PaywallScreen() {
           <Tickle size={46} mood="idle" animated />
         </Animated.View>
         <View style={styles.headerText}>
-          <Text style={styles.headerTitle}>Simple pricing</Text>
-          <Text style={styles.headerSub}>Two plans. Cancel anytime.</Text>
+          <Text style={styles.headerTitle}>{t('paywall.title')}</Text>
+          <Text style={styles.headerSub}>{t('paywall.sub')}</Text>
         </View>
       </Animated.View>
 
       <Animated.View style={[styles.billingTrack, toggleEnter]} onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width)}>
         {segWidth > 0 && <Animated.View style={[styles.billingThumb, { width: segWidth, transform: [{ translateX: thumbTranslate }] }]} />}
         <Pressable style={styles.billingSeg} onPress={() => selectBilling('monthly')}>
-          <Text style={[styles.billingLabel, billing === 'monthly' && styles.billingLabelActive]}>Monthly</Text>
+          <Text style={[styles.billingLabel, billing === 'monthly' && styles.billingLabelActive]}>{t('paywall.monthly')}</Text>
         </Pressable>
         <Pressable style={styles.billingSeg} onPress={() => selectBilling('annual')}>
-          <Text style={[styles.billingLabel, billing === 'annual' && styles.billingLabelActive]}>Annual</Text>
+          <Text style={[styles.billingLabel, billing === 'annual' && styles.billingLabelActive]}>{t('paywall.annual')}</Text>
           <View style={styles.saveBadge}>
-            <Text style={styles.saveBadgeText}>SAVE 48%</Text>
+            <Text style={styles.saveBadgeText}>{t('paywall.save')}</Text>
           </View>
         </Pressable>
       </Animated.View>
@@ -271,19 +269,19 @@ export default function PaywallScreen() {
               style={[styles.card, styles.freeCard, tier === 'free' ? styles.freeCardSelected : styles.freeCardUnselected]}>
               <View style={styles.cardTop}>
                 <View style={styles.cardTopText}>
-                  <Text style={styles.cardName}>Free</Text>
+                  <Text style={styles.cardName}>{t('paywall.free')}</Text>
                   <Text style={styles.priceLight}>{currency === 'usd' ? '$0' : '฿0'}</Text>
-                  <Text style={styles.periodLight}>forever</Text>
+                  <Text style={styles.periodLight}>{t('paywall.forever')}</Text>
                 </View>
                 <PlanCheck selected={tier === 'free'} dark={false} />
               </View>
               <View style={styles.badgeNeutral}>
-                <Text style={styles.badgeNeutralText}>YOUR PLAN TODAY</Text>
+                <Text style={styles.badgeNeutralText}>{t('paywall.yourPlanToday')}</Text>
               </View>
               <View style={styles.dividerLight} />
               <View style={styles.featureList}>
                 {FREE_FEATURES.map((f) => (
-                  <FeatureRow key={f} text={f} dark={false} />
+                  <FeatureRow key={f} text={t(f)} dark={false} />
                 ))}
               </View>
             </Pressable>
@@ -296,23 +294,23 @@ export default function PaywallScreen() {
               onPress={() => selectTier('premium')}
               style={[styles.card, styles.premiumCard, tier === 'premium' ? styles.premiumCardSelected : styles.premiumCardUnselected]}>
               <Animated.View style={[styles.recommendedBadge, badgePulse]}>
-                <Text style={styles.recommendedBadgeText}>RECOMMENDED</Text>
+                <Text style={styles.recommendedBadgeText}>{t('paywall.recommended')}</Text>
               </Animated.View>
               <View style={styles.cardTop}>
                 <View style={styles.cardTopText}>
                   <Text style={styles.cardNameDark}>Premium</Text>
                   <Text style={styles.priceDark}>{PRICE[currency][billing]}</Text>
-                  <Text style={styles.periodDark}>{PERIOD[currency][billing]}</Text>
+                  <Text style={styles.periodDark}>{periodLine(currency, billing)}</Text>
                 </View>
                 <PlanCheck selected={tier === 'premium'} dark />
               </View>
               <View style={styles.badgeWarm}>
-                <Text style={styles.badgeWarmText}>7-DAY FREE TRIAL</Text>
+                <Text style={styles.badgeWarmText}>{t('paywall.trialBadge')}</Text>
               </View>
               <View style={styles.dividerDark} />
               <View style={styles.featureList}>
                 {PREMIUM_FEATURES.map((f) => (
-                  <FeatureRow key={f} text={f} dark />
+                  <FeatureRow key={f} text={t(f)} dark />
                 ))}
               </View>
             </Pressable>
@@ -334,18 +332,18 @@ export default function PaywallScreen() {
       </Animated.View>
 
       <Animated.View style={fineEnter}>
-        <Text style={styles.fine}>{FINE_PRINT[currency][billing]}</Text>
+        <Text style={styles.fine}>{finePrint(currency, billing)}</Text>
         <View style={styles.footerLinks}>
           <Pressable onPress={handleRestore} hitSlop={6}>
-            <Text style={styles.footerLink}>Restore</Text>
+            <Text style={styles.footerLink}>{t('legal.restore')}</Text>
           </Pressable>
           <Text style={styles.footerDot}>·</Text>
-          <Pressable onPress={() => showToast('Terms coming soon')} hitSlop={6}>
-            <Text style={styles.footerLink}>Terms</Text>
+          <Pressable onPress={() => showToast(t('legal.termsSoon'))} hitSlop={6}>
+            <Text style={styles.footerLink}>{t('legal.terms')}</Text>
           </Pressable>
           <Text style={styles.footerDot}>·</Text>
           <Pressable onPress={() => Linking.openURL('https://maywalan.github.io/reminder/privacy.html')} hitSlop={6}>
-            <Text style={styles.footerLink}>Privacy</Text>
+            <Text style={styles.footerLink}>{t('legal.privacy')}</Text>
           </Pressable>
         </View>
       </Animated.View>

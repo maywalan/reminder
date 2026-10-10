@@ -50,7 +50,8 @@ export function useNotificationsSync() {
         state.plans !== prevState.plans ||
         state.settings.notificationsEnabled !== prevState.settings.notificationsEnabled ||
         state.settings.recapEnabled !== prevState.settings.recapEnabled ||
-        state.settings.recapHour !== prevState.settings.recapHour
+        state.settings.recapHour !== prevState.settings.recapHour ||
+        state.settings.language !== prevState.settings.language
       ) {
         scheduleSync();
       }

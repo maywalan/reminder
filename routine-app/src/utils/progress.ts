@@ -1,5 +1,7 @@
 import { SwatchColorNames } from '@/constants/theme';
 import type { Plan } from '@/store/types';
+import { t } from '@/i18n';
+import { displayYear, fmtDate, lang, monthLong, monthShortList } from '@/i18n/format';
 import { fromISO, toISO } from '@/utils/dates';
 
 /** Progress screen data logic — every stat here is derived from real plans in the store. */
@@ -105,7 +107,7 @@ export function colorBreakdown(dates: string[], plans: Plan[]): ColorRow[] {
   const total = completed.length;
   const rows = Array.from(counts.entries()).map(([color, count]) => ({
     color,
-    label: SwatchColorNames[color] ?? 'Color',
+    label: t(SwatchColorNames[color] ?? 'color.other'),
     count,
     pct: total > 0 ? Math.round((count / total) * 100) : 0,
   }));
@@ -164,49 +166,37 @@ export function pctDelta(cur: number, prev: number): number {
   return Math.round(((cur - prev) / prev) * 100);
 }
 
-export const WEEKDAY_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
-export const MONTH_LONG = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-];
-export const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
 /** Hero card's uppercase eyebrow line — "THIS WEEK" / "AUGUST" / "2026 SO FAR". */
 export function heroEyebrow(period: Period, range: RangeResult, offset: number): string {
   const start = fromISO(range.start);
-  if (period === 'week') return offset === 0 ? 'THIS WEEK' : 'THAT WEEK';
-  if (period === 'month') return MONTH_LONG[start.getMonth()].toUpperCase();
-  return offset === 0 ? `${start.getFullYear()} SO FAR` : String(start.getFullYear());
+  if (period === 'week') return offset === 0 ? t('progress.eyebrow.thisWeek') : t('progress.eyebrow.thatWeek');
+  if (period === 'month') return monthLong(start.getMonth()).toUpperCase();
+  const year = displayYear(start.getFullYear());
+  return offset === 0 ? t('progress.eyebrow.yearSoFar', { year }) : String(year);
 }
 
 /** Hero card's delta line target — "last week" / "July" / "2025". */
 export function previousPeriodLabel(period: Period, range: RangeResult): string {
-  if (period === 'week') return 'last week';
+  if (period === 'week') return t('progress.lastWeek');
   const prevStart = fromISO(range.prevStart);
-  if (period === 'month') return MONTH_LONG[prevStart.getMonth()];
-  return String(prevStart.getFullYear());
+  if (period === 'month') return t('progress.prevMonth', { month: monthLong(prevStart.getMonth()) });
+  return t('progress.prevYear', { year: displayYear(prevStart.getFullYear()) });
 }
 
 /** The nav-bar label for whichever period is currently in view, e.g. "Aug 19 – 25, 2026". */
 export function formatPeriodLabel(period: Period, range: RangeResult): string {
   const start = fromISO(range.start);
   const end = fromISO(range.end);
-  if (period === 'year') return String(start.getFullYear());
-  if (period === 'month') return `${MONTH_LONG[start.getMonth()]} ${start.getFullYear()}`;
+  if (period === 'year') return String(displayYear(start.getFullYear()));
+  if (period === 'month') return `${monthLong(start.getMonth())} ${displayYear(start.getFullYear())}`;
   const sameMonth = start.getMonth() === end.getMonth();
-  const startStr = `${MONTH_SHORT[start.getMonth()]} ${start.getDate()}`;
-  const endStr = sameMonth ? `${end.getDate()}` : `${MONTH_SHORT[end.getMonth()]} ${end.getDate()}`;
+  if (lang() === 'th') {
+    // "19 – 25 ส.ค. 2569" / "28 ส.ค. – 3 ก.ย. 2569"
+    const startStr = sameMonth ? `${start.getDate()}` : fmtDate(start);
+    return `${startStr} – ${fmtDate(end)} ${displayYear(end.getFullYear())}`;
+  }
+  const startStr = fmtDate(start);
+  const endStr = sameMonth ? `${end.getDate()}` : fmtDate(end);
   return `${startStr} – ${endStr}, ${end.getFullYear()}`;
 }
 
@@ -239,7 +229,7 @@ export interface MonthCell {
 /** One heat cell per month of the given year — a Google-Calendar-style year-at-a-glance grid. */
 export function yearMonthCells(year: number, todayISO: string, plans: Plan[]): MonthCell[] {
   const todayObj = fromISO(todayISO);
-  return MONTH_SHORT.map((label, m) => {
+  return monthShortList().map((label, m) => {
     const monthStart = new Date(year, m, 1);
     if (monthStart > todayObj) return { label, completed: 0, isFuture: true };
     const monthEndFull = new Date(year, m + 1, 0);

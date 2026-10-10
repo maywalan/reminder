@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text, TextInput } from '@/components/text';
+import { t } from '@/i18n';
 import { CheckIcon } from '@/components/icon';
 import { Radii, SwatchColors, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -36,11 +37,11 @@ export default function EditProfileScreen() {
     <View style={[styles.screen, { backgroundColor: theme.bg, paddingTop: insets.top + 8, paddingBottom: insets.bottom + 16 }]}>
       <View style={styles.head}>
         <Pressable onPress={() => router.back()} hitSlop={8}>
-          <Text style={{ color: theme.textSecondary, fontSize: Typography.rowLabel, fontWeight: '600' }}>Cancel</Text>
+          <Text style={{ color: theme.textSecondary, fontSize: Typography.rowLabel, fontWeight: '600' }}>{t('common.cancel')}</Text>
         </Pressable>
-        <Text style={{ color: theme.text, fontSize: Typography.sheetTitle, fontWeight: '800' }}>Edit Profile</Text>
+        <Text style={{ color: theme.text, fontSize: Typography.sheetTitle, fontWeight: '800' }}>{t('profile.edit')}</Text>
         <Pressable onPress={handleSave} hitSlop={8} disabled={saveDisabled}>
-          <Text style={{ color: saveDisabled ? theme.textFaint : theme.accentStrong, fontSize: Typography.rowLabel, fontWeight: '700' }}>Save</Text>
+          <Text style={{ color: saveDisabled ? theme.textFaint : theme.accentStrong, fontSize: Typography.rowLabel, fontWeight: '700' }}>{t('common.save')}</Text>
         </Pressable>
       </View>
 
@@ -53,14 +54,14 @@ export default function EditProfileScreen() {
 
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
           <View style={styles.field}>
-            <Text style={[styles.label, { color: theme.textTertiary }]}>YOUR NAME</Text>
+            <Text style={[styles.label, { color: theme.textTertiary }]}>{t('profile.yourName')}</Text>
             <TextInput
               value={name}
               onChangeText={(t) => {
                 setName(t);
                 setError(false);
               }}
-              placeholder="Your name"
+              placeholder={t('profile.namePlaceholder')}
               placeholderTextColor={theme.textTertiary}
               style={[styles.input, { color: theme.text, borderColor: error ? theme.danger : 'transparent' }]}
             />
@@ -68,7 +69,7 @@ export default function EditProfileScreen() {
         </View>
 
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
-          <Text style={[styles.label, { color: theme.textTertiary, paddingHorizontal: 14, paddingTop: 12 }]}>COLOR</Text>
+          <Text style={[styles.label, { color: theme.textTertiary, paddingHorizontal: 14, paddingTop: 12 }]}>{t('profile.color')}</Text>
           <View style={styles.swatchRow}>
             {SwatchColors.map((c) => {
               const selected = c === avatarColor;

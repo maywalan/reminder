@@ -3,7 +3,9 @@ import { Platform } from 'react-native';
 
 import { Colors } from '@/constants/theme';
 import type { Group, Plan } from '@/store/types';
-import { fmtTime12, toISO } from '@/utils/dates';
+import { lang, t } from '@/i18n';
+import { fmtDate, fmtTime } from '@/i18n/format';
+import { toISO } from '@/utils/dates';
 
 const APP_GROUP = 'group.com.maywalan.tickle';
 const WIDGET_KIND = 'TickleWidget';
@@ -21,7 +23,7 @@ export function syncWidgetData(plans: Plan[], groups: Group[]) {
 
   const now = new Date();
   const todayISO = toISO(now);
-  const dateLabel = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  const dateLabel = fmtDate(now, { weekday: 'short' });
 
   const todays = plans
     .filter((p) => p.date === todayISO && !p.completed)
@@ -30,10 +32,11 @@ export function syncWidgetData(plans: Plan[], groups: Group[]) {
     .map((p) => ({
       id: p.id,
       name: p.name,
-      time: p.allDay ? 'All Day' : fmtTime12(p.time),
+      time: p.allDay ? t('common.allDay') : fmtTime(p.time),
       color: colorForPlan(p, groups),
     }));
 
+  storage.set('language', lang());
   storage.set('dateLabel', dateLabel);
   storage.set('todayPlans', todays);
   ExtensionStorage.reloadWidget(WIDGET_KIND);

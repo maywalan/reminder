@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 import { Radii, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import type { ColorRow } from '@/utils/progress';
 
 export function ProgressCategories({ rows }: { rows: ColorRow[] }) {
@@ -11,9 +12,9 @@ export function ProgressCategories({ rows }: { rows: ColorRow[] }) {
 
   return (
     <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
-      <Text style={[styles.title, { color: theme.text }]}>By color</Text>
+      <Text style={[styles.title, { color: theme.text }]}>{t('progress.byColor')}</Text>
       {!hasData ? (
-        <Text style={[styles.empty, { color: theme.textTertiary }]}>No data yet</Text>
+        <Text style={[styles.empty, { color: theme.textTertiary }]}>{t('progress.noData')}</Text>
       ) : (
         <View style={styles.rows}>
           {rows.map((r) => (

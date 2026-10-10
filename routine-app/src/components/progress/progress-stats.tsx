@@ -4,6 +4,7 @@ import { Text } from '@/components/text';
 import { CalendarIcon, CheckIcon, ChartIcon, SparkleIcon } from '@/components/icon';
 import { Radii, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { t as tr } from '@/i18n';
 
 interface Props {
   completed: number;
@@ -22,10 +23,10 @@ export function ProgressStats({ completed, completionRate, streak, bestDay }: Pr
   const theme = useTheme();
 
   const tiles = [
-    { icon: CheckIcon, value: String(completed), label: 'Completed' },
-    { icon: ChartIcon, value: `${completionRate}%`, label: 'Rate' },
-    { icon: SparkleIcon, value: String(streak), label: 'Streak' },
-    { icon: CalendarIcon, value: bestDay.slice(0, 3), label: 'Best day' },
+    { icon: CheckIcon, value: String(completed), label: tr('progress.stat.completed') },
+    { icon: ChartIcon, value: `${completionRate}%`, label: tr('progress.stat.rate') },
+    { icon: SparkleIcon, value: String(streak), label: tr('progress.stat.streak') },
+    { icon: CalendarIcon, value: bestDay, label: tr('progress.stat.bestDay') },
   ];
 
   return (

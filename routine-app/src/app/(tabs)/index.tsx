@@ -17,6 +17,7 @@ import { CheckIcon, PaletteIcon, PlusIcon, TagIcon } from '@/components/icon';
 import { Text } from '@/components/text';
 import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
+import { t as tr } from '@/i18n';
 import { Fonts, Radii, SwatchColors, Typography } from '@/constants/theme';
 import { useEffectiveScheme, useTheme } from '@/hooks/use-theme';
 import { useToast } from '@/hooks/use-toast';
@@ -29,9 +30,9 @@ import { groupSearchResults, searchPlans } from '@/utils/plan-search';
 const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
 
 function greeting(hour: number) {
-  if (hour < 12) return 'Good morning';
-  if (hour < 18) return 'Good afternoon';
-  return 'Good evening';
+  if (hour < 12) return tr('home.greeting.morning');
+  if (hour < 18) return tr('home.greeting.afternoon');
+  return tr('home.greeting.evening');
 }
 
 /**
@@ -213,10 +214,10 @@ export default function HomeScreen() {
   // The Groups button's dot shows the first selected group's color.
   const activeGroup = groups.find((g) => filterGroupIds.includes(g.id));
   const emptyText = filtering
-    ? 'Nothing matches this filter today.'
+    ? tr('home.empty.filter')
     : feed.earlier.length > 0
-      ? 'All done for today.'
-      : 'Nothing planned for today.';
+      ? tr('home.empty.allDone')
+      : tr('home.empty.nothing');
 
   const selectProps = { selectMode, selectedIds, onToggleSelect: toggleSelected, onOpen: openPlan };
 
@@ -238,19 +239,18 @@ export default function HomeScreen() {
             <View style={styles.headerLeft}>
               <Tickle size={34} mood="idle" animated />
               <Text numberOfLines={1} style={[t.greeting, styles.headerText, { color: k.ink }]}>
-                {greeting(now.getHours())}
-                {firstName ? `, ${firstName}` : ''}
+                {firstName ? tr('home.greeting.withName', { greeting: greeting(now.getHours()), name: firstName }) : greeting(now.getHours())}
               </Text>
             </View>
             <Pressable onPress={() => setSelectMode(!selectMode)} hitSlop={10}>
-              <Text style={[t.link, styles.editBtn, { color: k.link }]}>{selectMode ? 'Done' : 'Edit'}</Text>
+              <Text style={[t.link, styles.editBtn, { color: k.link }]}>{selectMode ? tr('common.done') : tr('home.edit')}</Text>
             </Pressable>
           </View>
 
           <View style={styles.toolRow}>
             <SearchField value={query} onChangeText={setQuery} inputRef={searchRef} collapsed={!!panel} active={searching} onExpand={expandSearch} />
-            <ToolButton open={panel === 'colors'} label="Colors" dot={filterColor} icon={(c) => <PaletteIcon size={16} color={c} />} onPress={() => togglePanel('colors')} />
-            <ToolButton open={panel === 'groups'} label="Groups" dot={activeGroup?.color} icon={(c) => <TagIcon size={16} color={c} />} onPress={() => togglePanel('groups')} />
+            <ToolButton open={panel === 'colors'} label={tr('home.colors')} dot={filterColor} icon={(c) => <PaletteIcon size={16} color={c} />} onPress={() => togglePanel('colors')} />
+            <ToolButton open={panel === 'groups'} label={tr('home.groups')} dot={activeGroup?.color} icon={(c) => <TagIcon size={16} color={c} />} onPress={() => togglePanel('groups')} />
             {panel && (
               // Keyed by panel: switching Colors ⇄ Groups fades the old chips out while the new
               // ones slide in one by one, instead of swapping in place.
@@ -266,7 +266,7 @@ export default function HomeScreen() {
                           styles.chip,
                           { borderColor: filterColor === null ? 'transparent' : theme.cardBorder, backgroundColor: filterColor === null ? theme.accentSoft : theme.surface },
                         ]}>
-                        <Text style={chipText(filterColor === null)}>All</Text>
+                        <Text style={chipText(filterColor === null)}>{tr('home.all')}</Text>
                       </BouncyPressable>
                       {SwatchColors.map((c, i) => (
                         <BouncyPressable
@@ -284,8 +284,8 @@ export default function HomeScreen() {
                     </>
                   ) : groups.length === 0 ? (
                     <BouncyPressable entering={chipIn(0)} onPress={openCreateGroup} style={[styles.chip, styles.dashedChip, { borderColor: theme.dividerStrong }]}>
-                      <Text style={[chipText(false), { color: theme.textSecondary }]}>No groups yet ·</Text>
-                      <Text style={chipText(true)}>Create one</Text>
+                      <Text style={[chipText(false), { color: theme.textSecondary }]}>{tr('home.noGroups')}</Text>
+                      <Text style={chipText(true)}>{tr('home.createOne')}</Text>
                     </BouncyPressable>
                   ) : (
                     <>
@@ -299,7 +299,7 @@ export default function HomeScreen() {
                             backgroundColor: filterGroupIds.length === 0 ? theme.accentSoft : theme.surface,
                           },
                         ]}>
-                        <Text style={chipText(filterGroupIds.length === 0)}>All</Text>
+                        <Text style={chipText(filterGroupIds.length === 0)}>{tr('home.all')}</Text>
                       </BouncyPressable>
                       {groups.map((g, i) => {
                         const on = filterGroupIds.includes(g.id);
@@ -321,9 +321,9 @@ export default function HomeScreen() {
                           </BouncyPressable>
                         );
                       })}
-                      <BouncyPressable entering={chipIn(groups.length + 1)} onPress={openCreateGroup} accessibilityLabel="Create group" style={[styles.chip, styles.dashedChip, { borderColor: theme.dividerStrong }]}>
+                      <BouncyPressable entering={chipIn(groups.length + 1)} onPress={openCreateGroup} accessibilityLabel={tr('home.createGroup')} style={[styles.chip, styles.dashedChip, { borderColor: theme.dividerStrong }]}>
                         <PlusIcon size={11} color={theme.accentStrong} strokeWidth={2.6} />
-                        <Text style={chipText(true)}>New</Text>
+                        <Text style={chipText(true)}>{tr('home.newChip')}</Text>
                       </BouncyPressable>
                     </>
                   )}
@@ -358,7 +358,7 @@ export default function HomeScreen() {
 
               {lastDeletedSnapshot && !selectMode && (
                 <Pressable onPress={undoDelete} style={[styles.undoBar, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
-                  <Text style={{ color: theme.textSecondary, fontSize: Typography.rowValue, fontWeight: '500' }}>Undo last delete</Text>
+                  <Text style={{ color: theme.textSecondary, fontSize: Typography.rowValue, fontWeight: '500' }}>{tr('home.undoDelete')}</Text>
                 </Pressable>
               )}
 

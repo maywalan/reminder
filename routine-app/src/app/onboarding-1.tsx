@@ -3,6 +3,7 @@ import { View } from 'react-native';
 
 import { OnboardingShell } from '@/components/onboarding/onboarding-shell';
 import { Tickle } from '@/components/tickle';
+import { t } from '@/i18n';
 import { Radii, SwatchColors } from '@/constants/theme';
 
 const ROW_HUES = [SwatchColors[0], SwatchColors[1], SwatchColors[2]];
@@ -48,9 +49,9 @@ export default function Onboarding1Screen() {
     <OnboardingShell
       step={0}
       illustration={<Illustration />}
-      title={'Everything you owe\ntoday, in one list'}
-      body="Daily, weekly or monthly — add it once and it comes back on its own."
-      primaryLabel="Next"
+      title={t('onb1.title')}
+      body={t('onb1.body')}
+      primaryLabel={t('onb.next')}
       onPrimary={handleNext}
     />
   );

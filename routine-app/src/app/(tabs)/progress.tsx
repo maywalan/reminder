@@ -19,6 +19,8 @@ import { Typography } from '@/constants/theme';
 import { useEffectiveScheme, useTheme } from '@/hooks/use-theme';
 import { useAuthStore } from '@/store/use-auth-store';
 import { usePlannerStore } from '@/store/use-planner-store';
+import { t } from '@/i18n';
+import { weekdayShort } from '@/i18n/format';
 import { toISO } from '@/utils/dates';
 import { isPeriodLocked } from '@/utils/premium';
 import {
@@ -33,7 +35,6 @@ import {
   previousPeriodLabel,
   progressRange,
   sumHistory,
-  WEEKDAY_FULL,
   type Period,
 } from '@/utils/progress';
 
@@ -137,7 +138,7 @@ export default function ProgressScreen() {
       <ScrollView contentContainerStyle={{ paddingTop: insets.top + 14, paddingBottom: 130 }}>
         <View style={styles.headerTop}>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.h1, { color: theme.text }]}>Progress</Text>
+            <Text style={[styles.h1, { color: theme.text }]}>{t('tab.progress')}</Text>
             <View style={styles.periodNav}>
               <Pressable onPress={() => setOffset((o) => o + 1)} disabled={!canGoPrev} hitSlop={8} style={{ opacity: canGoPrev ? 1 : 0.3 }}>
                 <ChevronLeftIcon size={13} color={theme.textSecondary} strokeWidth={2.6} />
@@ -151,7 +152,7 @@ export default function ProgressScreen() {
           <View style={styles.headerActions}>
             {offset !== 0 && (
               <Pressable onPress={() => setOffset(0)} hitSlop={8}>
-                <Text style={[styles.todayBtn, { color: theme.accent }]}>Today</Text>
+                <Text style={[styles.todayBtn, { color: theme.accent }]}>{t('home.today')}</Text>
               </Pressable>
             )}
             <Pressable
@@ -169,9 +170,9 @@ export default function ProgressScreen() {
             value={period}
             onChange={changePeriod}
             options={[
-              { label: 'Week', value: 'week' },
-              { label: 'Month', value: 'month' },
-              { label: 'Year', value: 'year' },
+              { label: t('period.week'), value: 'week' },
+              { label: t('period.month'), value: 'month' },
+              { label: t('period.year'), value: 'year' },
             ]}
             style={styles.periodSwitch}
           />
@@ -191,7 +192,7 @@ export default function ProgressScreen() {
         </EntranceBox>
 
         <EntranceBox entrance={statsEnter} blurTint={blurTint}>
-          <ProgressStats completed={cur.completed} completionRate={completionRate} streak={streak} bestDay={WEEKDAY_FULL[best]} />
+          <ProgressStats completed={cur.completed} completionRate={completionRate} streak={streak} bestDay={weekdayShort(best)} />
         </EntranceBox>
 
         <EntranceBox entrance={chartEnter} blurTint={blurTint}>
@@ -218,13 +219,13 @@ export default function ProgressScreen() {
                 <LockIcon size={22} color={theme.accent} />
               </View>
               <Text style={[styles.lockTitle, { color: theme.text }]}>
-                {period === 'month' ? 'Monthly' : 'Yearly'} recap is Premium
+                {period === 'month' ? t('progress.locked.month') : t('progress.locked.year')}
               </Text>
               <Text style={[styles.lockBody, { color: theme.textSecondary }]}>
-                See your completion rate, streaks and best days across the whole {period}.
+                {period === 'month' ? t('progress.locked.bodyMonth') : t('progress.locked.bodyYear')}
               </Text>
               <BouncyPressable pressedScale={0.94} onPress={() => router.push('/paywall')} style={[styles.unlockBtn, { backgroundColor: theme.accent }]}>
-                <Text style={styles.unlockText}>Unlock</Text>
+                <Text style={styles.unlockText}>{t('progress.unlock')}</Text>
               </BouncyPressable>
             </Reanimated.View>
           </View>

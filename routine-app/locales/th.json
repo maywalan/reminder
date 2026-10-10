@@ -1,0 +1,6 @@
+{
+  "ios": {
+    "CFBundleDisplayName": "Tickle",
+    "NSPhotoLibraryUsageDescription": "อนุญาตให้ Tickle เข้าถึงรูปภาพ เพื่อแนบรูปไว้กับแผนของคุณ"
+  }
+}

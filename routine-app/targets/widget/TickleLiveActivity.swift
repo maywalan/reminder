@@ -53,13 +53,13 @@ private struct Countdown: View {
         if let end = state.end, state.start < end {
           Text(timerInterval: state.start...end, countsDown: true).foregroundColor(color)
         } else {
-          Text("Now").foregroundColor(color)
+          Text(TickleL10n.now).foregroundColor(color)
         }
       case .overtime:
         // `.timer` counts up once its date has passed — that's the overtime clock.
         (Text("+") + Text(state.end ?? state.start, style: .timer)).foregroundColor(overtimeRed)
       case .due:
-        Text("Now").foregroundColor(color)
+        Text(TickleL10n.now).foregroundColor(color)
       }
     }
     .font(.system(size: size, weight: .semibold).monospacedDigit())
@@ -111,9 +111,9 @@ private struct Meta: View {
     let state = context.state
     let detail: String = {
       switch mode(context) {
-      case .upcoming: return "starts \(hhmm(state.start))"
-      case .live, .overtime: return state.end.map { "ends \(hhmm($0))" } ?? "now"
-      case .due: return "reminder · \(hhmm(state.start))"
+      case .upcoming: return TickleL10n.starts(hhmm(state.start))
+      case .live, .overtime: return state.end.map { TickleL10n.ends(hhmm($0)) } ?? TickleL10n.nowLower
+      case .due: return TickleL10n.reminder(hhmm(state.start))
       }
     }()
     let muted = onDark ? Color.white.opacity(0.6) : ink.opacity(0.5)
@@ -140,14 +140,14 @@ private struct Actions: View {
         Spacer(minLength: 0)
         if context.state.end != nil {
           Button(intent: ExtendTickleTaskIntent(planId: a.planId)) {
-            Text("+10 min")
+            Text(TickleL10n.plus10)
               .font(.system(size: 13, weight: .semibold))
               .foregroundColor(onDark ? .white.opacity(0.7) : ink.opacity(0.5))
           }
           .buttonStyle(.plain)
         }
         Button(intent: CompleteTickleTaskIntent(planId: a.planId)) {
-          Text("Done")
+          Text(TickleL10n.done)
             .font(.system(size: 13, weight: .semibold))
             .foregroundColor(onDark ? .white : Color(hex: a.pillTextHex))
             .padding(.horizontal, 14)

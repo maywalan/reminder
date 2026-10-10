@@ -4,7 +4,9 @@ import { StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 import { Colors } from '@/constants/theme';
 import { usePlannerStore } from '@/store/use-planner-store';
-import { fmtTime12, toISO } from '@/utils/dates';
+import { t } from '@/i18n';
+import { fmtDate, fmtTime } from '@/i18n/format';
+import { toISO } from '@/utils/dates';
 
 interface WidgetPreviewProps {
   variant: 'mini' | 'compact';
@@ -16,7 +18,7 @@ export function WidgetPreview({ variant }: WidgetPreviewProps) {
   const groups = usePlannerStore((s) => s.groups);
   const now = new Date();
   const todayISO = toISO(now);
-  const dateLabel = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  const dateLabel = fmtDate(now, { weekday: 'short' });
 
   const todays = plans.filter((p) => p.date === todayISO && !p.completed).sort((a, b) => a.time.localeCompare(b.time));
 
@@ -39,7 +41,7 @@ export function WidgetPreview({ variant }: WidgetPreviewProps) {
         </Text>
       </View>
       {items.length === 0 ? (
-        <Text style={styles.empty}>Nothing planned today</Text>
+        <Text style={styles.empty}>{t('widget.nothingToday')}</Text>
       ) : (
         items.map((p) => (
           <View key={p.id} style={styles.taskRow}>
@@ -47,11 +49,11 @@ export function WidgetPreview({ variant }: WidgetPreviewProps) {
             <Text style={styles.taskName} numberOfLines={1}>
               {p.name}
             </Text>
-            {variant === 'compact' && <Text style={styles.taskTime}>{p.allDay ? 'All Day' : fmtTime12(p.time)}</Text>}
+            {variant === 'compact' && <Text style={styles.taskTime}>{p.allDay ? t('common.allDay') : fmtTime(p.time)}</Text>}
           </View>
         ))
       )}
-      {more > 0 && <Text style={styles.more}>+{more} more</Text>}
+      {more > 0 && <Text style={styles.more}>{t('common.more', { n: more })}</Text>}
     </View>
   );
 }

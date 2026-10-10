@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Crypto from 'expo-crypto';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+import { deviceLanguage } from '@/i18n';
 
 import type { Group, Plan, Profile, Settings, SubscriptionDetails, SubscriptionState } from './types';
 import { syncClearAll, syncDeletePlan, syncDeletePlans, syncUpdateProfile, syncUpdateSettings, syncUpsertGroup, syncUpsertPlan, syncUpsertPlans } from '@/lib/sync';
@@ -30,7 +31,7 @@ const SEED_SETTINGS: Settings = {
   soundEnabled: true,
   badgesEnabled: true,
   alertStyle: 'banners',
-  language: 'en',
+  language: deviceLanguage(),
   fontScale: 1,
   recapEnabled: true,
   recapHour: 8,

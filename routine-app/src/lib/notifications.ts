@@ -1,5 +1,6 @@
 import * as Notifications from 'expo-notifications';
 
+import { t } from '@/i18n';
 import type { Plan, Settings } from '@/store/types';
 import { planDateTime } from '@/utils/countdown';
 import { toISO } from '@/utils/dates';
@@ -41,11 +42,10 @@ export async function getNotificationPermissionStatus() {
 }
 
 function alertBody(offsetMinutes: number): string {
-  if (offsetMinutes === 0) return 'Starting now';
-  if (offsetMinutes < 60) return `Starting in ${offsetMinutes} min`;
-  if (offsetMinutes < 1440) return `Starting in ${Math.round(offsetMinutes / 60)} hr`;
-  const days = Math.round(offsetMinutes / 1440);
-  return `Starting in ${days} day${days > 1 ? 's' : ''}`;
+  if (offsetMinutes === 0) return t('notif.startingNow');
+  if (offsetMinutes < 60) return t('notif.inMin', { n: offsetMinutes });
+  if (offsetMinutes < 1440) return t('notif.inHr', { n: Math.round(offsetMinutes / 60) });
+  return t('notif.inDays', { count: Math.round(offsetMinutes / 1440) });
 }
 
 interface AlertJob {
@@ -112,11 +112,11 @@ export async function cancelAllPlanAlerts() {
 }
 
 function recapBody(dayPlans: Plan[]): string {
-  if (dayPlans.length === 0) return 'Nothing on your plan today.';
+  if (dayPlans.length === 0) return t('notif.nothingToday');
   const sorted = [...dayPlans].sort((a, b) => a.time.localeCompare(b.time));
   const names = sorted.slice(0, 3).map((p) => p.name);
   const rest = dayPlans.length - names.length;
-  return `${names.join(', ')}${rest > 0 ? `, +${rest} more` : ''}`;
+  return `${names.join(', ')}${rest > 0 ? t('notif.more', { n: rest }) : ''}`;
 }
 
 /**
@@ -150,7 +150,7 @@ export async function refreshDailyRecap(plans: Plan[], settings: Pick<Settings, 
   await Notifications.scheduleNotificationAsync({
     identifier: RECAP_IDENTIFIER,
     content: {
-      title: isToday ? "Today's Agenda" : "Tomorrow's Agenda",
+      title: isToday ? t('notif.todayAgenda') : t('notif.tomorrowAgenda'),
       body: recapBody(dayPlans),
       sound: true,
     },

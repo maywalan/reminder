@@ -4,6 +4,7 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/text';
+import { t } from '@/i18n';
 import { Fonts, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useOnboardingStore } from '@/store/use-onboarding-store';
@@ -40,7 +41,7 @@ export function OnboardingShell({ step, illustration, title, body, primaryLabel,
     <View style={[styles.screen, { backgroundColor: theme.surface, paddingTop: insets.top + 8, paddingBottom: insets.bottom + 24 }]}>
       <View style={styles.head}>
         <Pressable onPress={handleSkip} hitSlop={8}>
-          <Text style={[styles.skip, { color: theme.textSecondary }]}>Skip</Text>
+          <Text style={[styles.skip, { color: theme.textSecondary }]}>{t('onb.skip')}</Text>
         </Pressable>
       </View>
 

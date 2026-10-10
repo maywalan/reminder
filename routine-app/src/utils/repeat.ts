@@ -1,16 +1,19 @@
+import { lang, t } from '@/i18n';
+import type { StringKey } from '@/i18n/strings';
+import { weekdayLetter, weekdayShort } from '@/i18n/format';
 import { fromISO, pad, toISO } from '@/utils/dates';
 
 /** Repeat rules ported verbatim from planner-app-prototype.html, plus a custom interval/weekday rule. */
 
 export type RepeatType = 'none' | '1h' | '1d' | 'week' | 'month' | 'custom';
 
-export const REPEAT_OPTIONS: { value: RepeatType; label: string }[] = [
-  { value: 'none', label: 'Does not repeat' },
-  { value: '1h', label: 'Every 1 hour' },
-  { value: '1d', label: 'Every 1 day' },
-  { value: 'week', label: 'Every week' },
-  { value: 'month', label: 'Every month' },
-  { value: 'custom', label: 'Custom…' },
+export const REPEAT_OPTIONS: { value: RepeatType; labelKey: StringKey }[] = [
+  { value: 'none', labelKey: 'repeat.none' },
+  { value: '1h', labelKey: 'repeat.hour' },
+  { value: '1d', labelKey: 'repeat.day' },
+  { value: 'week', labelKey: 'repeat.week' },
+  { value: 'month', labelKey: 'repeat.month' },
+  { value: 'custom', labelKey: 'repeat.custom' },
 ];
 
 export type CustomRepeatUnit = 'day' | 'week' | 'month';
@@ -22,16 +25,16 @@ export interface CustomRepeatConfig {
   weekdays: number[];
 }
 
-export const WEEKDAY_ABBR = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 export function customRepeatLabel(config: CustomRepeatConfig): string {
   const n = config.interval;
-  if (config.unit === 'day') return n === 1 ? 'Every day' : `Every ${n} days`;
-  if (config.unit === 'month') return n === 1 ? 'Every month' : `Every ${n} months`;
-  const weekPart = n === 1 ? 'Every week' : `Every ${n} weeks`;
+  if (config.unit === 'day') return n === 1 ? t('repeat.everyDay') : t('repeat.everyNDays', { n });
+  if (config.unit === 'month') return n === 1 ? t('repeat.everyMonth') : t('repeat.everyNMonths', { n });
+  const weekPart = n === 1 ? t('repeat.everyWeek') : t('repeat.everyNWeeks', { n });
   if (config.weekdays.length === 0) return weekPart;
-  const days = [...config.weekdays].sort((a, b) => a - b).map((d) => WEEKDAY_ABBR[d]);
-  return `${weekPart} on ${days.join(', ')}`;
+  const sorted = [...config.weekdays].sort((a, b) => a - b);
+  const days = lang() === 'th' ? sorted.map(weekdayShort).join(' ') : sorted.map(weekdayLetter).join(', ');
+  return t('repeat.onDays', { part: weekPart, days });
 }
 
 const REPEAT_CAP = 150;

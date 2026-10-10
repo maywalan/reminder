@@ -5,6 +5,7 @@ import { Animated, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 import { Radii, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import { useBreathe, useBurst, useDrift, useHop, usePulse, useSink, useSquash } from '@/utils/motion';
 
 interface Props {
@@ -85,16 +86,16 @@ export function ProgressStreakCard({ streak, longest }: Props) {
   const pose: Pose = streak === 0 ? 'paused' : streak >= longest ? 'record' : 'growing';
 
   const title =
-    pose === 'record' ? 'Best streak yet!' : pose === 'growing' ? `${streak}-day streak` : longest > 0 ? 'Streak paused' : 'No streak yet';
+    pose === 'record' ? t('streak.record') : pose === 'growing' ? t('streak.growing', { count: streak }) : longest > 0 ? t('streak.paused') : t('streak.none');
 
   const subtitle =
     pose === 'record'
-      ? `You're on a ${streak}-day streak — your longest yet.`
+      ? t('streak.recordBody', { count: streak })
       : pose === 'growing'
-        ? `${longest - streak} more to match your record of ${longest}.`
+        ? t('streak.growingBody', { more: longest - streak, longest })
         : longest > 0
-          ? `Complete a plan today to start climbing back toward your record of ${longest}.`
-          : 'Complete a plan today to start your first streak.';
+          ? t('streak.pausedBody', { longest })
+          : t('streak.noneBody');
 
   return (
     <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>

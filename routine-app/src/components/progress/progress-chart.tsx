@@ -5,14 +5,13 @@ import { Radii, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { Plan } from '@/store/types';
 import { fromISO } from '@/utils/dates';
+import { t } from '@/i18n';
+import { lang, monthLong, monthShort, weekdayLetter, weekdayLetterList, weekdayLong, weekdayShort } from '@/i18n/format';
 import {
   bestWeekday,
   datesInRange,
   heatmapCells,
   historyForDate,
-  MONTH_LONG,
-  MONTH_SHORT,
-  WEEKDAY_FULL,
   yearMonthCells,
   type Period,
 } from '@/utils/progress';
@@ -25,8 +24,6 @@ interface Props {
   plans: Plan[];
 }
 
-const WEEKDAY_LETTER = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-const WEEKDAY_SHORT = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
 /** 15a's chart card: a 7-bar week chart, a calendar-aligned month heatmap, or a 12-bar year chart, sharing one white card shell with a header row and a "Best day/month" footer. */
 export function ProgressChart({ period, startISO, endISO, todayISO, plans }: Props) {
@@ -53,8 +50,8 @@ export function ProgressChart({ period, startISO, endISO, todayISO, plans }: Pro
     return (
       <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
         <View style={styles.headerRow}>
-          <Text style={[styles.title, { color: theme.text }]}>Monthly completion</Text>
-          <Text style={[styles.caption, { color: theme.textTertiary }]}>JAN–DEC</Text>
+          <Text style={[styles.title, { color: theme.text }]}>{t('progress.monthly')}</Text>
+          <Text style={[styles.caption, { color: theme.textTertiary }]}>{t('progress.janDec')}</Text>
         </View>
         <View style={styles.bars}>
           {cells.map((c, i) => {
@@ -74,7 +71,7 @@ export function ProgressChart({ period, startISO, endISO, todayISO, plans }: Pro
                     styles.barLabelYear,
                     { color: c.isFuture ? theme.textFaint : isCurrent ? theme.accentStrong : theme.textTertiary, fontWeight: isCurrent ? '700' : '600' },
                   ]}>
-                  {MONTH_SHORT[i][0]}
+                  {lang() === 'th' ? i + 1 : monthShort(i)[0]}
                 </Text>
               </View>
             );
@@ -82,9 +79,9 @@ export function ProgressChart({ period, startISO, endISO, todayISO, plans }: Pro
         </View>
         {bestIdx >= 0 && bestCount > 0 && (
           <View style={[styles.footer, { borderTopColor: theme.divider }]}>
-            <Text style={[styles.footerLabel, { color: theme.textSecondary }]}>Best month</Text>
+            <Text style={[styles.footerLabel, { color: theme.textSecondary }]}>{t('progress.bestMonth')}</Text>
             <Text style={[styles.footerValue, { color: theme.text }]}>
-              {MONTH_LONG[bestIdx]} · {bestCount} done
+              {t('progress.monthDone', { month: monthLong(bestIdx), count: bestCount })}
             </Text>
           </View>
         )}
@@ -100,9 +97,9 @@ export function ProgressChart({ period, startISO, endISO, todayISO, plans }: Pro
     return (
       <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
         <View style={styles.headerRow}>
-          <Text style={[styles.title, { color: theme.text }]}>Daily completion</Text>
+          <Text style={[styles.title, { color: theme.text }]}>{t('progress.daily')}</Text>
           <Text style={[styles.caption, { color: theme.textTertiary }]}>
-            {WEEKDAY_SHORT[start.getDay()]}–{WEEKDAY_SHORT[end.getDay()]}
+            {weekdayShort(start.getDay()).toUpperCase()}–{weekdayShort(end.getDay()).toUpperCase()}
           </Text>
         </View>
         <View style={styles.bars}>
@@ -114,15 +111,15 @@ export function ProgressChart({ period, startISO, endISO, todayISO, plans }: Pro
               <View key={iso} style={styles.barCol}>
                 <View style={[styles.bar, { height: h, backgroundColor: isToday ? theme.accent : '#D9E7FA' }]} />
                 <Text style={[styles.barLabelWeek, { color: isToday ? theme.accentStrong : theme.textTertiary, fontWeight: isToday ? '700' : '600' }]}>
-                  {WEEKDAY_LETTER[d.getDay()]}
+                  {weekdayLetter(d.getDay())}
                 </Text>
               </View>
             );
           })}
         </View>
         <View style={[styles.footer, { borderTopColor: theme.divider }]}>
-          <Text style={[styles.footerLabel, { color: theme.textSecondary }]}>Best day</Text>
-          <Text style={[styles.footerValue, { color: theme.text }]}>{WEEKDAY_FULL[bestIdx]}</Text>
+          <Text style={[styles.footerLabel, { color: theme.textSecondary }]}>{t('progress.bestDay')}</Text>
+          <Text style={[styles.footerValue, { color: theme.text }]}>{weekdayLong(bestIdx)}</Text>
         </View>
       </View>
     );
@@ -135,13 +132,13 @@ export function ProgressChart({ period, startISO, endISO, todayISO, plans }: Pro
   return (
     <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
       <View style={styles.headerRow}>
-        <Text style={[styles.title, { color: theme.text }]}>Daily completion</Text>
+        <Text style={[styles.title, { color: theme.text }]}>{t('progress.daily')}</Text>
         <Text style={[styles.caption, { color: theme.textTertiary }]}>
-          {MONTH_SHORT[start.getMonth()].toUpperCase()} {start.getDate()}–{end.getDate()}
+          {lang() === 'th' ? `${start.getDate()}–${end.getDate()} ${monthShort(start.getMonth())}` : `${monthShort(start.getMonth()).toUpperCase()} ${start.getDate()}–${end.getDate()}`}
         </Text>
       </View>
       <View style={styles.heatDow}>
-        {WEEKDAY_LETTER.map((l, i) => (
+        {weekdayLetterList().map((l, i) => (
           <Text key={i} style={[styles.heatDowText, { color: theme.textTertiary }]}>
             {l}
           </Text>
@@ -164,8 +161,8 @@ export function ProgressChart({ period, startISO, endISO, todayISO, plans }: Pro
         })}
       </View>
       <View style={[styles.footer, { borderTopColor: theme.divider }]}>
-        <Text style={[styles.footerLabel, { color: theme.textSecondary }]}>Best day</Text>
-        <Text style={[styles.footerValue, { color: theme.text }]}>{WEEKDAY_FULL[bestIdx]}</Text>
+        <Text style={[styles.footerLabel, { color: theme.textSecondary }]}>{t('progress.bestDay')}</Text>
+        <Text style={[styles.footerValue, { color: theme.text }]}>{weekdayLong(bestIdx)}</Text>
       </View>
     </View>
   );

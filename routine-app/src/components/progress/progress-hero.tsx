@@ -3,6 +3,7 @@ import { Circle, Svg } from 'react-native-svg';
 
 import { Text } from '@/components/text';
 import { Radii } from '@/constants/theme';
+import { t } from '@/i18n';
 
 const RING_SIZE = 76;
 const RING_STROKE = 9;
@@ -53,7 +54,7 @@ export function ProgressHero({ eyebrow, completed, total, completionRate, deltaP
         </Svg>
         <View style={styles.hole}>
           <Text style={styles.holeValue}>{completionRate}</Text>
-          <Text style={styles.holeCaption}>PERCENT</Text>
+          <Text style={styles.holeCaption}>{t('progress.percent')}</Text>
         </View>
       </View>
 
@@ -62,10 +63,10 @@ export function ProgressHero({ eyebrow, completed, total, completionRate, deltaP
           {eyebrow}
         </Text>
         <Text style={styles.line} numberOfLines={1}>
-          {completed} of {total} done
+          {t('progress.doneOf', { completed, total })}
         </Text>
         <Text style={styles.delta} numberOfLines={1}>
-          {up ? 'Up' : 'Down'} {Math.abs(deltaPct)} points on {compareLabel}.
+          {t(up ? 'progress.deltaUp' : 'progress.deltaDown', { n: Math.abs(deltaPct), than: compareLabel })}
         </Text>
       </View>
     </View>

@@ -5,8 +5,10 @@ import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from '@/components/icon';
 import { Radii, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { Plan } from '@/store/types';
-import { buildWeekDates, MONTHS, WEEKDAY_SHORT } from '@/utils/calendar';
-import { fmtTime12, fromISO } from '@/utils/dates';
+import { t } from '@/i18n';
+import { fmtDate, fmtTime, weekdayShort } from '@/i18n/format';
+import { buildWeekDates } from '@/utils/calendar';
+import { fromISO } from '@/utils/dates';
 
 interface Props {
   selectedDate: string;
@@ -31,12 +33,12 @@ export function WeekView({ selectedDate, todayISO, plans, colorForPlan, onShiftW
     <View>
       <View style={styles.nav}>
         <Text style={[styles.navLabel, { color: theme.text }]}>
-          {MONTHS[start.getMonth()].slice(0, 3)} {start.getDate()} – {MONTHS[end.getMonth()].slice(0, 3)} {end.getDate()}
+          {fmtDate(start)} – {fmtDate(end)}
         </Text>
         <View style={styles.navActions}>
           {!isCurrentWeek && (
             <Pressable onPress={onToday} hitSlop={8}>
-              <Text style={[styles.todayBtn, { color: theme.accentStrong }]}>Today</Text>
+              <Text style={[styles.todayBtn, { color: theme.accentStrong }]}>{t('home.today')}</Text>
             </Pressable>
           )}
           <View style={styles.arrows}>
@@ -60,26 +62,26 @@ export function WeekView({ selectedDate, todayISO, plans, colorForPlan, onShiftW
             <Pressable
               onPress={() => onPressDay(iso)}
               accessibilityRole="button"
-              accessibilityLabel={`Add a plan on ${WEEKDAY_SHORT[d.getDay()]} ${d.getDate()}`}
+              accessibilityLabel={t('calendar.addOn', { day: `${weekdayShort(d.getDay())} ${d.getDate()}` })}
               style={({ pressed }) => [
                 styles.blockHead,
                 { backgroundColor: pressed ? theme.divider : isToday ? theme.accentSoft : theme.surface2, borderColor: theme.cardBorder },
               ]}>
               <Text style={[styles.blockHeadText, { color: isToday ? theme.accentStrong : theme.text }]}>
-                {WEEKDAY_SHORT[d.getDay()]} {d.getDate()}
+                {weekdayShort(d.getDay())} {d.getDate()}
                 {isToday ? ' · Today' : ''}
               </Text>
               <PlusIcon size={13} color={theme.accentStrong} strokeWidth={2.6} />
             </Pressable>
             {dayPlans.length === 0 ? (
-              <Text style={[styles.empty, { color: theme.textTertiary }]}>No plans</Text>
+              <Text style={[styles.empty, { color: theme.textTertiary }]}>{t('calendar.noPlans')}</Text>
             ) : (
               dayPlans.map((p) => (
                 <Pressable
                   key={p.id}
                   onPress={() => onPressPlan(p.id)}
                   style={[styles.planRow, { borderColor: theme.cardBorder, borderLeftColor: colorForPlan(p) }]}>
-                  <Text style={[styles.planTime, { color: theme.accentStrong }]}>{p.allDay ? 'All Day' : fmtTime12(p.time)}</Text>
+                  <Text style={[styles.planTime, { color: theme.accentStrong }]}>{p.allDay ? t('common.allDay') : fmtTime(p.time)}</Text>
                   <Text numberOfLines={1} style={[styles.planName, { color: theme.text }]}>
                     {p.name}
                   </Text>

@@ -5,9 +5,16 @@ const path = require('path');
 const STOREKIT_SOURCE = path.join(__dirname, '..', 'ios-storekit', 'Tickle.storekit');
 const STOREKIT_FILENAME = 'Tickle.storekit';
 
+// Relative to the .xcodeproj (that's what Xcode itself writes when you pick the file in Edit Scheme).
+// "../../../" — relative to the scheme file — is NOT resolved and shows red in Xcode, so purchases
+// fail with "SKU not found" (found 2026-10-10).
+const SCHEME_IDENTIFIER = `../${STOREKIT_FILENAME}`;
+
 function injectReference(xml) {
-  if (xml.includes('StoreKitConfigurationFileReference')) return xml;
-  const ref = `      <StoreKitConfigurationFileReference\n         identifier = "../../../${STOREKIT_FILENAME}">\n      </StoreKitConfigurationFileReference>\n`;
+  if (xml.includes('StoreKitConfigurationFileReference')) {
+    return xml.replace(/(<StoreKitConfigurationFileReference\s+identifier = ")[^"]*(")/, `$1${SCHEME_IDENTIFIER}$2`);
+  }
+  const ref = `      <StoreKitConfigurationFileReference\n         identifier = "${SCHEME_IDENTIFIER}">\n      </StoreKitConfigurationFileReference>\n`;
   return xml.replace(/(<LaunchAction[^>]*>\n)/, `$1${ref}`);
 }
 

@@ -5,7 +5,8 @@ import { ChevronLeftIcon, ChevronRightIcon } from '@/components/icon';
 import { Radii, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { Plan } from '@/store/types';
-import { buildMonthGrid, MONTHS, WEEKDAY_LETTER } from '@/utils/calendar';
+import { displayYear, monthLongList, weekdayLetterList } from '@/i18n/format';
+import { buildMonthGrid } from '@/utils/calendar';
 
 interface Props {
   year: number;
@@ -22,7 +23,7 @@ export function YearView({ year, todayISO, plans, onShiftYear, onPressMonth }: P
   return (
     <View>
       <View style={styles.nav}>
-        <Text style={[styles.navLabel, { color: theme.text }]}>{year}</Text>
+        <Text style={[styles.navLabel, { color: theme.text }]}>{displayYear(year)}</Text>
         <View style={styles.arrows}>
           <Pressable onPress={() => onShiftYear(-1)} style={[styles.arrowBtn, { borderColor: theme.cardBorder }]}>
             <ChevronLeftIcon size={14} color={theme.text} strokeWidth={2.3} />
@@ -34,7 +35,7 @@ export function YearView({ year, todayISO, plans, onShiftYear, onPressMonth }: P
       </View>
 
       <View style={styles.grid}>
-        {MONTHS.map((name, m) => {
+        {monthLongList().map((name, m) => {
           const cells = buildMonthGrid(year, m);
           return (
             <Pressable
@@ -43,7 +44,7 @@ export function YearView({ year, todayISO, plans, onShiftYear, onPressMonth }: P
               style={[styles.mini, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
               <Text style={[styles.miniTitle, { color: theme.text }]}>{name}</Text>
               <View style={styles.miniDow}>
-                {WEEKDAY_LETTER.map((l, i) => (
+                {weekdayLetterList().map((l, i) => (
                   <Text key={i} style={[styles.miniDowText, { color: theme.textTertiary }]}>
                     {l}
                   </Text>

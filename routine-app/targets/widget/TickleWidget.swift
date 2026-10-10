@@ -3,6 +3,28 @@ import WidgetKit
 
 private let appGroup = "group.com.maywalan.tickle"
 
+/// The few words the widget + Live Activity draw themselves, in the app's chosen language — the RN
+/// side writes `language` ("en" / "th") into the App Group on every sync (src/lib/widget-sync.ts).
+/// Falls back to the phone's language before the app has synced once.
+enum TickleL10n {
+  static var isThai: Bool {
+    if let lang = UserDefaults(suiteName: appGroup)?.string(forKey: "language") { return lang == "th" }
+    return Locale.preferredLanguages.first?.hasPrefix("th") ?? false
+  }
+
+  static var today: String { isThai ? "วันนี้" : "Today" }
+  static var nothingToday: String { isThai ? "วันนี้ยังว่างอยู่" : "Nothing planned today" }
+  static func more(_ n: Int) -> String { isThai ? "และอีก \(n) อย่าง" : "+\(n) more" }
+  static var now: String { isThai ? "ตอนนี้" : "Now" }
+  static var nowLower: String { isThai ? "ตอนนี้" : "now" }
+  static func starts(_ time: String) -> String { isThai ? "เริ่ม \(time)" : "starts \(time)" }
+  static func ends(_ time: String) -> String { isThai ? "จบ \(time)" : "ends \(time)" }
+  static func reminder(_ time: String) -> String { isThai ? "เตือน · \(time)" : "reminder · \(time)" }
+  static var plus10: String { isThai ? "+10 นาที" : "+10 min" }
+  static var done: String { isThai ? "เสร็จ" : "Done" }
+  static var widgetDescription: String { isThai ? "ดูแผนของวันนี้ได้ในแวบเดียว" : "See today's plans at a glance." }
+}
+
 struct TodayPlan: Codable, Identifiable {
   let id: String
   let name: String
@@ -19,8 +41,8 @@ struct TickleEntry: TimelineEntry {
 struct TickleTimelineProvider: TimelineProvider {
   func placeholder(in context: Context) -> TickleEntry {
     TickleEntry(
-      date: .now, dateLabel: "Today",
-      plans: [TodayPlan(id: "placeholder", name: "Morning walk", time: "8:00 AM", color: "#1B76E8")])
+      date: .now, dateLabel: TickleL10n.today,
+      plans: [TodayPlan(id: "placeholder", name: TickleL10n.isThai ? "เดินตอนเช้า" : "Morning walk", time: TickleL10n.isThai ? "08:00" : "8:00 AM", color: "#1B76E8")])
   }
 
   func getSnapshot(in context: Context, completion: @escaping (TickleEntry) -> Void) {
@@ -98,7 +120,7 @@ struct TickleWidgetView: View {
       }
 
       if entry.plans.isEmpty {
-        Text("Nothing planned today")
+        Text(TickleL10n.nothingToday)
           .font(.system(size: 11))
           .foregroundStyle(.white.opacity(0.5))
       } else {
@@ -121,7 +143,7 @@ struct TickleWidgetView: View {
         }
         let more = entry.plans.count - limit
         if more > 0 {
-          Text("+\(more) more")
+          Text(TickleL10n.more(more))
             .font(.system(size: 10.5, weight: .semibold))
             .foregroundStyle(.white.opacity(0.45))
         }
@@ -141,7 +163,7 @@ struct TickleWidget: Widget {
       TickleWidgetView(entry: entry)
     }
     .configurationDisplayName("Tickle")
-    .description("See today's plans at a glance.")
+    .description(TickleL10n.widgetDescription)
     .supportedFamilies([.systemSmall, .systemMedium])
   }
 }

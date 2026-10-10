@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text, TextInput } from '@/components/text';
+import { t } from '@/i18n';
 import { CheckIcon } from '@/components/icon';
 import { Radii, SwatchColors, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -58,13 +59,13 @@ export default function CreateGroupScreen() {
       <View style={styles.head}>
         <View style={styles.headSide}>
           <Pressable onPress={() => router.back()} hitSlop={8}>
-            <Text style={{ color: theme.textSecondary, fontSize: Typography.heading, fontWeight: '600' }}>Cancel</Text>
+            <Text style={{ color: theme.textSecondary, fontSize: Typography.heading, fontWeight: '600' }}>{t('common.cancel')}</Text>
           </Pressable>
         </View>
-        <Text style={{ color: theme.text, fontSize: Typography.title, fontWeight: '800' }}>New Group</Text>
+        <Text style={{ color: theme.text, fontSize: Typography.title, fontWeight: '800' }}>{t('group.new')}</Text>
         <View style={[styles.headSide, styles.headSideEnd]}>
           <Pressable onPress={handleCreate} disabled={!canCreate} hitSlop={8}>
-            <Text style={{ color: canCreate ? theme.accent : theme.textQuaternary, fontSize: Typography.heading, fontWeight: '700' }}>Create</Text>
+            <Text style={{ color: canCreate ? theme.accent : theme.textQuaternary, fontSize: Typography.heading, fontWeight: '700' }}>{t('group.create')}</Text>
           </Pressable>
         </View>
       </View>
@@ -72,14 +73,14 @@ export default function CreateGroupScreen() {
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 24 }}>
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
           <View style={styles.field}>
-            <Text style={[styles.label, { color: theme.textTertiary }]}>GROUP NAME</Text>
+            <Text style={[styles.label, { color: theme.textTertiary }]}>{t('group.name')}</Text>
             <View style={styles.nameRow}>
               <View style={[styles.previewDot, { backgroundColor: color }]} />
               <TextInput
                 value={name}
                 onChangeText={setName}
                 autoFocus
-                placeholder="Search or name a new group"
+                placeholder={t('group.placeholder')}
                 placeholderTextColor={theme.textTertiary}
                 returnKeyType="done"
                 onSubmitEditing={handleCreate}
@@ -90,14 +91,14 @@ export default function CreateGroupScreen() {
           </View>
           {exactMatch && (
             <Text style={[styles.hint, styles.fieldBorder, { color: theme.textSecondary, borderColor: theme.divider }]}>
-              &ldquo;{exactMatch.name}&rdquo; already exists — tap it below to use it.
+              {t('group.exists', { name: exactMatch.name })}
             </Text>
           )}
         </View>
 
         {suggestions.length > 0 && (
           <>
-            <Text style={[styles.sectionLabel, { color: theme.textTertiary }]}>{query ? 'MATCHING GROUPS' : 'YOUR GROUPS'}</Text>
+            <Text style={[styles.sectionLabel, { color: theme.textTertiary }]}>{query ? t('group.matching') : t('group.yours')}</Text>
             <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
               {suggestions.map((g, i) => (
                 <Pressable
@@ -112,14 +113,14 @@ export default function CreateGroupScreen() {
                   <Text style={[styles.rowLabel, { color: theme.text }]} numberOfLines={1}>
                     {g.name}
                   </Text>
-                  <Text style={{ color: theme.accent, fontSize: Typography.body, fontWeight: '700' }}>Use</Text>
+                  <Text style={{ color: theme.accent, fontSize: Typography.body, fontWeight: '700' }}>{t('group.use')}</Text>
                 </Pressable>
               ))}
             </View>
           </>
         )}
 
-        <Text style={[styles.sectionLabel, { color: theme.textTertiary }]}>COLOR</Text>
+        <Text style={[styles.sectionLabel, { color: theme.textTertiary }]}>{t('group.color')}</Text>
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
           <View style={styles.swatchRow}>
             {SwatchColors.map((c) => (
@@ -135,7 +136,7 @@ export default function CreateGroupScreen() {
 
         <Pressable onPress={handleCreate} disabled={!canCreate} style={[styles.saveBtn, !canCreate && { opacity: 0.4 }]}>
           <Text style={{ color: '#fff', fontSize: Typography.heading, fontWeight: '700' }}>
-            {query ? `Create “${name.trim()}”` : 'Create group'}
+            {query ? t('group.createNamed', { name: name.trim() }) : t('group.createGroup')}
           </Text>
         </Pressable>
       </ScrollView>

@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/text';
+import { t } from '@/i18n';
 import { Tickle } from '@/components/tickle';
 import { Fonts } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -32,7 +33,7 @@ export function TickleSplash({ durationMs }: TickleSplashProps) {
         <Tickle size={132} mood="idle" animated />
         <View style={styles.wordmark}>
           <Text style={[styles.title, { color: theme.text }]}>Tickle</Text>
-          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>a friendly nudge, on time</Text>
+          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>{t('splash.tagline')}</Text>
         </View>
       </View>
       <View style={styles.progressRow}>

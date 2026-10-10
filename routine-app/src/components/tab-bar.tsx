@@ -6,6 +6,7 @@ import { Alert, Animated, Easing, Pressable, StyleSheet, View, type LayoutRectan
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/text';
+import { t } from '@/i18n';
 import { CalendarIcon, ChartIcon, HomeIcon, PersonIcon, PlusIcon } from '@/components/icon';
 import { Fonts, Radii, Typography } from '@/constants/theme';
 import { useEffectiveScheme, useTheme } from '@/hooks/use-theme';
@@ -41,9 +42,9 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   }, [selectMode, fade]);
 
   function handleDelete() {
-    Alert.alert('Delete Plans?', `${selectedIds.length} plan${selectedIds.length === 1 ? '' : 's'} will be deleted.`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: deleteSelected },
+    Alert.alert(t('plans.deleteTitle'), t('plans.deleteBody', { count: selectedIds.length }), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('common.delete'), style: 'destructive', onPress: deleteSelected },
     ]);
   }
 
@@ -158,10 +159,10 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
         style={[styles.selectRow, { opacity: fade }]}
         pointerEvents={selectMode ? 'auto' : 'none'}>
         <Pressable onPress={selectAll} hitSlop={8}>
-          <Text style={[styles.selectAction, { color: theme.accent }]}>Select All</Text>
+          <Text style={[styles.selectAction, { color: theme.accent }]}>{t('common.selectAll')}</Text>
         </Pressable>
         <Pressable onPress={handleDelete} hitSlop={8} disabled={selectedIds.length === 0}>
-          <Text style={[styles.selectAction, { color: theme.danger, opacity: selectedIds.length === 0 ? 0.4 : 1 }]}>Delete</Text>
+          <Text style={[styles.selectAction, { color: theme.danger, opacity: selectedIds.length === 0 ? 0.4 : 1 }]}>{t('common.delete')}</Text>
         </Pressable>
       </Animated.View>
     </View>

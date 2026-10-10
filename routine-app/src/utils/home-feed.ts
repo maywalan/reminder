@@ -1,6 +1,7 @@
 import type { Plan } from '@/store/types';
 import { findFuturePlans, findPastPlans, planDateTime, planEndDateTime } from '@/utils/countdown';
 import { pad, timeToMinutes, toISO } from '@/utils/dates';
+import { t } from '@/i18n';
 
 /**
  * Derived state for the Home screen (design_handoff_tickle_home_7). The store only knows
@@ -96,11 +97,11 @@ export function durationMinutes(plan: Plan): number {
 }
 
 /** "45 min", "1 hr", "2 hr", "1 hr 30 min". */
-export function formatDuration(min: number): string {
-  if (min < 60) return `${min} min`;
+export function formatDuration(min: number, { dropMinutesAfterHours = false } = {}): string {
+  if (min < 60) return t('duration.min', { m: min });
   const h = Math.floor(min / 60);
   const m = min % 60;
-  return m ? `${h} hr ${m} min` : `${h} hr`;
+  return m && !dropMinutesAfterHours ? t('duration.hrMin', { h, m }) : t('duration.hr', { h });
 }
 
 /** Elapsed ÷ duration for a started range, clamped to [0, 1]; plus seconds left (negative = overtime). */

@@ -7,6 +7,8 @@ import { useTheme } from '@/hooks/use-theme';
 import type { Group, Plan } from '@/store/types';
 import type { SearchSection } from '@/utils/plan-search';
 import { fromISO, toISO } from '@/utils/dates';
+import { t as tr } from '@/i18n';
+import { weekdayShort } from '@/i18n/format';
 
 /**
  * The two small-row blocks under the Today sheet (design_handoff_tickle_home_7): Upcoming and
@@ -22,7 +24,7 @@ interface SelectProps {
 }
 
 function dayLabel(dateISO: string) {
-  return fromISO(dateISO).toLocaleDateString('en-US', { weekday: 'short' });
+  return weekdayShort(fromISO(dateISO).getDay());
 }
 
 function Header({ title, action, onAction }: { title: string; action: string; onAction: () => void }) {
@@ -84,7 +86,7 @@ export function UpcomingBlock({ items, onCalendar, ...s }: SelectProps & { items
   if (items.length === 0) return null;
   return (
     <View style={styles.block}>
-      <Header title="Upcoming" action="Calendar" onAction={onCalendar} />
+      <Header title={tr('home.upcoming')} action={tr('tab.calendar')} onAction={onCalendar} />
       <View style={styles.rows}>
         {items.map((p, i) => (
           <SmallRow
@@ -108,7 +110,7 @@ export function UpcomingBlock({ items, onCalendar, ...s }: SelectProps & { items
                 {p.name}
               </Text>
             }
-            right={<Text style={[t.meta, { color: k.ink50 }]}>{p.allDay ? 'All day' : p.time}</Text>}
+            right={<Text style={[t.meta, { color: k.ink50 }]}>{p.allDay ? tr('home.allDay') : p.time}</Text>}
           />
         ))}
       </View>
@@ -138,13 +140,13 @@ export function EarlierBlock({
 
   return (
     <View style={styles.block}>
-      <Header title="Earlier" action={seeAll ? 'Show less' : 'See all'} onAction={onToggleSeeAll} />
+      <Header title={tr('home.earlier')} action={seeAll ? tr('home.showLess') : tr('home.seeAll')} onAction={onToggleSeeAll} />
       <View style={styles.rows}>
-        {rows.length === 0 && <Text style={[t.meta, styles.none, { color: k.ink38 }]}>Nothing checked off yet today.</Text>}
+        {rows.length === 0 && <Text style={[t.meta, styles.none, { color: k.ink38 }]}>{tr('home.noneChecked')}</Text>}
         {rows.map((p, i) => {
           const done = p.completed;
           const newDay = p.date !== todayISO && (i === 0 || rows[i - 1].date !== p.date);
-          const time = p.date === todayISO ? (p.allDay ? 'All day' : p.time) : newDay ? dayLabel(p.date) : '';
+          const time = p.date === todayISO ? (p.allDay ? tr('home.allDay') : p.time) : newDay ? dayLabel(p.date) : '';
           return (
             <Reanimated.View key={p.id} entering={FadeInUp.duration(260)} layout={LinearTransition.duration(220)}>
               <SmallRow
@@ -169,9 +171,9 @@ export function EarlierBlock({
                 right={
                   done ? undefined : (
                     <Text style={[t.link, { color: k.missedText }]}>
-                      Missed ·{' '}
+                      {tr('home.missed')}{' '}
                       <Text onPress={s.selectMode ? undefined : () => onRedo(p.id)} suppressHighlighting={false}>
-                        Redo
+                        {tr('home.redo')}
                       </Text>
                     </Text>
                   )
@@ -190,7 +192,7 @@ export function SearchResults({ sections, groups, ...s }: SelectProps & { sectio
   const k = useHomeTokens();
   const t = useHomeType();
   if (sections.length === 0) {
-    return <Text style={[t.meta, styles.noResults, { color: k.ink50 }]}>No tasks match your search.</Text>;
+    return <Text style={[t.meta, styles.noResults, { color: k.ink50 }]}>{tr('home.noResults')}</Text>;
   }
   return (
     <View style={styles.results}>
@@ -207,7 +209,7 @@ export function SearchResults({ sections, groups, ...s }: SelectProps & { sectio
                   key={p.id}
                   plan={p}
                   s={s}
-                  timeLabel={p.allDay ? 'All day' : p.time}
+                  timeLabel={p.allDay ? tr('home.allDay') : p.time}
                   marker={
                     <View
                       style={[

@@ -32,11 +32,14 @@ import { getNotificationPermissionStatus, requestNotificationPermissions } from 
 import { useAuthStore } from '@/store/use-auth-store';
 import { useOnboardingStore } from '@/store/use-onboarding-store';
 import { usePlannerStore } from '@/store/use-planner-store';
+import { t } from '@/i18n';
+import { fmtTime } from '@/i18n/format';
+import type { StringKey } from '@/i18n/strings';
 import type { AlertStyle, Language, ThemeMode } from '@/store/types';
 import { profileInitials } from '@/utils/profile';
-import { SUBSCRIPTION_STATES, SUBSCRIPTION_STATE_LABEL } from '@/utils/subscription';
+import { SUBSCRIPTION_STATES, subscriptionStateLabel } from '@/utils/subscription';
 
-const THEME_LABEL: Record<ThemeMode, string> = { light: 'Light', dark: 'Dark', system: 'System' };
+const THEME_LABEL: Record<ThemeMode, StringKey> = { light: 'theme.light', dark: 'theme.dark', system: 'theme.system' };
 const LANGUAGE_LABEL: Record<Language, string> = { en: 'English', th: 'ไทย', zh: '中文' };
 const LANGUAGE_FLAG: Record<Language, string> = { en: '🇺🇸', th: '🇹🇭', zh: '🇨🇳' };
 const SELECTABLE_LANGUAGES: Language[] = ['en', 'th'];
@@ -76,9 +79,9 @@ export default function ProfileScreen() {
       updateSettings({ notificationsEnabled: granted });
       return;
     }
-    Alert.alert('Notifications Are Off', 'Turn on notifications for Tickle in Settings to get reminders.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Open Settings', onPress: () => Linking.openSettings() },
+    Alert.alert(t('profile.notifOffTitle'), t('profile.notifOffBody'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('profile.openSettings'), onPress: () => Linking.openSettings() },
     ]);
   }
 
@@ -89,14 +92,14 @@ export default function ProfileScreen() {
   }
 
   function handleClearData() {
-    Alert.alert('Clear All Data?', 'This deletes every plan and group on this device. This can’t be undone.', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('profile.clearTitle'), t('profile.clearBody'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Clear All Data',
+        text: t('profile.clearAll'),
         style: 'destructive',
         onPress: () => {
           resetData();
-          showToast('All data cleared');
+          showToast(t('profile.cleared'));
         },
       },
     ]);
@@ -109,7 +112,8 @@ export default function ProfileScreen() {
   const [widgetsOpen, setWidgetsOpen] = useState(false);
   const [subscriptionStateOpen, setSubscriptionStateOpen] = useState(false);
 
-  const recapHourLabel = settings.recapHour === 12 ? '12 PM' : `${settings.recapHour} AM`;
+  const hourLabel = (hour: number) => fmtTime(`${hour}:00`).replace(':00 ', ' ');
+  const recapHourLabel = hourLabel(settings.recapHour);
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.surface }]}>
@@ -125,7 +129,7 @@ export default function ProfileScreen() {
             <Text style={[styles.name, { color: theme.text }]}>{profile.name}</Text>
             <PencilIcon size={14} color={theme.textFaint} strokeWidth={2} />
           </Pressable>
-          <Text style={[styles.sub, { color: theme.textTertiary }]}>Tap photo or name to edit</Text>
+          <Text style={[styles.sub, { color: theme.textTertiary }]}>{t('profile.tapToEdit')}</Text>
         </View>
 
         {authUser ? (
@@ -138,22 +142,22 @@ export default function ProfileScreen() {
         ) : (
           <View style={[styles.banner, { backgroundColor: theme.accentSoft, borderColor: theme.dividerStrong }]}>
             <WarningIcon size={18} color={theme.accent} strokeWidth={1.8} />
-            <Text style={[styles.bannerText, { color: theme.text }]}>Guest Mode — your data is stored only on this device.</Text>
+            <Text style={[styles.bannerText, { color: theme.text }]}>{t('profile.guestBanner')}</Text>
             <Pressable onPress={() => router.push('/login')} hitSlop={6}>
-              <Text style={[styles.bannerLink, { color: theme.accentStrong }]}>Log In</Text>
+              <Text style={[styles.bannerLink, { color: theme.accentStrong }]}>{t('profile.logIn')}</Text>
             </Pressable>
           </View>
         )}
 
         <UpgradeBanner />
 
-        <Text style={[styles.sectionLabel, { color: theme.textTertiary }]}>NOTIFICATIONS</Text>
+        <Text style={[styles.sectionLabel, { color: theme.textTertiary }]}>{t('profile.section.notifications')}</Text>
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
           <View style={styles.row}>
             <View style={[styles.rowIcon, { backgroundColor: theme.accentSoft }]}>
               <BellIcon size={16} color={theme.accent} strokeWidth={2} />
             </View>
-            <Text style={[styles.rowLabel, { color: theme.text }]}>Notifications</Text>
+            <Text style={[styles.rowLabel, { color: theme.text }]}>{t('profile.notifications')}</Text>
             <Switch
               value={settings.notificationsEnabled}
               onValueChange={handleNotificationsToggle}
@@ -164,7 +168,7 @@ export default function ProfileScreen() {
             <View style={[styles.rowIcon, { backgroundColor: theme.accentSoft }]}>
               <DeviceIcon size={16} color={theme.accent} strokeWidth={2} />
             </View>
-            <Text style={[styles.rowLabel, { color: theme.text }]}>Live Activities</Text>
+            <Text style={[styles.rowLabel, { color: theme.text }]}>{t('profile.liveActivities')}</Text>
             <Switch
               value={settings.liveActivitiesEnabled}
               onValueChange={(v) => updateSettings({ liveActivitiesEnabled: v })}
@@ -175,25 +179,25 @@ export default function ProfileScreen() {
             <View style={[styles.rowIcon, { backgroundColor: theme.accentSoft }]}>
               <GridIcon size={16} color={theme.accent} strokeWidth={2} />
             </View>
-            <Text style={[styles.rowLabel, { color: theme.text }]}>Notification Options</Text>
+            <Text style={[styles.rowLabel, { color: theme.text }]}>{t('profile.notifOptions')}</Text>
             <ChevronRightIcon size={16} color={theme.textFaint} strokeWidth={2} />
           </Pressable>
         </View>
 
-        <Text style={[styles.sectionLabel, { color: theme.textTertiary }]}>PREFERENCES</Text>
+        <Text style={[styles.sectionLabel, { color: theme.textTertiary }]}>{t('profile.section.preferences')}</Text>
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
           <Pressable onPress={() => setAppearanceOpen(true)} style={styles.row}>
             <View style={[styles.rowIcon, { backgroundColor: theme.accentSoft }]}>
               <CircleHalfIcon size={16} color={theme.accent} strokeWidth={2} />
             </View>
-            <Text style={[styles.rowLabel, { color: theme.text }]}>Appearance</Text>
-            <Text style={[styles.rowValue, { color: theme.textTertiary }]}>{THEME_LABEL[settings.themeMode]}</Text>
+            <Text style={[styles.rowLabel, { color: theme.text }]}>{t('profile.appearance')}</Text>
+            <Text style={[styles.rowValue, { color: theme.textTertiary }]}>{t(THEME_LABEL[settings.themeMode])}</Text>
           </Pressable>
           <Pressable onPress={() => setLanguageOpen(true)} style={[styles.row, styles.rowBorder, { borderColor: theme.divider }]}>
             <View style={[styles.rowIcon, { backgroundColor: theme.accentSoft }]}>
               <GlobeIcon size={16} color={theme.accent} strokeWidth={2} />
             </View>
-            <Text style={[styles.rowLabel, { color: theme.text }]}>Language</Text>
+            <Text style={[styles.rowLabel, { color: theme.text }]}>{t('profile.language')}</Text>
             <Text style={[styles.rowValue, { color: theme.textTertiary }]}>
               {LANGUAGE_FLAG[settings.language]} {LANGUAGE_LABEL[settings.language]}
             </Text>
@@ -202,30 +206,30 @@ export default function ProfileScreen() {
             <View style={[styles.rowIcon, { backgroundColor: theme.accentSoft }]}>
               <ShieldIcon size={16} color={theme.accent} strokeWidth={2} />
             </View>
-            <Text style={[styles.rowLabel, { color: theme.text }]}>Data Privacy</Text>
+            <Text style={[styles.rowLabel, { color: theme.text }]}>{t('profile.dataPrivacy')}</Text>
             <ChevronRightIcon size={16} color={theme.textFaint} strokeWidth={2} />
           </Pressable>
         </View>
 
-        <Text style={[styles.sectionLabel, { color: theme.textTertiary }]}>SUBSCRIPTION</Text>
+        <Text style={[styles.sectionLabel, { color: theme.textTertiary }]}>{t('profile.section.subscription')}</Text>
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
           <Pressable onPress={() => router.push('/subscription')} style={styles.row}>
             <View style={[styles.rowIcon, { backgroundColor: theme.accentSoft }]}>
               <SparkleIcon size={16} color={theme.accent} strokeWidth={1.8} />
             </View>
-            <Text style={[styles.rowLabel, { color: theme.text }]}>Manage Subscription</Text>
-            <Text style={[styles.rowValue, { color: theme.textTertiary }]}>{SUBSCRIPTION_STATE_LABEL[mockSubscriptionState]}</Text>
+            <Text style={[styles.rowLabel, { color: theme.text }]}>{t('profile.manageSub')}</Text>
+            <Text style={[styles.rowValue, { color: theme.textTertiary }]}>{subscriptionStateLabel(mockSubscriptionState)}</Text>
             <ChevronRightIcon size={16} color={theme.textFaint} strokeWidth={2} />
           </Pressable>
         </View>
 
-        <Text style={[styles.sectionLabel, { color: theme.textTertiary }]}>IOS WIDGETS</Text>
+        <Text style={[styles.sectionLabel, { color: theme.textTertiary }]}>{t('profile.section.widgets')}</Text>
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
           <Pressable onPress={() => setWidgetsOpen(true)} style={styles.row}>
             <View style={[styles.rowIcon, { backgroundColor: theme.accentSoft }]}>
               <GridIcon size={16} color={theme.accent} strokeWidth={2} />
             </View>
-            <Text style={[styles.rowLabel, { color: theme.text }]}>Home Screen Widgets</Text>
+            <Text style={[styles.rowLabel, { color: theme.text }]}>{t('profile.widgets')}</Text>
             <ChevronRightIcon size={16} color={theme.textFaint} strokeWidth={2} />
           </Pressable>
         </View>
@@ -247,7 +251,7 @@ export default function ProfileScreen() {
             </View>
             <Text style={[styles.rowLabel, { color: theme.text }]}>Subscription State</Text>
             <Text style={[styles.rowValue, { color: theme.textTertiary }]}>
-              {subscriptionTestOverride ? SUBSCRIPTION_STATE_LABEL[mockSubscriptionState] : 'Real'}
+              {subscriptionTestOverride ? subscriptionStateLabel(mockSubscriptionState) : 'Real'}
             </Text>
             <ChevronRightIcon size={16} color={theme.textFaint} strokeWidth={2} />
           </Pressable>
@@ -257,10 +261,10 @@ export default function ProfileScreen() {
           <Pressable
             onPress={() => {
               signOut();
-              showToast('Signed out');
+              showToast(t('profile.signedOut'));
             }}
             style={[styles.logOutBtn, { backgroundColor: theme.dangerSoft, borderColor: theme.dangerBorder }]}>
-            <Text style={{ color: theme.danger, fontSize: Typography.rowLabel, fontWeight: '700' }}>Log Out</Text>
+            <Text style={{ color: theme.danger, fontSize: Typography.rowLabel, fontWeight: '700' }}>{t('profile.logOut')}</Text>
           </Pressable>
         )}
       </ScrollView>
@@ -288,7 +292,7 @@ export default function ProfileScreen() {
                 setSubscriptionStateOpen(false);
               }}
               style={[styles.row, styles.rowBorder, { borderColor: theme.divider }]}>
-              <Text style={[styles.rowLabel, { color: theme.text, flex: 1 }]}>{SUBSCRIPTION_STATE_LABEL[s]}</Text>
+              <Text style={[styles.rowLabel, { color: theme.text, flex: 1 }]}>{subscriptionStateLabel(s)}</Text>
               {subscriptionTestOverride && mockSubscriptionState === s && <CheckIcon size={16} color={theme.accent} strokeWidth={3} />}
             </Pressable>
           ))}
@@ -298,7 +302,7 @@ export default function ProfileScreen() {
         </Text>
       </BottomSheet>
 
-      <BottomSheet visible={appearanceOpen} onClose={() => setAppearanceOpen(false)} title="Appearance">
+      <BottomSheet visible={appearanceOpen} onClose={() => setAppearanceOpen(false)} title={t('profile.appearance')}>
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.cardBorder, marginTop: 10 }]}>
           {(['light', 'dark', 'system'] as ThemeMode[]).map((mode, i) => (
             <Pressable
@@ -308,14 +312,14 @@ export default function ProfileScreen() {
                 setAppearanceOpen(false);
               }}
               style={[styles.row, i > 0 && styles.rowBorder, { borderColor: theme.divider }]}>
-              <Text style={[styles.rowLabel, { color: theme.text, flex: 1 }]}>{THEME_LABEL[mode]}</Text>
+              <Text style={[styles.rowLabel, { color: theme.text, flex: 1 }]}>{t(THEME_LABEL[mode])}</Text>
               {settings.themeMode === mode && <CheckIcon size={16} color={theme.accent} strokeWidth={3} />}
             </Pressable>
           ))}
         </View>
       </BottomSheet>
 
-      <BottomSheet visible={languageOpen} onClose={() => setLanguageOpen(false)} title="Language">
+      <BottomSheet visible={languageOpen} onClose={() => setLanguageOpen(false)} title={t('profile.language')}>
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.cardBorder, marginTop: 10 }]}>
           {SELECTABLE_LANGUAGES.map((lang, i) => (
             <Pressable
@@ -331,28 +335,25 @@ export default function ProfileScreen() {
             </Pressable>
           ))}
         </View>
-        <Text style={[styles.footnote, { color: theme.textTertiary }]}>
-          Your choice is saved. Full in-app translation is coming in a later update.
-        </Text>
       </BottomSheet>
 
       <BottomSheet
         visible={notifOptionsOpen}
         onClose={() => setNotifOptionsOpen(false)}
-        title="Notification Options"
+        title={t('profile.notifOptions')}
         left={
           <Pressable onPress={() => setNotifOptionsOpen(false)} hitSlop={8}>
-            <Text style={{ color: theme.textSecondary, fontSize: Typography.rowLabel, fontWeight: '600' }}>Cancel</Text>
+            <Text style={{ color: theme.textSecondary, fontSize: Typography.rowLabel, fontWeight: '600' }}>{t('common.cancel')}</Text>
           </Pressable>
         }
         right={
           <Pressable onPress={() => setNotifOptionsOpen(false)} hitSlop={8}>
-            <Text style={{ color: theme.accentStrong, fontSize: Typography.rowLabel, fontWeight: '700' }}>Done</Text>
+            <Text style={{ color: theme.accentStrong, fontSize: Typography.rowLabel, fontWeight: '700' }}>{t('common.done')}</Text>
           </Pressable>
         }>
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.cardBorder, marginTop: 10 }]}>
           <View style={styles.row}>
-            <Text style={[styles.rowLabel, { color: theme.text }]}>Sound</Text>
+            <Text style={[styles.rowLabel, { color: theme.text }]}>{t('profile.sound')}</Text>
             <Switch
               value={settings.soundEnabled}
               onValueChange={(v) => updateSettings({ soundEnabled: v })}
@@ -360,7 +361,7 @@ export default function ProfileScreen() {
             />
           </View>
           <View style={[styles.row, styles.rowBorder, { borderColor: theme.divider }]}>
-            <Text style={[styles.rowLabel, { color: theme.text }]}>Badges</Text>
+            <Text style={[styles.rowLabel, { color: theme.text }]}>{t('profile.badges')}</Text>
             <Switch
               value={settings.badgesEnabled}
               onValueChange={(v) => updateSettings({ badgesEnabled: v })}
@@ -368,13 +369,13 @@ export default function ProfileScreen() {
             />
           </View>
         </View>
-        <Text style={[styles.sectionLabel, { color: theme.textTertiary, paddingHorizontal: 4 }]}>DAILY RECAP</Text>
+        <Text style={[styles.sectionLabel, { color: theme.textTertiary, paddingHorizontal: 4 }]}>{t('profile.section.dailyRecap')}</Text>
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
           <View style={styles.row}>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.rowLabel, { color: theme.text }]}>Morning Agenda</Text>
+              <Text style={[styles.rowLabel, { color: theme.text }]}>{t('profile.morningAgenda')}</Text>
               <Text style={{ color: theme.textTertiary, fontSize: Typography.rowValue, marginTop: 1 }}>
-                One notification listing that day&apos;s plans.
+                {t('profile.morningAgendaSub')}
               </Text>
             </View>
             <Switch
@@ -393,7 +394,7 @@ export default function ProfileScreen() {
                     onPress={() => updateSettings({ recapHour: hour })}
                     style={[styles.hourChip, { borderColor: active ? theme.accent : theme.divider, backgroundColor: active ? theme.accentSoft : 'transparent' }]}>
                     <Text style={{ color: active ? theme.accentStrong : theme.textSecondary, fontSize: Typography.rowValue, fontWeight: '700' }}>
-                      {hour === 12 ? '12 PM' : `${hour} AM`}
+                      {hourLabel(hour)}
                     </Text>
                   </Pressable>
                 );
@@ -405,16 +406,16 @@ export default function ProfileScreen() {
           <Tickle size={40} mood={settings.recapEnabled ? 'idle' : 'off'} />
           <Text style={[styles.previewText, { color: theme.text }]}>
             {settings.recapEnabled
-              ? `Every morning at ${recapHourLabel}, I'll tap you with that day's plans.`
-              : "Turn Morning Agenda on and I'll tap you each morning with the day's plans."}
+              ? t('profile.agendaOn', { time: recapHourLabel })
+              : t('profile.agendaOff')}
           </Text>
         </View>
-        <Text style={[styles.sectionLabel, { color: theme.textTertiary, paddingHorizontal: 4 }]}>ALERT STYLE</Text>
+        <Text style={[styles.sectionLabel, { color: theme.textTertiary, paddingHorizontal: 4 }]}>{t('profile.section.alertStyle')}</Text>
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
           {(
             [
-              { key: 'banners' as AlertStyle, label: 'Banners', sub: 'Appear briefly, then go away on their own.' },
-              { key: 'persistent' as AlertStyle, label: 'Persistent', sub: 'Stay on screen until dismissed.' },
+              { key: 'banners' as AlertStyle, label: t('profile.banners'), sub: t('profile.bannersSub') },
+              { key: 'persistent' as AlertStyle, label: t('profile.persistent'), sub: t('profile.persistentSub') },
             ] as const
           ).map((opt, i) => (
             <Pressable
@@ -434,45 +435,44 @@ export default function ProfileScreen() {
       <BottomSheet
         visible={privacyOpen}
         onClose={() => setPrivacyOpen(false)}
-        title="Data Privacy"
+        title={t('profile.dataPrivacy')}
         right={
           <Pressable onPress={() => setPrivacyOpen(false)} hitSlop={8}>
-            <Text style={{ color: theme.accentStrong, fontSize: Typography.rowLabel, fontWeight: '700' }}>Close</Text>
+            <Text style={{ color: theme.accentStrong, fontSize: Typography.rowLabel, fontWeight: '700' }}>{t('common.close')}</Text>
           </Pressable>
         }>
         <Text style={[styles.privacyText, { color: theme.textSecondary }]}>
           {authUser
-            ? 'Your plans sync to your account so they’re available if you sign in elsewhere. Photos stay on this device — only a local reference is saved, not the image itself.'
-            : 'You’re browsing as a guest — your plans are stored only on this device and nothing is uploaded.'}
+            ? t('profile.privacySynced')
+            : t('profile.privacyGuest')}
         </Text>
         <Pressable onPress={() => Linking.openURL('https://maywalan.github.io/reminder/privacy.html')} hitSlop={4}>
-          <Text style={[styles.privacyText, { color: theme.accentStrong, marginTop: -6 }]}>Read the full privacy policy</Text>
+          <Text style={[styles.privacyText, { color: theme.accentStrong, marginTop: -6 }]}>{t('profile.privacyPolicy')}</Text>
         </Pressable>
         <Pressable onPress={handleClearData} style={[styles.clearDataBtn, { backgroundColor: theme.dangerSoft, borderColor: theme.dangerBorder }]}>
           <TrashIcon size={16} color={theme.danger} strokeWidth={1.8} />
-          <Text style={{ color: theme.danger, fontSize: Typography.rowLabel, fontWeight: '700' }}>Clear All Data</Text>
+          <Text style={{ color: theme.danger, fontSize: Typography.rowLabel, fontWeight: '700' }}>{t('profile.clearAll')}</Text>
         </Pressable>
       </BottomSheet>
 
       <BottomSheet
         visible={widgetsOpen}
         onClose={() => setWidgetsOpen(false)}
-        title="Home Screen Widgets"
+        title={t('profile.widgets')}
         right={
           <Pressable onPress={() => setWidgetsOpen(false)} hitSlop={8}>
-            <Text style={{ color: theme.accentStrong, fontSize: Typography.rowLabel, fontWeight: '700' }}>Done</Text>
+            <Text style={{ color: theme.accentStrong, fontSize: Typography.rowLabel, fontWeight: '700' }}>{t('common.done')}</Text>
           </Pressable>
         }>
         <ScrollView showsVerticalScrollIndicator={false}>
           <Text style={[styles.footnote, { color: theme.textSecondary, marginTop: 10 }]}>
-            Preview only for now — real home-screen widgets need a native build (not available in Expo Go). Once added,
-            long-press an empty area on your Home Screen, tap the + button, then search for Tickle.
+            {t('profile.widgetsHelp')}
           </Text>
-          <Text style={[styles.sectionLabel, { color: theme.textTertiary, paddingHorizontal: 4 }]}>MINI — TODAY&apos;S LIST</Text>
+          <Text style={[styles.sectionLabel, { color: theme.textTertiary, paddingHorizontal: 4 }]}>{t('profile.widgetMini')}</Text>
           <View style={styles.widgetWrap}>
             <WidgetPreview variant="mini" />
           </View>
-          <Text style={[styles.sectionLabel, { color: theme.textTertiary, paddingHorizontal: 4 }]}>COMPACT — LIST WITH DETAILS</Text>
+          <Text style={[styles.sectionLabel, { color: theme.textTertiary, paddingHorizontal: 4 }]}>{t('profile.widgetCompact')}</Text>
           <View style={styles.widgetWrap}>
             <WidgetPreview variant="compact" />
           </View>

@@ -17,6 +17,8 @@ import { Radii, Typography } from '@/constants/theme';
 import { useHolidays } from '@/hooks/use-holidays';
 import { useEffectiveScheme, useTheme } from '@/hooks/use-theme';
 import { usePlannerStore } from '@/store/use-planner-store';
+import { t } from '@/i18n';
+import { fmtDate } from '@/i18n/format';
 import { toISO } from '@/utils/dates';
 import { colorForPlan } from '@/utils/plans';
 
@@ -145,25 +147,21 @@ export default function CalendarScreen() {
   const getColor = (p: (typeof plans)[number]) => colorForPlan(p, groups, theme.accent);
 
   const selectedDayPlans = plans.filter((p) => p.date === selectedDate).sort((a, b) => a.time.localeCompare(b.time));
-  const selectedDateLabel = new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-  });
+  const selectedDateLabel = fmtDate(new Date(selectedDate + 'T00:00:00'), { weekday: 'long', month: 'long' });
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.surface }]}>
       <ScrollView ref={scrollRef} contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: 130 }}>
-        <Text style={[styles.h1, { color: theme.text }]}>Calendar</Text>
+        <Text style={[styles.h1, { color: theme.text }]}>{t('tab.calendar')}</Text>
 
         <EntranceBox entrance={viewSwitchEnter} blurTint={blurTint}>
           <SegmentedControl
             value={calView}
             onChange={setCalView}
             options={[
-              { label: 'Week', value: 'week' },
-              { label: 'Month', value: 'month' },
-              { label: 'Year', value: 'year' },
+              { label: t('period.week'), value: 'week' },
+              { label: t('period.month'), value: 'month' },
+              { label: t('period.year'), value: 'year' },
             ]}
             style={styles.viewSwitch}
           />
@@ -190,7 +188,7 @@ export default function CalendarScreen() {
                 <View style={styles.dayDetailHeader}>
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.dayDetailTitle, { color: theme.textSecondary }]}>
-                      {selectedDate === todayISO ? `Today, ${selectedDateLabel}` : selectedDateLabel}
+                      {selectedDate === todayISO ? t('calendar.todayLabel', { date: selectedDateLabel }) : selectedDateLabel}
                     </Text>
                     {holidays[selectedDate] && (
                       <Text style={[styles.holidayLabel, { color: theme.accent }]}>🎉 {holidays[selectedDate]}</Text>
@@ -204,7 +202,7 @@ export default function CalendarScreen() {
                   </Pressable>
                 </View>
                 {selectedDayPlans.length === 0 ? (
-                  <Text style={{ color: theme.textTertiary, fontSize: Typography.body, paddingHorizontal: 22 }}>No plans on this day. Tap the date again to add one.</Text>
+                  <Text style={{ color: theme.textTertiary, fontSize: Typography.body, paddingHorizontal: 22 }}>{t('calendar.emptyDay')}</Text>
                 ) : (
                   selectedDayPlans.map((p) => (
                     <TodoItem

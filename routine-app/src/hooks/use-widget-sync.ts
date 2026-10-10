@@ -26,7 +26,7 @@ export function useWidgetSync() {
     scheduleSync();
 
     const unsubscribe = usePlannerStore.subscribe((state, prevState) => {
-      if (state.plans !== prevState.plans || state.groups !== prevState.groups) {
+      if (state.plans !== prevState.plans || state.groups !== prevState.groups || state.settings.language !== prevState.settings.language) {
         scheduleSync();
       }
     });

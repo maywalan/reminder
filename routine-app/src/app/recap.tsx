@@ -8,11 +8,12 @@ import { Text } from '@/components/text';
 import { Radii, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { usePlannerStore } from '@/store/use-planner-store';
+import { t } from '@/i18n';
+import { weekdayLong } from '@/i18n/format';
 import { toISO } from '@/utils/dates';
 import { isPeriodLocked } from '@/utils/premium';
 import { bestWeekday, currentStreak, datesInRange, formatPeriodLabel, progressRange, sumHistory, type Period } from '@/utils/progress';
 
-const WEEKDAY_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 export default function RecapScreen() {
   const theme = useTheme();
@@ -41,9 +42,9 @@ export default function RecapScreen() {
     <View style={[styles.screen, { backgroundColor: theme.bg, paddingTop: insets.top + 8, paddingBottom: insets.bottom + 16 }]}>
       <View style={styles.head}>
         <Pressable onPress={() => router.back()} hitSlop={8}>
-          <Text style={{ color: theme.textSecondary, fontSize: Typography.heading, fontWeight: '600' }}>Close</Text>
+          <Text style={{ color: theme.textSecondary, fontSize: Typography.heading, fontWeight: '600' }}>{t('common.close')}</Text>
         </Pressable>
-        <Text style={{ color: theme.text, fontSize: Typography.title, fontWeight: '800' }}>Your Recap</Text>
+        <Text style={{ color: theme.text, fontSize: Typography.title, fontWeight: '800' }}>{t('recap.title')}</Text>
         <View style={{ width: 44 }} />
       </View>
 
@@ -55,22 +56,22 @@ export default function RecapScreen() {
         style={styles.card}>
         <Text style={styles.eyebrow}>{formatPeriodLabel(period, range)}</Text>
         <Text style={styles.big}>{cur.completed}</Text>
-        <Text style={styles.bigLabel}>tasks completed</Text>
+        <Text style={styles.bigLabel}>{t('recap.tasksCompleted')}</Text>
 
         <View style={styles.insight}>
           <Text style={styles.insightText}>
-            {streak > 0 ? `You're on a ${streak}-day streak — keep it going!` : 'Complete a task today to start a streak!'}
+            {streak > 0 ? t('recap.streak', { count: streak }) : t('recap.noStreak')}
           </Text>
         </View>
         <View style={styles.insight}>
-          <Text style={styles.insightText}>Your most productive day is {WEEKDAY_FULL[best]}.</Text>
+          <Text style={styles.insightText}>{t('recap.bestDay', { day: weekdayLong(best) })}</Text>
         </View>
       </LinearGradient>
 
       <Pressable
-        onPress={() => Alert.alert('Recap shared!')}
+        onPress={() => Alert.alert(t('recap.shared'))}
         style={[styles.shareBtn, { backgroundColor: theme.text }]}>
-        <Text style={{ color: theme.surface, fontSize: Typography.heading, fontWeight: '700' }}>Share Recap</Text>
+        <Text style={{ color: theme.surface, fontSize: Typography.heading, fontWeight: '700' }}>{t('recap.share')}</Text>
       </Pressable>
     </View>
   );

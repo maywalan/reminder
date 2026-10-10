@@ -1,0 +1,6 @@
+{
+  "ios": {
+    "CFBundleDisplayName": "Tickle",
+    "NSPhotoLibraryUsageDescription": "Allow Tickle to access your photos to attach one to a plan."
+  }
+}

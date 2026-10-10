@@ -14,8 +14,9 @@ import { refreshSubscriptionState } from '@/lib/iap';
 import { usePlannerStore } from '@/store/use-planner-store';
 import { countActivePlans } from '@/utils/premium';
 import { getSubscriptionContent } from '@/utils/subscription';
+import { t } from '@/i18n';
+import { fmtDate } from '@/i18n/format';
 import { fromISO } from '@/utils/dates';
-import { MONTH_SHORT } from '@/utils/progress';
 
 const EASE = Easing.bezier(0.22, 1, 0.36, 1);
 
@@ -65,7 +66,7 @@ async function openSubscriptionManagement() {
 
 function fmtDateLong(iso: string) {
   const d = fromISO(iso.slice(0, 10));
-  return `${d.getDate()} ${MONTH_SHORT[d.getMonth()]} ${d.getFullYear()}`;
+  return fmtDate(d, { year: true }, 'dm');
 }
 
 export default function SubscriptionScreen() {
@@ -108,9 +109,9 @@ export default function SubscriptionScreen() {
       setSubscriptionTestOverride(false);
       await refreshSubscriptionState();
       const has = usePlannerStore.getState().mockSubscriptionState !== 'free';
-      showToast(has ? 'Purchases restored' : 'No purchase to restore');
+      showToast(t(has ? 'restore.done' : 'restore.none'));
     } catch {
-      showToast('Restore failed');
+      showToast(t('restore.failed'));
     }
   }
 
@@ -123,10 +124,7 @@ export default function SubscriptionScreen() {
       handleRestore();
       return;
     }
-    Alert.alert(
-      'What changes on Free?',
-      'You keep all your data, but drop to 5 active plans, daily & weekly recurrence only, one reminder per plan, and this month’s calendar view.'
-    );
+    Alert.alert(t('sub.freeChangesTitle'), t('sub.freeChangesBody'));
   }
 
   const heroInk = content.dark ? '#FFFFFF' : '#10203A';
@@ -143,7 +141,7 @@ export default function SubscriptionScreen() {
         <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
           <ChevronLeftIcon size={14} color="#3A4759" strokeWidth={2.6} />
         </Pressable>
-        <Text style={styles.navTitle}>Subscription</Text>
+        <Text style={styles.navTitle}>{t('sub.title')}</Text>
       </View>
 
       <View style={styles.body}>
@@ -174,7 +172,7 @@ export default function SubscriptionScreen() {
         <Animated.View style={[styles.card, listEnter]}>
           <Text style={styles.cardTitle}>{content.listTitle}</Text>
           <View style={styles.featureList}>
-            {['Unlimited plans & custom recurrence', 'Full calendar, history & export', 'Smart reminders, themes & widgets'].map((f) => (
+            {[t('sub.feature.plans'), t('sub.feature.calendar'), t('sub.feature.reminders')].map((f) => (
               <View key={f} style={styles.featureRow}>
                 <View style={[styles.featureDot, { backgroundColor: dotBg }]}>
                   <Text style={[styles.featureDotMark, { color: dotColor }]}>✓</Text>
@@ -187,19 +185,19 @@ export default function SubscriptionScreen() {
 
         <Animated.View style={[styles.card, styles.billingCard, billingEnter]}>
           <View style={styles.billRow}>
-            <Text style={styles.billLabel}>Plan</Text>
+            <Text style={styles.billLabel}>{t('sub.plan')}</Text>
             <Text style={styles.billValue}>{content.billPlan}</Text>
           </View>
           <View style={styles.billRow}>
-            <Text style={styles.billLabel}>Next charge</Text>
+            <Text style={styles.billLabel}>{t('sub.nextCharge')}</Text>
             <Text style={styles.billValueMono}>{content.billNext}</Text>
           </View>
           <View style={styles.billRow}>
-            <Text style={styles.billLabel}>Billed by</Text>
+            <Text style={styles.billLabel}>{t('sub.billedBy')}</Text>
             <Text style={styles.billValue}>{content.billPay}</Text>
           </View>
           <View style={[styles.billRow, styles.billRowLast]}>
-            <Text style={styles.billLabel}>Member since</Text>
+            <Text style={styles.billLabel}>{t('sub.memberSince')}</Text>
             <Text style={styles.billValueMono}>{memberSince}</Text>
           </View>
         </Animated.View>
@@ -217,15 +215,15 @@ export default function SubscriptionScreen() {
         </Pressable>
         <View style={styles.footerLinks}>
           <Pressable onPress={handleRestore} hitSlop={6}>
-            <Text style={styles.footerLink}>Restore</Text>
+            <Text style={styles.footerLink}>{t('legal.restore')}</Text>
           </Pressable>
           <Text style={styles.footerDot}>·</Text>
-          <Pressable onPress={() => showToast('Terms coming soon')} hitSlop={6}>
-            <Text style={styles.footerLink}>Terms</Text>
+          <Pressable onPress={() => showToast(t('legal.termsSoon'))} hitSlop={6}>
+            <Text style={styles.footerLink}>{t('legal.terms')}</Text>
           </Pressable>
           <Text style={styles.footerDot}>·</Text>
           <Pressable onPress={() => Linking.openURL('https://maywalan.github.io/reminder/privacy.html')} hitSlop={6}>
-            <Text style={styles.footerLink}>Privacy</Text>
+            <Text style={styles.footerLink}>{t('legal.privacy')}</Text>
           </Pressable>
         </View>
       </Animated.View>

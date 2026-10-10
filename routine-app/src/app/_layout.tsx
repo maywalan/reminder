@@ -14,6 +14,7 @@ import { useLiveActivitySync } from '@/hooks/use-live-activity-sync';
 import { useNotificationsSync } from '@/hooks/use-notifications-sync';
 import { useSubscriptionSync } from '@/hooks/use-subscription-sync';
 import { useWidgetSync } from '@/hooks/use-widget-sync';
+import { setLanguage } from '@/i18n';
 import { useAuthStore } from '@/store/use-auth-store';
 import { useOnboardingStore } from '@/store/use-onboarding-store';
 import { usePlannerStore } from '@/store/use-planner-store';
@@ -42,9 +43,11 @@ export default function RootLayout() {
   const effectiveScheme = useEffectiveScheme();
   const theme = Colors[effectiveScheme];
   const fontScale = usePlannerStore((s) => s.settings.fontScale);
+  const language = usePlannerStore((s) => s.settings.language);
   // Typography reads this module-level scale synchronously — set it before children render so
   // first paint after a settings change is already correct, not just the one after.
   setFontScale(fontScale);
+  setLanguage(language);
   const [fontsLoaded] = useFonts({
     Anuphan_400Regular,
     Anuphan_500Medium,
@@ -117,7 +120,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider value={effectiveScheme === 'dark' ? NAV_THEME_DARK : NAV_THEME_LIGHT}>
         <StatusBar style={effectiveScheme === 'dark' ? 'light' : 'dark'} />
-        <Stack key={fontScale} screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.bg } }}>
+        <Stack key={`${fontScale}-${language}`} screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.bg } }}>
           <Stack.Protected guard={!hasCompletedOnboarding}>
             <Stack.Screen name="onboarding-1" />
             <Stack.Screen name="onboarding-2" />

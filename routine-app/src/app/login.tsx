@@ -7,6 +7,7 @@ import { Text, TextInput } from '@/components/text';
 import { AppleLogoIcon, GoogleLogoIcon } from '@/components/icon';
 import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
+import { t } from '@/i18n';
 import { Fonts, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useToast } from '@/hooks/use-toast';
@@ -44,11 +45,11 @@ export default function LoginScreen() {
 
   async function handleEmailSubmit() {
     if (mode === 'signUp' && !name.trim()) {
-      setError('Enter your name.');
+      setError(t('login.enterName'));
       return;
     }
     if (!email.trim() || !password) {
-      setError('Enter an email and password.');
+      setError(t('login.enterEmail'));
       return;
     }
     setError(null);
@@ -62,7 +63,7 @@ export default function LoginScreen() {
       return;
     }
     if (mode === 'signUp') {
-      showToast('Check your email to confirm your account');
+      showToast(t('login.checkEmail'));
       return;
     }
     goHome();
@@ -91,9 +92,9 @@ export default function LoginScreen() {
         <ScrollView contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
           <View style={styles.head}>
             <Tickle size={52} mood="idle" animated />
-            <Text style={[styles.title, { color: theme.text }]}>{mode === 'signIn' ? 'Welcome back' : 'Create your account'}</Text>
+            <Text style={[styles.title, { color: theme.text }]}>{mode === 'signIn' ? t('login.welcome') : t('login.create')}</Text>
             <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-              {mode === 'signIn' ? 'Your plans sync across devices.' : 'Takes a minute — your plans sync everywhere after.'}
+              {mode === 'signIn' ? t('login.signInSub') : t('login.signUpSub')}
             </Text>
           </View>
 
@@ -106,7 +107,7 @@ export default function LoginScreen() {
                     setName(t);
                     setError(null);
                   }}
-                  placeholder="Name"
+                  placeholder={t('login.name')}
                   placeholderTextColor={theme.textTertiary}
                   autoComplete="name"
                   style={[styles.input, { color: theme.text }]}
@@ -120,7 +121,7 @@ export default function LoginScreen() {
                   setEmail(t);
                   setError(null);
                 }}
-                placeholder="Email"
+                placeholder={t('login.email')}
                 placeholderTextColor={theme.textTertiary}
                 autoCapitalize="none"
                 autoComplete="email"
@@ -135,7 +136,7 @@ export default function LoginScreen() {
                   setPassword(t);
                   setError(null);
                 }}
-                placeholder="Password"
+                placeholder={t('login.password')}
                 placeholderTextColor={theme.textTertiary}
                 secureTextEntry={!showPassword}
                 autoComplete={mode === 'signIn' ? 'current-password' : 'new-password'}
@@ -153,26 +154,26 @@ export default function LoginScreen() {
             onPress={handleEmailSubmit}
             disabled={busy !== null}
             style={[styles.primaryButton, { backgroundColor: theme.accent, opacity: busy && busy !== 'email' ? 0.5 : 1 }]}>
-            {busy === 'email' ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryButtonText}>{mode === 'signIn' ? 'Sign in' : 'Create Account'}</Text>}
+            {busy === 'email' ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryButtonText}>{mode === 'signIn' ? t('login.signIn') : t('login.createAccount')}</Text>}
           </Pressable>
 
           <View style={styles.linkRow}>
             <Pressable onPress={() => setMode(mode === 'signIn' ? 'signUp' : 'signIn')} hitSlop={6}>
               <Text style={{ color: theme.textSecondary, fontSize: Typography.body }}>
-                {mode === 'signIn' ? "Don't have an account? " : 'Already have an account? '}
-                <Text style={{ color: theme.accentStrong, fontWeight: '700' }}>{mode === 'signIn' ? 'Create one' : 'Log in'}</Text>
+                {mode === 'signIn' ? t('login.noAccount') : t('login.haveAccount')}
+                <Text style={{ color: theme.accentStrong, fontWeight: '700' }}>{mode === 'signIn' ? t('login.createOne') : t('login.logIn')}</Text>
               </Text>
             </Pressable>
             {mode === 'signIn' && (
-              <Pressable onPress={() => showToast('Password reset is coming soon')} hitSlop={6}>
-                <Text style={{ color: theme.accentStrong, fontSize: Typography.body, fontWeight: '600' }}>Forgot password?</Text>
+              <Pressable onPress={() => showToast(t('login.resetSoon'))} hitSlop={6}>
+                <Text style={{ color: theme.accentStrong, fontSize: Typography.body, fontWeight: '600' }}>{t('login.forgot')}</Text>
               </Pressable>
             )}
           </View>
 
           <View style={styles.dividerRow}>
             <View style={[styles.dividerLine, { backgroundColor: theme.divider }]} />
-            <Text style={[styles.dividerLabel, { color: theme.textTertiary }]}>OR</Text>
+            <Text style={[styles.dividerLabel, { color: theme.textTertiary }]}>{t('login.or')}</Text>
             <View style={[styles.dividerLine, { backgroundColor: theme.divider }]} />
           </View>
 
@@ -185,20 +186,20 @@ export default function LoginScreen() {
             ) : (
               <>
                 <GoogleLogoIcon size={18} />
-                <Text style={[styles.oauthButtonText, { color: theme.text }]}>Continue with Google</Text>
+                <Text style={[styles.oauthButtonText, { color: theme.text }]}>{t('login.google')}</Text>
               </>
             )}
           </Pressable>
 
           <Pressable
-            onPress={() => showToast('Apple Sign-In is coming soon')}
+            onPress={() => showToast(t('login.appleSoon'))}
             style={[styles.oauthButton, { backgroundColor: theme.surface, borderColor: theme.cardBorder, opacity: 0.5 }]}>
             <AppleLogoIcon size={18} color={theme.text} />
-            <Text style={[styles.oauthButtonText, { color: theme.text }]}>Continue with Apple</Text>
+            <Text style={[styles.oauthButtonText, { color: theme.text }]}>{t('login.apple')}</Text>
           </Pressable>
 
           <Pressable onPress={handleGuest} hitSlop={6} style={styles.guestLink}>
-            <Text style={{ color: theme.accentStrong, fontSize: Typography.body, fontWeight: '600' }}>Keep using without an account</Text>
+            <Text style={{ color: theme.accentStrong, fontSize: Typography.body, fontWeight: '600' }}>{t('login.guest')}</Text>
           </Pressable>
         </ScrollView>
 

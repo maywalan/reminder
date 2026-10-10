@@ -12,6 +12,8 @@ import { useTheme } from '@/hooks/use-theme';
 import type { Group, Plan } from '@/store/types';
 import { planDateTime } from '@/utils/countdown';
 import { pad } from '@/utils/dates';
+import { t as tr } from '@/i18n';
+import { fmtDate } from '@/i18n/format';
 import {
   dueProgress,
   durationMinutes,
@@ -85,7 +87,7 @@ function MetaLine({
 
 /** "Mon, 5 Oct" */
 function dateLine(d: Date) {
-  return `${d.toLocaleDateString('en-US', { weekday: 'short' })}, ${d.getDate()} ${d.toLocaleDateString('en-US', { month: 'short' })}`;
+  return fmtDate(d, { weekday: 'short' }, 'dm');
 }
 
 /** The idle Now marker: an azure "Now" badge (time under it) in the time column, the azure dot on the rail, and the Now line running off to the right. */
@@ -97,7 +99,7 @@ function NowRow({ nowMs }: { nowMs: number }) {
     <Grid style={styles.nowRow}>
       <View style={[styles.timeColBox, styles.nowBadgeCol]}>
         <View style={[styles.nowBadge, { backgroundColor: k.primary }]}>
-          <Text style={[t.metaStrong, styles.nowBadgeLabel]}>Now</Text>
+          <Text style={[t.metaStrong, styles.nowBadgeLabel]}>{tr('home.nowBadge')}</Text>
           <Text style={[t.nowTime, styles.nowBadgeTime]}>{`${pad(d.getHours())}:${pad(d.getMinutes())}`}</Text>
         </View>
       </View>
@@ -114,7 +116,7 @@ function GapRow({ minutes }: { minutes: number }) {
     <Grid style={styles.gapRow}>
       <View style={styles.timeColBox} />
       <View style={styles.markerCol} />
-      <Text style={[t.endTime, { color: k.ink40 }]}>{formatDuration(minutes).replace(/ \d+ min$/, '')} free</Text>
+      <Text style={[t.endTime, { color: k.ink40 }]}>{tr('home.free', { duration: formatDuration(minutes, { dropMinutesAfterHours: true }) })}</Text>
     </Grid>
   );
 }
@@ -181,10 +183,10 @@ function TaskRow({
 
   let detail: string;
   if (soon) detail = soon.text;
-  else if (plan.allDay) detail = 'all day';
+  else if (plan.allDay) detail = tr('home.allDayLower');
   else if (range) detail = formatDuration(dur);
-  else if (plan.alerts.length > 0) detail = `${plan.alerts.length} alert${plan.alerts.length > 1 ? 's' : ''}`;
-  else detail = 'reminder';
+  else if (plan.alerts.length > 0) detail = tr('home.alerts', { count: plan.alerts.length });
+  else detail = tr('home.reminder');
 
   // Rows grow a little with length (54 at ≤1 hr, 72 at ≥2 hr) but aren't scaled to real time.
   const rangeMin = range ? 54 + 18 * Math.min(1, Math.max(0, (dur - 60) / 60)) : 0;
@@ -208,7 +210,7 @@ function TaskRow({
         </View>
       ) : (
         <Text style={[styles.timeCol, plan.allDay ? t.endTime : t.railTime, { color: plan.allDay ? k.ink50 : k.ink }]}>
-          {plan.allDay ? 'All day' : plan.time}
+          {plan.allDay ? tr('home.allDay') : plan.time}
         </Text>
       )}
       {range ? (
@@ -244,9 +246,9 @@ function TaskRow({
   );
 
   function confirmDelete() {
-    Alert.alert('Delete Plan?', `"${plan.name}" will be deleted.`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => h.onDelete(plan.id) },
+    Alert.alert(tr('plan.deleteTitle'), tr('plan.deleteBody', { name: plan.name }), [
+      { text: tr('common.cancel'), style: 'cancel' },
+      { text: tr('common.delete'), style: 'destructive', onPress: () => h.onDelete(plan.id) },
     ]);
   }
 
@@ -354,10 +356,10 @@ function LiveRow({ plan, group, nowMs, isActive, drag, h }: { plan: Plan; group?
               </Text>
               <View style={[styles.liveBadge, { backgroundColor: over ? k.missedDot : k.liveDot }]}>
                 <View style={styles.liveBadgeDot} />
-                <Text style={[t.metaStrong, styles.liveBadgeText]}>{over ? 'OVERTIME' : point ? 'DUE NOW' : 'LIVE NOW'}</Text>
+                <Text style={[t.metaStrong, styles.liveBadgeText]}>{over ? tr('home.badge.overtime') : point ? tr('home.badge.dueNow') : tr('home.badge.liveNow')}</Text>
               </View>
             </View>
-            <MetaLine group={group} detail={point ? `due ${plan.time}` : `ends ${plan.endTime}`} palette={p.text} t={t} k={k} />
+            <MetaLine group={group} detail={point ? tr('home.due', { time: plan.time }) : tr('home.ends', { time: plan.endTime ?? '' })} palette={p.text} t={t} k={k} />
           </View>
           <View style={[styles.track, { backgroundColor: p.track }]}>
             <View style={[styles.track, { width: pct, backgroundColor: p.base }]} />
@@ -368,7 +370,7 @@ function LiveRow({ plan, group, nowMs, isActive, drag, h }: { plan: Plan; group?
             </Text>
             {!point && (
               <Pressable onPress={() => h.onExtend(plan)} hitSlop={10} disabled={h.selectMode}>
-                <Text style={[t.button, { color: k.ink50 }]}>+10 min</Text>
+                <Text style={[t.button, { color: k.ink50 }]}>{tr('home.plus10')}</Text>
               </Pressable>
             )}
             <Pressable
@@ -379,7 +381,7 @@ function LiveRow({ plan, group, nowMs, isActive, drag, h }: { plan: Plan; group?
               disabled={h.selectMode}
               hitSlop={8}
               style={[styles.donePill, { borderColor: p.pillBorder, backgroundColor: k.donePillBg }]}>
-              <Text style={[t.button, { color: p.pillText }]}>Done</Text>
+              <Text style={[t.button, { color: p.pillText }]}>{tr('common.done')}</Text>
             </Pressable>
           </View>
         </View>
@@ -393,7 +395,7 @@ export function TodaySheet({ feed, nowMs, groups, emptyText, countdownPlanId, on
   const t = useHomeType();
   const { today, live, leftCount, nowLineIndex } = feed;
 
-  const count = live ? `1 live · ${leftCount} left` : leftCount > 0 ? `${leftCount} left` : 'All clear';
+  const count = live ? tr('home.count.liveLeft', { count: leftCount }) : leftCount > 0 ? tr('home.count.left', { count: leftCount }) : tr('home.count.allClear');
 
   // A Live-Activity task gets a ticking "starts in m:ss" through its last hour (mirroring the Lock
   // Screen); otherwise the next task gets a quieter "in N min" when it's within the hour.
@@ -401,18 +403,18 @@ export function TodaySheet({ feed, nowMs, groups, emptyText, countdownPlanId, on
   function soonFor(plan: Plan): { text: string; live: boolean } | null {
     const untilMs = planDateTime(plan).getTime() - nowMs;
     if (plan.id === countdownPlanId) {
-      return { text: untilMs > 0 ? `starts in ${formatLiveCountdown(Math.ceil(untilMs / 1000))}` : 'now', live: true };
+      return { text: untilMs > 0 ? tr('home.startsIn', { time: formatLiveCountdown(Math.ceil(untilMs / 1000)) }) : tr('home.now'), live: true };
     }
     if (plan.id !== next?.id || plan.allDay) return null;
     const min = Math.ceil(untilMs / 60000);
-    return min > 0 && min <= 60 ? { text: `in ${min} min`, live: false } : null;
+    return min > 0 && min <= 60 ? { text: tr('home.inMin', { min }), live: false } : null;
   }
 
   return (
     <View style={[styles.sheet, { backgroundColor: k.sheet, borderColor: k.sheetBorder }]}>
       <View style={styles.sheetHead}>
         <Text numberOfLines={1} style={[t.todayHeading, styles.sheetTitle, { color: k.primary }]}>
-          Today
+          {tr('home.today')}
           <Text style={[t.todayDate, { color: k.ink50 }]}>{`  ·  ${dateLine(new Date(nowMs))}`}</Text>
         </Text>
         <Text numberOfLines={1} style={[t.meta, { color: k.ink50 }]}>

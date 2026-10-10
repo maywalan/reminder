@@ -16,7 +16,8 @@
       "bundleIdentifier": "com.maywalan.tickle",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSSupportsLiveActivities": true
+        "NSSupportsLiveActivities": true,
+        "CFBundleAllowMixedLocalizations": true
       },
       "entitlements": {
         "com.apple.security.application-groups": [
@@ -83,6 +84,10 @@
         "projectId": "a1459f51-044f-4fe0-95c5-7c4254543c79"
       }
     },
-    "owner": "maywalan"
+    "owner": "maywalan",
+    "locales": {
+      "en": "./locales/en.json",
+      "th": "./locales/th.json"
+    }
   }
 }

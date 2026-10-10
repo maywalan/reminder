@@ -18,11 +18,11 @@ import Reanimated, {
 import { SearchIcon, XIcon } from '@/components/icon';
 import { Text, TextInput } from '@/components/text';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 
 const AnimatedPressable = Reanimated.createAnimatedComponent(Pressable);
 
 const SIZE = 34;
-const PLACEHOLDER_WORDS = ['Search', 'tasks,', 'groups,', 'dates'];
 
 /** One spring for every size/position change in Home's search + filter row, so they move as one. */
 export const TOOL_ROW_SPRING = { damping: 18, stiffness: 190, mass: 0.8 };
@@ -121,7 +121,7 @@ export function SearchField({
       <AnimatedPressable
         onPress={onPress}
         accessibilityRole="search"
-        accessibilityLabel="Search"
+        accessibilityLabel={t('search.label')}
         style={[styles.field, collapsed ? styles.fieldCollapsed : styles.fieldExpanded, { shadowColor: accent }, fieldStyle]}>
         <Reanimated.View style={iconStyle}>
           <SearchIcon size={15} color={iconColor} strokeWidth={2.2} />
@@ -134,14 +134,14 @@ export function SearchField({
               onChangeText={onChangeText}
               onFocus={onFocus}
               onBlur={onBlur}
-              accessibilityLabel="Search tasks, groups, dates"
+              accessibilityLabel={t('search.placeholder')}
               returnKeyType="search"
               autoCorrect={false}
               style={[styles.input, { color: theme.text, fontWeight: '500' }]}
             />
             {value.length === 0 && (
               <View pointerEvents="none" style={styles.placeholder}>
-                {PLACEHOLDER_WORDS.map((w, i) => (
+                {t('search.placeholder').split(' ').map((w, i) => (
                   <Reanimated.View key={w} entering={reduceMotion ? undefined : wordIn(i)}>
                     <Text style={[styles.placeholderWord, { color: theme.textTertiary, fontWeight: '500' }]}>{w}</Text>
                   </Reanimated.View>
@@ -152,7 +152,7 @@ export function SearchField({
         )}
         {!collapsed && value.length > 0 && (
           <Reanimated.View entering={ZoomIn.duration(160)} exiting={ZoomOut.duration(120)}>
-            <Pressable onPress={() => onChangeText('')} hitSlop={8} accessibilityLabel="Clear search">
+            <Pressable onPress={() => onChangeText('')} hitSlop={8} accessibilityLabel={t('search.clear')}>
               <XIcon size={13} color={theme.textTertiary} strokeWidth={2.4} />
             </Pressable>
           </Reanimated.View>

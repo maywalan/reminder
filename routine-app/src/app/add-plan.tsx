@@ -27,7 +27,10 @@ import { usePlaceSearch } from '@/hooks/use-place-search';
 import { useEffectiveScheme, useTheme } from '@/hooks/use-theme';
 import { useToast } from '@/hooks/use-toast';
 import { uid, usePlannerStore } from '@/store/use-planner-store';
-import { fmtTime12, fromISO, pad, toISO } from '@/utils/dates';
+import { lang, t } from '@/i18n';
+import { fmtDate, fmtTime, weekdayLetterList, weekdayLong } from '@/i18n/format';
+import type { StringKey } from '@/i18n/strings';
+import { fromISO, pad, toISO } from '@/utils/dates';
 import {
   type CustomRepeatConfig,
   customRepeatLabel,
@@ -35,7 +38,6 @@ import {
   generateRepeatOccurrences,
   REPEAT_OPTIONS,
   type RepeatType,
-  WEEKDAY_ABBR,
 } from '@/utils/repeat';
 import { COMMON_TIME_ZONES, deviceTimeZone, listTimeZones, timeZoneCityLabel, timeZoneOffsetLabel } from '@/utils/timezone';
 
@@ -45,21 +47,21 @@ const MAX_PHOTOS = 3;
 // other screens reusing `SwatchColors` (Edit Profile, Today's filter chips) keep the base order.
 const COLOR_PICKER_ORDER = [SwatchColors[7], ...SwatchColors.slice(0, 7)];
 
-const ALERT_OPTIONS = [
-  { value: 'none', label: 'None' },
-  { value: '0', label: 'At time of event' },
-  { value: '5', label: '5 minutes before' },
-  { value: '15', label: '15 minutes before' },
-  { value: '30', label: '30 minutes before' },
-  { value: '60', label: '1 hour before' },
-  { value: '120', label: '2 hours before' },
-  { value: '1440', label: '1 day before' },
-  { value: '2880', label: '2 days before' },
-  { value: '10080', label: '1 week before' },
+const ALERT_OPTIONS: { value: string; labelKey: StringKey }[] = [
+  { value: 'none', labelKey: 'plan.none' },
+  { value: '0', labelKey: 'alert.atTime' },
+  { value: '5', labelKey: 'alert.min5' },
+  { value: '15', labelKey: 'alert.min15' },
+  { value: '30', labelKey: 'alert.min30' },
+  { value: '60', labelKey: 'alert.hr1' },
+  { value: '120', labelKey: 'alert.hr2' },
+  { value: '1440', labelKey: 'alert.day1' },
+  { value: '2880', labelKey: 'alert.day2' },
+  { value: '10080', labelKey: 'alert.week1' },
 ];
 
 function alertLabel(value: string) {
-  return ALERT_OPTIONS.find((o) => o.value === value)?.label ?? 'None';
+  return t(ALERT_OPTIONS.find((o) => o.value === value)?.labelKey ?? 'plan.none');
 }
 
 /** Row order (Alert / Second Alert / Third Alert) always matches ascending alert value — the
@@ -187,9 +189,10 @@ export default function AddPlanScreen() {
 
   const openCreateGroup = () => router.push({ pathname: '/create-group', params: { from: 'plan' } });
 
-  const dateLabel = dateTime.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
-  const timeLabel = fmtTime12(`${pad(dateTime.getHours())}:${pad(dateTime.getMinutes())}`);
-  const endTimeLabel = fmtTime12(`${pad(endDateTime.getHours())}:${pad(endDateTime.getMinutes())}`);
+  const dateLabel = fmtDate(dateTime, { weekday: 'short', year: true });
+  const pickerLocale = lang() === 'th' ? 'th-TH' : 'en-US';
+  const timeLabel = fmtTime(`${pad(dateTime.getHours())}:${pad(dateTime.getMinutes())}`);
+  const endTimeLabel = fmtTime(`${pad(endDateTime.getHours())}:${pad(endDateTime.getMinutes())}`);
 
   function onChangeDate(event: { type: string }, selected?: Date) {
     if (Platform.OS === 'android') setShowDatePicker(false);
@@ -230,7 +233,7 @@ export default function AddPlanScreen() {
   function handleSave() {
     if (!name.trim()) {
       setError(true);
-      showToast('Plan name required');
+      showToast(t('plan.nameRequired'));
       return;
     }
     if (atPlanLimit) {
@@ -273,8 +276,7 @@ export default function AddPlanScreen() {
     // appear there — without this, saving one looks like it silently failed. Today picks this
     // up on focus and surfaces it as a toast (see index.tsx).
     if (!editing && date !== toISO(new Date())) {
-      const label = dateTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      setPendingSaveToast(`Saved "${name.trim()}" for ${label} — view it on Calendar`);
+      setPendingSaveToast(t('plan.savedFor', { name: name.trim(), date: fmtDate(dateTime) }));
     }
     router.back();
   }
@@ -346,13 +348,13 @@ export default function AddPlanScreen() {
       <View style={styles.head}>
         <View style={styles.headSide}>
           <Pressable onPress={() => router.back()} hitSlop={8}>
-            <Text style={{ color: theme.textSecondary, fontSize: Typography.heading, fontWeight: '600' }}>Cancel</Text>
+            <Text style={{ color: theme.textSecondary, fontSize: Typography.heading, fontWeight: '600' }}>{t('common.cancel')}</Text>
           </Pressable>
         </View>
-        <Text style={{ color: theme.text, fontSize: Typography.title, fontWeight: '800' }}>{editing ? 'Edit Plan' : 'New Plan'}</Text>
+        <Text style={{ color: theme.text, fontSize: Typography.title, fontWeight: '800' }}>{editing ? t('plan.edit') : t('plan.new')}</Text>
         <View style={[styles.headSide, styles.headSideEnd]}>
           <Pressable onPress={handleSave} hitSlop={8}>
-            <Text style={{ color: theme.accent, fontSize: Typography.heading, fontWeight: '700' }}>Save</Text>
+            <Text style={{ color: theme.accent, fontSize: Typography.heading, fontWeight: '700' }}>{t('common.save')}</Text>
           </Pressable>
         </View>
       </View>
@@ -362,13 +364,13 @@ export default function AddPlanScreen() {
           <View style={styles.field}>
             <TextInput
               value={name}
-              onChangeText={(t) => {
-                setName(t);
+              onChangeText={(text) => {
+                setName(text);
                 setError(false);
               }}
               onFocus={() => setTitleFocused(true)}
               onBlur={() => setTimeout(() => setTitleFocused(false), 150)}
-              placeholder="Title"
+              placeholder={t('plan.title')}
               placeholderTextColor={theme.textTertiary}
               style={[styles.input, { color: theme.text, borderColor: error ? theme.danger : 'transparent' }]}
             />
@@ -397,7 +399,7 @@ export default function AddPlanScreen() {
               onChangeText={setLocation}
               onFocus={() => setLocationFocused(true)}
               onBlur={() => setTimeout(() => setLocationFocused(false), 150)}
-              placeholder="Location"
+              placeholder={t('plan.location')}
               placeholderTextColor={theme.textTertiary}
               style={[styles.input, { color: theme.text, borderColor: 'transparent' }]}
             />
@@ -433,7 +435,7 @@ export default function AddPlanScreen() {
 
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
           <Pressable onPress={openCreateGroup} style={styles.fieldRow}>
-            <Text style={{ color: theme.text, fontSize: Typography.heading, fontWeight: '600' }}>Group</Text>
+            <Text style={{ color: theme.text, fontSize: Typography.heading, fontWeight: '600' }}>{t('plan.group')}</Text>
             {group ? (
               <>
                 <View style={styles.groupValue}>
@@ -448,10 +450,10 @@ export default function AddPlanScreen() {
               </>
             ) : (
               <>
-                <Text style={{ flex: 1, textAlign: 'right', color: theme.textTertiary, fontSize: Typography.heading }}>No group</Text>
+                <Text style={{ flex: 1, textAlign: 'right', color: theme.textTertiary, fontSize: Typography.heading }}>{t('plan.noGroup')}</Text>
                 <View style={[styles.createGroupBtn, { backgroundColor: theme.accentSoft }]}>
                   <PlusIcon size={12} color={theme.accentStrong} strokeWidth={2.6} />
-                  <Text style={{ color: theme.accentStrong, fontSize: Typography.body, fontWeight: '700' }}>Create group</Text>
+                  <Text style={{ color: theme.accentStrong, fontSize: Typography.body, fontWeight: '700' }}>{t('plan.createGroup')}</Text>
                 </View>
               </>
             )}
@@ -466,32 +468,33 @@ export default function AddPlanScreen() {
                   onPress={() => setTimeMode('specific')}
                   style={[styles.segment, { backgroundColor: timeMode === 'specific' ? theme.accent : theme.surface2, borderColor: theme.divider }]}>
                   <Text style={{ color: timeMode === 'specific' ? '#fff' : theme.text, fontSize: Typography.body, fontWeight: '700' }}>
-                    Specific Time
+                    {t('plan.specificTime')}
                   </Text>
                 </Pressable>
                 <Pressable
                   onPress={() => setTimeMode('range')}
                   style={[styles.segment, { backgroundColor: timeMode === 'range' ? theme.accent : theme.surface2, borderColor: theme.divider }]}>
-                  <Text style={{ color: timeMode === 'range' ? '#fff' : theme.text, fontSize: Typography.body, fontWeight: '700' }}>Time Range</Text>
+                  <Text style={{ color: timeMode === 'range' ? '#fff' : theme.text, fontSize: Typography.body, fontWeight: '700' }}>{t('plan.timeRange')}</Text>
                 </Pressable>
               </View>
             </View>
           )}
 
           <View style={[styles.fieldRow, !allDay && styles.fieldBorder, { borderColor: theme.divider }]}>
-            <Text style={{ flex: 1, color: theme.text, fontSize: Typography.heading, fontWeight: '600' }}>All Day</Text>
+            <Text style={{ flex: 1, color: theme.text, fontSize: Typography.heading, fontWeight: '600' }}>{t('plan.allDay')}</Text>
             <Switch value={allDay} onValueChange={setAllDay} trackColor={{ true: theme.success }} />
           </View>
 
           {allDay ? (
             <View style={[styles.field, styles.fieldBorder, { borderColor: theme.divider }]}>
-              <Text style={[styles.label, { color: theme.textTertiary }]}>DATE</Text>
+              <Text style={[styles.label, { color: theme.textTertiary }]}>{t('plan.date')}</Text>
               {Platform.OS === 'ios' ? (
                 <View style={styles.iosPickerRow}>
                   <DateTimePicker
                     value={dateTime}
                     mode="date"
                     display="compact"
+                    locale={pickerLocale}
                     themeVariant={scheme}
                     accentColor={theme.accent}
                     onChange={onChangeDate}
@@ -506,13 +509,14 @@ export default function AddPlanScreen() {
           ) : timeMode === 'specific' ? (
             <View style={[styles.timeRangeRow, styles.fieldBorder, { borderColor: theme.divider }]}>
               <View style={styles.timeRangeCol}>
-                <Text style={[styles.label, { color: theme.textTertiary }]}>DATE</Text>
+                <Text style={[styles.label, { color: theme.textTertiary }]}>{t('plan.date')}</Text>
                 {Platform.OS === 'ios' ? (
                   <View style={styles.iosPickerRow}>
                     <DateTimePicker
                       value={dateTime}
                       mode="date"
                       display="compact"
+                    locale={pickerLocale}
                       themeVariant={scheme}
                       accentColor={theme.accent}
                       onChange={onChangeDate}
@@ -525,13 +529,14 @@ export default function AddPlanScreen() {
                 )}
               </View>
               <View style={[styles.timeRangeCol, styles.timeRangeColBorder, { borderColor: theme.divider }]}>
-                <Text style={[styles.label, { color: theme.textTertiary }]}>TIME</Text>
+                <Text style={[styles.label, { color: theme.textTertiary }]}>{t('plan.time')}</Text>
                 {Platform.OS === 'ios' ? (
                   <View style={styles.iosPickerRow}>
                     <DateTimePicker
                       value={dateTime}
                       mode="time"
                       display="compact"
+                    locale={pickerLocale}
                       themeVariant={scheme}
                       accentColor={theme.accent}
                       onChange={onChangeTime}
@@ -547,13 +552,14 @@ export default function AddPlanScreen() {
           ) : (
             <>
               <View style={[styles.field, styles.fieldBorder, { borderColor: theme.divider }]}>
-                <Text style={[styles.label, { color: theme.textTertiary }]}>DATE</Text>
+                <Text style={[styles.label, { color: theme.textTertiary }]}>{t('plan.date')}</Text>
                 {Platform.OS === 'ios' ? (
                   <View style={styles.iosPickerRow}>
                     <DateTimePicker
                       value={dateTime}
                       mode="date"
                       display="compact"
+                    locale={pickerLocale}
                       themeVariant={scheme}
                       accentColor={theme.accent}
                       onChange={onChangeDate}
@@ -567,13 +573,14 @@ export default function AddPlanScreen() {
               </View>
               <View style={[styles.timeRangeRow, styles.fieldBorder, { borderColor: theme.divider }]}>
                 <View style={styles.timeRangeCol}>
-                  <Text style={[styles.label, { color: theme.textTertiary }]}>START TIME</Text>
+                  <Text style={[styles.label, { color: theme.textTertiary }]}>{t('plan.startTime')}</Text>
                   {Platform.OS === 'ios' ? (
                     <View style={styles.iosPickerRow}>
                       <DateTimePicker
                         value={dateTime}
                         mode="time"
                         display="compact"
+                    locale={pickerLocale}
                         themeVariant={scheme}
                         accentColor={theme.accent}
                         onChange={onChangeTime}
@@ -586,13 +593,14 @@ export default function AddPlanScreen() {
                   )}
                 </View>
                 <View style={[styles.timeRangeCol, styles.timeRangeColBorder, { borderColor: theme.divider }]}>
-                  <Text style={[styles.label, { color: theme.textTertiary }]}>END TIME</Text>
+                  <Text style={[styles.label, { color: theme.textTertiary }]}>{t('plan.endTime')}</Text>
                   {Platform.OS === 'ios' ? (
                     <View style={styles.iosPickerRow}>
                       <DateTimePicker
                         value={endDateTime}
                         mode="time"
                         display="compact"
+                    locale={pickerLocale}
                         themeVariant={scheme}
                         accentColor={theme.accent}
                         onChange={onChangeEndTime}
@@ -609,7 +617,7 @@ export default function AddPlanScreen() {
           )}
 
           <Pressable onPress={() => setTimeZoneOpen(true)} style={[styles.fieldRow, styles.fieldBorder, { borderColor: theme.divider }]}>
-            <Text style={{ flex: 1, color: theme.text, fontSize: Typography.heading, fontWeight: '600' }}>Time Zone</Text>
+            <Text style={{ flex: 1, color: theme.text, fontSize: Typography.heading, fontWeight: '600' }}>{t('plan.timeZone')}</Text>
             <Text style={{ color: theme.textTertiary, fontSize: Typography.heading }} numberOfLines={1}>
               {timeZoneCityLabel(timezone)}
             </Text>
@@ -619,23 +627,24 @@ export default function AddPlanScreen() {
           {!editing && (
             <>
               <Pressable onPress={() => setRepeatOpen(true)} style={[styles.field, styles.fieldBorder, { borderColor: theme.divider }]}>
-                <Text style={[styles.label, { color: theme.textTertiary }]}>REPEAT</Text>
+                <Text style={[styles.label, { color: theme.textTertiary }]}>{t('plan.repeat')}</Text>
                 <View style={styles.pickerRow}>
                   <Text style={[styles.input, styles.pickerValue, { color: theme.text, borderColor: 'transparent' }]}>
-                    {repeatType === 'custom' ? customRepeatLabel(customRepeat) : (REPEAT_OPTIONS.find((o) => o.value === repeatType)?.label ?? 'Does not repeat')}
+                    {repeatType === 'custom' ? customRepeatLabel(customRepeat) : t(REPEAT_OPTIONS.find((o) => o.value === repeatType)?.labelKey ?? 'repeat.none')}
                   </Text>
                   <ChevronRightIcon size={16} color={theme.textTertiary} strokeWidth={2} />
                 </View>
               </Pressable>
               {repeatType !== 'none' && (
                 <View style={[styles.field, styles.fieldBorder, { borderColor: theme.divider }]}>
-                  <Text style={[styles.label, { color: theme.textTertiary }]}>REPEAT UNTIL</Text>
+                  <Text style={[styles.label, { color: theme.textTertiary }]}>{t('plan.repeatUntil')}</Text>
                   {Platform.OS === 'ios' ? (
                     <View style={styles.iosPickerRow}>
                       <DateTimePicker
                         value={repeatUntil ?? dateTime}
                         mode="date"
                         display="compact"
+                    locale={pickerLocale}
                         minimumDate={dateTime}
                         themeVariant={scheme}
                         accentColor={theme.accent}
@@ -645,7 +654,7 @@ export default function AddPlanScreen() {
                   ) : (
                     <Pressable onPress={() => setShowRepeatUntilPicker(true)}>
                       <Text style={[styles.input, { color: theme.text, borderColor: 'transparent' }]}>
-                        {(repeatUntil ?? dateTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        {fmtDate(repeatUntil ?? dateTime, { year: true })}
                       </Text>
                     </Pressable>
                   )}
@@ -657,12 +666,12 @@ export default function AddPlanScreen() {
           {[0, 1, 2].map((rowIndex) => {
             if (rowIndex > alerts.length) return null;
             const value = alerts[rowIndex] as string | undefined;
-            const label = rowIndex === 0 ? 'Alert' : rowIndex === 1 ? 'Second Alert' : 'Third Alert';
+            const label = t(rowIndex === 0 ? 'plan.alert1' : rowIndex === 1 ? 'plan.alert2' : 'plan.alert3');
             return (
               <Pressable key={rowIndex} onPress={() => setAlertSlot((rowIndex + 1) as 1 | 2 | 3)} style={[styles.fieldRow, styles.fieldBorder, { borderColor: theme.divider }]}>
                 <Text style={{ flex: 1, color: theme.text, fontSize: Typography.heading, fontWeight: '600' }}>{label}</Text>
                 <Text style={{ color: value ? theme.accentStrong : theme.textTertiary, fontSize: Typography.heading, fontWeight: value ? '700' : '400' }}>
-                  {value ? alertLabel(value) : 'None'}
+                  {value ? alertLabel(value) : t('plan.none')}
                 </Text>
                 {rowIndex > 0 && value && (
                   <Pressable onPress={() => removeAlert(rowIndex)} hitSlop={8} style={styles.removeAlertBtn}>
@@ -677,7 +686,7 @@ export default function AddPlanScreen() {
 
         {editing && (
           <Text style={[styles.footnote, { color: theme.textTertiary }]}>
-            Repeat can only be set when creating a new plan. This edits just this occurrence.
+            {t('plan.repeatEditNote')}
           </Text>
         )}
 
@@ -704,9 +713,9 @@ export default function AddPlanScreen() {
           <View style={[styles.fieldRow, styles.liveActivityRow]}>
             <Tickle size={46} mood="live" bubbleMotion="hop" animated />
             <View style={{ flex: 1 }}>
-              <Text style={{ color: theme.text, fontSize: Typography.heading, fontWeight: '600' }}>Live Activity</Text>
+              <Text style={{ color: theme.text, fontSize: Typography.heading, fontWeight: '600' }}>{t('plan.liveActivity')}</Text>
               <Text style={{ color: theme.textSecondary, fontSize: Typography.body, marginTop: 2 }}>
-                Counts down on your Lock Screen and Dynamic Island until it starts.
+                {t('plan.liveActivitySub')}
               </Text>
             </View>
             <Switch value={live} onValueChange={setLive} trackColor={{ true: theme.success }} />
@@ -714,7 +723,7 @@ export default function AddPlanScreen() {
         </View>
 
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
-          <Text style={[styles.label, { color: theme.textTertiary, paddingHorizontal: 14, paddingTop: 12 }]}>COLORS</Text>
+          <Text style={[styles.label, { color: theme.textTertiary, paddingHorizontal: 14, paddingTop: 12 }]}>{t('plan.colors')}</Text>
           <View style={styles.swatchRow}>
             {COLOR_PICKER_ORDER.map((c) => (
               <Pressable
@@ -729,17 +738,17 @@ export default function AddPlanScreen() {
 
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
           <View style={styles.labelRow}>
-            <Text style={[styles.label, { color: theme.textTertiary, marginBottom: 0 }]}>PHOTOS</Text>
+            <Text style={[styles.label, { color: theme.textTertiary, marginBottom: 0 }]}>{t('plan.photos')}</Text>
             {photoUris.length > 0 && (
               <Text style={{ color: theme.textTertiary, fontSize: Typography.body }}>
-                {photoUris.length} of {MAX_PHOTOS}
+                {t('common.of', { n: photoUris.length, total: MAX_PHOTOS })}
               </Text>
             )}
           </View>
           <View style={styles.photoRow}>
             {photoUris.map((uri) => (
               <View key={uri} style={styles.photoThumbWrap}>
-                <Pressable onPress={() => setPreviewIndex(photoUris.indexOf(uri))} accessibilityLabel="Preview photo">
+                <Pressable onPress={() => setPreviewIndex(photoUris.indexOf(uri))} accessibilityLabel={t('plan.previewPhoto')}>
                   <Image source={{ uri }} style={styles.photoThumb} />
                 </Pressable>
                 <Pressable onPress={() => removePhoto(uri)} style={styles.photoRemoveDot}>
@@ -750,7 +759,7 @@ export default function AddPlanScreen() {
             {photoUris.length < MAX_PHOTOS && (
               <Pressable onPress={handlePickPhoto} style={[styles.photoPicker, { borderColor: theme.dividerStrong }]}>
                 <CameraIcon size={18} color={theme.textTertiary} strokeWidth={1.8} />
-                <Text style={{ color: theme.textSecondary, fontSize: Typography.label, fontWeight: '600', marginTop: 4 }}>Add</Text>
+                <Text style={{ color: theme.textSecondary, fontSize: Typography.label, fontWeight: '600', marginTop: 4 }}>{t('plan.addPhoto')}</Text>
               </Pressable>
             )}
           </View>
@@ -758,11 +767,11 @@ export default function AddPlanScreen() {
 
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
           <View style={styles.field}>
-            <Text style={[styles.label, { color: theme.textTertiary }]}>DETAILS</Text>
+            <Text style={[styles.label, { color: theme.textTertiary }]}>{t('plan.details')}</Text>
             <TextInput
               value={notes}
               onChangeText={setNotes}
-              placeholder="Add notes, links, or anything else..."
+              placeholder={t('plan.notesPlaceholder')}
               placeholderTextColor={theme.textTertiary}
               multiline
               style={[styles.input, styles.notesInput, { color: theme.text, borderColor: 'transparent' }]}
@@ -779,10 +788,10 @@ export default function AddPlanScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={{ color: theme.text, fontSize: Typography.heading, fontWeight: '700' }}>
-                {FREE_ACTIVE_PLAN_LIMIT} of {FREE_ACTIVE_PLAN_LIMIT} free plans in use
+                {t('plan.limitTitle', { limit: FREE_ACTIVE_PLAN_LIMIT })}
               </Text>
               <Text style={{ color: theme.textSecondary, fontSize: Typography.body, fontWeight: '500', marginTop: 2 }}>
-                Go Premium for unlimited plans
+                {t('plan.limitSub')}
               </Text>
             </View>
             <ChevronRightIcon size={14} color={theme.textTertiary} strokeWidth={2.4} />
@@ -790,24 +799,24 @@ export default function AddPlanScreen() {
         )}
 
         <Pressable onPress={handleSave} style={styles.saveBtn}>
-          <Text style={{ color: '#fff', fontSize: Typography.heading, fontWeight: '700' }}>{atPlanLimit ? 'Upgrade to save' : 'Save plan'}</Text>
+          <Text style={{ color: '#fff', fontSize: Typography.heading, fontWeight: '700' }}>{atPlanLimit ? t('plan.upgradeToSave') : t('plan.savePlan')}</Text>
         </Pressable>
 
         {editing ? (
           <>
             <Pressable onPress={handleDuplicate} style={[styles.deleteBtn, { backgroundColor: theme.surface, borderColor: theme.divider, borderWidth: 1, marginBottom: 10, marginTop: 14 }]}>
-              <Text style={{ color: theme.accent, fontSize: Typography.heading, fontWeight: '700' }}>Duplicate Plan</Text>
+              <Text style={{ color: theme.accent, fontSize: Typography.heading, fontWeight: '700' }}>{t('plan.duplicate')}</Text>
             </Pressable>
           </>
         ) : (
           <Text style={[styles.footnote, { color: theme.textTertiary, textAlign: 'center', marginTop: 12 }]}>
-            Editing an existing plan adds Duplicate and Delete below this button.
+            {t('plan.editHint')}
           </Text>
         )}
 
         {editing && (
           <Pressable onPress={handleDelete} style={[styles.deleteBtn, { backgroundColor: theme.dangerSoft }]}>
-            <Text style={{ color: theme.danger, fontSize: Typography.heading, fontWeight: '700' }}>Delete Plan</Text>
+            <Text style={{ color: theme.danger, fontSize: Typography.heading, fontWeight: '700' }}>{t('plan.delete')}</Text>
           </Pressable>
         )}
       </ScrollView>
@@ -819,14 +828,14 @@ export default function AddPlanScreen() {
       <BottomSheet
         visible={alertSlot !== null}
         onClose={() => setAlertSlot(null)}
-        title={alertSlot === 3 ? 'Third Alert' : alertSlot === 2 ? 'Second Alert' : 'Alert'}>
+        title={t(alertSlot === 3 ? 'plan.alert3' : alertSlot === 2 ? 'plan.alert2' : 'plan.alert1')}>
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider, marginTop: 10, marginBottom: 20 }]}>
           {ALERT_OPTIONS.map((opt, i) => (
             <Pressable
               key={opt.value}
               onPress={() => selectAlert(opt.value)}
               style={[styles.sheetRow, i > 0 && styles.fieldBorder, { borderColor: theme.divider }]}>
-              <Text style={[styles.sheetRowLabel, { color: theme.text }]}>{opt.label}</Text>
+              <Text style={[styles.sheetRowLabel, { color: theme.text }]}>{t(opt.labelKey)}</Text>
               {(alertSlot !== null ? (alerts[alertSlot - 1] ?? 'none') : undefined) === opt.value && (
                 <CheckIcon size={16} color={theme.accent} strokeWidth={3} />
               )}
@@ -835,7 +844,7 @@ export default function AddPlanScreen() {
         </View>
       </BottomSheet>
 
-      <BottomSheet visible={repeatOpen} onClose={() => setRepeatOpen(false)} title="Repeat">
+      <BottomSheet visible={repeatOpen} onClose={() => setRepeatOpen(false)} title={t('plan.repeatTitle')}>
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider, marginTop: 10, marginBottom: 20 }]}>
           {REPEAT_OPTIONS.map((opt, i) => (
             <Pressable
@@ -855,7 +864,7 @@ export default function AddPlanScreen() {
                 setRepeatOpen(false);
               }}
               style={[styles.sheetRow, i > 0 && styles.fieldBorder, { borderColor: theme.divider }]}>
-              <Text style={[styles.sheetRowLabel, { color: theme.text }]}>{opt.label}</Text>
+              <Text style={[styles.sheetRowLabel, { color: theme.text }]}>{t(opt.labelKey)}</Text>
               {repeatType === opt.value && <CheckIcon size={16} color={theme.accent} strokeWidth={3} />}
             </Pressable>
           ))}
@@ -865,7 +874,7 @@ export default function AddPlanScreen() {
       <BottomSheet
         visible={customRepeatOpen}
         onClose={() => setCustomRepeatOpen(false)}
-        title="Custom Repeat"
+        title={t('repeat.customTitle')}
         right={
           <Pressable
             onPress={() => {
@@ -873,12 +882,12 @@ export default function AddPlanScreen() {
               setCustomRepeatOpen(false);
             }}
             hitSlop={8}>
-            <Text style={{ color: theme.accent, fontSize: Typography.heading, fontWeight: '700' }}>Done</Text>
+            <Text style={{ color: theme.accent, fontSize: Typography.heading, fontWeight: '700' }}>{t('common.done')}</Text>
           </Pressable>
         }>
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider, marginTop: 10 }]}>
           <View style={styles.field}>
-            <Text style={[styles.label, { color: theme.textTertiary }]}>EVERY</Text>
+            <Text style={[styles.label, { color: theme.textTertiary }]}>{t('repeat.every')}</Text>
             <View style={styles.intervalRow}>
               <Pressable
                 onPress={() => setCustomRepeat((c) => ({ ...c, interval: Math.max(1, c.interval - 1) }))}
@@ -901,7 +910,7 @@ export default function AddPlanScreen() {
               key={unit}
               onPress={() => setCustomRepeat((c) => ({ ...c, unit }))}
               style={[styles.sheetRow, i > 0 && styles.fieldBorder, { borderColor: theme.divider }]}>
-              <Text style={[styles.sheetRowLabel, { color: theme.text, textTransform: 'capitalize' }]}>{unit}{customRepeat.interval > 1 ? 's' : ''}</Text>
+              <Text style={[styles.sheetRowLabel, { color: theme.text }]}>{t(`repeat.unit.${unit}`, { count: customRepeat.interval })}</Text>
               {customRepeat.unit === unit && <CheckIcon size={16} color={theme.accent} strokeWidth={3} />}
             </Pressable>
           ))}
@@ -909,9 +918,9 @@ export default function AddPlanScreen() {
 
         {customRepeat.unit === 'week' && (
           <>
-            <Text style={[styles.sectionLabel, { color: theme.textTertiary, paddingHorizontal: 4 }]}>ON THESE DAYS</Text>
+            <Text style={[styles.sectionLabel, { color: theme.textTertiary, paddingHorizontal: 4 }]}>{t('repeat.onTheseDays')}</Text>
             <View style={styles.weekdayRow}>
-              {WEEKDAY_ABBR.map((label, wd) => {
+              {weekdayLetterList().map((label, wd) => {
                 const active = customRepeat.weekdays.includes(wd);
                 return (
                   <Pressable
@@ -928,7 +937,7 @@ export default function AddPlanScreen() {
                 );
               })}
             </View>
-            <Text style={[styles.footnote, { color: theme.textTertiary }]}>Leave none selected to repeat on {WEEKDAY_ABBR[dateTime.getDay()]} only.</Text>
+            <Text style={[styles.footnote, { color: theme.textTertiary }]}>{t('repeat.noneSelected', { day: weekdayLong(dateTime.getDay()).replace(/^วัน/, '') })}</Text>
           </>
         )}
       </BottomSheet>
@@ -939,7 +948,7 @@ export default function AddPlanScreen() {
           setTimeZoneOpen(false);
           setTimeZoneQuery('');
         }}
-        title="Time Zone"
+        title={t('plan.timeZone')}
         right={
           <Pressable
             onPress={() => {
@@ -947,14 +956,14 @@ export default function AddPlanScreen() {
               setTimeZoneQuery('');
             }}
             hitSlop={8}>
-            <Text style={{ color: theme.accent, fontSize: Typography.heading, fontWeight: '700' }}>Done</Text>
+            <Text style={{ color: theme.accent, fontSize: Typography.heading, fontWeight: '700' }}>{t('common.done')}</Text>
           </Pressable>
         }>
         <View style={[styles.field, { paddingHorizontal: 0 }]}>
           <TextInput
             value={timeZoneQuery}
             onChangeText={setTimeZoneQuery}
-            placeholder="Search city or region"
+            placeholder={t('tz.search')}
             placeholderTextColor={theme.textTertiary}
             style={[styles.input, styles.searchInput, { color: theme.text, borderColor: theme.divider, backgroundColor: theme.surface2 }]}
           />
@@ -979,7 +988,7 @@ export default function AddPlanScreen() {
               </Pressable>
             ))}
             {filteredTimeZones.length === 0 && (
-              <Text style={[styles.footnote, { color: theme.textTertiary, marginBottom: 0 }]}>No matching time zones.</Text>
+              <Text style={[styles.footnote, { color: theme.textTertiary, marginBottom: 0 }]}>{t('tz.none')}</Text>
             )}
           </View>
         </ScrollView>

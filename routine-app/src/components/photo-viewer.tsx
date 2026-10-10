@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { XIcon } from '@/components/icon';
 import { Text } from '@/components/text';
+import { t } from '@/i18n';
 
 /**
  * Full-screen photo preview for a plan's attached photos: swipe between them, pinch to zoom each
@@ -49,8 +50,8 @@ export function PhotoViewer({ uris, index, onClose }: { uris: string[]; index: n
         </ScrollView>
 
         <View style={[styles.top, { paddingTop: insets.top + 8 }]} pointerEvents="box-none">
-          {uris.length > 1 ? <Text style={styles.counter}>{`${page + 1} of ${uris.length}`}</Text> : <View />}
-          <Pressable onPress={onClose} hitSlop={12} accessibilityLabel="Close photo" style={styles.close}>
+          {uris.length > 1 ? <Text style={styles.counter}>{t('common.of', { n: page + 1, total: uris.length })}</Text> : <View />}
+          <Pressable onPress={onClose} hitSlop={12} accessibilityLabel={t('photo.close')} style={styles.close}>
             <XIcon size={16} color="#fff" strokeWidth={2.4} />
           </Pressable>
         </View>

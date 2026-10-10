@@ -1,11 +1,14 @@
 import type { Group, Plan } from '@/store/types';
+import { t } from '@/i18n';
+import { fmtDate, MONTH_LONG, MONTH_SHORT, WEEKDAY_LONG, WEEKDAY_SHORT } from '@/i18n/format';
 import { fmtTime12, fromISO, toISO } from '@/utils/dates';
 
 /**
  * Home's search: matches a plan's title, group name, time and date. Every word typed must match
  * somewhere ("work tue" = Work-group plans on a Tuesday). Times match as "14:30", "2:30 pm",
  * "2:30pm" or "2pm"; dates as "2026-10-06", "oct 6", "6 oct", "october", "tue", "tuesday", and
- * "today" / "tomorrow" / "yesterday".
+ * "today" / "tomorrow" / "yesterday". Thai words match too, whatever the app language: "ต.ค.",
+ * "ตุลาคม", "จันทร์", "วันนี้" / "พรุ่งนี้" / "เมื่อวาน", "ทั้งวัน".
  */
 
 function timeForms(time: string): string[] {
@@ -32,12 +35,26 @@ function dateForms(dateISO: string, todayISO: string): string[] {
     `${d.getMonth() + 1}/${day}`,
     `${day}/${d.getMonth() + 1}`,
   ];
-  const t = fromISO(todayISO);
-  const offset = Math.round((d.getTime() - t.getTime()) / 86_400_000);
-  if (offset === 0) forms.push('today');
-  if (offset === 1) forms.push('tomorrow');
-  if (offset === -1) forms.push('yesterday');
+  const m = d.getMonth();
+  const wd = d.getDay();
+  forms.push(
+    MONTH_SHORT.th[m],
+    MONTH_LONG.th[m],
+    WEEKDAY_SHORT.th[wd],
+    WEEKDAY_LONG.th[wd],
+    WEEKDAY_LONG.th[wd].replace(/^วัน/, ''),
+    `${day} ${MONTH_SHORT.th[m]}`,
+    `${day} ${MONTH_LONG.th[m]}`
+  );
+  const offset = relativeDay(dateISO, todayISO);
+  if (offset === 0) forms.push('today', 'วันนี้');
+  if (offset === 1) forms.push('tomorrow', 'พรุ่งนี้');
+  if (offset === -1) forms.push('yesterday', 'เมื่อวาน');
   return forms;
+}
+
+function relativeDay(dateISO: string, todayISO: string) {
+  return Math.round((fromISO(dateISO).getTime() - fromISO(todayISO).getTime()) / 86_400_000);
 }
 
 export function searchPlans(plans: Plan[], groups: Group[], query: string, nowMs: number): Plan[] {
@@ -50,7 +67,7 @@ export function searchPlans(plans: Plan[], groups: Group[], query: string, nowMs
     const haystack = [
       p.name.toLowerCase(),
       p.groupId ? (groupName.get(p.groupId) ?? '') : '',
-      ...(p.allDay ? ['all day'] : timeForms(p.time)),
+      ...(p.allDay ? ['all day', 'ทั้งวัน'] : timeForms(p.time)),
       ...(p.endTime && !p.allDay ? timeForms(p.endTime) : []),
       ...dateForms(p.date, todayISO),
     ].join(' | ');
@@ -83,9 +100,8 @@ export function groupSearchResults(results: Plan[], nowMs: number): SearchSectio
 }
 
 function sectionTitle(dateISO: string, todayISO: string) {
-  const forms = dateForms(dateISO, todayISO);
-  const rel = forms.find((f) => f === 'today' || f === 'tomorrow' || f === 'yesterday');
-  const d = fromISO(dateISO);
-  const label = d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' });
-  return rel ? `${rel[0].toUpperCase()}${rel.slice(1)} · ${label}` : label;
+  const offset = relativeDay(dateISO, todayISO);
+  const rel = offset === 0 ? t('home.today') : offset === 1 ? t('date.tomorrow') : offset === -1 ? t('date.yesterday') : null;
+  const label = fmtDate(fromISO(dateISO), { weekday: 'short' });
+  return rel ? `${rel} · ${label}` : label;
 }

@@ -1,0 +1,62 @@
+import type { Entry } from './types';
+
+export default {
+  'progress.locked.month': { en: 'Monthly recap is Premium', th: 'สรุปรายเดือนสำหรับ Premium' },
+  'progress.locked.year': { en: 'Yearly recap is Premium', th: 'สรุปรายปีสำหรับ Premium' },
+  'progress.locked.bodyMonth': { en: 'See your completion rate, streaks and best days across the whole month.', th: 'ดูอัตราความสำเร็จ สถิติต่อเนื่อง และวันที่ดีที่สุดของทั้งเดือน' },
+  'progress.locked.bodyYear': { en: 'See your completion rate, streaks and best days across the whole year.', th: 'ดูอัตราความสำเร็จ สถิติต่อเนื่อง และวันที่ดีที่สุดของทั้งปี' },
+  'progress.unlock': { en: 'Unlock', th: 'ปลดล็อก' },
+
+  'progress.eyebrow.thisWeek': { en: 'THIS WEEK', th: 'สัปดาห์นี้' },
+  'progress.eyebrow.thatWeek': { en: 'THAT WEEK', th: 'สัปดาห์นั้น' },
+  'progress.eyebrow.yearSoFar': { en: '{year} SO FAR', th: 'ปี {year} ถึงตอนนี้' },
+  'progress.prevMonth': { en: '{month}', th: 'เดือน{month}' },
+  'progress.prevYear': { en: '{year}', th: 'ปี {year}' },
+  'progress.lastWeek': { en: 'last week', th: 'สัปดาห์ที่แล้ว' },
+
+  'progress.percent': { en: 'PERCENT', th: 'เปอร์เซ็นต์' },
+  'progress.doneOf': { en: '{completed} of {total} done', th: 'ทำแล้ว {completed} จาก {total}' },
+  'progress.deltaUp': { en: 'Up {n} points on {than}.', th: 'เพิ่มขึ้น {n} จุดจาก{than}' },
+  'progress.deltaDown': { en: 'Down {n} points on {than}.', th: 'ลดลง {n} จุดจาก{than}' },
+
+  'progress.byColor': { en: 'By color', th: 'แยกตามสี' },
+  'progress.noData': { en: 'No data yet', th: 'ยังไม่มีข้อมูล' },
+  'progress.monthly': { en: 'Monthly completion', th: 'ความสำเร็จรายเดือน' },
+  'progress.janDec': { en: 'JAN–DEC', th: 'ม.ค.–ธ.ค.' },
+  'progress.bestMonth': { en: 'Best month', th: 'เดือนที่ดีที่สุด' },
+  'progress.monthDone': { en: '{month} · {count} done', th: '{month} · ทำได้ {count}' },
+  'progress.daily': { en: 'Daily completion', th: 'ความสำเร็จรายวัน' },
+  'progress.bestDay': { en: 'Best day', th: 'วันที่ดีที่สุด' },
+
+  'progress.stat.completed': { en: 'Completed', th: 'ทำเสร็จ' },
+  'progress.stat.rate': { en: 'Rate', th: 'อัตรา' },
+  'progress.stat.streak': { en: 'Streak', th: 'ต่อเนื่อง' },
+  'progress.stat.bestDay': { en: 'Best day', th: 'วันเด่น' },
+
+  'streak.record': { en: 'Best streak yet!', th: 'สถิติต่อเนื่องสูงสุดเลย!' },
+  'streak.growing': { en: '{count}-day streak', th: 'ต่อเนื่อง {count} วัน' },
+  'streak.paused': { en: 'Streak paused', th: 'สถิติต่อเนื่องหยุดชั่วคราว' },
+  'streak.none': { en: 'No streak yet', th: 'ยังไม่มีสถิติต่อเนื่อง' },
+  'streak.recordBody': { en: "You're on a {count}-day streak — your longest yet.", th: 'ทำต่อเนื่องมา {count} วันแล้ว ยาวที่สุดเท่าที่เคยมี!' },
+  'streak.growingBody': { en: '{more} more to match your record of {longest}.', th: 'อีก {more} วันจะเท่าสถิติ {longest} วันของคุณ' },
+  'streak.pausedBody': { en: 'Complete a plan today to start climbing back toward your record of {longest}.', th: 'ทำแผนให้เสร็จสักอันวันนี้ แล้วไต่กลับไปหาสถิติ {longest} วันกัน' },
+  'streak.noneBody': { en: 'Complete a plan today to start your first streak.', th: 'ทำแผนให้เสร็จสักอันวันนี้ เพื่อเริ่มสถิติแรกของคุณ' },
+
+  'recap.title': { en: 'Your Recap', th: 'สรุปของคุณ' },
+  'recap.tasksCompleted': { en: 'tasks completed', th: 'งานที่ทำเสร็จ' },
+  'recap.streak': { en: "You're on a {count}-day streak — keep it going!", th: 'ทำต่อเนื่องมา {count} วันแล้ว ไปต่อเลย!' },
+  'recap.noStreak': { en: 'Complete a task today to start a streak!', th: 'ทำงานให้เสร็จสักอันวันนี้ เพื่อเริ่มสถิติต่อเนื่อง!' },
+  'recap.bestDay': { en: 'Your most productive day is {day}.', th: 'วันที่คุณทำได้เยอะที่สุดคือ{day}' },
+  'recap.shared': { en: 'Recap shared!', th: 'แชร์สรุปแล้ว!' },
+  'recap.share': { en: 'Share Recap', th: 'แชร์สรุป' },
+
+  'color.violet': { en: 'Violet', th: 'ม่วง' },
+  'color.orchid': { en: 'Orchid', th: 'ม่วงชมพู' },
+  'color.teal': { en: 'Teal', th: 'เขียวน้ำทะเล' },
+  'color.amber': { en: 'Amber', th: 'เหลืองอำพัน' },
+  'color.coral': { en: 'Coral', th: 'ชมพูส้ม' },
+  'color.green': { en: 'Green', th: 'เขียว' },
+  'color.slate': { en: 'Slate', th: 'เทา' },
+  'color.azure': { en: 'Azure', th: 'ฟ้า' },
+  'color.other': { en: 'Color', th: 'สี' },
+} satisfies Record<string, Entry>;

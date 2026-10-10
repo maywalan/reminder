@@ -9,7 +9,8 @@ import { Fonts, Radii, RowMinHeight, Typography } from '@/constants/theme';
 import type { Group, Plan } from '@/store/types';
 import { useTheme } from '@/hooks/use-theme';
 import { secondsUntilPlan } from '@/utils/countdown';
-import { fmtTime12 } from '@/utils/dates';
+import { t } from '@/i18n';
+import { fmtTime } from '@/i18n/format';
 
 interface Props {
   plan: Plan;
@@ -113,13 +114,13 @@ export function TodoItem({
           <ClockIcon size={12} color={overdue ? theme.due : theme.textSecondary} strokeWidth={2} />
           <Text style={[styles.metaText, { color: overdue ? theme.due : theme.textSecondary }]}>
             {dateLabel ? `${dateLabel} · ` : ''}
-            {plan.allDay ? 'All Day' : plan.endTime ? `${fmtTime12(plan.time)} – ${fmtTime12(plan.endTime)}` : fmtTime12(plan.time)}
+            {plan.allDay ? t('common.allDay') : plan.endTime ? `${fmtTime(plan.time)} – ${fmtTime(plan.endTime)}` : fmtTime(plan.time)}
           </Text>
-          {plan.live && <Text style={[styles.metaText, styles.metaBold, { color: theme.successLive }]}> · Live</Text>}
+          {plan.live && <Text style={[styles.metaText, styles.metaBold, { color: theme.successLive }]}> · {t('todo.live')}</Text>}
           {plan.alerts.length > 0 && (
             <Text style={[styles.metaText, { color: overdue ? theme.due : theme.textSecondary }]}>
               {' '}
-              · {plan.alerts.length > 1 ? `${plan.alerts.length} Alerts` : 'Alert'}
+              · {plan.alerts.length > 1 ? t('plan.alerts', { count: plan.alerts.length }) : t('plan.alert')}
             </Text>
           )}
           {group && <Text style={[styles.metaText, styles.metaBold, { color: group.color }]}> · {group.name}</Text>}
@@ -162,9 +163,9 @@ export function TodoItem({
   ];
 
   function confirmDelete() {
-    Alert.alert('Delete Plan?', `"${plan.name}" will be deleted.`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: onDelete },
+    Alert.alert(t('plan.deleteTitle'), t('plan.deleteBody', { name: plan.name }), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('common.delete'), style: 'destructive', onPress: onDelete },
     ]);
   }
 

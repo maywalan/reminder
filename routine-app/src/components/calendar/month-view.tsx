@@ -5,7 +5,9 @@ import { ChevronLeftIcon, ChevronRightIcon } from '@/components/icon';
 import { Radii, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { Plan } from '@/store/types';
-import { buildMonthGrid, MONTHS, WEEKDAY_LETTER } from '@/utils/calendar';
+import { t } from '@/i18n';
+import { displayYear, monthLong, weekdayLetterList } from '@/i18n/format';
+import { buildMonthGrid } from '@/utils/calendar';
 import { fromISO } from '@/utils/dates';
 
 interface Props {
@@ -33,12 +35,12 @@ export function MonthView({ year, month, todayISO, selectedDate, plans, colorFor
     <View style={[styles.surface, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
       <View style={styles.nav}>
         <Text style={[styles.navLabel, { color: theme.text }]}>
-          {MONTHS[month]} {year}
+          {monthLong(month)} {displayYear(year)}
         </Text>
         <View style={styles.navActions}>
           {!isCurrentMonth && (
             <Pressable onPress={onToday} hitSlop={8}>
-              <Text style={[styles.todayBtn, { color: theme.accentStrong }]}>Today</Text>
+              <Text style={[styles.todayBtn, { color: theme.accentStrong }]}>{t('home.today')}</Text>
             </Pressable>
           )}
           <View style={styles.arrows}>
@@ -53,7 +55,7 @@ export function MonthView({ year, month, todayISO, selectedDate, plans, colorFor
       </View>
 
       <View style={styles.dowRow}>
-        {WEEKDAY_LETTER.map((l, i) => (
+        {weekdayLetterList().map((l, i) => (
           <Text key={i} style={[styles.dow, { color: theme.textTertiary }]}>
             {l}
           </Text>
@@ -129,7 +131,7 @@ export function MonthView({ year, month, todayISO, selectedDate, plans, colorFor
                     </View>
                   ))}
                   {dayPlans.length > DETAILED_CHIP_LIMIT && (
-                    <Text style={[styles.more, { color: theme.textTertiary }]}>+{dayPlans.length - DETAILED_CHIP_LIMIT} more</Text>
+                    <Text style={[styles.more, { color: theme.textTertiary }]}>{t('common.more', { n: dayPlans.length - DETAILED_CHIP_LIMIT })}</Text>
                   )}
                 </View>
             </Pressable>

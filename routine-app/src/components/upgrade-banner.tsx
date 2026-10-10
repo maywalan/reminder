@@ -15,6 +15,7 @@ import Reanimated, {
 import { BouncyPressable } from '@/components/bouncy-pressable';
 import { XIcon } from '@/components/icon';
 import { Text } from '@/components/text';
+import { t } from '@/i18n';
 import { Tickle } from '@/components/tickle';
 import { Typography } from '@/constants/theme';
 import { usePlannerStore } from '@/store/use-planner-store';
@@ -85,7 +86,7 @@ export function UpgradeBanner() {
           onPress={openPaywall}
           pressedScale={0.96}
           accessibilityRole="button"
-          accessibilityLabel={nearLimit ? `Go Premium. ${used} of ${FREE_ACTIVE_PLAN_LIMIT} free plans used` : 'Go Premium'}
+          accessibilityLabel={nearLimit ? `${t('banner.title')}. ${t('banner.used', { used, limit: FREE_ACTIVE_PLAN_LIMIT })}` : t('banner.title')}
           style={styles.card}>
           <View style={styles.top}>
             <View style={styles.mascotTile}>
@@ -93,13 +94,13 @@ export function UpgradeBanner() {
             </View>
             <View style={{ flex: 1, minWidth: 0 }}>
               <View style={styles.trialPill}>
-                <Text style={styles.trialText}>7-DAY FREE TRIAL</Text>
+                <Text style={styles.trialText}>{t('paywall.trialBadge')}</Text>
               </View>
               <Text style={styles.title} numberOfLines={1}>
-                Go Premium
+                {t('banner.title')}
               </Text>
               <Text style={styles.sub} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
-                {nearLimit ? `${used} of ${FREE_ACTIVE_PLAN_LIMIT} free plans used` : 'Unlimited plans, month & year recaps'}
+                {nearLimit ? t('banner.used', { used, limit: FREE_ACTIVE_PLAN_LIMIT }) : t('banner.sub')}
               </Text>
             </View>
           </View>
@@ -113,11 +114,11 @@ export function UpgradeBanner() {
           )}
 
           <BouncyPressable onPress={openPaywall} pressedScale={0.96} style={styles.cta}>
-            <Text style={styles.ctaText}>Start free trial</Text>
+            <Text style={styles.ctaText}>{t('paywall.cta.trial')}</Text>
           </BouncyPressable>
         </BouncyPressable>
 
-        <Pressable onPress={handleDismiss} hitSlop={8} accessibilityRole="button" accessibilityLabel="Dismiss" style={styles.close}>
+        <Pressable onPress={handleDismiss} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('common.dismiss')} style={styles.close}>
           <XIcon size={12} color={MUTED_ON_INK} strokeWidth={2.6} />
         </Pressable>
       </View>

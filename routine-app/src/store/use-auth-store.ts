@@ -4,6 +4,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { create } from 'zustand';
 
 import { supabase } from '@/lib/supabase';
+import { t } from '@/i18n';
 import { performInitialSync } from '@/lib/sync';
 import { usePlannerStore } from '@/store/use-planner-store';
 
@@ -59,7 +60,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
     // is already registered and confirmed — under any provider, Google included — to avoid
     // leaking which emails have accounts. An empty identities array is the only tell.
     if (data.user && data.user.identities?.length === 0) {
-      return { error: 'This email is already signed up. Try logging in instead.' };
+      return { error: t('auth.alreadySignedUp') };
     }
 
     usePlannerStore.getState().setProfile({ name });
@@ -72,7 +73,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
       provider,
       options: { redirectTo, skipBrowserRedirect: true },
     });
-    if (error || !data.url) return { error: error?.message ?? 'Could not start sign-in.' };
+    if (error || !data.url) return { error: error?.message ?? t('auth.couldNotStart') };
 
     // openAuthSessionAsync (ASWebAuthenticationSession) is unreliable at catching the final
     // exp://... redirect in Expo Go — it shows "Safari cannot open the page" even though the
@@ -94,7 +95,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
     if (!callbackUrl) return { error: null }; // user cancelled without completing sign-in
 
     const { queryParams } = Linking.parse(callbackUrl.replace('#', '?'));
-    if (queryParams?.error) return { error: (queryParams.error_description as string) ?? 'Sign-in failed.' };
+    if (queryParams?.error) return { error: (queryParams.error_description as string) ?? t('auth.failed') };
 
     const access_token = queryParams?.access_token as string | undefined;
     const refresh_token = queryParams?.refresh_token as string | undefined;

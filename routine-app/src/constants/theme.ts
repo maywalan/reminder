@@ -1,3 +1,4 @@
+import type { StringKey } from '@/i18n/strings';
 /**
  * Design tokens ported from the "Tickle draft 2" handoff (docs/design_handoff_tickle_draft2 —
  * see its README.md for the full token table). Section 08 of that design file is the source of
@@ -176,16 +177,16 @@ export const Fonts = {
 /** Task/group/plan color swatches — the 7 plan hues from the Tickle draft-2 design tokens, plus azure. */
 export const SwatchColors = ['#7B61FF', '#A455D6', '#17A8A0', '#F0A32E', '#E86A7C', '#35B978', '#8A8FA3', '#1B76E8'] as const;
 
-/** Display names for SwatchColors, keyed by hex — used anywhere a color needs a human label (e.g. Progress's by-color breakdown). */
-export const SwatchColorNames: Record<string, string> = {
-  '#7B61FF': 'Violet',
-  '#A455D6': 'Orchid',
-  '#17A8A0': 'Teal',
-  '#F0A32E': 'Amber',
-  '#E86A7C': 'Coral',
-  '#35B978': 'Green',
-  '#8A8FA3': 'Slate',
-  '#1B76E8': 'Azure',
+/** Display-name string keys for SwatchColors, keyed by hex — used anywhere a color needs a human label (e.g. Progress's by-color breakdown). */
+export const SwatchColorNames: Record<string, StringKey> = {
+  '#7B61FF': 'color.violet',
+  '#A455D6': 'color.orchid',
+  '#17A8A0': 'color.teal',
+  '#F0A32E': 'color.amber',
+  '#E86A7C': 'color.coral',
+  '#35B978': 'color.green',
+  '#8A8FA3': 'color.slate',
+  '#1B76E8': 'color.azure',
 };
 
 /** Default color for a newly created task — azure-500, matching the app's own accent color. */

@@ -54,6 +54,8 @@ interface Props extends RowHandlers {
   /** The Live-Activity task counting down to its start (from findLiveActivityPlan), shown with a ticking "starts in m:ss". */
   countdownPlanId: string | null;
   onReorder: (orderedIds: string[]) => void;
+  /** Rendered at the bottom of the sheet under a divider — Home puts the Upcoming block here. */
+  footer?: ReactNode;
 }
 
 function Grid({ children, style }: { children: ReactNode; style?: ViewStyle | ViewStyle[] }) {
@@ -390,7 +392,7 @@ function LiveRow({ plan, group, nowMs, isActive, drag, h }: { plan: Plan; group?
   );
 }
 
-export function TodaySheet({ feed, nowMs, groups, emptyText, countdownPlanId, onReorder, ...h }: Props) {
+export function TodaySheet({ feed, nowMs, groups, emptyText, countdownPlanId, onReorder, footer, ...h }: Props) {
   const k = useHomeTokens();
   const t = useHomeType();
   const { today, live, leftCount, nowLineIndex } = feed;
@@ -459,6 +461,13 @@ export function TodaySheet({ feed, nowMs, groups, emptyText, countdownPlanId, on
           {nowLineIndex === today.length && <NowRow nowMs={nowMs} />}
         </View>
       )}
+
+      {footer && (
+        <>
+          <View style={[styles.footerDivider, { backgroundColor: k.rail }]} />
+          {footer}
+        </>
+      )}
     </View>
   );
 }
@@ -478,6 +487,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   sheetTitle: { flexShrink: 1 },
+  footerDivider: { height: StyleSheet.hairlineWidth, marginHorizontal: 10, marginTop: 2, marginBottom: 6 },
   sheetHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingLeft: 10, paddingRight: 4 },
   empty: { paddingHorizontal: 10, paddingVertical: 14 },
   list: { paddingRight: 4, paddingVertical: 4 },

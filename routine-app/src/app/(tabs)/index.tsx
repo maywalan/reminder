@@ -57,13 +57,13 @@ function useClock(fast: boolean) {
 const EASE = Easing.bezier(0.22, 1, 0.36, 1);
 const BLUR_START = 22;
 
-// Entrance for the three feed blocks (Today sheet, Upcoming, Earlier) — 100ms apart, same style
+// Entrance for the two feed blocks (Today sheet, which holds Upcoming, then Earlier) — 100ms apart, same style
 // of animation as src/app/subscription.tsx's per-section entrance. playToken changes on every screen
 // focus (including the first), so it replays each time the user comes back to Today — not just on
 // mount. Drives both the fade/slide-up (native driver) and a dissolving BlurView veil on top
 // (JS-driven — `intensity` isn't an animatable style prop, so it can't ride the same native-driven
 // timing).
-const ENTER_DELAY = { today: 50, upcoming: 150, earlier: 250 };
+const ENTER_DELAY = { today: 50, earlier: 150 };
 function useEntrance(delayMs: number, playToken: number) {
   const v = useRef(new Animated.Value(0)).current;
   const blur = useRef(new Animated.Value(0)).current;
@@ -148,7 +148,6 @@ export default function HomeScreen() {
   );
 
   const todayEnter = useEntrance(ENTER_DELAY.today, enterToken);
-  const upcomingEnter = useEntrance(ENTER_DELAY.upcoming, enterToken);
   const earlierEnter = useEntrance(ENTER_DELAY.earlier, enterToken);
 
   function togglePanel(which: Panel) {
@@ -353,6 +352,11 @@ export default function HomeScreen() {
                   onDelete={deletePlan}
                   onExtend={(p) => p.endTime && updatePlan(p.id, { endTime: addMinutesToTime(p.endTime, 10) })}
                   onReorder={(ids) => reorderPlans(todayISO, ids)}
+                  footer={
+                    feed.upcoming.length > 0 ? (
+                      <UpcomingBlock items={feed.upcoming} onCalendar={() => router.navigate('/calendar')} {...selectProps} />
+                    ) : undefined
+                  }
                 />
               </EntranceBox>
 
@@ -361,10 +365,6 @@ export default function HomeScreen() {
                   <Text style={{ color: theme.textSecondary, fontSize: Typography.rowValue, fontWeight: '500' }}>{tr('home.undoDelete')}</Text>
                 </Pressable>
               )}
-
-              <EntranceBox entrance={upcomingEnter} blurTint={blurTint}>
-                <UpcomingBlock items={feed.upcoming} onCalendar={() => router.navigate('/calendar')} {...selectProps} />
-              </EntranceBox>
 
               <EntranceBox entrance={earlierEnter} blurTint={blurTint}>
                 <EarlierBlock

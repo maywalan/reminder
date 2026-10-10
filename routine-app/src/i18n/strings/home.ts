@@ -45,7 +45,7 @@ export default {
   'home.showLess': { en: 'Show less', th: 'ย่อลง' },
   'home.noneChecked': { en: 'Nothing checked off yet today.', th: 'วันนี้ยังไม่ได้ติ๊กอะไรเลย' },
   'home.missed': { en: 'Missed ·', th: 'เลยเวลา ·' },
-  'home.redo': { en: 'Redo', th: 'ทำอีกรอบ' },
+  'home.redo': { en: 'Redo', th: 'ทำใหม่' },
   'home.noResults': { en: 'No tasks match your search.', th: 'ไม่เจองานที่ค้นหา' },
 
   'search.placeholder': { en: 'Search tasks, groups, dates', th: 'ค้นหางาน กลุ่ม วันที่' },

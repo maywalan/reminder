@@ -261,9 +261,9 @@ const styles = StyleSheet.create({
   block: { gap: 2 },
   // Starts at the title column (time 38 + gap 10 + marker 9 + gap 10) so day labels stay unbroken.
   divider: { height: StyleSheet.hairlineWidth, marginLeft: 67 },
-  // Inside the Today sheet, right edges line up with its header count and rows (sheetHead / list paddingRight 4).
-  inSheetHeader: { paddingRight: 4 },
-  inSheetRows: { paddingRight: 4 },
+  // Inside the Today sheet, right edges line up with its header count and rings (today-sheet.tsx: 4 + END_PAD).
+  inSheetHeader: { paddingRight: 13 },
+  inSheetRows: { paddingRight: 13 },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10 },
   headerTitle: { flex: 1 },
   rows: { paddingHorizontal: 10 },

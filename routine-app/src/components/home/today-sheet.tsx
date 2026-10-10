@@ -35,6 +35,10 @@ const TIME_COL = 38;
 const MARKER_COL = 9;
 const COL_GAP = 10;
 const RAIL_X = 52;
+// Right edge shared by every row's ring / Done pill, the header count, the Now line and the Upcoming
+// footer: END_PAD inside the row. Rows are clipped (Swipeable), so tinted cards can't bleed past
+// them — instead they fill the row and pad their content by the same END_PAD (user's call, 2026-10-11).
+const END_PAD = 9;
 
 interface RowHandlers {
   selectMode: boolean;
@@ -487,8 +491,8 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   sheetTitle: { flexShrink: 1 },
-  footerDivider: { height: StyleSheet.hairlineWidth, marginLeft: 10, marginRight: 4, marginTop: 2, marginBottom: 6 },
-  sheetHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingLeft: 10, paddingRight: 4 },
+  footerDivider: { height: StyleSheet.hairlineWidth, marginLeft: 10, marginRight: 4 + END_PAD, marginTop: 2, marginBottom: 6 },
+  sheetHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingLeft: 10, paddingRight: 4 + END_PAD },
   empty: { paddingHorizontal: 10, paddingVertical: 14 },
   list: { paddingRight: 4, paddingVertical: 4 },
   railLine: { position: 'absolute', left: RAIL_X, top: 14, bottom: 14, width: 1 },
@@ -498,9 +502,9 @@ const styles = StyleSheet.create({
   timeCol: { width: TIME_COL, textAlign: 'right' },
   timeRight: { textAlign: 'right' },
   markerCol: { width: MARKER_COL },
-  content: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  content: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: END_PAD },
   contentText: { flex: 1, minWidth: 0 },
-  countdownCard: { borderRadius: 16, paddingVertical: 10, paddingHorizontal: 13, marginVertical: -4 },
+  countdownCard: { borderRadius: 16, paddingVertical: 10, paddingLeft: 13, marginVertical: -4 },
 
   pointRow: { alignItems: 'center', paddingVertical: 10 },
   dot9: { width: 9, height: 9, borderRadius: 4.5 },
@@ -530,7 +534,7 @@ const styles = StyleSheet.create({
   },
   nowBadgeLabel: { color: '#fff', fontSize: 12, lineHeight: 14 },
   nowBadgeTime: { color: 'rgba(255,255,255,0.85)', lineHeight: 12 },
-  nowLine: { flex: 1, height: 1 },
+  nowLine: { flex: 1, height: 1, marginRight: END_PAD },
 
   ring: { width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, overflow: 'hidden' },
   ringFill: { position: 'absolute', top: -1.5, left: -1.5, right: -1.5, bottom: -1.5, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
@@ -561,7 +565,7 @@ const styles = StyleSheet.create({
   liveBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 9 },
   liveBadgeDot: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#fff' },
   liveBadgeText: { color: '#fff', fontSize: 9.5, letterSpacing: 0.4 },
-  liveCard: { flex: 1, minWidth: 0, borderRadius: 16, paddingVertical: 12, paddingHorizontal: 13, gap: 9 },
+  liveCard: { flex: 1, minWidth: 0, borderRadius: 16, paddingVertical: 12, paddingLeft: 13, paddingRight: END_PAD, gap: 9 },
   liveHead: { gap: 1 },
   track: { height: 3, borderRadius: 2 },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 12 },

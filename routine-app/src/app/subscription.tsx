@@ -1,4 +1,4 @@
-import { useIAP } from 'expo-iap';
+import { showManageSubscriptionsIOS, useIAP } from 'expo-iap';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import { Alert, Animated, Easing, Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
@@ -6,17 +6,18 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/text';
 import { ChevronLeftIcon } from '@/components/icon';
+import { Typography } from '@/constants/theme';
 import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
 import { useToast } from '@/hooks/use-toast';
 import { refreshSubscriptionState } from '@/lib/iap';
 import { usePlannerStore } from '@/store/use-planner-store';
+import { countActivePlans } from '@/utils/premium';
 import { getSubscriptionContent } from '@/utils/subscription';
 import { fromISO } from '@/utils/dates';
 import { MONTH_SHORT } from '@/utils/progress';
 
 const EASE = Easing.bezier(0.22, 1, 0.36, 1);
-const MONO = Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' });
 
 // Entrance stagger (design_handoff_tickle_subscription/README.md "Motion"): hero -> included list
 // -> billing card -> CTA -> footer, 140ms apart from 110ms.
@@ -45,17 +46,18 @@ function useMeterFill(pct: number) {
   return v;
 }
 
-function useSheen() {
-  const v = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    const loop = Animated.loop(Animated.timing(v, { toValue: 1, duration: 3400, easing: Easing.linear, useNativeDriver: false }));
-    loop.start();
-    return () => loop.stop();
-  }, [v]);
-  return { left: v.interpolate({ inputRange: [0, 0.62, 1], outputRange: ['-40%', '120%', '120%'] }) };
-}
-
-function openSubscriptionManagement() {
+async function openSubscriptionManagement() {
+  if (Platform.OS === 'ios') {
+    try {
+      // Apple's in-app sheet; resolves once it's dismissed, so re-read the entitlement right away
+      // (a cancel shows up as 'ending' without leaving the app).
+      await showManageSubscriptionsIOS();
+      await refreshSubscriptionState();
+      return;
+    } catch {
+      // Sheet unavailable — fall back to the App Store page below.
+    }
+  }
   const url =
     Platform.OS === 'ios' ? 'itms-apps://apps.apple.com/account/subscriptions' : 'https://play.google.com/store/account/subscriptions';
   Linking.openURL(url).catch(() => {});
@@ -74,7 +76,9 @@ export default function SubscriptionScreen() {
   const state = usePlannerStore((s) => s.mockSubscriptionState);
   const setSubscriptionTestOverride = usePlannerStore((s) => s.setSubscriptionTestOverride);
   const firstUsedAt = usePlannerStore((s) => s.firstUsedAt);
-  const content = getSubscriptionContent(state);
+  const details = usePlannerStore((s) => s.subscriptionDetails);
+  const plans = usePlannerStore((s) => s.plans);
+  const content = getSubscriptionContent(state, { details, activePlans: countActivePlans(plans) });
   const memberSince = firstUsedAt ? fmtDateLong(firstUsedAt) : '—';
 
   const { restorePurchases } = useIAP();
@@ -89,7 +93,6 @@ export default function SubscriptionScreen() {
   const ctaEnter = useEntrance(ENTER_DELAY.cta);
   const footerEnter = useEntrance(ENTER_DELAY.footer);
   const meterFill = useMeterFill(content.pct);
-  const sheen = useSheen();
 
   function handlePrimary() {
     if (content.ctaAction === 'paywall') {
@@ -192,7 +195,7 @@ export default function SubscriptionScreen() {
             <Text style={styles.billValueMono}>{content.billNext}</Text>
           </View>
           <View style={styles.billRow}>
-            <Text style={styles.billLabel}>Payment</Text>
+            <Text style={styles.billLabel}>Billed by</Text>
             <Text style={styles.billValue}>{content.billPay}</Text>
           </View>
           <View style={[styles.billRow, styles.billRowLast]}>
@@ -204,7 +207,6 @@ export default function SubscriptionScreen() {
 
       <Animated.View style={ctaEnter}>
         <Pressable onPress={handlePrimary} style={styles.ctaBtn}>
-          <Animated.View style={[styles.sheen, { left: sheen.left }]} />
           <Text style={styles.ctaLabel}>{content.ctaLabel}</Text>
         </Pressable>
       </Animated.View>
@@ -237,7 +239,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#F7FAFF', paddingHorizontal: 16 },
   navRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
   backBtn: { width: 30, height: 30, borderRadius: 15, backgroundColor: 'rgba(16,32,58,0.06)', alignItems: 'center', justifyContent: 'center' },
-  navTitle: { fontWeight: '700', fontSize: 16, color: '#10203A', letterSpacing: -0.2 },
+  navTitle: { fontWeight: '700', fontSize: Typography.title, color: '#10203A', letterSpacing: -0.2 },
 
   body: { flex: 1, gap: 11 },
 
@@ -247,39 +249,38 @@ const styles = StyleSheet.create({
   heroTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
   heroTopText: { flex: 1, minWidth: 0, gap: 7 },
   pill: { alignSelf: 'flex-start', paddingVertical: 4, paddingHorizontal: 9, borderRadius: 9 },
-  pillText: { fontWeight: '700', fontSize: 9, letterSpacing: 0.4 },
-  planName: { fontWeight: '700', fontSize: 17, lineHeight: 19 },
-  priceLine: { fontFamily: MONO, fontWeight: '500', fontSize: 11 },
+  pillText: { fontWeight: '700', fontSize: Typography.caption, letterSpacing: 0.4 },
+  planName: { fontWeight: '700', fontSize: Typography.screenTitle },
+  priceLine: { fontWeight: '500', fontSize: Typography.body, fontVariant: ['tabular-nums'] },
 
   meter: { gap: 7 },
   meterLabelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
-  meterLabel: { fontWeight: '500', fontSize: 10.5, flexShrink: 1, marginRight: 8 },
-  meterValue: { fontFamily: MONO, fontSize: 10 },
+  meterLabel: { fontWeight: '500', fontSize: Typography.rowValue, flexShrink: 1, marginRight: 8 },
+  meterValue: { fontWeight: '600', fontSize: Typography.rowValue, fontVariant: ['tabular-nums'] },
   meterTrack: { height: 6, borderRadius: 3, overflow: 'hidden' },
   meterBar: { height: '100%', borderRadius: 3 },
 
   card: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#E7EDF6', borderRadius: 20, padding: 14, gap: 10 },
-  cardTitle: { fontWeight: '700', fontSize: 11, letterSpacing: 0.2, color: '#10203A' },
+  cardTitle: { fontWeight: '700', fontSize: Typography.heading, color: '#10203A' },
   featureList: { gap: 9 },
   featureRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-  featureDot: { width: 16, height: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  featureDotMark: { fontSize: 9, fontWeight: '700' },
-  featureText: { fontWeight: '500', fontSize: 11, flex: 1 },
+  featureDot: { width: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
+  featureDotMark: { fontSize: Typography.caption, fontWeight: '700' },
+  featureText: { fontWeight: '500', fontSize: Typography.rowLabel, flex: 1 },
 
   billingCard: { paddingVertical: 0, paddingHorizontal: 14, gap: 0 },
-  billRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#F1F5FB' },
+  billRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F1F5FB' },
   billRowLast: { borderBottomWidth: 0 },
-  billLabel: { fontWeight: '500', fontSize: 11, color: '#5A6A80' },
-  billValue: { fontWeight: '600', fontSize: 11, color: '#10203A' },
-  billValueMono: { fontFamily: MONO, fontWeight: '500', fontSize: 11, color: '#10203A' },
+  billLabel: { fontWeight: '500', fontSize: Typography.rowLabel, color: '#5A6A80' },
+  billValue: { fontWeight: '600', fontSize: Typography.rowValue, color: '#10203A' },
+  billValueMono: { fontWeight: '600', fontSize: Typography.rowValue, fontVariant: ['tabular-nums'], color: '#10203A' },
 
-  ctaBtn: { position: 'relative', overflow: 'hidden', height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1B76E8', shadowColor: '#1B76E8', shadowOpacity: 0.3, shadowRadius: 22, shadowOffset: { width: 0, height: 10 }, marginTop: 12, marginBottom: 10 },
-  ctaLabel: { color: '#fff', fontWeight: '700', fontSize: 14 },
-  sheen: { position: 'absolute', top: 0, bottom: 0, width: '35%', backgroundColor: 'rgba(255,255,255,0.2)' },
+  ctaBtn: { height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1B76E8', shadowColor: '#1B76E8', shadowOpacity: 0.3, shadowRadius: 22, shadowOffset: { width: 0, height: 10 }, marginTop: 12, marginBottom: 10 },
+  ctaLabel: { color: '#fff', fontWeight: '700', fontSize: Typography.heading },
 
   minorBtn: { alignItems: 'center', paddingVertical: 4 },
-  minorLabel: { fontWeight: '600', fontSize: 11.5 },
+  minorLabel: { fontWeight: '600', fontSize: Typography.rowLabel },
   footerLinks: { flexDirection: 'row', justifyContent: 'center', gap: 12, marginTop: 9 },
-  footerLink: { fontWeight: '500', fontSize: 10.5, color: '#5A6A80' },
-  footerDot: { fontSize: 10.5, color: '#5A6A80' },
+  footerLink: { fontWeight: '500', fontSize: Typography.body, color: '#5A6A80' },
+  footerDot: { fontSize: Typography.body, color: '#5A6A80' },
 });

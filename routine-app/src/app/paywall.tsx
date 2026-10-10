@@ -2,11 +2,12 @@ import * as Haptics from 'expo-haptics';
 import { finishTransaction, useIAP } from 'expo-iap';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Animated, Easing, Linking, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/text';
 import { CheckIcon, XIcon } from '@/components/icon';
+import { Typography } from '@/constants/theme';
 import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
 import { useToast } from '@/hooks/use-toast';
@@ -20,7 +21,6 @@ type Tier = 'free' | 'premium';
 type CtaState = 'idle' | 'loading' | 'done';
 
 const EASE = Easing.bezier(0.22, 1, 0.36, 1);
-const MONO = Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' });
 
 const FREE_FEATURES = ['5 active plans', 'Daily & weekly', 'Calendar: this month', '1 reminder per plan', 'Today view & streak', 'Widgets, no expiry'];
 const PREMIUM_FEATURES = ['Unlimited plans', 'Custom recurrence', 'Full calendar + drag', 'Reminders & snooze', 'History & export', 'Themes & icons'];
@@ -92,17 +92,6 @@ function useBadgePulse() {
   };
 }
 
-/** CTA button's ambient sheen sweep — 3.4s, a soft diagonal highlight crossing the pill. */
-function useSheen() {
-  const v = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    const loop = Animated.loop(Animated.timing(v, { toValue: 1, duration: 3400, easing: Easing.linear, useNativeDriver: false }));
-    loop.start();
-    return () => loop.stop();
-  }, [v]);
-  return { left: v.interpolate({ inputRange: [0, 0.62, 1], outputRange: ['-40%', '120%', '120%'] }) };
-}
-
 function PlanCheck({ selected, dark }: { selected: boolean; dark: boolean }) {
   return (
     <View
@@ -123,7 +112,7 @@ function FeatureRow({ text, dark }: { text: string; dark: boolean }) {
       <View style={[styles.featureTick, { backgroundColor: dark ? '#1B76E8' : '#EAF2FE' }]}>
         <CheckIcon size={8} color={dark ? '#fff' : '#1B76E8'} strokeWidth={3.4} />
       </View>
-      <Text style={[styles.featureText, { color: dark ? '#F2F7FD' : '#3A4759' }]} numberOfLines={1}>
+      <Text style={[styles.featureText, { color: dark ? '#F2F7FD' : '#3A4759' }]} numberOfLines={2}>
         {text}
       </Text>
     </View>
@@ -166,7 +155,6 @@ export default function PaywallScreen() {
   const premiumLift = useLift(tier === 'premium');
   const freeLift = useLift(tier === 'free');
   const badgePulse = useBadgePulse();
-  const sheen = useSheen();
   const thinkDots = useThink(cta === 'loading');
 
   const thumbX = useRef(new Animated.Value(billing === 'annual' ? 1 : 0)).current;
@@ -334,7 +322,6 @@ export default function PaywallScreen() {
 
       <Animated.View style={ctaEnter}>
         <Pressable onPress={handlePrimaryPress} style={[styles.ctaBtn, cta === 'done' && styles.ctaBtnDone]}>
-          <Animated.View style={[styles.sheen, { left: sheen.left }]} />
           {cta !== 'loading' && <Text style={styles.ctaLabel}>{ctaLabel}</Text>}
           {cta === 'loading' && (
             <View style={styles.dotsRow}>
@@ -374,22 +361,22 @@ const styles = StyleSheet.create({
   currencyPill: { flexDirection: 'row', gap: 2, padding: 3, backgroundColor: '#EAF0F9', borderRadius: 12 },
   pillBtn: { paddingVertical: 4, paddingHorizontal: 9, borderRadius: 9 },
   pillBtnActive: { backgroundColor: '#fff', shadowColor: '#10203A', shadowOpacity: 0.1, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
-  pillLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 0.3, color: 'rgba(16,32,58,0.45)' },
+  pillLabel: { fontSize: Typography.label, fontWeight: '700', letterSpacing: 0.3, color: 'rgba(16,32,58,0.45)' },
   pillLabelActive: { color: '#10203A' },
   closeBtn: { width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(16,32,58,0.06)', alignItems: 'center', justifyContent: 'center' },
 
   header: { flexDirection: 'row', alignItems: 'center', gap: 11, marginBottom: 10 },
   headerText: { flex: 1, gap: 4 },
-  headerTitle: { fontWeight: '700', fontSize: 18, lineHeight: 21, color: '#10203A', letterSpacing: -0.2 },
-  headerSub: { fontWeight: '500', fontSize: 11, lineHeight: 15, color: '#4B5A70' },
+  headerTitle: { fontWeight: '700', fontSize: Typography.screenTitle, color: '#10203A', letterSpacing: -0.2 },
+  headerSub: { fontWeight: '500', fontSize: Typography.body, color: '#4B5A70' },
 
   billingTrack: { position: 'relative', flexDirection: 'row', padding: 4, backgroundColor: '#EAF0F9', borderRadius: 16, marginBottom: 10 },
   billingThumb: { position: 'absolute', top: 4, bottom: 4, left: 4, borderRadius: 12, backgroundColor: '#fff', shadowColor: '#10203A', shadowOpacity: 0.09, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
-  billingSeg: { flex: 1, height: 32, borderRadius: 12, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 5 },
-  billingLabel: { fontWeight: '600', fontSize: 11.5, color: 'rgba(16,32,58,0.5)' },
+  billingSeg: { flex: 1, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 5 },
+  billingLabel: { fontWeight: '600', fontSize: Typography.body, color: 'rgba(16,32,58,0.5)' },
   billingLabelActive: { color: '#10203A' },
   saveBadge: { paddingVertical: 2, paddingHorizontal: 6, borderRadius: 7, backgroundColor: '#F6EBD6' },
-  saveBadgeText: { fontSize: 8.5, fontWeight: '700', letterSpacing: 0.2, color: '#8C6318' },
+  saveBadgeText: { fontSize: Typography.caption, fontWeight: '700', letterSpacing: 0.2, color: '#8C6318' },
 
   cardsRow: { flex: 1, flexDirection: 'row', gap: 10, marginBottom: 10 },
   cardOuter: { flex: 1, minWidth: 0 },
@@ -402,41 +389,40 @@ const styles = StyleSheet.create({
   premiumCardUnselected: { borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.07)', shadowColor: '#10203A', shadowOpacity: 0.12, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
 
   recommendedBadge: { position: 'absolute', top: -8, left: 12, paddingVertical: 3, paddingHorizontal: 8, borderRadius: 9, backgroundColor: '#1B76E8' },
-  recommendedBadgeText: { color: '#fff', fontWeight: '700', fontSize: 8.5, letterSpacing: 0.3 },
+  recommendedBadgeText: { color: '#fff', fontWeight: '700', fontSize: Typography.caption, letterSpacing: 0.3 },
 
   cardTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 6 },
   cardTopText: { flex: 1, minWidth: 0, gap: 5 },
-  cardName: { fontWeight: '700', fontSize: 14, color: '#10203A' },
-  cardNameDark: { fontWeight: '700', fontSize: 14, color: '#fff' },
-  priceLight: { fontFamily: MONO, fontWeight: '500', fontSize: 16, color: '#10203A' },
-  priceDark: { fontFamily: MONO, fontWeight: '500', fontSize: 16, color: '#fff' },
-  periodLight: { fontWeight: '500', fontSize: 8.5, color: '#5A6A80' },
-  periodDark: { fontWeight: '500', fontSize: 8.5, color: '#C6D6EA' },
+  cardName: { fontWeight: '700', fontSize: Typography.heading, color: '#10203A' },
+  cardNameDark: { fontWeight: '700', fontSize: Typography.heading, color: '#fff' },
+  priceLight: { fontWeight: '700', fontSize: Typography.screenTitle, fontVariant: ['tabular-nums'], color: '#10203A' },
+  priceDark: { fontWeight: '700', fontSize: Typography.screenTitle, fontVariant: ['tabular-nums'], color: '#fff' },
+  periodLight: { fontWeight: '500', fontSize: Typography.rowValue, color: '#5A6A80' },
+  periodDark: { fontWeight: '500', fontSize: Typography.rowValue, color: '#C6D6EA' },
 
   check: { width: 20, height: 20, borderRadius: 10, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
 
   badgeNeutral: { alignSelf: 'flex-start', paddingVertical: 5, paddingHorizontal: 8, borderRadius: 9, backgroundColor: '#EEF3FA' },
-  badgeNeutralText: { color: '#4B5A70', fontWeight: '700', fontSize: 8.5, letterSpacing: 0.2 },
+  badgeNeutralText: { color: '#4B5A70', fontWeight: '700', fontSize: Typography.caption, letterSpacing: 0.2 },
   badgeWarm: { alignSelf: 'flex-start', paddingVertical: 5, paddingHorizontal: 8, borderRadius: 9, backgroundColor: 'rgba(184,134,43,0.2)' },
-  badgeWarmText: { color: '#EFC985', fontWeight: '700', fontSize: 8.5, letterSpacing: 0.2 },
+  badgeWarmText: { color: '#EFC985', fontWeight: '700', fontSize: Typography.caption, letterSpacing: 0.2 },
 
   dividerLight: { height: 1, backgroundColor: '#EEF3FA' },
   dividerDark: { height: 1, backgroundColor: 'rgba(255,255,255,0.14)' },
 
   featureList: { flex: 1, gap: 7 },
   featureRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 7 },
-  featureTick: { width: 13, height: 13, borderRadius: 7, marginTop: 1, alignItems: 'center', justifyContent: 'center' },
-  featureText: { flex: 1, fontWeight: '500', fontSize: 9.5, lineHeight: 12 },
+  featureTick: { width: 15, height: 15, borderRadius: 8, marginTop: 1, alignItems: 'center', justifyContent: 'center' },
+  featureText: { flex: 1, fontWeight: '500', fontSize: Typography.rowValue, lineHeight: 17 },
 
-  ctaBtn: { position: 'relative', overflow: 'hidden', height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1B76E8', shadowColor: '#1B76E8', shadowOpacity: 0.32, shadowRadius: 22, shadowOffset: { width: 0, height: 10 }, marginBottom: 8 },
+  ctaBtn: { height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1B76E8', shadowColor: '#1B76E8', shadowOpacity: 0.32, shadowRadius: 22, shadowOffset: { width: 0, height: 10 }, marginBottom: 8 },
   ctaBtnDone: { backgroundColor: '#0F5FC4', shadowColor: '#0F5FC4', shadowOpacity: 0.34 },
-  ctaLabel: { color: '#fff', fontWeight: '700', fontSize: 14.5 },
-  sheen: { position: 'absolute', top: 0, bottom: 0, width: '35%', backgroundColor: 'rgba(255,255,255,0.22)' },
+  ctaLabel: { color: '#fff', fontWeight: '700', fontSize: Typography.heading },
   dotsRow: { flexDirection: 'row', gap: 7 },
   dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#fff' },
 
-  fine: { fontWeight: '500', fontSize: 8.5, lineHeight: 12, textAlign: 'center', color: '#5A6A80', marginBottom: 7 },
+  fine: { fontWeight: '500', fontSize: Typography.label, lineHeight: 16, textAlign: 'center', color: '#5A6A80', marginBottom: 7 },
   footerLinks: { flexDirection: 'row', justifyContent: 'center', gap: 12 },
-  footerLink: { fontWeight: '500', fontSize: 11, color: 'rgba(16,32,58,0.72)' },
-  footerDot: { fontSize: 11, color: 'rgba(16,32,58,0.72)' },
+  footerLink: { fontWeight: '500', fontSize: Typography.body, color: 'rgba(16,32,58,0.72)' },
+  footerDot: { fontSize: Typography.body, color: 'rgba(16,32,58,0.72)' },
 });

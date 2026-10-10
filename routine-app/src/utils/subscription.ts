@@ -1,4 +1,9 @@
-import type { SubscriptionState } from '@/store/types';
+import { Platform } from 'react-native';
+
+import { PREMIUM_SKUS } from '@/lib/iap';
+import type { SubscriptionDetails, SubscriptionState } from '@/store/types';
+import { FREE_ACTIVE_PLAN_LIMIT } from '@/utils/premium';
+import { MONTH_SHORT } from '@/utils/progress';
 
 export const SUBSCRIPTION_STATES: SubscriptionState[] = ['trial', 'monthly', 'annual', 'ending', 'free'];
 
@@ -33,30 +38,86 @@ export interface SubscriptionContent {
   listGrey: boolean;
 }
 
+type Billing = 'monthly' | 'annual';
+
+const DAY_MS = 86_400_000;
+const TRIAL_DAYS = 7;
+// Same fallback USD prices as the paywall's PRICE table (Tickle.storekit's displayPrice).
+const PRICE_USD: Record<Billing, number> = { monthly: 2.69, annual: 16.99 };
+const BILLED_BY = Platform.OS === 'android' ? 'Google Play' : 'App Store';
+
+const usd = (n: number) => `$${n.toFixed(2)}`;
+
+function fmtDate(ms: number) {
+  const d = new Date(ms);
+  return `${d.getDate()} ${MONTH_SHORT[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+function addPeriod(ms: number, billing: Billing) {
+  const d = new Date(ms);
+  if (billing === 'annual') d.setFullYear(d.getFullYear() + 1);
+  else d.setMonth(d.getMonth() + 1);
+  return d.getTime();
+}
+
+export interface SubscriptionInputs {
+  /** From the last StoreKit refresh; null on Free or while a Profile > Testing state is forced. */
+  details: SubscriptionDetails | null;
+  activePlans: number;
+  now?: number;
+}
+
 /**
- * Fallback content per entitlement state (design_handoff_tickle_subscription/README.md's state
- * table). Dates/prices/payment-method strings here are the spec's own display-conversion fallback
- * copy — once real StoreKit/Play Billing wiring exists, every field but `listTitle`/`listGrey`
- * should come from the live product/entitlement record instead of this table.
+ * Where the current period starts/ends and which billing it's on. Real StoreKit dates when we
+ * have them; otherwise (a forced testing state) plausible dates relative to today, so the screen
+ * never shows a stale hardcoded date.
  */
-export function getSubscriptionContent(state: SubscriptionState): SubscriptionContent {
+function resolvePeriod(state: SubscriptionState, details: SubscriptionDetails | null, now: number) {
+  const billing: Billing =
+    details?.productId === PREMIUM_SKUS.annual ? 'annual'
+    : details?.productId === PREMIUM_SKUS.monthly ? 'monthly'
+    : state === 'annual' || state === 'trial' ? 'annual'
+    : 'monthly';
+  if (details) {
+    const end = details.expiresAt ?? (state === 'trial' ? details.periodStart + TRIAL_DAYS * DAY_MS : addPeriod(details.periodStart, billing));
+    return { billing, start: details.periodStart, end };
+  }
+  const start = now - (state === 'trial' ? 2 : state === 'ending' ? 26 : 10) * DAY_MS;
+  const end = state === 'trial' ? start + TRIAL_DAYS * DAY_MS : addPeriod(start, billing);
+  return { billing, start, end };
+}
+
+/**
+ * Content per entitlement state (design_handoff_tickle_subscription/README.md's state table),
+ * filled from StoreKit's dates. Prices are still the fixed USD fallback until the paywall reads
+ * localized prices from StoreKit.
+ */
+export function getSubscriptionContent(state: SubscriptionState, { details, activePlans, now = Date.now() }: SubscriptionInputs): SubscriptionContent {
+  const { billing, start, end } = resolvePeriod(state, details, now);
+  const daysLeft = Math.max(0, Math.ceil((end - now) / DAY_MS));
+  const elapsedPct = Math.min(100, Math.max(0, ((now - start) / Math.max(1, end - start)) * 100));
+  const planName = billing === 'annual' ? 'Premium — Annual' : 'Premium — Monthly';
+  const billPlan = billing === 'annual' ? 'Premium annual' : 'Premium monthly';
+  const daysLabel = `${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} left`;
+
   switch (state) {
-    case 'trial':
+    case 'trial': {
+      const day = Math.min(TRIAL_DAYS, Math.max(1, Math.floor((now - start) / DAY_MS) + 1));
       return {
-        pillLabel: 'TRIAL · 4 DAYS LEFT',
+        pillLabel: `TRIAL · ${daysLabel.toUpperCase()}`,
         pillBg: '#1B76E8',
         pillInk: '#fff',
         dark: true,
-        planName: 'Premium — Annual',
-        priceLine: '$16.99 / yr after trial',
-        meterLabel: 'Trial ends 17 Sep 2026',
-        meterValue: 'day 3 of 7',
-        pct: 43,
+        planName,
+        priceLine: `${usd(PRICE_USD[billing])} / ${billing === 'annual' ? 'yr' : 'month'} after trial`,
+        meterLabel: `Trial ends ${fmtDate(end)}`,
+        meterValue: `day ${day} of ${TRIAL_DAYS}`,
+        pct: elapsedPct,
         barColor: '#1B76E8',
-        billPlan: 'Premium annual',
-        billNext: '17 Sep 2026',
-        billPay: 'Apple Pay',
-        ctaLabel: 'Manage in App Store',
+        billPlan,
+        billNext: fmtDate(end),
+        billPay: BILLED_BY,
+        ctaLabel: 'Manage subscription',
         ctaAction: 'store',
         minorLabel: 'Cancel trial',
         minorInk: '#5A6A80',
@@ -64,6 +125,7 @@ export function getSubscriptionContent(state: SubscriptionState): SubscriptionCo
         listTitle: 'Included in your plan',
         listGrey: false,
       };
+    }
     case 'monthly':
       return {
         pillLabel: 'ACTIVE',
@@ -71,14 +133,14 @@ export function getSubscriptionContent(state: SubscriptionState): SubscriptionCo
         pillInk: '#8FEAC4',
         dark: true,
         planName: 'Premium — Monthly',
-        priceLine: '$2.69 / month',
-        meterLabel: 'Renews 13 Oct 2026',
-        meterValue: '$32.28 / yr at this rate',
+        priceLine: `${usd(PRICE_USD.monthly)} / month`,
+        meterLabel: `Renews ${fmtDate(end)}`,
+        meterValue: `${usd(PRICE_USD.monthly * 12)} / yr at this rate`,
         pct: 100,
         barColor: '#1B76E8',
         billPlan: 'Premium monthly',
-        billNext: '13 Oct 2026',
-        billPay: 'Visa ·· 4242',
+        billNext: fmtDate(end),
+        billPay: BILLED_BY,
         ctaLabel: 'Switch to annual · save 48%',
         ctaAction: 'paywall',
         minorLabel: 'Cancel subscription',
@@ -94,15 +156,15 @@ export function getSubscriptionContent(state: SubscriptionState): SubscriptionCo
         pillInk: '#8FEAC4',
         dark: true,
         planName: 'Premium — Annual',
-        priceLine: '$16.99 / yr (≈ $1.42/mo)',
-        meterLabel: 'Renews 13 Sep 2027',
-        meterValue: '≈ $1.42 / mo',
+        priceLine: `${usd(PRICE_USD.annual)} / yr (≈ ${usd(PRICE_USD.annual / 12)}/mo)`,
+        meterLabel: `Renews ${fmtDate(end)}`,
+        meterValue: `≈ ${usd(PRICE_USD.annual / 12)} / mo`,
         pct: 100,
         barColor: '#1B76E8',
         billPlan: 'Premium annual',
-        billNext: '13 Sep 2027',
-        billPay: 'Apple Pay',
-        ctaLabel: 'Manage in App Store',
+        billNext: fmtDate(end),
+        billPay: BILLED_BY,
+        ctaLabel: 'Manage subscription',
         ctaAction: 'store',
         minorLabel: 'Cancel subscription',
         minorInk: '#5A6A80',
@@ -110,21 +172,23 @@ export function getSubscriptionContent(state: SubscriptionState): SubscriptionCo
         listTitle: 'Included in your plan',
         listGrey: false,
       };
-    case 'ending':
+    case 'ending': {
+      const endDate = new Date(end);
       return {
-        pillLabel: 'ENDS 13 OCT',
+        pillLabel: `ENDS ${endDate.getDate()} ${MONTH_SHORT[endDate.getMonth()].toUpperCase()}`,
         pillBg: 'rgba(184,134,43,0.22)',
         pillInk: '#EFC985',
         dark: true,
-        planName: 'Premium — Monthly',
+        planName,
         priceLine: 'Cancelled · no further charges',
-        meterLabel: 'Premium until 13 Oct 2026, then Free',
-        meterValue: '27 days left',
-        pct: 68,
+        meterLabel: `Premium until ${fmtDate(end)}, then Free`,
+        meterValue: daysLabel,
+        // Drains toward the end date.
+        pct: 100 - elapsedPct,
         barColor: '#D9A356',
-        billPlan: 'Premium monthly',
+        billPlan,
         billNext: '—',
-        billPay: 'Visa ·· 4242',
+        billPay: BILLED_BY,
         ctaLabel: 'Keep Premium',
         ctaAction: 'store',
         minorLabel: 'What changes on Free?',
@@ -133,8 +197,10 @@ export function getSubscriptionContent(state: SubscriptionState): SubscriptionCo
         listTitle: 'Included in your plan',
         listGrey: false,
       };
+    }
     case 'free':
-    default:
+    default: {
+      const atLimit = activePlans >= FREE_ACTIVE_PLAN_LIMIT;
       return {
         pillLabel: 'FREE PLAN',
         pillBg: '#EEF3FA',
@@ -143,9 +209,9 @@ export function getSubscriptionContent(state: SubscriptionState): SubscriptionCo
         planName: 'Free',
         priceLine: '$0 forever',
         meterLabel: 'Active plans used',
-        meterValue: '5 of 5',
-        pct: 100,
-        barColor: '#D9A356',
+        meterValue: `${Math.min(activePlans, FREE_ACTIVE_PLAN_LIMIT)} of ${FREE_ACTIVE_PLAN_LIMIT}`,
+        pct: Math.min(100, (activePlans / FREE_ACTIVE_PLAN_LIMIT) * 100),
+        barColor: atLimit ? '#D9A356' : '#1B76E8',
         billPlan: 'Free',
         billNext: '—',
         billPay: '—',
@@ -157,5 +223,6 @@ export function getSubscriptionContent(state: SubscriptionState): SubscriptionCo
         listTitle: 'Unlock with Premium',
         listGrey: true,
       };
+    }
   }
 }

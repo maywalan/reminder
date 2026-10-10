@@ -3,7 +3,7 @@ import * as Crypto from 'expo-crypto';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-import type { Group, Plan, Profile, Settings, SubscriptionState } from './types';
+import type { Group, Plan, Profile, Settings, SubscriptionDetails, SubscriptionState } from './types';
 import { syncClearAll, syncDeletePlan, syncDeletePlans, syncUpdateProfile, syncUpdateSettings, syncUpsertGroup, syncUpsertPlan, syncUpsertPlans } from '@/lib/sync';
 import { findFuturePlans, findPastPlans } from '@/utils/countdown';
 import { toISO } from '@/utils/dates';
@@ -58,6 +58,9 @@ interface PlannerState {
    */
   mockSubscriptionState: SubscriptionState;
   setMockSubscriptionState: (state: SubscriptionState) => void;
+  /** Dates/plan behind `mockSubscriptionState`, from the same StoreKit refresh. Null on Free. */
+  subscriptionDetails: SubscriptionDetails | null;
+  setSubscriptionDetails: (details: SubscriptionDetails | null) => void;
   /** Set from Profile > Testing > Subscription State: StoreKit refreshes leave the state alone. */
   subscriptionTestOverride: boolean;
   setSubscriptionTestOverride: (on: boolean) => void;
@@ -110,6 +113,7 @@ export const usePlannerStore = create<PlannerState>()(
       pendingGroupPick: null,
       firstUsedAt: null,
       mockSubscriptionState: 'free',
+      subscriptionDetails: null,
       subscriptionTestOverride: false,
       upgradeBannerDismissedAt: null,
 
@@ -118,6 +122,8 @@ export const usePlannerStore = create<PlannerState>()(
       },
 
       setMockSubscriptionState: (state) => set({ mockSubscriptionState: state }),
+
+      setSubscriptionDetails: (details) => set({ subscriptionDetails: details }),
 
       setSubscriptionTestOverride: (on) => set({ subscriptionTestOverride: on }),
 
@@ -291,6 +297,7 @@ export const usePlannerStore = create<PlannerState>()(
         settings: state.settings,
         firstUsedAt: state.firstUsedAt,
         mockSubscriptionState: state.mockSubscriptionState,
+        subscriptionDetails: state.subscriptionDetails,
         subscriptionTestOverride: state.subscriptionTestOverride,
         upgradeBannerDismissedAt: state.upgradeBannerDismissedAt,
       }),

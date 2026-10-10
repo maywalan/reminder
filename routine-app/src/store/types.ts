@@ -40,6 +40,15 @@ export type Language = 'en' | 'th' | 'zh';
 /** Entitlement state for the Subscription status screen — see `mockSubscriptionState` on the planner store. */
 export type SubscriptionState = 'trial' | 'monthly' | 'annual' | 'ending' | 'free';
 
+/** What StoreKit last reported about the active Premium subscription (epoch ms). */
+export interface SubscriptionDetails {
+  productId: string;
+  /** Start of the current billing period (or of the trial). */
+  periodStart: number;
+  /** When the current period ends — renewal date, or the last day of Premium once cancelled. */
+  expiresAt: number | null;
+}
+
 export interface Settings {
   notificationsEnabled: boolean;
   liveActivitiesEnabled: boolean;

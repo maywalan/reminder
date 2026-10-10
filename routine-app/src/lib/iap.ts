@@ -22,10 +22,14 @@ export function subscriptionStateForSku(productId: string): SubscriptionState | 
  * subscription → 'free'. Otherwise: still in the 7-day intro offer → 'trial'; auto-renew turned
  * off (cancelled but paid up until expiry, trial included) → 'ending'; else the plan's billing.
  */
-export function deriveSubscriptionState(active: ActiveSubscription[], purchases: Purchase[]): SubscriptionState {
-  const sub = active
+function currentPremiumSub(active: ActiveSubscription[]): ActiveSubscription | undefined {
+  return active
     .filter((s) => s.isActive && subscriptionStateForSku(s.productId))
     .sort((a, b) => b.transactionDate - a.transactionDate)[0];
+}
+
+export function deriveSubscriptionState(active: ActiveSubscription[], purchases: Purchase[]): SubscriptionState {
+  const sub = currentPremiumSub(active);
   if (!sub) return 'free';
   if (sub.renewalInfoIOS && !sub.renewalInfoIOS.willAutoRenew) return 'ending';
   const latest = purchases
@@ -51,6 +55,10 @@ export async function refreshSubscriptionState(): Promise<void> {
     const store = usePlannerStore.getState();
     if (store.subscriptionTestOverride) return;
     store.setMockSubscriptionState(deriveSubscriptionState(active ?? [], purchases ?? []));
+    const sub = currentPremiumSub(active ?? []);
+    store.setSubscriptionDetails(
+      sub ? { productId: sub.productId, periodStart: sub.transactionDate, expiresAt: sub.expirationDateIOS ?? null } : null
+    );
   } catch {
     // Offline or StoreKit unavailable — keep the last known state.
   }

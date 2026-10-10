@@ -135,7 +135,7 @@ export default function RootLayout() {
           <Stack.Screen name="recap" options={{ presentation: 'modal' }} />
           <Stack.Screen name="edit-profile" options={{ presentation: 'modal' }} />
           <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="subscription" options={{ animation: 'fade' }} />
+          <Stack.Screen name="subscription" options={{ animation: 'slide_from_right' }} />
         </Stack>
       </ThemeProvider>
     </GestureHandlerRootView>

@@ -97,6 +97,13 @@ notification options + alert style, appearance, font size, language picker, data
 hosted policy link, Home Screen Widgets preview with today's date), custom tab bar, light/dark
 theming, local persistence + Supabase sync.
 
+**iOS widgets** (`targets/widget/`, design `../tickle_calendar_widget/` Round 4): Calendar
+(medium two weeks / large month grid), Today (small), Next 3 days (small), and lock-screen
+Up next (inline / rectangular / to-do ring) + Date (circular). The app writes plans from ~45 days
+back to ~75 days ahead, plus holidays, into the App Group (`src/lib/widget-sync.ts`). Widget taps
+open `tickle://calendar?date=…[&plan=…|&add=1]`, which the Calendar tab handles by pushing the
+plan sheet on top of itself.
+
 **New Settings fields added for the above** (`calendarDensity`, `fontScale`, `recapEnabled`,
 `recapHour`) **and `Plan.timezone` are device-local only** — not yet columns in the Supabase
 schema, so they don't sync across a signed-in user's devices. Would need a migration
@@ -108,7 +115,6 @@ schema, so they don't sync across a signed-in user's devices. Would need a migra
 |---|---|
 | Apple Sign-In | blocked on enrolling in the Apple Developer Program ($99/yr) — email/password and (broken) Google OAuth are the only sign-in methods right now |
 | Actual in-app translation | the Language sheet persists a choice, but text isn't retranslated yet — see the `LANG` object and `applyLanguage()` |
-| Real iOS Home Screen widgets | the Settings widgets sheet is a preview mockup (matching the prototype's own mock); a working WidgetKit widget needs a native dev build, which Expo Go can't provide |
 | Calendar customize sheet (background/font/colors) | `#overlay-cal-customize` |
 
 Suggested order: fix Google OAuth or drop it in favor of Apple Sign-In (Apple requires offering

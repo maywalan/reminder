@@ -1,7 +1,7 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Animated, Easing, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -70,6 +70,8 @@ export default function CalendarScreen() {
   const theme = useTheme();
   const blurTint = useEffectiveScheme() === 'dark' ? 'dark' : 'light';
   const router = useRouter();
+  // Widget taps (targets/widget/TickleCalendarData.swift → CalLink): tickle://calendar?date=…[&plan=…|&add=1]
+  const linkParams = useLocalSearchParams<{ date?: string; plan?: string; add?: string }>();
   const insets = useSafeAreaInsets();
   const plans = usePlannerStore((s) => s.plans);
   const groups = usePlannerStore((s) => s.groups);
@@ -143,6 +145,27 @@ export default function CalendarScreen() {
     setCalYear(now.getFullYear());
     handleSelectDate(todayISO);
   }
+
+  // A widget tap lands here with the day to show, and maybe a plan to open or a new plan to start
+  // on it. The sheet is pushed from this tab so Cancel/back always has somewhere to go. Params are
+  // cleared afterwards so tapping the same widget spot again still registers.
+  useEffect(() => {
+    const iso = linkParams.date;
+    if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
+    const d = new Date(iso + 'T00:00:00');
+    setCalView('month');
+    setCalMonth(d.getMonth());
+    setCalYear(d.getFullYear());
+    setSelectedDate(iso);
+    if (linkParams.plan) {
+      router.push({ pathname: '/add-plan', params: { id: linkParams.plan } });
+    } else if (linkParams.add) {
+      router.push({ pathname: '/add-plan', params: { date: iso } });
+    } else {
+      setTimeout(() => scrollRef.current?.scrollTo({ y: Math.max(dayDetailY.current - 16, 0), animated: true }), 350);
+    }
+    router.setParams({ date: undefined, plan: undefined, add: undefined });
+  }, [linkParams.date, linkParams.plan, linkParams.add, router]);
 
   const getColor = (p: (typeof plans)[number]) => colorForPlan(p, groups, theme.accent);
 

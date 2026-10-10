@@ -42,12 +42,15 @@ public class TickleLiveActivityModule: Module {
     /// Lives here because @bacons/apple-targets' own ExtensionStorage pod requires iOS 16.4 and is
     /// silently dropped at this app's 15.1 deployment target — so its writes were no-ops.
     /// `plansJson` is the JSON array TickleWidget.swift decodes as `[TodayPlan]`.
-    Function("setWidgetData") { (appGroup: String, kind: String, language: String, dateLabel: String, plansJson: String) in
+    /// Calendar widgets' data (src/lib/widget-sync.ts): the app language plus `{ plans, holidays }` JSON,
+    /// then a reload of every widget kind — they all read the same payload.
+    Function("setWidgetData") { (appGroup: String, language: String, calendarJson: String) in
       let defaults = UserDefaults(suiteName: appGroup)
       defaults?.set(language, forKey: "language")
-      defaults?.set(dateLabel, forKey: "dateLabel")
-      defaults?.set(Data(plansJson.utf8), forKey: "todayPlans")
-      WidgetCenter.shared.reloadTimelines(ofKind: kind)
+      defaults?.set(Data(calendarJson.utf8), forKey: "calendarData")
+      defaults?.removeObject(forKey: "todayPlans")
+      defaults?.removeObject(forKey: "dateLabel")
+      WidgetCenter.shared.reloadAllTimelines()
     }
 
     /// Lock Screen button taps since the last call, oldest first — each `{ action: 'complete' | 'extend', planId, at }`.

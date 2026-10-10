@@ -35,12 +35,12 @@ export default {
 
   'streak.record': { en: 'Best streak yet!', th: 'สถิติต่อเนื่องสูงสุดเลย!' },
   'streak.growing': { en: '{count}-day streak', th: 'ต่อเนื่อง {count} วัน' },
-  'streak.paused': { en: 'Streak paused', th: 'สถิติต่อเนื่องหยุดชั่วคราว' },
+  'streak.paused': { en: 'Streak paused', th: 'ทำต่อเนื่องขาดช่วงไป' },
   'streak.none': { en: 'No streak yet', th: 'ยังไม่มีสถิติต่อเนื่อง' },
   'streak.recordBody': { en: "You're on a {count}-day streak — your longest yet.", th: 'ทำต่อเนื่องมา {count} วันแล้ว ยาวที่สุดเท่าที่เคยมี!' },
   'streak.growingBody': { en: '{more} more to match your record of {longest}.', th: 'อีก {more} วันจะเท่าสถิติ {longest} วันของคุณ' },
-  'streak.pausedBody': { en: 'Complete a plan today to start climbing back toward your record of {longest}.', th: 'ทำแผนให้เสร็จสักอันวันนี้ แล้วไต่กลับไปหาสถิติ {longest} วันกัน' },
-  'streak.noneBody': { en: 'Complete a plan today to start your first streak.', th: 'ทำแผนให้เสร็จสักอันวันนี้ เพื่อเริ่มสถิติแรกของคุณ' },
+  'streak.pausedBody': { en: 'Complete a plan today to start climbing back toward your record of {longest}.', th: 'ทำเสร็จสักแผนวันนี้ ก็เริ่มนับใหม่ได้ (สถิติเดิม {longest} วัน)' },
+  'streak.noneBody': { en: 'Complete a plan today to start your first streak.', th: 'ทำเสร็จสักแผนวันนี้ ก็เริ่มนับวันต่อเนื่องได้เลย' },
 
   'recap.title': { en: 'Your Recap', th: 'สรุปของคุณ' },
   'recap.tasksCompleted': { en: 'tasks completed', th: 'งานที่ทำเสร็จ' },

@@ -47,9 +47,11 @@ function withFont(style: StyleProp<TextStyle>, nested: boolean): StyleProp<TextS
   return [style, { fontFamily: familyFor(flat.fontWeight) }];
 }
 
-export const Text = forwardRef<RNText, TextProps>(function Text({ style, ...rest }, ref) {
+// iOS's "standard" strategy is what native apps get: it avoids leaving one short word alone on
+// the last line ("…สถิติ 6 วัน / กัน"), which iOS's default (none) does a lot with Thai.
+export const Text = forwardRef<RNText, TextProps>(function Text({ style, lineBreakStrategyIOS = 'standard', ...rest }, ref) {
   const nested = useContext(InsideText);
-  const text = <RNText ref={ref} {...rest} style={withFont(style, nested)} />;
+  const text = <RNText ref={ref} lineBreakStrategyIOS={lineBreakStrategyIOS} {...rest} style={withFont(style, nested)} />;
   return nested ? text : <InsideText.Provider value={true}>{text}</InsideText.Provider>;
 });
 

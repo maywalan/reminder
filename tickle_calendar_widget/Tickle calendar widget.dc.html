@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><meta name="design_doc_mode" content="canvas"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700&amp;display=swap"><style>body{margin:0;background:#F4F7FB}a{color:#1B76E8;text-decoration:none}a:hover{color:#1668D8}</style></helmet>
+<section style="padding:44px 48px 20px;font-family:'Anuphan',sans-serif;color:#10203A;display:flex;flex-direction:column;gap:28px">
+  <div style="display:flex;flex-direction:column;gap:8px;max-width:880px">
+    <div style="font-weight:700;font-size:26px;letter-spacing:-.4px">Round 4 — Large month widget on the phone</div>
+    <div style="font-weight:400;font-size:13.5px;line-height:1.7;color:rgba(16,32,58,.6);text-wrap:pretty">iOS only allows small accessory widgets on the lock screen, so the large month widget lives on the home screen (and in StandBy). <a href="#4a">4a</a> is the large widget with plan names written into each day, without Tickle's banner. <a href="#4b">4b</a> is what the lock screen can carry: an inline line above the clock, a rectangular next-up and a circular day count.</div>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start">
+
+    <div id="4a" style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:center;gap:8px"><a href="#4a" style="font-weight:700;font-size:11px;background:#EAF2FE;color:#1B76E8;padding:3px 8px;border-radius:6px">4a</a><span style="font-weight:600;font-size:14px">Home screen · large widget</span></div>
+      <div data-screen-label="Home screen large widget" style="width:393px;height:852px;box-sizing:border-box;border-radius:58px;border:11px solid #17181D;background:linear-gradient(180deg,#2A4E9E 0%,#6A79D2 38%,#B7A6E6 68%,#EDCBD9 100%);position:relative;overflow:hidden;box-shadow:0 20px 50px rgba(16,32,58,.22)">
+        <div style="position:absolute;left:50%;top:11px;width:122px;height:35px;margin-left:-61px;border-radius:18px;background:#000"></div>
+        <div style="height:54px;display:flex;align-items:center;justify-content:space-between;padding:4px 30px 0;color:#fff;font-weight:600;font-size:15px"><span>9:41</span><span style="font-size:12px;opacity:.9;white-space:nowrap">●●● ▮</span></div>
+        <div style="padding:14px 16px 0;display:flex;flex-direction:column;gap:6px;align-items:center">
+          <div style="width:338px;height:354px;box-sizing:border-box;border-radius:24px;background:rgba(18,22,40,.62);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.12);padding:12px 9px 9px;display:flex;flex-direction:column;color:#fff">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:0 4px 5px">
+              <div style="font-weight:700;font-size:14px;letter-spacing:-.1px">May 2026</div>
+              <div style="font-weight:600;font-size:10.5px;padding:2px 8px;border-radius:9px;background:rgba(255,255,255,.14);white-space:nowrap">3 plans today</div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));padding-bottom:3px">
+              <sc-for list="{{ wds }}" as="w" hint-placeholder-count="7"><div style="text-align:center;font-weight:700;font-size:9px;color:rgba(255,255,255,.5)">{{ w }}</div></sc-for>
+            </div>
+            <div style="flex:1;display:grid;grid-template-rows:repeat(6,minmax(0,1fr));border-top:1px solid rgba(255,255,255,.1)">
+              <sc-for list="{{ gweeks }}" as="wk" hint-placeholder-count="6">
+                <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-bottom:1px solid rgba(255,255,255,.08);min-height:0">
+                  <sc-for list="{{ wk.days }}" as="c" hint-placeholder-count="7">
+                    <div style="display:flex;flex-direction:column;gap:1.5px;padding:2px 1.5px;min-width:0;overflow:hidden">
+                      <div style="align-self:center;width:15px;height:15px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:9px;background:{{ c.dbg }};color:{{ c.dcol }}">{{ c.n }}</div>
+                      <sc-for list="{{ c.chips }}" as="h">
+                        <div style="display:flex;align-items:center;gap:2px;height:11px;padding:0 2px 0 0;border-radius:3px;background:{{ h.bg }};opacity:{{ h.op }};overflow:hidden">
+                          <span style="width:2px;align-self:stretch;background:{{ h.bar }};flex:none"></span>
+                          <span style="font-weight:600;font-size:7px;line-height:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:{{ h.strike }}">{{ h.t }}</span>
+                        </div>
+                      </sc-for>
+                      <sc-if value="{{ c.hasMore }}" hint-placeholder-val="{{ false }}"><div style="font-weight:600;font-size:7px;line-height:10px;color:rgba(255,255,255,.65);padding-left:2px;white-space:nowrap">{{ c.more }}</div></sc-if>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="font-weight:500;font-size:11px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.25);white-space:nowrap">Tickle</div>
+        </div>
+        <div style="position:absolute;left:12px;right:12px;bottom:12px;height:88px;border-radius:34px;background:rgba(255,255,255,.22);backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:space-around;padding:0 10px">
+          <img src="design_handoff_tickle_icon_6b/icon-master.svg" alt="Tickle" style="width:62px;height:62px">
+          <div style="width:62px;height:62px;border-radius:15px;background:rgba(255,255,255,.35)"></div>
+          <div style="width:62px;height:62px;border-radius:15px;background:rgba(255,255,255,.35)"></div>
+          <div style="width:62px;height:62px;border-radius:15px;background:rgba(255,255,255,.35)"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="4c" style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:center;gap:8px"><a href="#4c" style="font-weight:700;font-size:11px;background:#EAF2FE;color:#1B76E8;padding:3px 8px;border-radius:6px">4c</a><span style="font-weight:600;font-size:14px">Home screen · medium + small</span></div>
+      <div data-screen-label="Home screen medium and small widgets" style="width:393px;height:852px;box-sizing:border-box;border-radius:58px;border:11px solid #17181D;background:linear-gradient(180deg,#2A4E9E 0%,#6A79D2 38%,#B7A6E6 68%,#EDCBD9 100%);position:relative;overflow:hidden;box-shadow:0 20px 50px rgba(16,32,58,.22);color:#fff">
+        <div style="position:absolute;left:50%;top:11px;width:122px;height:35px;margin-left:-61px;border-radius:18px;background:#000"></div>
+        <div style="height:54px;display:flex;align-items:center;justify-content:space-between;padding:4px 30px 0;font-weight:600;font-size:15px"><span>9:41</span><span style="font-size:12px;opacity:.9;white-space:nowrap">●●● ▮</span></div>
+        <div style="padding:14px 16px 0;display:flex;flex-direction:column;gap:22px;align-items:center">
+
+          <div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+            <div style="width:338px;height:158px;box-sizing:border-box;border-radius:24px;background:rgba(18,22,40,.62);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.12);padding:10px 9px 7px;display:flex;flex-direction:column">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:0 4px 4px">
+                <div style="font-weight:700;font-size:13px">May 10 – 23</div>
+                <div style="font-weight:600;font-size:10px;padding:2px 8px;border-radius:9px;background:rgba(255,255,255,.14);white-space:nowrap">3 plans today</div>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));padding-bottom:2px">
+                <sc-for list="{{ wds }}" as="w" hint-placeholder-count="7"><div style="text-align:center;font-weight:700;font-size:8.5px;color:rgba(255,255,255,.5)">{{ w }}</div></sc-for>
+              </div>
+              <div style="flex:1;display:grid;grid-template-rows:repeat(2,minmax(0,1fr));border-top:1px solid rgba(255,255,255,.1)">
+                <sc-for list="{{ mweeks }}" as="wk" hint-placeholder-count="2">
+                  <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-bottom:1px solid rgba(255,255,255,.08);min-height:0">
+                    <sc-for list="{{ wk.days }}" as="c" hint-placeholder-count="7">
+                      <div style="display:flex;flex-direction:column;gap:1.5px;padding:2px 1.5px;min-width:0;overflow:hidden">
+                        <div style="align-self:center;width:15px;height:15px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:9px;background:{{ c.dbg }};color:{{ c.dcol }}">{{ c.n }}</div>
+                        <sc-for list="{{ c.chips }}" as="h">
+                          <div style="display:flex;align-items:center;gap:2px;height:11px;padding:0 2px 0 0;border-radius:3px;background:{{ h.bg }};opacity:{{ h.op }};overflow:hidden">
+                            <span style="width:2px;align-self:stretch;background:{{ h.bar }};flex:none"></span>
+                            <span style="font-weight:600;font-size:7px;line-height:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:{{ h.strike }}">{{ h.t }}</span>
+                          </div>
+                        </sc-for>
+                        <sc-if value="{{ c.hasMore }}" hint-placeholder-val="{{ false }}"><div style="font-weight:600;font-size:7px;line-height:10px;color:rgba(255,255,255,.65);padding-left:2px;white-space:nowrap">{{ c.more }}</div></sc-if>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="font-weight:500;font-size:11px;text-shadow:0 1px 2px rgba(0,0,0,.25);white-space:nowrap">Tickle</div>
+          </div>
+
+          <div style="display:flex;gap:22px">
+            <div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+              <div style="width:158px;height:158px;box-sizing:border-box;border-radius:24px;background:rgba(18,22,40,.62);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.12);padding:11px 10px 10px;display:flex;flex-direction:column;gap:6px">
+                <div style="display:flex;align-items:baseline;gap:5px;padding:0 2px">
+                  <span style="font-weight:700;font-size:10px;letter-spacing:.5px;color:#7FB3FF">THU</span>
+                  <span style="font-weight:700;font-size:22px;line-height:1;letter-spacing:-.5px">14</span>
+                </div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:4px;justify-content:flex-end">
+                  <sc-for list="{{ today3 }}" as="h" hint-placeholder-count="3">
+                    <div style="display:flex;align-items:center;gap:5px;height:24px;padding-right:6px;border-radius:6px;background:{{ h.bg }};overflow:hidden">
+                      <span style="width:3px;align-self:stretch;background:{{ h.bar }};flex:none"></span>
+                      <span style="flex:1;min-width:0;font-weight:600;font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ h.t }}</span>
+                      <span style="font-weight:500;font-size:9px;color:rgba(255,255,255,.7);white-space:nowrap;flex:none">{{ h.time }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+              <div style="font-weight:500;font-size:11px;text-shadow:0 1px 2px rgba(0,0,0,.25);white-space:nowrap">Today</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+              <div style="width:158px;height:158px;box-sizing:border-box;border-radius:24px;background:rgba(18,22,40,.62);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.12);padding:10px 8px 8px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px">
+                <sc-for list="{{ next3 }}" as="d" hint-placeholder-count="3">
+                  <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+                    <div style="font-weight:700;font-size:8.5px;color:{{ d.wcol }};text-align:center">{{ d.wd }}</div>
+                    <div style="font-weight:700;font-size:17px;line-height:1.1;text-align:center;color:{{ d.wcol }}">{{ d.n }}</div>
+                    <div style="display:flex;flex-direction:column;gap:2px;margin-top:3px">
+                      <sc-for list="{{ d.chips }}" as="h">
+                        <div style="display:flex;align-items:center;gap:2px;height:30px;padding:0 3px 0 0;border-radius:5px;background:{{ h.bg }};opacity:{{ h.op }};overflow:hidden">
+                          <span style="width:2px;align-self:stretch;background:{{ h.bar }};flex:none"></span>
+                          <span style="font-weight:600;font-size:8.5px;line-height:1.2;overflow:hidden;text-decoration:{{ h.strike }}">{{ h.t }}</span>
+                        </div>
+                      </sc-for>
+                      <sc-if value="{{ d.hasMore }}" hint-placeholder-val="{{ false }}"><div style="font-weight:600;font-size:8.5px;color:rgba(255,255,255,.65);padding-left:3px">{{ d.more }}</div></sc-if>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="font-weight:500;font-size:11px;text-shadow:0 1px 2px rgba(0,0,0,.25);white-space:nowrap">Next 3 days</div>
+            </div>
+          </div>
+
+        </div>
+        <div style="position:absolute;left:12px;right:12px;bottom:12px;height:88px;border-radius:34px;background:rgba(255,255,255,.22);backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:space-around;padding:0 10px">
+          <img src="design_handoff_tickle_icon_6b/icon-master.svg" alt="Tickle" style="width:62px;height:62px">
+          <div style="width:62px;height:62px;border-radius:15px;background:rgba(255,255,255,.35)"></div>
+          <div style="width:62px;height:62px;border-radius:15px;background:rgba(255,255,255,.35)"></div>
+          <div style="width:62px;height:62px;border-radius:15px;background:rgba(255,255,255,.35)"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="4b" style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:center;gap:8px"><a href="#4b" style="font-weight:700;font-size:11px;background:#EAF2FE;color:#1B76E8;padding:3px 8px;border-radius:6px">4b</a><span style="font-weight:600;font-size:14px">Lock screen · accessory widgets</span></div>
+      <div data-screen-label="Lock screen widgets" style="width:393px;height:852px;box-sizing:border-box;border-radius:58px;border:11px solid #17181D;background:linear-gradient(180deg,#2A4E9E 0%,#6A79D2 38%,#B7A6E6 68%,#EDCBD9 100%);position:relative;overflow:hidden;box-shadow:0 20px 50px rgba(16,32,58,.22);color:#fff">
+        <div style="position:absolute;left:50%;top:11px;width:122px;height:35px;margin-left:-61px;border-radius:18px;background:#000"></div>
+        <div style="height:54px;display:flex;align-items:center;justify-content:flex-end;padding:4px 30px 0;font-weight:600;font-size:12px;opacity:.9;white-space:nowrap">●●● ▮</div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:0;padding-top:22px">
+          <div style="display:flex;align-items:center;gap:6px;font-weight:600;font-size:17px;color:rgba(255,255,255,.88)">
+            <span>Thu 14</span>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="2.5" stroke="currentColor" stroke-width="2.2"></rect><path d="M4 9.5h16" stroke="currentColor" stroke-width="2.2"></path></svg>
+            <span>2:00 Design review</span>
+          </div>
+          <div style="font-weight:700;font-size:96px;line-height:1;letter-spacing:-3px;color:rgba(255,255,255,.9);margin-top:2px">1:30</div>
+          <div style="display:flex;gap:12px;margin-top:16px">
+            <div style="width:158px;height:70px;box-sizing:border-box;border-radius:18px;background:rgba(255,255,255,.18);backdrop-filter:blur(20px);padding:9px 12px;display:flex;flex-direction:column;justify-content:center;gap:1px">
+              <div style="display:flex;align-items:center;gap:5px;font-weight:700;font-size:11px;color:rgba(255,255,255,.75)"><span style="width:7px;height:7px;border-radius:4px;background:#fff"></span>Next · 2:00 PM</div>
+              <div style="font-weight:700;font-size:14px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Design review</div>
+              <div style="font-weight:500;font-size:11px;color:rgba(255,255,255,.75);white-space:nowrap">then Stats set · 4:30</div>
+            </div>
+            <div style="width:70px;height:70px;border-radius:35px;background:rgba(255,255,255,.18);backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:center;position:relative">
+              <svg width="70" height="70" viewBox="0 0 70 70" style="position:absolute;inset:0"><circle cx="35" cy="35" r="29" stroke="rgba(255,255,255,.25)" stroke-width="5" fill="none"></circle><circle cx="35" cy="35" r="29" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round" stroke-dasharray="0 182.2" transform="rotate(-90 35 35)"></circle></svg>
+              <div style="display:flex;flex-direction:column;align-items:center;line-height:1"><span style="font-weight:700;font-size:20px">3</span><span style="font-weight:600;font-size:9px;color:rgba(255,255,255,.75);margin-top:2px">to do</span></div>
+            </div>
+            <div style="width:70px;height:70px;border-radius:35px;background:rgba(255,255,255,.18);backdrop-filter:blur(20px);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1">
+              <span style="font-weight:700;font-size:10px;color:rgba(255,255,255,.75);letter-spacing:.5px">MAY</span>
+              <span style="font-weight:700;font-size:24px;margin-top:2px">14</span>
+            </div>
+          </div>
+        </div>
+        <div style="position:absolute;left:0;right:0;bottom:30px;display:flex;justify-content:space-between;padding:0 46px">
+          <div style="width:50px;height:50px;border-radius:25px;background:rgba(0,0,0,.25);backdrop-filter:blur(20px)"></div>
+          <div style="width:50px;height:50px;border-radius:25px;background:rgba(0,0,0,.25);backdrop-filter:blur(20px)"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+<section style="padding:44px 48px 20px;font-family:'Anuphan',sans-serif;color:#10203A;display:flex;flex-direction:column;gap:28px">
+  <div style="display:flex;flex-direction:column;gap:8px;max-width:880px">
+    <div style="font-weight:700;font-size:26px;letter-spacing:-.4px">Round 3 — <a href="#2a">Round 2</a> with a month view</div>
+    <div style="font-weight:400;font-size:13.5px;line-height:1.7;color:rgba(16,32,58,.6);text-wrap:pretty">The week strip swaps for May's grid from Calendar 13a. Medium puts the mini month beside Tickle's next-up; large shows the full month with dots, then today's plans. Small stays a single nudge — a month doesn't fit legibly at 158px with Tickle in it.</div>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start">
+    <sc-for list="{{ scen3 }}" as="s" hint-placeholder-count="3">
+    <div id="{{ s.id }}" style="display:flex;flex-direction:column;gap:14px;padding:22px;background:#fff;border:1px solid #E7EDF6;border-radius:24px">
+      <div style="display:flex;align-items:center;gap:8px"><a href="#{{ s.id }}" style="font-weight:700;font-size:11px;background:#EAF2FE;color:#1B76E8;padding:3px 8px;border-radius:6px">{{ s.id }}</a><span style="font-weight:600;font-size:14px">{{ s.name }}</span></div>
+      <div style="padding:22px;border-radius:26px;background:linear-gradient(165deg,#C9DEF8 0%,#E4EEFB 60%,#F1F6FD 100%);display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;gap:16px">
+          <div style="width:158px;height:158px;box-sizing:border-box;border-radius:22px;background:linear-gradient(170deg,#D6E7FC 0%,#EAF3FE 55%,#F7FAFF 100%);box-shadow:0 6px 18px rgba(16,32,58,.08);padding:14px;display:flex;flex-direction:column;position:relative;overflow:hidden">
+            <img src="assets/tickle-glyph.svg" alt="" style="position:absolute;right:-18px;bottom:-22px;width:92px;height:92px;transform:rotate(-14deg)">
+            <div style="font-weight:600;font-size:11px;color:rgba(16,32,58,.55);white-space:nowrap">{{ s.smKicker }}</div>
+            <div style="font-weight:700;font-size:15px;line-height:1.3;letter-spacing:-.2px;margin-top:4px;max-width:118px">{{ s.smTitle }}</div>
+            <div style="margin-top:auto;font-weight:600;font-size:11px;color:#1B76E8;white-space:nowrap">{{ s.smFoot }}</div>
+          </div>
+          <div style="width:338px;height:158px;box-sizing:border-box;border-radius:22px;background:#fff;box-shadow:0 6px 18px rgba(16,32,58,.08);padding:11px 11px 11px 9px;display:flex;gap:10px">
+            <div style="width:150px;flex:none;display:flex;flex-direction:column;gap:3px">
+              <div style="font-weight:700;font-size:11px;letter-spacing:.6px;color:#1B76E8;padding-left:4px">MAY</div>
+              <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr))">
+                <sc-for list="{{ s.month }}" as="c" hint-placeholder-count="42">
+                  <div style="height:19px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px">
+                    <div style="width:15px;height:15px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:{{ c.w }};background:{{ c.bg }};color:{{ c.col }}">{{ c.n }}</div>
+                    <div style="display:flex;gap:1.5px;height:2.5px">
+                      <sc-for list="{{ c.dots }}" as="x"><span style="width:2.5px;height:2.5px;border-radius:2px;background:{{ x.c }}"></span></sc-for>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:14px;background:linear-gradient(170deg,#D6E7FC 0%,#EAF3FE 60%,#F7FAFF 100%);position:relative;overflow:hidden">
+              <img src="assets/tickle-glyph.svg" alt="" style="position:absolute;right:-14px;bottom:-24px;width:74px;height:74px;transform:rotate(-14deg)">
+              <div style="font-weight:600;font-size:10.5px;color:rgba(16,32,58,.55);position:relative">{{ s.smKicker }}</div>
+              <div style="font-weight:700;font-size:13.5px;line-height:1.3;position:relative;max-width:120px">{{ s.smTitle }}</div>
+              <div style="margin-top:auto;font-weight:600;font-size:11px;color:#1B76E8;white-space:nowrap;position:relative">{{ s.smFoot }}</div>
+            </div>
+          </div>
+        </div>
+        <div style="width:338px;box-sizing:border-box;border-radius:22px;background:#fff;box-shadow:0 6px 18px rgba(16,32,58,.08);padding:14px;display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:16px;background:linear-gradient(170deg,#D6E7FC 0%,#EAF3FE 60%,#F7FAFF 100%);position:relative;overflow:hidden;min-height:58px">
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;position:relative;padding-right:60px">
+              <div style="font-weight:700;font-size:15px;letter-spacing:-.2px">{{ s.lgTitle }}</div>
+              <div style="font-size:11.5px;color:rgba(16,32,58,.6)">{{ s.lgSub }}</div>
+            </div>
+            <img src="assets/tickle-glyph.svg" alt="" style="position:absolute;right:-10px;bottom:-26px;width:84px;height:84px;transform:rotate(-14deg)">
+          </div>
+          <div style="display:flex;flex-direction:column">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:0 4px 4px">
+              <div style="font-weight:700;font-size:13px">May 2026</div>
+              <div style="font-weight:600;font-size:11px;color:rgba(16,32,58,.55);white-space:nowrap">{{ s.todayCount }}</div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));padding-bottom:2px">
+              <sc-for list="{{ wds }}" as="w" hint-placeholder-count="7"><div style="text-align:center;font-weight:700;font-size:9.5px;color:rgba(16,32,58,.42)">{{ w }}</div></sc-for>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr))">
+              <sc-for list="{{ s.month }}" as="c" hint-placeholder-count="42">
+                <div style="height:29px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px">
+                  <div style="width:22px;height:22px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:600;background:{{ c.bg }};color:{{ c.colL }}">{{ c.n }}</div>
+                  <div style="display:flex;gap:2px;height:3.5px">
+                    <sc-for list="{{ c.dots }}" as="x"><span style="width:3.5px;height:3.5px;box-sizing:border-box;border-radius:2px;background:{{ x.bg }};border:1px solid {{ x.c }}"></span></sc-for>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <sc-if value="{{ s.empty }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:14px;border:1.5px dashed #C9DBF3;color:#1B76E8;font-weight:600;font-size:12.5px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="#1B76E8" stroke-width="2.4" stroke-linecap="round"></path></svg>Add a plan for today
+            </div>
+          </sc-if>
+          <sc-if value="{{ s.hasPlans }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <sc-for list="{{ s.shown }}" as="p" hint-placeholder-count="3">
+                <div onClick="{{ p.toggle }}" style="display:flex;gap:10px;align-items:center;padding:7px 11px;border-radius:13px;border:1px solid #EBEFF7;cursor:pointer">
+                  <div style="width:19px;height:19px;box-sizing:border-box;border-radius:10px;border:2px solid {{ p.ring }};background:{{ p.fill }};flex:none;display:flex;align-items:center;justify-content:center">
+                    <sc-if value="{{ p.done }}" hint-placeholder-val="{{ false }}"><svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="m5 12.5 4.5 4.5L19 7.5" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></sc-if>
+                  </div>
+                  <div style="flex:1;min-width:0;font-weight:600;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:{{ p.tcol }};text-decoration:{{ p.strike }}">{{ p.t }}</div>
+                  <span style="width:6px;height:6px;border-radius:3px;background:{{ p.c }};flex:none"></span>
+                  <div style="font-weight:500;font-size:11px;color:rgba(16,32,58,.55);flex:none;width:52px;text-align:right;white-space:nowrap">{{ p.time }}</div>
+                </div>
+              </sc-for>
+              <sc-if value="{{ s.overflow }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 11px;border-radius:13px;background:#F7FAFF;border:1px solid #EBEFF7">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <div style="display:flex;gap:3px"><sc-for list="{{ s.restDots }}" as="x"><span style="width:6px;height:6px;border-radius:3px;background:{{ x }}"></span></sc-for></div>
+                    <div style="font-weight:600;font-size:12px;white-space:nowrap">{{ s.moreLabel }}</div>
+                  </div>
+                  <div style="font-weight:600;font-size:11.5px;color:#1B76E8;white-space:nowrap">Open Calendar</div>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+    </sc-for>
+  </div>
+</section>
+<section style="padding:44px 48px 20px;font-family:'Anuphan',sans-serif;color:#10203A;display:flex;flex-direction:column;gap:28px">
+  <div style="display:flex;flex-direction:column;gap:8px;max-width:880px">
+    <div style="font-weight:700;font-size:26px;letter-spacing:-.4px">Round 2 — <a href="#1c">1c</a> across plan counts</div>
+    <div style="font-weight:400;font-size:13.5px;line-height:1.7;color:rgba(16,32,58,.6);text-wrap:pretty">Same Tickle nudge widget with nothing planned, one plan, and five plans. The week strip and the rest of May's data stay the same; only today changes. Tap a plan in the large widget to tick it off.</div>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start">
+    <sc-for list="{{ scen }}" as="s" hint-placeholder-count="3">
+    <div id="{{ s.id }}" style="display:flex;flex-direction:column;gap:14px;padding:22px;background:#fff;border:1px solid #E7EDF6;border-radius:24px">
+      <div style="display:flex;align-items:center;gap:8px"><a href="#{{ s.id }}" style="font-weight:700;font-size:11px;background:#EAF2FE;color:#1B76E8;padding:3px 8px;border-radius:6px">{{ s.id }}</a><span style="font-weight:600;font-size:14px">{{ s.name }}</span></div>
+      <div style="font-size:12px;line-height:1.6;color:rgba(16,32,58,.58);max-width:512px">{{ s.note }}</div>
+      <div style="padding:22px;border-radius:26px;background:linear-gradient(165deg,#C9DEF8 0%,#E4EEFB 60%,#F1F6FD 100%);display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;gap:16px">
+          <div style="width:158px;height:158px;box-sizing:border-box;border-radius:22px;background:linear-gradient(170deg,#D6E7FC 0%,#EAF3FE 55%,#F7FAFF 100%);box-shadow:0 6px 18px rgba(16,32,58,.08);padding:14px;display:flex;flex-direction:column;position:relative;overflow:hidden">
+            <img src="assets/tickle-glyph.svg" alt="" style="position:absolute;right:-18px;bottom:-22px;width:92px;height:92px;transform:rotate(-14deg)">
+            <div style="font-weight:600;font-size:11px;color:rgba(16,32,58,.55);white-space:nowrap">{{ s.smKicker }}</div>
+            <div style="font-weight:700;font-size:15px;line-height:1.3;letter-spacing:-.2px;margin-top:4px;max-width:118px">{{ s.smTitle }}</div>
+            <div style="margin-top:auto;font-weight:600;font-size:11px;color:#1B76E8;white-space:nowrap">{{ s.smFoot }}</div>
+          </div>
+          <div style="width:338px;height:158px;box-sizing:border-box;border-radius:22px;background:#fff;box-shadow:0 6px 18px rgba(16,32,58,.08);padding:13px 14px;display:flex;flex-direction:column;gap:10px">
+            <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr))">
+              <sc-for list="{{ s.week }}" as="d" hint-placeholder-count="7">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+                  <div style="font-weight:600;font-size:10px;color:rgba(16,32,58,.45)">{{ d.wd }}</div>
+                  <div style="width:26px;height:26px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:12px;background:{{ d.bg }};color:{{ d.col }}">{{ d.n }}</div>
+                  <div style="display:flex;gap:2.5px;height:4px">
+                    <sc-for list="{{ d.dots }}" as="x"><span style="width:4px;height:4px;box-sizing:border-box;border-radius:2px;background:{{ x.bg }};border:1px solid {{ x.c }}"></span></sc-for>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="flex:1;display:flex;align-items:center;gap:10px;padding:0 12px;border-radius:14px;background:linear-gradient(170deg,#D6E7FC 0%,#EAF3FE 60%,#F7FAFF 100%);position:relative;overflow:hidden">
+              <div style="width:3px;height:30px;border-radius:2px;background:{{ s.mdBar }};flex:none"></div>
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+                <div style="font-weight:600;font-size:10.5px;color:rgba(16,32,58,.55);white-space:nowrap">{{ s.mdKicker }}</div>
+                <div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ s.mdTitle }}</div>
+              </div>
+              <img src="assets/tickle-glyph.svg" alt="" style="width:58px;height:58px;margin:0 -8px -22px 0;transform:rotate(-14deg);flex:none;align-self:flex-end">
+            </div>
+          </div>
+        </div>
+        <div style="width:338px;box-sizing:border-box;border-radius:22px;background:#fff;box-shadow:0 6px 18px rgba(16,32,58,.08);padding:14px;display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:16px;background:linear-gradient(170deg,#D6E7FC 0%,#EAF3FE 60%,#F7FAFF 100%);position:relative;overflow:hidden;min-height:58px">
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;position:relative;padding-right:60px">
+              <div style="font-weight:700;font-size:15px;letter-spacing:-.2px">{{ s.lgTitle }}</div>
+              <div style="font-size:11.5px;color:rgba(16,32,58,.6)">{{ s.lgSub }}</div>
+            </div>
+            <img src="assets/tickle-glyph.svg" alt="" style="position:absolute;right:-10px;bottom:-26px;width:84px;height:84px;transform:rotate(-14deg)">
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr))">
+            <sc-for list="{{ s.week }}" as="d" hint-placeholder-count="7">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+                <div style="font-weight:600;font-size:10px;color:rgba(16,32,58,.45)">{{ d.wd }}</div>
+                <div style="width:28px;height:28px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:12.5px;background:{{ d.bg }};color:{{ d.col }}">{{ d.n }}</div>
+                <div style="display:flex;gap:2.5px;height:4px">
+                  <sc-for list="{{ d.dots }}" as="x"><span style="width:4px;height:4px;box-sizing:border-box;border-radius:2px;background:{{ x.bg }};border:1px solid {{ x.c }}"></span></sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          <sc-if value="{{ s.empty }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:7px">
+              <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;border-radius:14px;border:1.5px dashed #C9DBF3;color:#1B76E8;font-weight:600;font-size:12.5px">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="#1B76E8" stroke-width="2.4" stroke-linecap="round"></path></svg>Add a plan for today
+              </div>
+              <div style="display:flex;gap:10px;align-items:center;padding:8px 11px;border-radius:14px;background:#F7FAFF;border:1px solid #EBEFF7">
+                <div style="font-weight:600;font-size:10.5px;color:rgba(16,32,58,.55);white-space:nowrap;flex:none">Tomorrow</div>
+                <div style="flex:1;min-width:0;font-weight:600;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Weekly sync with Mei</div>
+                <span style="width:6px;height:6px;border-radius:3px;background:#7B61FF;flex:none"></span>
+                <div style="font-weight:500;font-size:11px;color:rgba(16,32,58,.55);flex:none;white-space:nowrap">10:00 AM</div>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ s.hasPlans }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;flex-direction:column;gap:7px">
+              <sc-for list="{{ s.shown }}" as="p" hint-placeholder-count="3">
+                <div onClick="{{ p.toggle }}" style="display:flex;gap:10px;align-items:center;padding:8px 11px;border-radius:14px;border:1px solid #EBEFF7;cursor:pointer">
+                  <div style="width:20px;height:20px;box-sizing:border-box;border-radius:10px;border:2px solid {{ p.ring }};background:{{ p.fill }};flex:none;display:flex;align-items:center;justify-content:center">
+                    <sc-if value="{{ p.done }}" hint-placeholder-val="{{ false }}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="m5 12.5 4.5 4.5L19 7.5" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></sc-if>
+                  </div>
+                  <div style="flex:1;min-width:0;font-weight:600;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:{{ p.tcol }};text-decoration:{{ p.strike }}">{{ p.t }}</div>
+                  <span style="width:6px;height:6px;border-radius:3px;background:{{ p.c }};flex:none"></span>
+                  <div style="font-weight:500;font-size:11px;color:rgba(16,32,58,.55);flex:none;width:52px;text-align:right;white-space:nowrap">{{ p.time }}</div>
+                </div>
+              </sc-for>
+              <sc-if value="{{ s.single }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:6px 11px 0;font-size:11.5px;color:rgba(16,32,58,.5)">The rest of today is free.</div>
+              </sc-if>
+              <sc-if value="{{ s.overflow }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 11px;border-radius:14px;background:#F7FAFF;border:1px solid #EBEFF7">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <div style="display:flex;gap:3px"><sc-for list="{{ s.restDots }}" as="x"><span style="width:6px;height:6px;border-radius:3px;background:{{ x }}"></span></sc-for></div>
+                    <div style="font-weight:600;font-size:12px;white-space:nowrap">{{ s.moreLabel }}</div>
+                  </div>
+                  <div style="font-weight:600;font-size:11.5px;color:#1B76E8;white-space:nowrap">Open Calendar</div>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+    </sc-for>
+  </div>
+</section>
+<section style="padding:44px 48px 60px;font-family:'Anuphan',sans-serif;color:#10203A;display:flex;flex-direction:column;gap:28px">
+  <div style="display:flex;flex-direction:column;gap:8px;max-width:880px">
+    <div style="font-weight:700;font-size:26px;letter-spacing:-.4px">Round 1 — Calendar widget</div>
+    <div style="font-weight:400;font-size:13.5px;line-height:1.7;color:rgba(16,32,58,.6);text-wrap:pretty">Three home-screen widget directions, each at small, medium and large. All read the same data as Calendar 13a: Thursday May 14, three plans today, and plan dots coloured by list across the month.</div>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start">
+
+    <div id="1a" style="display:flex;flex-direction:column;gap:14px;padding:22px;background:#fff;border:1px solid #E7EDF6;border-radius:24px">
+      <div style="display:flex;align-items:center;gap:8px"><a href="#1a" style="font-weight:700;font-size:11px;background:#EAF2FE;color:#1B76E8;padding:3px 8px;border-radius:6px">1a</a><span style="font-weight:600;font-size:14px">Agenda</span></div>
+      <div style="font-size:12px;line-height:1.6;color:rgba(16,32,58,.58);max-width:512px">Date first, then what's on. Small shows the next plan, medium the whole day, large adds the week's dots so you see busy days ahead.</div>
+      <div style="padding:22px;border-radius:26px;background:linear-gradient(165deg,#C9DEF8 0%,#E4EEFB 60%,#F1F6FD 100%);display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;gap:16px">
+          <div style="width:158px;height:158px;box-sizing:border-box;border-radius:22px;background:#fff;box-shadow:0 6px 18px rgba(16,32,58,.08);padding:14px;display:flex;flex-direction:column">
+            <div style="font-weight:700;font-size:11px;letter-spacing:.6px;color:#1B76E8">THURSDAY</div>
+            <div style="font-weight:700;font-size:38px;line-height:1;letter-spacing:-1px;margin-top:2px">14</div>
+            <div style="margin-top:auto;display:flex;gap:7px">
+              <div style="width:3px;border-radius:2px;background:#7B61FF;flex:none"></div>
+              <div style="display:flex;flex-direction:column;gap:1px;min-width:0">
+                <div style="font-weight:600;font-size:12px;line-height:1.3">Design review with Mei</div>
+                <div style="font-size:11px;color:rgba(16,32,58,.55)">2:00 PM · +2 more</div>
+              </div>
+            </div>
+          </div>
+          <div style="width:338px;height:158px;box-sizing:border-box;border-radius:22px;background:#fff;box-shadow:0 6px 18px rgba(16,32,58,.08);padding:14px 16px;display:flex;gap:16px">
+            <div style="width:78px;flex:none;display:flex;flex-direction:column">
+              <div style="font-weight:700;font-size:11px;letter-spacing:.6px;color:#1B76E8">THU</div>
+              <div style="font-weight:700;font-size:38px;line-height:1;letter-spacing:-1px;margin-top:2px">14</div>
+              <div style="font-weight:500;font-size:11px;color:rgba(16,32,58,.55);margin-top:4px">May</div>
+              <div style="margin-top:auto;font-weight:600;font-size:11px;color:rgba(16,32,58,.55)">3 plans</div>
+            </div>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:11px">
+              <sc-for list="{{ plans }}" as="p" hint-placeholder-count="3">
+                <div style="display:flex;gap:8px">
+                  <div style="width:3px;border-radius:2px;background:{{ p.c }};flex:none"></div>
+                  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px">
+                    <div style="font-weight:600;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.t }}</div>
+                    <div style="font-size:11px;color:rgba(16,32,58,.55)">{{ p.time }}</div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        <div style="width:338px;height:354px;box-sizing:border-box;border-radius:22px;background:#fff;box-shadow:0 6px 18px rgba(16,32,58,.08);padding:16px;display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between">
+            <div style="display:flex;flex-direction:column">
+              <div style="font-weight:700;font-size:11px;letter-spacing:.6px;color:#1B76E8">THURSDAY</div>
+              <div style="font-weight:700;font-size:22px;letter-spacing:-.4px">May 14</div>
+            </div>
+            <div style="font-weight:600;font-size:11px;color:rgba(16,32,58,.55);padding-bottom:3px;white-space:nowrap;flex:none">3 plans · 0 done</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <sc-for list="{{ plans }}" as="p" hint-placeholder-count="3">
+              <div style="display:flex;gap:10px;align-items:center;padding:9px 11px;border-radius:14px;background:#F7FAFF;border:1px solid #EBEFF7">
+                <div style="width:3px;height:28px;border-radius:2px;background:{{ p.c }};flex:none"></div>
+                <div style="flex:1;min-width:0;font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.t }}</div>
+                <div style="font-weight:500;font-size:11px;color:rgba(16,32,58,.55);flex:none;white-space:nowrap">{{ p.time }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="margin-top:auto;display:flex;flex-direction:column;gap:8px">
+            <div style="font-weight:600;font-size:11px;color:rgba(16,32,58,.55)">This week</div>
+            <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr))">
+              <sc-for list="{{ week }}" as="d" hint-placeholder-count="7">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+                  <div style="font-weight:600;font-size:10px;color:rgba(16,32,58,.45)">{{ d.wd }}</div>
+                  <div style="width:28px;height:28px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:12.5px;background:{{ d.bg }};color:{{ d.col }}">{{ d.n }}</div>
+                  <div style="display:flex;gap:2.5px;height:4px">
+                    <sc-for list="{{ d.dots }}" as="x"><span style="width:4px;height:4px;box-sizing:border-box;border-radius:2px;background:{{ x.bg }};border:1px solid {{ x.c }}"></span></sc-for>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="1b" style="display:flex;flex-direction:column;gap:14px;padding:22px;background:#fff;border:1px solid #E7EDF6;border-radius:24px">
+      <div style="display:flex;align-items:center;gap:8px"><a href="#1b" style="font-weight:700;font-size:11px;background:#EAF2FE;color:#1B76E8;padding:3px 8px;border-radius:6px">1b</a><span style="font-weight:600;font-size:14px">Month glance</span></div>
+      <div style="font-size:12px;line-height:1.6;color:rgba(16,32,58,.58);max-width:512px">The 13a month grid shrunk onto the home screen. Small marks busy days in bold, medium pairs the grid with today, large is the full Month compact view.</div>
+      <div style="padding:22px;border-radius:26px;background:linear-gradient(165deg,#C9DEF8 0%,#E4EEFB 60%,#F1F6FD 100%);display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;gap:16px">
+          <div style="width:158px;height:158px;box-sizing:border-box;border-radius:22px;background:#fff;box-shadow:0 6px 18px rgba(16,32,58,.08);padding:12px 11px;display:flex;flex-direction:column;gap:4px">
+            <div style="font-weight:700;font-size:11px;letter-spacing:.6px;color:#1B76E8;padding-left:3px">MAY</div>
+            <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));row-gap:1px">
+              <sc-for list="{{ month }}" as="c" hint-placeholder-count="42">
+                <div style="height:17px;display:flex;align-items:center;justify-content:center"><div style="width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:{{ c.w }};background:{{ c.bg }};color:{{ c.col }}">{{ c.n }}</div></div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="width:338px;height:158px;box-sizing:border-box;border-radius:22px;background:#fff;box-shadow:0 6px 18px rgba(16,32,58,.08);padding:12px 14px 12px 11px;display:flex;gap:14px">
+            <div style="width:136px;flex:none;display:flex;flex-direction:column;gap:4px">
+              <div style="font-weight:700;font-size:11px;letter-spacing:.6px;color:#1B76E8;padding-left:3px">MAY</div>
+              <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));row-gap:1px">
+                <sc-for list="{{ month }}" as="c" hint-placeholder-count="42">
+                  <div style="height:17px;display:flex;align-items:center;justify-content:center"><div style="width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:{{ c.w }};background:{{ c.bg }};color:{{ c.col }}">{{ c.n }}</div></div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:9px;border-left:1px solid #EDF1F8;padding-left:14px">
+              <div style="font-weight:600;font-size:11px;color:rgba(16,32,58,.55)">Today</div>
+              <sc-for list="{{ plans }}" as="p" hint-placeholder-count="3">
+                <div style="display:flex;gap:7px">
+                  <div style="width:3px;border-radius:2px;background:{{ p.c }};flex:none"></div>
+                  <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+                    <div style="font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.t }}</div>
+                    <div style="font-size:10.5px;color:rgba(16,32,58,.55)">{{ p.time }}</div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        <div style="width:338px;box-sizing:border-box;border-radius:22px;background:#fff;box-shadow:0 6px 18px rgba(16,32,58,.08);padding:14px 10px 14px;display:flex;flex-direction:column">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:0 6px 6px">
+            <div style="font-weight:700;font-size:16px;letter-spacing:-.2px">May 2026</div>
+            <div style="font-weight:600;font-size:11px;color:#1B76E8;white-space:nowrap;flex:none">3 today</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));padding-bottom:2px">
+            <sc-for list="{{ wds }}" as="w" hint-placeholder-count="7"><div style="text-align:center;font-weight:700;font-size:10px;color:rgba(16,32,58,.42)">{{ w }}</div></sc-for>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr))">
+            <sc-for list="{{ month }}" as="c" hint-placeholder-count="42">
+              <div style="height:34px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px">
+                <div style="width:24px;height:24px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;background:{{ c.bg }};color:{{ c.colL }}">{{ c.n }}</div>
+                <div style="display:flex;gap:2.5px;height:4px">
+                  <sc-for list="{{ c.dots }}" as="x"><span style="width:4px;height:4px;box-sizing:border-box;border-radius:2px;background:{{ x.bg }};border:1px solid {{ x.c }}"></span></sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="margin-top:8px;display:flex;gap:6px;padding:0 4px;flex-wrap:wrap">
+            <sc-for list="{{ plans }}" as="p" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:5px;padding:4px 8px;border-radius:9px;background:#F7FAFF;border:1px solid #EBEFF7;max-width:100%">
+                <span style="width:6px;height:6px;border-radius:3px;background:{{ p.c }};flex:none"></span>
+                <span style="font-weight:600;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.short }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="1c" style="display:flex;flex-direction:column;gap:14px;padding:22px;background:#fff;border:1px solid #E7EDF6;border-radius:24px">
+      <div style="display:flex;align-items:center;gap:8px"><a href="#1c" style="font-weight:700;font-size:11px;background:#EAF2FE;color:#1B76E8;padding:3px 8px;border-radius:6px">1c</a><span style="font-weight:600;font-size:14px">Tickle nudge</span></div>
+      <div style="font-size:12px;line-height:1.6;color:rgba(16,32,58,.58);max-width:512px">Tickle reads your day out loud. The voice leads ("Next up…"), the week strip from Week view sits under it, and large lets you tick plans off from the home screen.</div>
+      <div style="padding:22px;border-radius:26px;background:linear-gradient(165deg,#C9DEF8 0%,#E4EEFB 60%,#F1F6FD 100%);display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;gap:16px">
+          <div style="width:158px;height:158px;box-sizing:border-box;border-radius:22px;background:linear-gradient(170deg,#D6E7FC 0%,#EAF3FE 55%,#F7FAFF 100%);box-shadow:0 6px 18px rgba(16,32,58,.08);padding:14px;display:flex;flex-direction:column;position:relative;overflow:hidden">
+            <img src="assets/tickle-glyph.svg" alt="" style="position:absolute;right:-18px;bottom:-22px;width:92px;height:92px;transform:rotate(-14deg)">
+            <div style="font-weight:600;font-size:11px;color:rgba(16,32,58,.55)">Next up · 2:00 PM</div>
+            <div style="font-weight:700;font-size:15px;line-height:1.3;letter-spacing:-.2px;margin-top:4px;max-width:118px">Design review with Mei</div>
+            <div style="margin-top:auto;font-weight:600;font-size:11px;color:#1B76E8">2 more today</div>
+          </div>
+          <div style="width:338px;height:158px;box-sizing:border-box;border-radius:22px;background:#fff;box-shadow:0 6px 18px rgba(16,32,58,.08);padding:13px 14px;display:flex;flex-direction:column;gap:10px">
+            <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr))">
+              <sc-for list="{{ week }}" as="d" hint-placeholder-count="7">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+                  <div style="font-weight:600;font-size:10px;color:rgba(16,32,58,.45)">{{ d.wd }}</div>
+                  <div style="width:26px;height:26px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:12px;background:{{ d.bg }};color:{{ d.col }}">{{ d.n }}</div>
+                  <div style="display:flex;gap:2.5px;height:4px">
+                    <sc-for list="{{ d.dots }}" as="x"><span style="width:4px;height:4px;box-sizing:border-box;border-radius:2px;background:{{ x.bg }};border:1px solid {{ x.c }}"></span></sc-for>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="flex:1;display:flex;align-items:center;gap:10px;padding:0 12px;border-radius:14px;background:linear-gradient(170deg,#D6E7FC 0%,#EAF3FE 60%,#F7FAFF 100%);position:relative;overflow:hidden">
+              <div style="width:3px;height:30px;border-radius:2px;background:#7B61FF;flex:none"></div>
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+                <div style="font-weight:600;font-size:10.5px;color:rgba(16,32,58,.55)">Next up · 2:00 PM</div>
+                <div style="font-weight:700;font-size:13px">Design review with Mei</div>
+              </div>
+              <img src="assets/tickle-glyph.svg" alt="" style="width:58px;height:58px;margin:0 -8px -22px 0;transform:rotate(-14deg);flex:none;align-self:flex-end">
+            </div>
+          </div>
+        </div>
+        <div style="width:338px;box-sizing:border-box;border-radius:22px;background:#fff;box-shadow:0 6px 18px rgba(16,32,58,.08);padding:14px;display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:16px;background:linear-gradient(170deg,#D6E7FC 0%,#EAF3FE 60%,#F7FAFF 100%);position:relative;overflow:hidden;min-height:58px">
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;position:relative">
+              <div style="font-weight:700;font-size:15px;letter-spacing:-.2px">Three plans today</div>
+              <div style="font-size:11.5px;color:rgba(16,32,58,.6)">Design review is first, at 2:00</div>
+            </div>
+            <img src="assets/tickle-glyph.svg" alt="" style="position:absolute;right:-10px;bottom:-26px;width:84px;height:84px;transform:rotate(-14deg)">
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr))">
+            <sc-for list="{{ week }}" as="d" hint-placeholder-count="7">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+                <div style="font-weight:600;font-size:10px;color:rgba(16,32,58,.45)">{{ d.wd }}</div>
+                <div style="width:28px;height:28px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:12.5px;background:{{ d.bg }};color:{{ d.col }}">{{ d.n }}</div>
+                <div style="display:flex;gap:2.5px;height:4px">
+                  <sc-for list="{{ d.dots }}" as="x"><span style="width:4px;height:4px;box-sizing:border-box;border-radius:2px;background:{{ x.bg }};border:1px solid {{ x.c }}"></span></sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:7px;margin-top:4px">
+            <sc-for list="{{ plans }}" as="p" hint-placeholder-count="3">
+              <div onClick="{{ p.toggle }}" style="display:flex;gap:10px;align-items:center;padding:8px 11px;border-radius:14px;border:1px solid #EBEFF7;cursor:pointer">
+                <div style="width:20px;height:20px;box-sizing:border-box;border-radius:10px;border:2px solid {{ p.ring }};background:{{ p.fill }};flex:none;display:flex;align-items:center;justify-content:center">
+                  <sc-if value="{{ p.done }}" hint-placeholder-val="{{ false }}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="m5 12.5 4.5 4.5L19 7.5" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path></svg></sc-if>
+                </div>
+                <div style="flex:1;min-width:0;font-weight:600;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:{{ p.tcol }};text-decoration:{{ p.strike }}">{{ p.t }}</div>
+                <span style="width:6px;height:6px;border-radius:3px;background:{{ p.c }};flex:none"></span>
+                <div style="font-weight:500;font-size:11px;color:rgba(16,32,58,.55);flex:none;width:48px;text-align:right;white-space:nowrap">{{ p.time }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { done: {} };
+  renderVals() {
+    const V = '#7B61FF', P = '#A455D6', T = '#17A8A0', G = '#35B978', O = '#F0A32E', R = '#E0616F';
+    const dot = (c, outline) => ({ c, bg: outline ? 'transparent' : c });
+    const dots = {
+      4: [dot(V)], 6: [dot(G, 1)], 12: [dot(G)], 14: [dot(V), dot(P), dot(T)], 15: [dot(V), dot(G, 1)],
+      16: [dot(O)], 18: [dot(R), dot(P)], 20: [dot(T)], 22: [dot(R), dot(G), dot(P)], 28: [dot(V)]
+    };
+    const TODAY = 14, AZ = '#1B76E8', INK = '#10203A', FADE = 'rgba(16,32,58,.26)', LIGHT = 'rgba(16,32,58,.45)';
+    const cell = (n, out) => {
+      const today = !out && n === TODAY, has = !out && !!dots[n];
+      return {
+        n, dots: out ? [] : (dots[n] || []),
+        bg: today ? AZ : 'transparent',
+        col: today ? '#fff' : out ? 'transparent' : has ? INK : LIGHT,
+        colL: today ? '#fff' : out ? FADE : INK,
+        w: today || has ? 700 : 500
+      };
+    };
+    const month = [];
+    for (let d = 26; d <= 30; d++) month.push(cell(d, true));
+    for (let d = 1; d <= 31; d++) month.push(cell(d, false));
+    for (let d = 1; month.length < 42; d++) month.push(cell(d, true));
+    const wds = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+    const week = [10, 11, 12, 13, 14, 15, 16].map((n, i) => ({ ...cell(n, false), wd: wds[i], col: n === TODAY ? '#fff' : INK }));
+    const base = [
+      { t: 'Design review with Mei', short: 'Design review', time: '2:00 PM', c: V },
+      { t: 'Stats problem set', short: 'Stats problem set', time: '4:30 PM', c: P },
+      { t: 'Call the dentist', short: 'Dentist', time: 'All day', c: T }
+    ];
+    const plans = base.map((p, i) => {
+      const done = !!this.state.done[i];
+      return {
+        ...p, done,
+        ring: done ? G : '#DDE3EE', fill: done ? G : 'transparent',
+        tcol: done ? 'rgba(16,32,58,.4)' : INK, strike: done ? 'line-through' : 'none',
+        toggle: () => this.setState(s => ({ done: { ...s.done, [i]: !s.done[i] } }))
+      };
+    });
+    const sd = this.state.sdone || {};
+    const mk = (key, list) => list.map((p, i) => {
+      const k = key + i, done = sd[k] ?? !!p.done;
+      return {
+        ...p, done,
+        ring: done ? G : '#DDE3EE', fill: done ? G : 'transparent',
+        tcol: done ? 'rgba(16,32,58,.4)' : INK, strike: done ? 'line-through' : 'none',
+        toggle: () => this.setState(s => ({ sdone: { ...(s.sdone || {}), [k]: !done } }))
+      };
+    });
+    const weekFor = todayDots => week.map(d => d.n === TODAY ? { ...d, dots: todayDots } : d);
+    const five = [
+      { t: 'Morning stand-up', time: '9:00 AM', c: O, done: true },
+      { t: 'Design review with Mei', time: '2:00 PM', c: V },
+      { t: 'Stats problem set', time: '4:30 PM', c: P },
+      { t: 'Gym, legs day', time: '6:30 PM', c: G },
+      { t: 'Call the dentist', time: 'All day', c: T }
+    ];
+    const fivePlans = mk('5', five);
+    const scen = [
+      { id: '2a', name: 'No plans', note: 'A free day. Tickle says so instead of showing an empty list, and the large widget offers to add one and shows what\'s next tomorrow.',
+        empty: true, hasPlans: false, week: weekFor([]),
+        smKicker: 'Today', smTitle: 'Nothing planned', smFoot: '+ Add a plan',
+        mdBar: '#C9DBF3', mdKicker: 'Free day', mdTitle: 'Tomorrow · Weekly sync, 10:00',
+        lgTitle: 'Nothing on today', lgSub: 'Enjoy the free day', shown: [] },
+      { id: '2b', name: 'One plan', note: 'One plan fills the "next up" slot; the footer says the rest of the day is clear rather than counting "0 more".',
+        empty: false, hasPlans: true, single: true, overflow: false, week: weekFor([dot(V)]),
+        smKicker: 'Next up · 2:00 PM', smTitle: 'Design review with Mei', smFoot: 'That\'s all today',
+        mdBar: V, mdKicker: 'Only plan · 2:00 PM', mdTitle: 'Design review with Mei',
+        lgTitle: 'One plan today', lgSub: 'Design review at 2:00, then you\'re free', shown: mk('1', [base[0]]) },
+      { id: '2c', name: 'Five plans', note: 'The large widget lists three, starting with the finished stand-up so progress shows, then folds the rest into a "+2 more" row. Week dots stay capped at three.',
+        empty: false, hasPlans: true, single: false, overflow: true, week: weekFor([dot(O), dot(V), dot(P)]),
+        smKicker: 'Next up · 2:00 PM', smTitle: 'Design review with Mei', smFoot: '3 more today',
+        mdBar: V, mdKicker: 'Next up · 2:00 PM · 1 of 5 done', mdTitle: 'Design review with Mei',
+        lgTitle: 'Five plans today', lgSub: '1 done. Design review is next, at 2:00', shown: fivePlans.slice(0, 3),
+        restDots: five.slice(3).map(p => p.c), moreLabel: '+2 more today' }
+    ];
+    const scen3 = scen.map(s => {
+      const td = s.week.find(d => d.n === TODAY).dots;
+      const m = month.map(c => (c.colL !== FADE && c.n === TODAY) ? { ...c, dots: td } : c);
+      return { ...s, id: '3' + s.id[1], month: m, todayCount: s.empty ? 'Free today' : s.lgTitle.replace(' today', '') };
+    });
+    const ev = {
+      4: [['Weekly sync', V]], 6: [['Run 5k', G, 1]], 12: [['Gym', G]],
+      14: [['Design review', V], ['Stats set', P], ['Dentist', T]],
+      15: [['Team lunch', V], ['Yoga', G, 1]], 16: [['Water plants', O]],
+      18: [["Mei's birthday", R], ['Stats quiz', P]], 20: [['Pick up parcel', T]],
+      22: [['Date night', R], ['Gym', G], ['Essay due', P]], 28: [['Weekly sync', V]]
+    };
+    const hol = { 1: 'Labour Day', 4: 'Coronation Day' };
+    const chip = ([t, c, done]) => ({ t, bar: c, bg: c + '55', op: done ? 0.5 : 1, strike: done ? 'line-through' : 'none' });
+    const gcell = (n, out) => {
+      const list = out ? [] : (ev[n] || []);
+      const today = !out && n === TODAY;
+      const over = list.length > 2;
+      return {
+        n, today: today,
+        dbg: today ? '#FFFFFF' : 'transparent',
+        dcol: today ? '#10203A' : out ? 'rgba(255,255,255,.28)' : hol[n] ? '#FFC24D' : 'rgba(255,255,255,.92)',
+        chips: (over ? list.slice(0, 1) : list).map(chip),
+        more: over ? '+' + (list.length - 1) + ' more' : '',
+        hasMore: over
+      };
+    };
+    const grid = [];
+    for (let d = 26; d <= 30; d++) grid.push(gcell(d, true));
+    for (let d = 1; d <= 31; d++) grid.push(gcell(d, false));
+    for (let d = 1; grid.length < 42; d++) grid.push(gcell(d, true));
+    const gweeks = [0, 1, 2, 3, 4, 5].map(r => ({ days: grid.slice(r * 7, r * 7 + 7) }));
+    const mweeks = gweeks.slice(2, 4);
+    const today3 = [['Design review', '2:00', V], ['Stats set', '4:30', P], ['Dentist', 'All day', T]].map(([t, time, c]) => ({ t, time, bar: c, bg: c + '55' }));
+    const next3 = [14, 15, 16].map((n, i) => ({
+      wd: ['Today', 'Fri', 'Sat'][i], n,
+      chips: (ev[n] || []).slice(0, 2).map(chip),
+      more: (ev[n] || []).length > 2 ? '+' + ((ev[n] || []).length - 2) : '',
+      hasMore: (ev[n] || []).length > 2,
+      wcol: i === 0 ? '#FFFFFF' : 'rgba(255,255,255,.6)'
+    }));
+    return { plans, month, week, wds, scen, scen3, gweeks, mweeks, today3, next3 };
+  }
+}
+</script>
+</body>
+</html>

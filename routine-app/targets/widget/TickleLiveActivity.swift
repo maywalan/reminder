@@ -209,11 +209,14 @@ struct TickleLiveActivity: Widget {
           .padding(.horizontal, 4)
         }
       } compactLeading: {
-        Circle().fill(Color(hex: context.attributes.baseHex)).frame(width: 10, height: 10)
+        // Empty on purpose (user's call, 2026-10-10): the countdown sat in the top bar all day.
+        // iOS requires these regions, but with nothing in them the island keeps its resting
+        // size — the activity lives on the Lock Screen, and long-press still opens the expanded view.
+        EmptyView()
       } compactTrailing: {
-        Countdown(context: context, size: 13, onDark: true).frame(maxWidth: 56)
+        EmptyView()
       } minimal: {
-        Circle().fill(Color(hex: context.attributes.baseHex)).frame(width: 10, height: 10)
+        EmptyView()
       }
       .widgetURL(URL(string: "tickle://"))
       .keylineTint(Color(hex: context.attributes.baseHex))

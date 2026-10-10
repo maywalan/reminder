@@ -196,7 +196,10 @@ private struct CalHeader: View {
 
 struct CalendarGridWidgetView: View {
   let entry: CalEntry
-  @Environment(\.widgetFamily) private var family
+  /// Set only by the preview harness — `widgetFamily` can't be injected outside WidgetKit.
+  var familyOverride: WidgetFamily? = nil
+  @Environment(\.widgetFamily) private var envFamily
+  private var family: WidgetFamily { familyOverride ?? envFamily }
 
   var body: some View {
     Group {
@@ -382,7 +385,9 @@ private struct NextUp {
 @available(iOS 16.0, *)
 struct LockWidgetView: View {
   let entry: CalEntry
-  @Environment(\.widgetFamily) private var family
+  var familyOverride: WidgetFamily? = nil
+  @Environment(\.widgetFamily) private var envFamily
+  private var family: WidgetFamily { familyOverride ?? envFamily }
 
   var body: some View {
     switch family {

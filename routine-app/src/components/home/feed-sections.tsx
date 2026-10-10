@@ -12,9 +12,8 @@ import { weekdayShort } from '@/i18n/format';
 
 /**
  * The two small-row blocks under the Today sheet (design_handoff_tickle_home_7): Upcoming and
- * Earlier. Upcoming renders inside the Today sheet (its `footer`), under a divider and with
- * hairline dividers between rows (user's call, 2026-10-10); Earlier stays straight on the grey
- * page. Both share the rail's 38/9/content grid so their markers line up with the sheet's.
+ * Earlier. Upcoming renders inside the Today sheet (its `footer`), under a divider (user's call,
+ * 2026-10-10; no lines between its rows); Earlier stays straight on the grey page. Both share the rail's 38/9/content grid so their markers line up with the sheet's.
  */
 
 interface SelectProps {
@@ -90,31 +89,29 @@ export function UpcomingBlock({ items, onCalendar, ...s }: SelectProps & { items
       <Header title={tr('home.upcoming')} action={tr('tab.calendar')} onAction={onCalendar} style={styles.inSheetHeader} />
       <View style={styles.inSheetRows}>
         {items.map((p, i) => (
-          <View key={p.id}>
-            {i > 0 && <View style={[styles.divider, { backgroundColor: k.rail }]} />}
-            <SmallRow
-              plan={p}
-              s={s}
-              timeLabel={i === 0 || items[i - 1].date !== p.date ? dayLabel(p.date) : ''}
-              marker={
-                <View
-                  style={[
-                    styles.dot7,
-                    {
-                      borderWidth: 1.5,
-                      borderColor: planPalette(p.color, k.dark).base,
-                    },
-                  ]}
-                />
-              }
-              title={
-                <Text numberOfLines={1} style={[t.smallTitle, styles.title, { color: k.ink }]}>
-                  {p.name}
-                </Text>
-              }
-              right={<Text style={[t.meta, { color: k.ink50 }]}>{p.allDay ? tr('home.allDay') : p.time}</Text>}
-            />
-          </View>
+          <SmallRow
+            key={p.id}
+            plan={p}
+            s={s}
+            timeLabel={i === 0 || items[i - 1].date !== p.date ? dayLabel(p.date) : ''}
+            marker={
+              <View
+                style={[
+                  styles.dot7,
+                  {
+                    borderWidth: 1.5,
+                    borderColor: planPalette(p.color, k.dark).base,
+                  },
+                ]}
+              />
+            }
+            title={
+              <Text numberOfLines={1} style={[t.smallTitle, styles.title, { color: k.ink }]}>
+                {p.name}
+              </Text>
+            }
+            right={<Text style={[t.meta, { color: k.ink50 }]}>{p.allDay ? tr('home.allDay') : p.time}</Text>}
+          />
         ))}
       </View>
     </View>
@@ -259,8 +256,6 @@ export function SearchResults({ sections, groups, ...s }: SelectProps & { sectio
 
 const styles = StyleSheet.create({
   block: { gap: 2 },
-  // Starts at the title column (time 38 + gap 10 + marker 9 + gap 10) so day labels stay unbroken.
-  divider: { height: StyleSheet.hairlineWidth, marginLeft: 67 },
   // Inside the Today sheet, right edges line up with its header count and rings (today-sheet.tsx: 4 + END_PAD).
   inSheetHeader: { paddingRight: 13 },
   inSheetRows: { paddingRight: 13 },

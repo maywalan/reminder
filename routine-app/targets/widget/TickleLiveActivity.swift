@@ -62,7 +62,7 @@ private struct Countdown: View {
         Text(TickleL10n.now).foregroundColor(color)
       }
     }
-    .font(.system(size: size, weight: .semibold).monospacedDigit())
+    .font(.anuphan(size: size, weight: .semibold).monospacedDigit())
     .multilineTextAlignment(.trailing)
   }
 }
@@ -122,7 +122,7 @@ private struct Meta: View {
         ?? Text(""))
         + Text(detail)
     )
-    .font(.system(size: 12))
+    .font(.anuphan(size: 12))
     .foregroundColor(muted)
     .lineLimit(1)
   }
@@ -141,14 +141,14 @@ private struct Actions: View {
         if context.state.end != nil {
           Button(intent: ExtendTickleTaskIntent(planId: a.planId)) {
             Text(TickleL10n.plus10)
-              .font(.system(size: 13, weight: .semibold))
+              .font(.anuphan(size: 13, weight: .semibold))
               .foregroundColor(onDark ? .white.opacity(0.7) : ink.opacity(0.5))
           }
           .buttonStyle(.plain)
         }
         Button(intent: CompleteTickleTaskIntent(planId: a.planId)) {
           Text(TickleL10n.done)
-            .font(.system(size: 13, weight: .semibold))
+            .font(.anuphan(size: 13, weight: .semibold))
             .foregroundColor(onDark ? .white : Color(hex: a.pillTextHex))
             .padding(.horizontal, 14)
             .frame(height: 28)
@@ -170,7 +170,7 @@ struct TickleLiveActivity: Widget {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
           VStack(alignment: .leading, spacing: 2) {
             Text(context.attributes.title)
-              .font(.system(size: 15, weight: .semibold))
+              .font(.anuphan(size: 15, weight: .semibold))
               .foregroundColor(ink)
               .lineLimit(1)
             Meta(context: context)
@@ -191,7 +191,7 @@ struct TickleLiveActivity: Widget {
           HStack(spacing: 8) {
             Circle().fill(Color(hex: context.attributes.baseHex)).frame(width: 9, height: 9)
             Text(context.attributes.title)
-              .font(.system(size: 15, weight: .semibold))
+              .font(.anuphan(size: 15, weight: .semibold))
               .foregroundColor(.white)
               .lineLimit(1)
           }

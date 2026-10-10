@@ -2,6 +2,14 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
   <dict>
+    <!-- Anuphan, the app's only typeface (design_handoff_tickle_draft2 "Typography — Anuphan only"). -->
+    <key>UIAppFonts</key>
+    <array>
+      <string>Anuphan_400Regular.ttf</string>
+      <string>Anuphan_500Medium.ttf</string>
+      <string>Anuphan_600SemiBold.ttf</string>
+      <string>Anuphan_700Bold.ttf</string>
+    </array>
     <key>NSExtension</key>
     <dict>
       <key>NSExtensionPointIdentifier</key>

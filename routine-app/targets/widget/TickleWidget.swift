@@ -70,6 +70,22 @@ struct TickleTimelineProvider: TimelineProvider {
   }
 }
 
+extension Font {
+  /// Anuphan (bundled in this extension, registered via UIAppFonts) — the app's only typeface, and
+  /// the one that carries Thai. Weight maps to the matching static cut; there's no 800 cut, so
+  /// anything heavier than semibold uses Bold, like the RN side's `Fonts` map.
+  static func anuphan(size: CGFloat, weight: Font.Weight = .regular) -> Font {
+    let name: String
+    switch weight {
+    case .bold, .heavy, .black: name = "Anuphan-Bold"
+    case .semibold: name = "Anuphan-SemiBold"
+    case .medium: name = "Anuphan-Medium"
+    default: name = "Anuphan-Regular"
+    }
+    return .custom(name, size: size)
+  }
+}
+
 extension Color {
   init(hex: String) {
     var s = hex.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -109,19 +125,19 @@ struct TickleWidgetView: View {
           .fill(Color(hex: "#1B76E8"))
           .frame(width: 16, height: 16)
         Text("Tickle")
-          .font(.system(size: 11, weight: .bold))
+          .font(.anuphan(size: 11, weight: .bold))
           .foregroundStyle(.white.opacity(0.7))
           .lineLimit(1)
         Spacer(minLength: 4)
         Text(entry.dateLabel)
-          .font(.system(size: 9.5, weight: .semibold))
+          .font(.anuphan(size: 9.5, weight: .semibold))
           .foregroundStyle(.white.opacity(0.45))
           .lineLimit(1)
       }
 
       if entry.plans.isEmpty {
         Text(TickleL10n.nothingToday)
-          .font(.system(size: 11))
+          .font(.anuphan(size: 11))
           .foregroundStyle(.white.opacity(0.5))
       } else {
         ForEach(entry.plans.prefix(limit)) { plan in
@@ -130,13 +146,13 @@ struct TickleWidgetView: View {
               .fill(Color(hex: plan.color))
               .frame(width: 6, height: 6)
             Text(plan.name)
-              .font(.system(size: 11.5, weight: .semibold))
+              .font(.anuphan(size: 11.5, weight: .semibold))
               .foregroundStyle(.white)
               .lineLimit(1)
             if family != .systemSmall {
               Spacer(minLength: 4)
               Text(plan.time)
-                .font(.system(size: 10, weight: .semibold))
+                .font(.anuphan(size: 10, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.5))
             }
           }
@@ -144,7 +160,7 @@ struct TickleWidgetView: View {
         let more = entry.plans.count - limit
         if more > 0 {
           Text(TickleL10n.more(more))
-            .font(.system(size: 10.5, weight: .semibold))
+            .font(.anuphan(size: 10.5, weight: .semibold))
             .foregroundStyle(.white.opacity(0.45))
         }
       }

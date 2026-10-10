@@ -1,4 +1,5 @@
 import ExpoModulesCore
+import WidgetKit
 
 struct LiveActivityPayloadRecord: Record {
   @Field var planId: String = ""
@@ -35,6 +36,18 @@ public class TickleLiveActivityModule: Module {
           end: $0.endMs.map { Date(timeIntervalSince1970: $0 / 1000) })
       }
       await TickleLiveActivityController.shared.sync(payload)
+    }
+
+    /// Home Screen widget data, written into the shared App Group and followed by a timeline reload.
+    /// Lives here because @bacons/apple-targets' own ExtensionStorage pod requires iOS 16.4 and is
+    /// silently dropped at this app's 15.1 deployment target — so its writes were no-ops.
+    /// `plansJson` is the JSON array TickleWidget.swift decodes as `[TodayPlan]`.
+    Function("setWidgetData") { (appGroup: String, kind: String, language: String, dateLabel: String, plansJson: String) in
+      let defaults = UserDefaults(suiteName: appGroup)
+      defaults?.set(language, forKey: "language")
+      defaults?.set(dateLabel, forKey: "dateLabel")
+      defaults?.set(Data(plansJson.utf8), forKey: "todayPlans")
+      WidgetCenter.shared.reloadTimelines(ofKind: kind)
     }
 
     /// Lock Screen button taps since the last call, oldest first — each `{ action: 'complete' | 'extend', planId, at }`.

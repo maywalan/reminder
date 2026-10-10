@@ -54,7 +54,9 @@ struct TickleWidgetBundle: WidgetBundle {
     TickleWidget()
     TickleCalendarWidget()
     TickleNext3Widget()
-    if #available(iOS 16.0, *) {
+    // WidgetBundleBuilder only supports `if #available` from iOS 16.1 — an older version compiles
+    // but hits SwiftUI's fatalError("Unavailable") stub and takes the whole extension down.
+    if #available(iOS 16.1, *) {
       TickleLockWidget()
       TickleDateWidget()
     }

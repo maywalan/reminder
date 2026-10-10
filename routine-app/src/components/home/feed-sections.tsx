@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 import Reanimated, { FadeInUp, LinearTransition } from 'react-native-reanimated';
 
 import { Text } from '@/components/text';
@@ -28,11 +28,11 @@ function dayLabel(dateISO: string) {
   return weekdayShort(fromISO(dateISO).getDay());
 }
 
-function Header({ title, action, onAction }: { title: string; action: string; onAction: () => void }) {
+function Header({ title, action, onAction, style }: { title: string; action: string; onAction: () => void; style?: ViewStyle }) {
   const k = useHomeTokens();
   const t = useHomeType();
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, style]}>
       <Text style={[t.sectionLabel, styles.headerTitle, { color: k.ink50 }]}>{title}</Text>
       <Pressable onPress={onAction} hitSlop={10}>
         <Text numberOfLines={1} style={[t.link, { color: k.link }]}>
@@ -87,8 +87,8 @@ export function UpcomingBlock({ items, onCalendar, ...s }: SelectProps & { items
   if (items.length === 0) return null;
   return (
     <View style={styles.block}>
-      <Header title={tr('home.upcoming')} action={tr('tab.calendar')} onAction={onCalendar} />
-      <View>
+      <Header title={tr('home.upcoming')} action={tr('tab.calendar')} onAction={onCalendar} style={styles.inSheetHeader} />
+      <View style={styles.inSheetRows}>
         {items.map((p, i) => (
           <View key={p.id}>
             {i > 0 && <View style={[styles.divider, { backgroundColor: k.rail }]} />}
@@ -260,7 +260,10 @@ export function SearchResults({ sections, groups, ...s }: SelectProps & { sectio
 const styles = StyleSheet.create({
   block: { gap: 2 },
   // Starts at the title column (time 38 + gap 10 + marker 9 + gap 10) so day labels stay unbroken.
-  divider: { height: StyleSheet.hairlineWidth, marginLeft: 67, marginRight: 4 },
+  divider: { height: StyleSheet.hairlineWidth, marginLeft: 67 },
+  // Inside the Today sheet, right edges line up with its header count and rows (sheetHead / list paddingRight 4).
+  inSheetHeader: { paddingRight: 4 },
+  inSheetRows: { paddingRight: 4 },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10 },
   headerTitle: { flex: 1 },
   rows: { paddingHorizontal: 10 },

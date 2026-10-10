@@ -487,7 +487,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   sheetTitle: { flexShrink: 1 },
-  footerDivider: { height: StyleSheet.hairlineWidth, marginHorizontal: 10, marginTop: 2, marginBottom: 6 },
+  footerDivider: { height: StyleSheet.hairlineWidth, marginLeft: 10, marginRight: 4, marginTop: 2, marginBottom: 6 },
   sheetHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingLeft: 10, paddingRight: 4 },
   empty: { paddingHorizontal: 10, paddingVertical: 14 },
   list: { paddingRight: 4, paddingVertical: 4 },

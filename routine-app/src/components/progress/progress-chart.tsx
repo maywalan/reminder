@@ -56,16 +56,18 @@ export function ProgressChart({ period, startISO, endISO, todayISO, plans }: Pro
         <View style={styles.bars}>
           {cells.map((c, i) => {
             const isCurrent = i === currentMonthIndex;
-            const h = c.isFuture ? 8 : 8 + (c.completed / max) * 80;
+            const h = c.isFuture ? 8 : 8 + (c.completed / max) * (PLOT_HEIGHT - 8);
             return (
               <View key={c.label} style={styles.barCol}>
-                <View
-                  style={[
-                    styles.bar,
-                    styles.barYear,
-                    { height: h, backgroundColor: c.isFuture ? theme.dividerStrong : isCurrent ? theme.accent : '#D9E7FA' },
-                  ]}
-                />
+                <View style={styles.plot}>
+                  <View
+                    style={[
+                      styles.bar,
+                      styles.barYear,
+                      { height: h, backgroundColor: c.isFuture ? theme.dividerStrong : isCurrent ? theme.accent : '#D9E7FA' },
+                    ]}
+                  />
+                </View>
                 <Text
                   style={[
                     styles.barLabelYear,
@@ -106,10 +108,12 @@ export function ProgressChart({ period, startISO, endISO, todayISO, plans }: Pro
           {dates.map((iso, i) => {
             const d = fromISO(iso);
             const isToday = iso === todayISO;
-            const h = 4 + (counts[i] / max) * 92;
+            const h = 4 + (counts[i] / max) * (PLOT_HEIGHT - 4);
             return (
               <View key={iso} style={styles.barCol}>
-                <View style={[styles.bar, { height: h, backgroundColor: isToday ? theme.accent : '#D9E7FA' }]} />
+                <View style={styles.plot}>
+                  <View style={[styles.bar, { height: h, backgroundColor: isToday ? theme.accent : '#D9E7FA' }]} />
+                </View>
                 <Text style={[styles.barLabelWeek, { color: isToday ? theme.accentStrong : theme.textTertiary, fontWeight: isToday ? '700' : '600' }]}>
                   {weekdayLetter(d.getDay())}
                 </Text>
@@ -168,12 +172,17 @@ export function ProgressChart({ period, startISO, endISO, todayISO, plans }: Pro
   );
 }
 
+const PLOT_HEIGHT = 96;
+
 const styles = StyleSheet.create({
   card: { borderRadius: Radii.subcard, borderWidth: 1, marginHorizontal: 14, marginTop: 14, padding: 13 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
   title: { fontSize: Typography.rowLabel, fontWeight: '700' },
   caption: { fontSize: 10, fontWeight: '500' },
-  bars: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, height: 96, marginTop: 14 },
+  bars: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginTop: 14 },
+  // Bars grow inside their own fixed-height area, so the tallest one stops at the top of it
+  // instead of climbing into the card title (the label underneath used to eat into the 96pt).
+  plot: { width: '100%', height: PLOT_HEIGHT, justifyContent: 'flex-end' },
   barCol: { flex: 1, alignItems: 'center', gap: 6 },
   bar: { width: '100%', borderRadius: 8 },
   barYear: { borderRadius: 5 },

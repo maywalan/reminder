@@ -36,3 +36,8 @@ export function countActivePlans(plans: Plan[], now = new Date()): number {
   }
   return active.size;
 }
+
+// Paywall / Subscription feature lists. Only what the app really has and really gates (the plan
+// limit and Month/Year recaps above). Don't list a feature until it exists and is locked.
+export const FREE_FEATURES = ['feature.free.plans', 'feature.free.today', 'feature.free.week', 'feature.free.widgets'] as const;
+export const PREMIUM_FEATURES = ['feature.pro.plans', 'feature.pro.recaps', 'feature.pro.free'] as const;

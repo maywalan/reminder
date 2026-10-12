@@ -17,6 +17,7 @@ import Reanimated, {
 
 import { SearchIcon, XIcon } from '@/components/icon';
 import { Text, TextInput } from '@/components/text';
+import { Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { t } from '@/i18n';
 
@@ -177,7 +178,7 @@ const styles = StyleSheet.create({
   fieldExpanded: { gap: 8, paddingHorizontal: 12 },
   fieldCollapsed: { justifyContent: 'center' },
   inputWrap: { flex: 1, justifyContent: 'center' },
-  input: { fontSize: 13, paddingVertical: 0 },
+  input: { fontSize: Typography.body, paddingVertical: 0 },
   placeholder: { ...StyleSheet.absoluteFillObject, flexDirection: 'row', alignItems: 'center', gap: 4 },
-  placeholderWord: { fontSize: 13 },
+  placeholderWord: { fontSize: Typography.body },
 });

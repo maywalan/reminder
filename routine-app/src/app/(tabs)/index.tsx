@@ -222,7 +222,7 @@ export default function HomeScreen() {
 
   const chipText = (active: boolean) => ({
     color: active ? theme.accentStrong : theme.text,
-    fontSize: 12,
+    fontSize: Typography.rowValue,
     fontWeight: '700' as const,
     fontFamily: Fonts[700],
   });
@@ -391,7 +391,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 8, paddingHorizontal: 22, paddingBottom: 16 },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 },
   headerText: { flexShrink: 1 },
-  editBtn: { fontSize: 12 },
+  editBtn: { fontSize: Typography.rowValue },
   toolRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingBottom: 14 },
   panel: { flex: 1 },
   panelRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingRight: 12 },

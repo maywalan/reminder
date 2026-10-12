@@ -53,5 +53,5 @@ const styles = StyleSheet.create({
   tile: { flex: 1, borderRadius: Radii.md, borderWidth: 1, paddingVertical: 10, alignItems: 'center', gap: 4 },
   iconWrap: { width: 22, height: 22, borderRadius: 7, alignItems: 'center', justifyContent: 'center' },
   value: { fontSize: Typography.rowLabel, fontWeight: '800', letterSpacing: -0.2 },
-  label: { fontSize: 9, fontWeight: '600' },
+  label: { fontSize: Typography.tabLabel, fontWeight: '600' },
 });

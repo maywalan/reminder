@@ -41,5 +41,5 @@ const styles = StyleSheet.create({
   dot: { width: 9, height: 9, borderRadius: 4.5 },
   track: { flex: 1, height: 7, borderRadius: 4, overflow: 'hidden' },
   fill: { height: '100%', borderRadius: 4 },
-  pct: { fontSize: 10.5, fontWeight: '500', width: 32, textAlign: 'right' },
+  pct: { fontSize: Typography.caption, fontWeight: '500', width: 32, textAlign: 'right' },
 });

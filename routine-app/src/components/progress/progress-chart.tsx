@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
   barLabelWeek: { fontSize: Typography.tabLabel },
   barLabelYear: { fontSize: 8 },
   footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, paddingTop: 11, borderTopWidth: 1 },
-  footerLabel: { fontSize: 11, fontWeight: '500' },
+  footerLabel: { fontSize: Typography.label, fontWeight: '500' },
   footerValue: { fontSize: Typography.label, fontWeight: '700' },
   heatDow: { flexDirection: 'row', marginTop: 12, marginBottom: 6 },
   heatDowText: { flex: 1, textAlign: 'center', fontSize: Typography.tabLabel, fontWeight: '700' },

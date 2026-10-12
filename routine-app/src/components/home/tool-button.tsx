@@ -16,7 +16,7 @@ import Reanimated, {
 
 import { TOOL_ROW_SPRING, toolRowLayout } from '@/components/home/search-field';
 import { Text } from '@/components/text';
-import { Fonts } from '@/constants/theme';
+import { Fonts, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 const AnimatedPressable = Reanimated.createAnimatedComponent(Pressable);
@@ -96,6 +96,6 @@ export function ToolButton({
 const styles = StyleSheet.create({
   btn: { minWidth: 34, height: 34, borderRadius: 17, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   btnOpen: { flexDirection: 'row', gap: 6, paddingHorizontal: 12 },
-  label: { fontSize: 12, fontWeight: '700', fontFamily: Fonts[700] },
+  label: { fontSize: Typography.rowValue, fontWeight: '700', fontFamily: Fonts[700] },
   dot: { position: 'absolute', top: -1, right: -1, width: 10, height: 10, borderRadius: 5, borderWidth: 2 },
 });

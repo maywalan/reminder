@@ -13,7 +13,7 @@ import { Toast } from '@/components/toast';
 import { useToast } from '@/hooks/use-toast';
 import { refreshSubscriptionState, usePremiumPrices } from '@/lib/iap';
 import { usePlannerStore } from '@/store/use-planner-store';
-import { countActivePlans } from '@/utils/premium';
+import { countActivePlans, PREMIUM_FEATURES } from '@/utils/premium';
 import { getSubscriptionContent } from '@/utils/subscription';
 import { t } from '@/i18n';
 import { fmtDate } from '@/i18n/format';
@@ -177,7 +177,7 @@ export default function SubscriptionScreen() {
         <Animated.View style={[styles.card, listEnter]}>
           <Text style={styles.cardTitle}>{content.listTitle}</Text>
           <View style={styles.featureList}>
-            {[t('sub.feature.plans'), t('sub.feature.calendar'), t('sub.feature.reminders')].map((f) => (
+            {PREMIUM_FEATURES.map((key) => t(key)).map((f) => (
               <View key={f} style={styles.featureRow}>
                 <View style={[styles.featureDot, { backgroundColor: dotBg }]}>
                   <Text style={[styles.featureDotMark, { color: dotColor }]}>✓</Text>

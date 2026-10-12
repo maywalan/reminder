@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
   skip: { fontSize: Typography.body, fontWeight: '600', fontFamily: Fonts[600] },
   middle: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 28 },
   copy: { alignItems: 'center', gap: 9, maxWidth: 260 },
-  title: { fontSize: 22, fontWeight: '700', fontFamily: Fonts[700], letterSpacing: -0.3, textAlign: 'center', lineHeight: 30 },
+  title: { fontSize: Typography.screenTitle, fontWeight: '700', fontFamily: Fonts[700], letterSpacing: -0.3, textAlign: 'center', lineHeight: 30 },
   body: { fontSize: Typography.body + 0.5, fontWeight: '500', fontFamily: Fonts[500], textAlign: 'center', lineHeight: 20 },
   footer: { gap: 16 },
   pager: { flexDirection: 'row', gap: 6, justifyContent: 'center' },

@@ -16,14 +16,14 @@ import { useToast } from '@/hooks/use-toast';
 import { annualSavingsPct, formatPrice, PREMIUM_SKUS, refreshSubscriptionState, usePremiumPrices, type Billing, type PremiumPrices } from '@/lib/iap';
 import { usePlannerStore } from '@/store/use-planner-store';
 import { useThink } from '@/utils/motion';
+import { FREE_FEATURES, PREMIUM_FEATURES } from '@/utils/premium';
 
 type Tier = 'free' | 'premium';
 type CtaState = 'idle' | 'loading' | 'done';
 
 const EASE = Easing.bezier(0.22, 1, 0.36, 1);
 
-const FREE_FEATURES = ['feature.free.plans', 'feature.free.repeat', 'feature.free.calendar', 'feature.free.reminder', 'feature.free.today', 'feature.free.widgets'] as const;
-const PREMIUM_FEATURES = ['feature.pro.plans', 'feature.pro.repeat', 'feature.pro.calendar', 'feature.pro.reminders', 'feature.pro.history', 'feature.pro.themes'] as const;
+
 
 // Prices come from the App Store storefront (`usePremiumPrices`); until StoreKit answers, the
 // fallback from the design handoff shows with a note that the App Store price may differ.

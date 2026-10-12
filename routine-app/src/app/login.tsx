@@ -143,7 +143,7 @@ export default function LoginScreen() {
                 style={[styles.input, { flex: 1, color: theme.text }]}
               />
               <Pressable onPress={() => setShowPassword((v) => !v)} hitSlop={8}>
-                <Text style={{ fontSize: 10, fontWeight: '600', fontFamily: Fonts[600], color: theme.textTertiary }}>{showPassword ? 'hide' : 'show'}</Text>
+                <Text style={{ fontSize: Typography.caption, fontWeight: '600', fontFamily: Fonts[600], color: theme.textTertiary }}>{showPassword ? 'hide' : 'show'}</Text>
               </Pressable>
             </View>
           </View>
@@ -212,7 +212,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, paddingHorizontal: 24 },
   head: { alignItems: 'flex-start', gap: 8, marginBottom: 22 },
-  title: { fontSize: 22, fontWeight: '700', fontFamily: Fonts[700], letterSpacing: -0.3 },
+  title: { fontSize: Typography.screenTitle, fontWeight: '700', fontFamily: Fonts[700], letterSpacing: -0.3 },
   subtitle: { fontSize: Typography.body, fontWeight: '500', fontFamily: Fonts[500] },
   fields: { gap: 10, marginBottom: 4 },
   field: { height: 52, borderRadius: 16, borderWidth: 1, justifyContent: 'center', paddingHorizontal: 16 },

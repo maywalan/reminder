@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { XIcon } from '@/components/icon';
 import { Text } from '@/components/text';
+import { Typography } from '@/constants/theme';
 import { t } from '@/i18n';
 
 /**
@@ -64,6 +65,6 @@ const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: '#000' },
   page: { flexGrow: 1, alignItems: 'center', justifyContent: 'center' },
   top: { position: 'absolute', left: 0, right: 0, top: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20 },
-  counter: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  counter: { color: '#fff', fontSize: Typography.rowLabel, fontWeight: '600' },
   close: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.18)' },
 });

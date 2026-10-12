@@ -4,7 +4,7 @@ import { Animated, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 import { t } from '@/i18n';
 import { Tickle } from '@/components/tickle';
-import { Fonts } from '@/constants/theme';
+import { Fonts, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 interface TickleSplashProps {
@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
   center: { alignItems: 'center', gap: 26 },
   wordmark: { alignItems: 'center' },
   title: { fontFamily: Fonts[700], fontWeight: '700', fontSize: 28, letterSpacing: -0.6 },
-  subtitle: { fontFamily: Fonts[500], fontWeight: '500', fontSize: 13, marginTop: 5 },
+  subtitle: { fontFamily: Fonts[500], fontWeight: '500', fontSize: Typography.body, marginTop: 5 },
   progressRow: { position: 'absolute', bottom: 60, alignItems: 'center' },
   track: { width: 120, height: 3, borderRadius: 2, overflow: 'hidden' },
   fill: { height: 3, borderRadius: 2 },

@@ -239,7 +239,7 @@ export default function ProgressScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   headerTop: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', paddingHorizontal: 20, gap: 12 },
-  h1: { fontSize: 20, fontWeight: '700', letterSpacing: -0.2 },
+  h1: { fontSize: Typography.screenTitle, fontWeight: '700', letterSpacing: -0.2 },
   periodNav: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 5 },
   periodLabel: { fontSize: Typography.body, fontWeight: '500' },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 12 },

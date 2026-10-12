@@ -47,7 +47,8 @@ function periodLine(prices: PremiumPrices, billing: Billing) {
 function finePrint(prices: PremiumPrices, billing: Billing) {
   const price = prices.display[billing];
   const base = billing === 'monthly' ? t('paywall.fine.monthly', { price }) : t('paywall.fine.annual', { price, mo: perMonth(prices) });
-  return prices.fromStore ? base : `${base} ${t('paywall.fine.localNote')}`;
+  // Thai breaks at the sentence (\n in the string); the price note always gets its own line.
+  return prices.fromStore ? base : `${base}\n${t('paywall.fine.localNote')}`;
 }
 
 // Entrance stagger (design_handoff_tickle_paywall/README.md "Motion"): header -> toggle ->
@@ -248,7 +249,7 @@ export default function PaywallScreen() {
 
   return (
     // A modal sheet already starts below the status bar, so no top inset here.
-    <View style={[styles.screen, { paddingTop: 16, paddingBottom: insets.bottom + 28 }]}>
+    <View style={[styles.screen, { paddingTop: 16, paddingBottom: insets.bottom + 8 }]}>
       <View style={styles.utilityRow}>
         <View style={styles.currencyPill}>
           {PAYWALL_CURRENCIES.map((c) => (
@@ -272,6 +273,8 @@ export default function PaywallScreen() {
         </View>
       </Animated.View>
 
+      <View style={styles.spacer} />
+
       <Animated.View style={[styles.billingTrack, toggleEnter]} onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width)}>
         {segWidth > 0 && <Animated.View style={[styles.billingThumb, { width: segWidth, transform: [{ translateX: thumbTranslate }] }]} />}
         <Pressable style={styles.billingSeg} onPress={() => selectBilling('monthly')}>
@@ -284,6 +287,8 @@ export default function PaywallScreen() {
           </View>
         </Pressable>
       </Animated.View>
+
+      <View style={styles.spacer} />
 
       <View style={styles.cardsRow}>
         <Animated.View style={[styles.cardOuter, freeEnter]}>
@@ -342,7 +347,7 @@ export default function PaywallScreen() {
         </Animated.View>
       </View>
 
-      {/* Prices stay up top; the button block sits at the bottom (user's pick, 2026-10-13). */}
+      {/* Leftover height is shared evenly between the sections (user's call, 2026-10-13). */}
       <View style={styles.spacer} />
 
       <Animated.View style={ctaEnter}>
@@ -375,6 +380,8 @@ export default function PaywallScreen() {
         </View>
       </Animated.View>
 
+      <View style={styles.spacer} />
+
       <Toast message={toastMessage} kind={toastKind} />
     </View>
   );
@@ -392,7 +399,7 @@ type Theme = (typeof Colors)[keyof typeof Colors];
 function makeStyles(c: Theme, p: PremiumPalette) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: c.bg, paddingHorizontal: 16 },
-    utilityRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+    utilityRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
     currencyPill: { flexDirection: 'row', gap: 2, padding: 3, backgroundColor: p.track, borderRadius: 12 },
     pillBtn: { paddingVertical: 4, paddingHorizontal: 9, borderRadius: 9 },
     pillBtnActive: { backgroundColor: p.thumb, shadowColor: '#10203A', shadowOpacity: 0.1, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
@@ -400,12 +407,12 @@ function makeStyles(c: Theme, p: PremiumPalette) {
     pillLabelActive: { color: c.text },
     closeBtn: { width: 28, height: 28, borderRadius: 14, backgroundColor: p.softButton, alignItems: 'center', justifyContent: 'center' },
 
-    header: { flexDirection: 'row', alignItems: 'center', gap: 11, marginBottom: 10 },
+    header: { flexDirection: 'row', alignItems: 'center', gap: 11 },
     headerText: { flex: 1, gap: 4 },
     headerTitle: { fontWeight: '700', fontSize: Typography.screenTitle, color: c.text, letterSpacing: -0.2 },
     headerSub: { fontWeight: '500', fontSize: Typography.body, color: p.inkSub },
 
-    billingTrack: { position: 'relative', flexDirection: 'row', padding: 4, backgroundColor: p.track, borderRadius: 16, marginBottom: 10 },
+    billingTrack: { position: 'relative', flexDirection: 'row', padding: 4, backgroundColor: p.track, borderRadius: 16 },
     billingThumb: { position: 'absolute', top: 4, bottom: 4, left: 4, borderRadius: 12, backgroundColor: p.thumb, shadowColor: '#10203A', shadowOpacity: 0.09, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
     billingSeg: { flex: 1, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 5 },
     billingLabel: { fontWeight: '600', fontSize: Typography.body, color: c.textSecondary },
@@ -413,8 +420,8 @@ function makeStyles(c: Theme, p: PremiumPalette) {
     saveBadge: { paddingVertical: 2, paddingHorizontal: 6, borderRadius: 7, backgroundColor: p.saveBg },
     saveBadgeText: { fontSize: Typography.caption, fontWeight: '700', letterSpacing: 0.2, color: p.saveInk },
 
-    // Cards size to their (short) feature lists; the leftover height goes to `spacer`.
-    cardsRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
+    // Cards size to their (short) feature lists; the leftover height is split between the `spacer`s.
+    cardsRow: { flexDirection: 'row', gap: 10 },
     cardOuter: { flex: 1, minWidth: 0 },
     // flexGrow (not flex: 1) so a card keeps its content height but stretches to match the taller one.
     cardInner: { flexGrow: 1 },
@@ -447,7 +454,8 @@ function makeStyles(c: Theme, p: PremiumPalette) {
     dividerDark: { height: 1, backgroundColor: p.cardDivider },
 
     featureList: { gap: 7 },
-    spacer: { flex: 1, minHeight: 12 },
+    // Equal flexible gaps between header, billing toggle, cards, the button block and the bottom edge.
+    spacer: { flex: 1, minHeight: 14 },
 
     ctaBtn: { height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', backgroundColor: c.accent, shadowColor: c.accent, shadowOpacity: 0.32, shadowRadius: 22, shadowOffset: { width: 0, height: 10 }, marginBottom: 8 },
     ctaBtnDone: { backgroundColor: Colors.light.accentStrong, shadowColor: Colors.light.accentStrong, shadowOpacity: 0.34 },

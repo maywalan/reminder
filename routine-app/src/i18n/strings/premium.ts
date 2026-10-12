@@ -17,8 +17,8 @@ export default {
   'paywall.cta.trial': { en: 'Start free trial', th: 'เริ่มทดลองใช้ฟรี' },
   'paywall.cta.free': { en: 'Your plan today', th: 'ใช้แพ็กเกจปัจจุบัน' },
   'paywall.cta.done': { en: '✓  Trial started', th: '✓  เริ่มทดลองใช้แล้ว' },
-  'paywall.fine.monthly': { en: 'Billed {price} each month. Cancel anytime from account settings.', th: 'เรียกเก็บ {price} ทุกเดือน ยกเลิกได้ทุกเมื่อในการตั้งค่าบัญชี' },
-  'paywall.fine.annual': { en: 'Annual billed as one payment of {price}/yr (≈ {mo}/mo). Cancel anytime from account settings.', th: 'รายปีเรียกเก็บครั้งเดียว {price}/ปี (≈ {mo}/เดือน) ยกเลิกได้ทุกเมื่อในการตั้งค่าบัญชี' },
+  'paywall.fine.monthly': { en: 'Billed {price} each month. Cancel anytime from account settings.', th: 'เรียกเก็บ {price} ทุกเดือน\nยกเลิกได้ทุกเมื่อในการตั้งค่าบัญชี' },
+  'paywall.fine.annual': { en: 'Annual billed as one payment of {price}/yr (≈ {mo}/mo). Cancel anytime from account settings.', th: 'รายปีเรียกเก็บครั้งเดียว {price}/ปี (≈ {mo}/เดือน)\nยกเลิกได้ทุกเมื่อในการตั้งค่าบัญชี' },
   'paywall.fine.localNote': { en: 'Local pricing — App Store price may vary slightly.', th: 'ราคาท้องถิ่น ราคาใน App Store อาจต่างเล็กน้อย' },
   'paywall.purchaseFailed': { en: 'Purchase failed', th: 'ซื้อไม่สำเร็จ' },
 

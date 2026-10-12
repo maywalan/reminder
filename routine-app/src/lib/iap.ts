@@ -74,7 +74,7 @@ export interface PremiumPrices {
   amount: Record<Billing, number>;
   /** StoreKit's own formatted price ("$2.69", "฿89.00"); the fallback is formatted locally. */
   display: Record<Billing, string>;
-  /** A StoreKit price string to copy the currency format from; undefined for the fallback. */
+  /** A price string to copy the currency format from: StoreKit's own, or a symbol template for the fixed prices. */
   like?: string;
   fromStore: boolean;
 }
@@ -112,15 +112,28 @@ export function formatPrice(amount: number, currency: string, like?: string): st
   }
 }
 
-function fallbackPrices(): PremiumPrices {
-  const currency = Localization.getLocales()[0]?.regionCode === 'TH' ? 'THB' : 'USD';
+export type PaywallCurrency = keyof typeof FALLBACK_AMOUNTS;
+export const PAYWALL_CURRENCIES = Object.keys(FALLBACK_AMOUNTS) as PaywallCurrency[];
+
+/**
+ * Fixed handoff prices in one currency — the paywall's USD/THB switch shows these for the currency
+ * the App Store won't charge in, always with the "App Store price may vary" note.
+ */
+export function referencePrices(currency: PaywallCurrency): PremiumPrices {
   const amount = FALLBACK_AMOUNTS[currency];
+  // Symbol templates rather than Intl, which spells THB out as "THB 89" in non-Thai locales.
+  const like = currency === 'THB' ? '฿0' : '$0';
   return {
     currency,
     amount,
-    display: { monthly: formatPrice(amount.monthly, currency), annual: formatPrice(amount.annual, currency) },
+    display: { monthly: formatPrice(amount.monthly, currency, like), annual: formatPrice(amount.annual, currency, like) },
+    like,
     fromStore: false,
   };
+}
+
+function fallbackPrices(): PremiumPrices {
+  return referencePrices(Localization.getLocales()[0]?.regionCode === 'TH' ? 'THB' : 'USD');
 }
 
 let cachedPrices: PremiumPrices | null = null;

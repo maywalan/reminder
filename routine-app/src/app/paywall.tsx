@@ -13,7 +13,18 @@ import { t } from '@/i18n';
 import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
 import { useToast } from '@/hooks/use-toast';
-import { annualSavingsPct, formatPrice, PREMIUM_SKUS, refreshSubscriptionState, usePremiumPrices, type Billing, type PremiumPrices } from '@/lib/iap';
+import {
+  annualSavingsPct,
+  formatPrice,
+  PAYWALL_CURRENCIES,
+  PREMIUM_SKUS,
+  referencePrices,
+  refreshSubscriptionState,
+  usePremiumPrices,
+  type Billing,
+  type PaywallCurrency,
+  type PremiumPrices,
+} from '@/lib/iap';
 import { usePlannerStore } from '@/store/use-planner-store';
 import { useThink } from '@/utils/motion';
 import { FREE_FEATURES, PREMIUM_FEATURES } from '@/utils/premium';
@@ -129,7 +140,13 @@ export default function PaywallScreen() {
 
   const [tier, setTier] = useState<Tier>('premium');
   const [billing, setBilling] = useState<Billing>('annual');
-  const prices = usePremiumPrices();
+  const storePrices = usePremiumPrices();
+  // USD/THB switch (user's call, 2026-10-13). Starts on the App Store's currency; that one shows
+  // StoreKit's real price, the other shows the fixed handoff price with the "may vary" note.
+  const storeCurrency = PAYWALL_CURRENCIES.find((c) => c === storePrices.currency);
+  const [pickedCurrency, setPickedCurrency] = useState<PaywallCurrency | null>(null);
+  const currency = pickedCurrency ?? storeCurrency ?? 'USD';
+  const prices = currency === storePrices.currency ? storePrices : referencePrices(currency);
   const [cta, setCta] = useState<CtaState>('idle');
   const [trackWidth, setTrackWidth] = useState(0);
 
@@ -189,6 +206,12 @@ export default function PaywallScreen() {
     setBilling(next);
   }
 
+  function selectCurrency(next: PaywallCurrency) {
+    if (next === currency) return;
+    Haptics.selectionAsync();
+    setPickedCurrency(next);
+  }
+
   async function handlePrimaryPress() {
     if (tier === 'free') {
       router.back();
@@ -226,6 +249,13 @@ export default function PaywallScreen() {
   return (
     <View style={[styles.screen, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 16 }]}>
       <View style={styles.utilityRow}>
+        <View style={styles.currencyPill}>
+          {PAYWALL_CURRENCIES.map((c) => (
+            <Pressable key={c} onPress={() => selectCurrency(c)} style={[styles.pillBtn, currency === c && styles.pillBtnActive]}>
+              <Text style={[styles.pillLabel, currency === c && styles.pillLabelActive]}>{c}</Text>
+            </Pressable>
+          ))}
+        </View>
         <Pressable onPress={() => router.back()} style={styles.closeBtn} hitSlop={8}>
           <XIcon size={13} color={theme.textSecondary} strokeWidth={2.4} />
         </Pressable>
@@ -358,7 +388,12 @@ type Theme = (typeof Colors)[keyof typeof Colors];
 function makeStyles(c: Theme, p: PremiumPalette) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: c.bg, paddingHorizontal: 16 },
-    utilityRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', marginBottom: 8 },
+    utilityRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+    currencyPill: { flexDirection: 'row', gap: 2, padding: 3, backgroundColor: p.track, borderRadius: 12 },
+    pillBtn: { paddingVertical: 4, paddingHorizontal: 9, borderRadius: 9 },
+    pillBtnActive: { backgroundColor: p.thumb, shadowColor: '#10203A', shadowOpacity: 0.1, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
+    pillLabel: { fontSize: Typography.label, fontWeight: '700', letterSpacing: 0.3, color: c.textTertiary },
+    pillLabelActive: { color: c.text },
     closeBtn: { width: 28, height: 28, borderRadius: 14, backgroundColor: p.softButton, alignItems: 'center', justifyContent: 'center' },
 
     header: { flexDirection: 'row', alignItems: 'center', gap: 11, marginBottom: 10 },

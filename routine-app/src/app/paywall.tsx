@@ -1,13 +1,14 @@
 import * as Haptics from 'expo-haptics';
 import { ErrorCode, finishTransaction, useIAP } from 'expo-iap';
 import { useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, Linking, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/text';
 import { CheckIcon, XIcon } from '@/components/icon';
-import { Typography } from '@/constants/theme';
+import { Colors, Typography, type PremiumPalette } from '@/constants/theme';
+import { usePremiumColors, useTheme } from '@/hooks/use-theme';
 import { t } from '@/i18n';
 import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
@@ -83,14 +84,20 @@ function useBadgePulse() {
   };
 }
 
+// The ink Premium card keeps the light theme's azure in both modes (it's dark either way).
+const CARD_ACCENT = Colors.light.accent;
+
 function PlanCheck({ selected, dark }: { selected: boolean; dark: boolean }) {
+  const theme = useTheme();
+  const p = usePremiumColors();
+  const accent = dark ? CARD_ACCENT : theme.accent;
   return (
     <View
       style={[
-        styles.check,
+        staticStyles.check,
         selected
-          ? { backgroundColor: '#1B76E8', borderColor: '#1B76E8' }
-          : { backgroundColor: 'transparent', borderColor: dark ? 'rgba(255,255,255,0.3)' : '#D5E2F5' },
+          ? { backgroundColor: accent, borderColor: accent }
+          : { backgroundColor: 'transparent', borderColor: dark ? 'rgba(255,255,255,0.3)' : p.checkOff },
       ]}>
       {selected && <CheckIcon size={11} color="#fff" strokeWidth={3.2} />}
     </View>
@@ -98,12 +105,14 @@ function PlanCheck({ selected, dark }: { selected: boolean; dark: boolean }) {
 }
 
 function FeatureRow({ text, dark }: { text: string; dark: boolean }) {
+  const theme = useTheme();
+  const p = usePremiumColors();
   return (
-    <View style={styles.featureRow}>
-      <View style={[styles.featureTick, { backgroundColor: dark ? '#1B76E8' : '#EAF2FE' }]}>
-        <CheckIcon size={8} color={dark ? '#fff' : '#1B76E8'} strokeWidth={3.4} />
+    <View style={staticStyles.featureRow}>
+      <View style={[staticStyles.featureTick, { backgroundColor: dark ? CARD_ACCENT : theme.accentSoft }]}>
+        <CheckIcon size={8} color={dark ? '#fff' : theme.accent} strokeWidth={3.4} />
       </View>
-      <Text style={[styles.featureText, { color: dark ? '#F2F7FD' : '#3A4759' }]} numberOfLines={2}>
+      <Text style={[staticStyles.featureText, { color: dark ? p.cardInkBody : p.inkBody }]} numberOfLines={2}>
         {text}
       </Text>
     </View>
@@ -114,6 +123,9 @@ export default function PaywallScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { toastMessage, toastKind, showToast } = useToast();
+  const theme = useTheme();
+  const palette = usePremiumColors();
+  const styles = useMemo(() => makeStyles(theme, palette), [theme, palette]);
 
   const [tier, setTier] = useState<Tier>('premium');
   const [billing, setBilling] = useState<Billing>('annual');
@@ -215,7 +227,7 @@ export default function PaywallScreen() {
     <View style={[styles.screen, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 16 }]}>
       <View style={styles.utilityRow}>
         <Pressable onPress={() => router.back()} style={styles.closeBtn} hitSlop={8}>
-          <XIcon size={13} color="rgba(16,32,58,0.5)" strokeWidth={2.4} />
+          <XIcon size={13} color={theme.textSecondary} strokeWidth={2.4} />
         </Pressable>
       </View>
 
@@ -334,69 +346,75 @@ export default function PaywallScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#F7FAFF', paddingHorizontal: 16 },
-  utilityRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', marginBottom: 8 },
-  closeBtn: { width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(16,32,58,0.06)', alignItems: 'center', justifyContent: 'center' },
-
-  header: { flexDirection: 'row', alignItems: 'center', gap: 11, marginBottom: 10 },
-  headerText: { flex: 1, gap: 4 },
-  headerTitle: { fontWeight: '700', fontSize: Typography.screenTitle, color: '#10203A', letterSpacing: -0.2 },
-  headerSub: { fontWeight: '500', fontSize: Typography.body, color: '#4B5A70' },
-
-  billingTrack: { position: 'relative', flexDirection: 'row', padding: 4, backgroundColor: '#EAF0F9', borderRadius: 16, marginBottom: 10 },
-  billingThumb: { position: 'absolute', top: 4, bottom: 4, left: 4, borderRadius: 12, backgroundColor: '#fff', shadowColor: '#10203A', shadowOpacity: 0.09, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
-  billingSeg: { flex: 1, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 5 },
-  billingLabel: { fontWeight: '600', fontSize: Typography.body, color: 'rgba(16,32,58,0.5)' },
-  billingLabelActive: { color: '#10203A' },
-  saveBadge: { paddingVertical: 2, paddingHorizontal: 6, borderRadius: 7, backgroundColor: '#F6EBD6' },
-  saveBadgeText: { fontSize: Typography.caption, fontWeight: '700', letterSpacing: 0.2, color: '#8C6318' },
-
-  cardsRow: { flex: 1, flexDirection: 'row', gap: 10, marginBottom: 10 },
-  cardOuter: { flex: 1, minWidth: 0 },
-  card: { flex: 1, minWidth: 0, borderRadius: 20, paddingVertical: 18, paddingHorizontal: 14, gap: 13 },
-  freeCard: { backgroundColor: '#fff' },
-  freeCardSelected: { borderWidth: 1.5, borderColor: '#1B76E8', shadowColor: '#10203A', shadowOpacity: 0.1, shadowRadius: 22, shadowOffset: { width: 0, height: 10 } },
-  freeCardUnselected: { borderWidth: 1, borderColor: '#E7EDF6' },
-  premiumCard: { backgroundColor: '#10203A', position: 'relative' },
-  premiumCardSelected: { borderWidth: 1.5, borderColor: '#1B76E8', shadowColor: '#10203A', shadowOpacity: 0.24, shadowRadius: 26, shadowOffset: { width: 0, height: 12 } },
-  premiumCardUnselected: { borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.07)', shadowColor: '#10203A', shadowOpacity: 0.12, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
-
-  recommendedBadge: { position: 'absolute', top: -8, left: 12, paddingVertical: 3, paddingHorizontal: 8, borderRadius: 9, backgroundColor: '#1B76E8' },
-  recommendedBadgeText: { color: '#fff', fontWeight: '700', fontSize: Typography.caption, letterSpacing: 0.3 },
-
-  cardTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 6 },
-  cardTopText: { flex: 1, minWidth: 0, gap: 5 },
-  cardName: { fontWeight: '700', fontSize: Typography.heading, color: '#10203A' },
-  cardNameDark: { fontWeight: '700', fontSize: Typography.heading, color: '#fff' },
-  priceLight: { fontWeight: '700', fontSize: Typography.screenTitle, fontVariant: ['tabular-nums'], color: '#10203A' },
-  priceDark: { fontWeight: '700', fontSize: Typography.screenTitle, fontVariant: ['tabular-nums'], color: '#fff' },
-  periodLight: { fontWeight: '500', fontSize: Typography.rowValue, color: '#5A6A80' },
-  periodDark: { fontWeight: '500', fontSize: Typography.rowValue, color: '#C6D6EA' },
-
+const staticStyles = StyleSheet.create({
   check: { width: 20, height: 20, borderRadius: 10, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
-
-  badgeNeutral: { alignSelf: 'flex-start', paddingVertical: 5, paddingHorizontal: 8, borderRadius: 9, backgroundColor: '#EEF3FA' },
-  badgeNeutralText: { color: '#4B5A70', fontWeight: '700', fontSize: Typography.caption, letterSpacing: 0.2 },
-  badgeWarm: { alignSelf: 'flex-start', paddingVertical: 5, paddingHorizontal: 8, borderRadius: 9, backgroundColor: 'rgba(184,134,43,0.2)' },
-  badgeWarmText: { color: '#EFC985', fontWeight: '700', fontSize: Typography.caption, letterSpacing: 0.2 },
-
-  dividerLight: { height: 1, backgroundColor: '#EEF3FA' },
-  dividerDark: { height: 1, backgroundColor: 'rgba(255,255,255,0.14)' },
-
-  featureList: { flex: 1, gap: 7 },
   featureRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 7 },
   featureTick: { width: 15, height: 15, borderRadius: 8, marginTop: 1, alignItems: 'center', justifyContent: 'center' },
   featureText: { flex: 1, fontWeight: '500', fontSize: Typography.rowValue, lineHeight: 17 },
-
-  ctaBtn: { height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1B76E8', shadowColor: '#1B76E8', shadowOpacity: 0.32, shadowRadius: 22, shadowOffset: { width: 0, height: 10 }, marginBottom: 8 },
-  ctaBtnDone: { backgroundColor: '#0F5FC4', shadowColor: '#0F5FC4', shadowOpacity: 0.34 },
-  ctaLabel: { color: '#fff', fontWeight: '700', fontSize: Typography.heading },
-  dotsRow: { flexDirection: 'row', gap: 7 },
-  dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#fff' },
-
-  fine: { fontWeight: '500', fontSize: Typography.label, lineHeight: 16, textAlign: 'center', color: '#5A6A80', marginBottom: 7 },
-  footerLinks: { flexDirection: 'row', justifyContent: 'center', gap: 12 },
-  footerLink: { fontWeight: '500', fontSize: Typography.body, color: 'rgba(16,32,58,0.72)' },
-  footerDot: { fontSize: Typography.body, color: 'rgba(16,32,58,0.72)' },
 });
+
+type Theme = (typeof Colors)[keyof typeof Colors];
+
+function makeStyles(c: Theme, p: PremiumPalette) {
+  return StyleSheet.create({
+    screen: { flex: 1, backgroundColor: c.bg, paddingHorizontal: 16 },
+    utilityRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', marginBottom: 8 },
+    closeBtn: { width: 28, height: 28, borderRadius: 14, backgroundColor: p.softButton, alignItems: 'center', justifyContent: 'center' },
+
+    header: { flexDirection: 'row', alignItems: 'center', gap: 11, marginBottom: 10 },
+    headerText: { flex: 1, gap: 4 },
+    headerTitle: { fontWeight: '700', fontSize: Typography.screenTitle, color: c.text, letterSpacing: -0.2 },
+    headerSub: { fontWeight: '500', fontSize: Typography.body, color: p.inkSub },
+
+    billingTrack: { position: 'relative', flexDirection: 'row', padding: 4, backgroundColor: p.track, borderRadius: 16, marginBottom: 10 },
+    billingThumb: { position: 'absolute', top: 4, bottom: 4, left: 4, borderRadius: 12, backgroundColor: p.thumb, shadowColor: '#10203A', shadowOpacity: 0.09, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
+    billingSeg: { flex: 1, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 5 },
+    billingLabel: { fontWeight: '600', fontSize: Typography.body, color: c.textSecondary },
+    billingLabelActive: { color: c.text },
+    saveBadge: { paddingVertical: 2, paddingHorizontal: 6, borderRadius: 7, backgroundColor: p.saveBg },
+    saveBadgeText: { fontSize: Typography.caption, fontWeight: '700', letterSpacing: 0.2, color: p.saveInk },
+
+    cardsRow: { flex: 1, flexDirection: 'row', gap: 10, marginBottom: 10 },
+    cardOuter: { flex: 1, minWidth: 0 },
+    card: { flex: 1, minWidth: 0, borderRadius: 20, paddingVertical: 18, paddingHorizontal: 14, gap: 13 },
+    freeCard: { backgroundColor: c.surface },
+    freeCardSelected: { borderWidth: 1.5, borderColor: c.accent, shadowColor: '#10203A', shadowOpacity: 0.1, shadowRadius: 22, shadowOffset: { width: 0, height: 10 } },
+    freeCardUnselected: { borderWidth: 1, borderColor: c.cardBorder },
+    premiumCard: { backgroundColor: p.card, position: 'relative' },
+    premiumCardSelected: { borderWidth: 1.5, borderColor: CARD_ACCENT, shadowColor: '#10203A', shadowOpacity: 0.24, shadowRadius: 26, shadowOffset: { width: 0, height: 12 } },
+    premiumCardUnselected: { borderWidth: 1.5, borderColor: p.cardBorder, shadowColor: '#10203A', shadowOpacity: 0.12, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
+
+    recommendedBadge: { position: 'absolute', top: -8, left: 12, paddingVertical: 3, paddingHorizontal: 8, borderRadius: 9, backgroundColor: CARD_ACCENT },
+    recommendedBadgeText: { color: '#fff', fontWeight: '700', fontSize: Typography.caption, letterSpacing: 0.3 },
+
+    cardTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 6 },
+    cardTopText: { flex: 1, minWidth: 0, gap: 5 },
+    cardName: { fontWeight: '700', fontSize: Typography.heading, color: c.text },
+    cardNameDark: { fontWeight: '700', fontSize: Typography.heading, color: p.cardInk },
+    priceLight: { fontWeight: '700', fontSize: Typography.screenTitle, fontVariant: ['tabular-nums'], color: c.text },
+    priceDark: { fontWeight: '700', fontSize: Typography.screenTitle, fontVariant: ['tabular-nums'], color: p.cardInk },
+    periodLight: { fontWeight: '500', fontSize: Typography.rowValue, color: p.inkMuted },
+    periodDark: { fontWeight: '500', fontSize: Typography.rowValue, color: p.cardInkSoft },
+
+    badgeNeutral: { alignSelf: 'flex-start', paddingVertical: 5, paddingHorizontal: 8, borderRadius: 9, backgroundColor: p.chip },
+    badgeNeutralText: { color: p.inkSub, fontWeight: '700', fontSize: Typography.caption, letterSpacing: 0.2 },
+    badgeWarm: { alignSelf: 'flex-start', paddingVertical: 5, paddingHorizontal: 8, borderRadius: 9, backgroundColor: p.goldBg },
+    badgeWarmText: { color: p.gold, fontWeight: '700', fontSize: Typography.caption, letterSpacing: 0.2 },
+
+    dividerLight: { height: 1, backgroundColor: p.chip },
+    dividerDark: { height: 1, backgroundColor: p.cardDivider },
+
+    featureList: { flex: 1, gap: 7 },
+
+    ctaBtn: { height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', backgroundColor: c.accent, shadowColor: c.accent, shadowOpacity: 0.32, shadowRadius: 22, shadowOffset: { width: 0, height: 10 }, marginBottom: 8 },
+    ctaBtnDone: { backgroundColor: Colors.light.accentStrong, shadowColor: Colors.light.accentStrong, shadowOpacity: 0.34 },
+    ctaLabel: { color: '#fff', fontWeight: '700', fontSize: Typography.heading },
+    dotsRow: { flexDirection: 'row', gap: 7 },
+    dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#fff' },
+
+    fine: { fontWeight: '500', fontSize: Typography.label, lineHeight: 16, textAlign: 'center', color: p.inkMuted, marginBottom: 7 },
+    footerLinks: { flexDirection: 'row', justifyContent: 'center', gap: 12 },
+    footerLink: { fontWeight: '500', fontSize: Typography.body, color: p.link },
+    footerDot: { fontSize: Typography.body, color: p.link },
+  });
+}

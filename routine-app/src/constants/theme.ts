@@ -76,6 +76,70 @@ export const Colors = {
   },
 } as const;
 
+/**
+ * Extra colors for the Premium screens (paywall, Subscription, upgrade banner) — the handoffs
+ * (design_handoff_tickle_paywall / _subscription) use a few mid-greys, a gold and a mint that the
+ * main palette doesn't have. Dark values are this app's own extrapolation. The ink "Premium"
+ * card stays dark in both modes; in dark mode it's lifted a step so it still reads as a card
+ * against the near-black screen.
+ */
+export const PremiumColors = {
+  light: {
+    inkBody: '#3A4759', // feature rows, back chevron
+    inkSub: '#4B5A70', // header subtitle, neutral badge text
+    inkMuted: '#5A6A80', // period lines, fine print, billing labels
+    inkFaint: '#8A99AC', // greyed-out list ticks
+    link: 'rgba(16,32,58,0.72)', // Restore · Terms · Privacy
+    chip: '#EEF3FA', // neutral badge, meter track, divider
+    track: '#EAF0F9', // Monthly/Annual toggle track
+    thumb: '#FFFFFF', // toggle thumb
+    checkOff: '#D5E2F5', // unselected plan circle
+    softButton: 'rgba(16,32,58,0.06)', // close / back circle
+    rowDivider: '#F1F5FB',
+    saveBg: '#F6EBD6',
+    saveInk: '#8C6318',
+    card: '#10203A', // ink Premium card / dark hero
+    cardBorder: 'rgba(255,255,255,0.07)',
+    cardInk: '#FFFFFF',
+    cardInkBody: '#F2F7FD',
+    cardInkSoft: '#C6D6EA',
+    cardDivider: 'rgba(255,255,255,0.14)',
+    gold: '#EFC985',
+    goldBg: 'rgba(184,134,43,0.2)',
+    goldBar: '#D9A356',
+    mint: '#8FEAC4',
+    mintBg: 'rgba(79,216,164,0.2)',
+  },
+  dark: {
+    inkBody: 'rgba(242,245,250,0.82)',
+    inkSub: 'rgba(242,245,250,0.7)',
+    inkMuted: 'rgba(242,245,250,0.6)',
+    inkFaint: 'rgba(242,245,250,0.4)',
+    link: 'rgba(242,245,250,0.72)',
+    chip: 'rgba(255,255,255,0.08)',
+    track: 'rgba(255,255,255,0.08)',
+    thumb: '#24324D',
+    checkOff: 'rgba(255,255,255,0.25)',
+    softButton: 'rgba(255,255,255,0.1)',
+    rowDivider: 'rgba(255,255,255,0.08)',
+    saveBg: 'rgba(240,163,46,0.18)',
+    saveInk: '#F3C47A',
+    card: '#17294A',
+    cardBorder: 'rgba(255,255,255,0.1)',
+    cardInk: '#FFFFFF',
+    cardInkBody: '#F2F7FD',
+    cardInkSoft: '#C6D6EA',
+    cardDivider: 'rgba(255,255,255,0.14)',
+    gold: '#EFC985',
+    goldBg: 'rgba(184,134,43,0.24)',
+    goldBar: '#D9A356',
+    mint: '#8FEAC4',
+    mintBg: 'rgba(79,216,164,0.2)',
+  },
+} as const;
+
+export type PremiumPalette = (typeof PremiumColors)['light'] | (typeof PremiumColors)['dark'];
+
 export type ThemeColors = typeof Colors.light;
 export type ThemeColorKey = keyof ThemeColors;
 

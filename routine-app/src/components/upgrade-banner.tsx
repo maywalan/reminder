@@ -17,16 +17,19 @@ import { XIcon } from '@/components/icon';
 import { Text } from '@/components/text';
 import { t } from '@/i18n';
 import { Tickle } from '@/components/tickle';
-import { Typography } from '@/constants/theme';
+import { Colors, PremiumColors, Typography } from '@/constants/theme';
+import { usePremiumColors } from '@/hooks/use-theme';
 import { usePlannerStore } from '@/store/use-planner-store';
 import { countActivePlans, FREE_ACTIVE_PLAN_LIMIT } from '@/utils/premium';
 
 /** design canvas "Tickle upgrade banner" — the paywall's Premium-card ink, same on light and dark. */
-const INK = '#10203A';
-const MUTED_ON_INK = '#C6D6EA';
-const GOLD = '#EFC985';
-const GOLD_TINT = 'rgba(184,134,43,0.2)';
-const AZURE = '#1B76E8';
+// The banner is the ink Premium card, dark in both modes (see `PremiumColors`); only its
+// background lifts a step in dark mode, applied inline.
+const INK = PremiumColors.light.card;
+const MUTED_ON_INK = PremiumColors.light.cardInkSoft;
+const GOLD = PremiumColors.light.gold;
+const GOLD_TINT = PremiumColors.light.goldBg;
+const AZURE = Colors.light.accent;
 
 const DISMISS_FOR_MS = 7 * 24 * 60 * 60 * 1000;
 /** From this many active plans the banner switches to the "N of 5 used" meter and ignores a dismiss. */
@@ -42,6 +45,7 @@ const ENTER_SPRING = { damping: 14, stiffness: 170 };
 export function UpgradeBanner() {
   const router = useRouter();
   const reduceMotion = useReducedMotion();
+  const premium = usePremiumColors();
   const subscriptionState = usePlannerStore((s) => s.mockSubscriptionState);
   const plans = usePlannerStore((s) => s.plans);
   const dismissedAt = usePlannerStore((s) => s.upgradeBannerDismissedAt);
@@ -87,7 +91,7 @@ export function UpgradeBanner() {
           pressedScale={0.96}
           accessibilityRole="button"
           accessibilityLabel={nearLimit ? `${t('banner.title')}. ${t('banner.used', { used, limit: FREE_ACTIVE_PLAN_LIMIT })}` : t('banner.title')}
-          style={styles.card}>
+          style={[styles.card, { backgroundColor: premium.card }]}>
           <View style={styles.top}>
             <View style={styles.mascotTile}>
               <Tickle size={34} mood="idle" animated />

@@ -3,7 +3,7 @@
  * https://docs.expo.dev/guides/color-schemes/
  */
 
-import { Colors } from '@/constants/theme';
+import { Colors, PremiumColors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { usePlannerStore } from '@/store/use-planner-store';
 
@@ -17,4 +17,9 @@ export function useEffectiveScheme(): 'light' | 'dark' {
 
 export function useTheme() {
   return Colors[useEffectiveScheme()];
+}
+
+/** The Premium screens' extra colors (see `PremiumColors`) for the current Appearance. */
+export function usePremiumColors() {
+  return PremiumColors[useEffectiveScheme()];
 }

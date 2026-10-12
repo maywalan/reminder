@@ -1,12 +1,13 @@
 import { showManageSubscriptionsIOS, useIAP } from 'expo-iap';
 import { useRouter } from 'expo-router';
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Alert, Animated, Easing, Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/text';
 import { ChevronLeftIcon } from '@/components/icon';
-import { Typography } from '@/constants/theme';
+import { Colors, Typography, type PremiumPalette } from '@/constants/theme';
+import { usePremiumColors, useTheme } from '@/hooks/use-theme';
 import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
 import { useToast } from '@/hooks/use-toast';
@@ -79,8 +80,11 @@ export default function SubscriptionScreen() {
   const firstUsedAt = usePlannerStore((s) => s.firstUsedAt);
   const details = usePlannerStore((s) => s.subscriptionDetails);
   const prices = usePremiumPrices();
+  const theme = useTheme();
+  const palette = usePremiumColors();
+  const styles = useMemo(() => makeStyles(theme, palette), [theme, palette]);
   const plans = usePlannerStore((s) => s.plans);
-  const content = getSubscriptionContent(state, { details, activePlans: countActivePlans(plans), prices });
+  const content = getSubscriptionContent(state, { details, activePlans: countActivePlans(plans), prices, colors: { theme, premium: palette } });
   const memberSince = firstUsedAt ? fmtDateLong(firstUsedAt) : '—';
 
   const { restorePurchases } = useIAP();
@@ -128,19 +132,19 @@ export default function SubscriptionScreen() {
     Alert.alert(t('sub.freeChangesTitle'), t('sub.freeChangesBody'));
   }
 
-  const heroInk = content.dark ? '#FFFFFF' : '#10203A';
-  const heroInkSoft = content.dark ? '#C6D6EA' : '#5A6A80';
-  const trackColor = content.dark ? 'rgba(255,255,255,0.14)' : '#EEF3FA';
-  const dotBg = content.listGrey ? '#EEF3FA' : '#1B76E8';
-  const dotColor = content.listGrey ? '#8A99AC' : '#fff';
-  const rowInk = content.listGrey ? '#5A6A80' : '#3A4759';
+  const heroInk = content.dark ? palette.cardInk : theme.text;
+  const heroInkSoft = content.dark ? palette.cardInkSoft : palette.inkMuted;
+  const trackColor = content.dark ? palette.cardDivider : palette.chip;
+  const dotBg = content.listGrey ? palette.chip : theme.accent;
+  const dotColor = content.listGrey ? palette.inkFaint : '#fff';
+  const rowInk = content.listGrey ? palette.inkMuted : palette.inkBody;
   const barWidth = meterFill.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'], extrapolate: 'clamp' });
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 16 }]}>
       <View style={styles.navRow}>
         <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
-          <ChevronLeftIcon size={14} color="#3A4759" strokeWidth={2.6} />
+          <ChevronLeftIcon size={14} color={palette.inkBody} strokeWidth={2.6} />
         </Pressable>
         <Text style={styles.navTitle}>{t('sub.title')}</Text>
       </View>
@@ -234,52 +238,56 @@ export default function SubscriptionScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#F7FAFF', paddingHorizontal: 16 },
-  navRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
-  backBtn: { width: 30, height: 30, borderRadius: 15, backgroundColor: 'rgba(16,32,58,0.06)', alignItems: 'center', justifyContent: 'center' },
-  navTitle: { fontWeight: '700', fontSize: Typography.title, color: '#10203A', letterSpacing: -0.2 },
+type Theme = (typeof Colors)[keyof typeof Colors];
 
-  body: { flex: 1, gap: 11 },
+function makeStyles(c: Theme, p: PremiumPalette) {
+  return StyleSheet.create({
+    screen: { flex: 1, backgroundColor: c.bg, paddingHorizontal: 16 },
+    navRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
+    backBtn: { width: 30, height: 30, borderRadius: 15, backgroundColor: p.softButton, alignItems: 'center', justifyContent: 'center' },
+    navTitle: { fontWeight: '700', fontSize: Typography.title, color: c.text, letterSpacing: -0.2 },
 
-  hero: { borderRadius: 22, padding: 16, gap: 14 },
-  heroDark: { backgroundColor: '#10203A', shadowColor: '#10203A', shadowOpacity: 0.24, shadowRadius: 30, shadowOffset: { width: 0, height: 14 } },
-  heroLight: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#E7EDF6', shadowColor: '#10203A', shadowOpacity: 0.07, shadowRadius: 18, shadowOffset: { width: 0, height: 6 } },
-  heroTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
-  heroTopText: { flex: 1, minWidth: 0, gap: 7 },
-  pill: { alignSelf: 'flex-start', paddingVertical: 4, paddingHorizontal: 9, borderRadius: 9 },
-  pillText: { fontWeight: '700', fontSize: Typography.caption, letterSpacing: 0.4 },
-  planName: { fontWeight: '700', fontSize: Typography.screenTitle },
-  priceLine: { fontWeight: '500', fontSize: Typography.body, fontVariant: ['tabular-nums'] },
+    body: { flex: 1, gap: 11 },
 
-  meter: { gap: 7 },
-  meterLabelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
-  meterLabel: { fontWeight: '500', fontSize: Typography.rowValue, flexShrink: 1, marginRight: 8 },
-  meterValue: { fontWeight: '600', fontSize: Typography.rowValue, fontVariant: ['tabular-nums'] },
-  meterTrack: { height: 6, borderRadius: 3, overflow: 'hidden' },
-  meterBar: { height: '100%', borderRadius: 3 },
+    hero: { borderRadius: 22, padding: 16, gap: 14 },
+    heroDark: { backgroundColor: p.card, shadowColor: '#10203A', shadowOpacity: 0.24, shadowRadius: 30, shadowOffset: { width: 0, height: 14 } },
+    heroLight: { backgroundColor: c.surface, borderWidth: 1, borderColor: c.cardBorder, shadowColor: '#10203A', shadowOpacity: 0.07, shadowRadius: 18, shadowOffset: { width: 0, height: 6 } },
+    heroTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
+    heroTopText: { flex: 1, minWidth: 0, gap: 7 },
+    pill: { alignSelf: 'flex-start', paddingVertical: 4, paddingHorizontal: 9, borderRadius: 9 },
+    pillText: { fontWeight: '700', fontSize: Typography.caption, letterSpacing: 0.4 },
+    planName: { fontWeight: '700', fontSize: Typography.screenTitle },
+    priceLine: { fontWeight: '500', fontSize: Typography.body, fontVariant: ['tabular-nums'] },
 
-  card: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#E7EDF6', borderRadius: 20, padding: 14, gap: 10 },
-  cardTitle: { fontWeight: '700', fontSize: Typography.heading, color: '#10203A' },
-  featureList: { gap: 9 },
-  featureRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-  featureDot: { width: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
-  featureDotMark: { fontSize: Typography.caption, fontWeight: '700' },
-  featureText: { fontWeight: '500', fontSize: Typography.rowLabel, flex: 1 },
+    meter: { gap: 7 },
+    meterLabelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
+    meterLabel: { fontWeight: '500', fontSize: Typography.rowValue, flexShrink: 1, marginRight: 8 },
+    meterValue: { fontWeight: '600', fontSize: Typography.rowValue, fontVariant: ['tabular-nums'] },
+    meterTrack: { height: 6, borderRadius: 3, overflow: 'hidden' },
+    meterBar: { height: '100%', borderRadius: 3 },
 
-  billingCard: { paddingVertical: 0, paddingHorizontal: 14, gap: 0 },
-  billRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F1F5FB' },
-  billRowLast: { borderBottomWidth: 0 },
-  billLabel: { fontWeight: '500', fontSize: Typography.rowLabel, color: '#5A6A80' },
-  billValue: { fontWeight: '600', fontSize: Typography.rowValue, color: '#10203A' },
-  billValueMono: { fontWeight: '600', fontSize: Typography.rowValue, fontVariant: ['tabular-nums'], color: '#10203A' },
+    card: { backgroundColor: c.surface, borderWidth: 1, borderColor: c.cardBorder, borderRadius: 20, padding: 14, gap: 10 },
+    cardTitle: { fontWeight: '700', fontSize: Typography.heading, color: c.text },
+    featureList: { gap: 9 },
+    featureRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+    featureDot: { width: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
+    featureDotMark: { fontSize: Typography.caption, fontWeight: '700' },
+    featureText: { fontWeight: '500', fontSize: Typography.rowLabel, flex: 1 },
 
-  ctaBtn: { height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1B76E8', shadowColor: '#1B76E8', shadowOpacity: 0.3, shadowRadius: 22, shadowOffset: { width: 0, height: 10 }, marginTop: 12, marginBottom: 10 },
-  ctaLabel: { color: '#fff', fontWeight: '700', fontSize: Typography.heading },
+    billingCard: { paddingVertical: 0, paddingHorizontal: 14, gap: 0 },
+    billRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: p.rowDivider },
+    billRowLast: { borderBottomWidth: 0 },
+    billLabel: { fontWeight: '500', fontSize: Typography.rowLabel, color: p.inkMuted },
+    billValue: { fontWeight: '600', fontSize: Typography.rowValue, color: c.text },
+    billValueMono: { fontWeight: '600', fontSize: Typography.rowValue, fontVariant: ['tabular-nums'], color: c.text },
 
-  minorBtn: { alignItems: 'center', paddingVertical: 4 },
-  minorLabel: { fontWeight: '600', fontSize: Typography.rowLabel },
-  footerLinks: { flexDirection: 'row', justifyContent: 'center', gap: 12, marginTop: 9 },
-  footerLink: { fontWeight: '500', fontSize: Typography.body, color: '#5A6A80' },
-  footerDot: { fontSize: Typography.body, color: '#5A6A80' },
-});
+    ctaBtn: { height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center', backgroundColor: c.accent, shadowColor: c.accent, shadowOpacity: 0.3, shadowRadius: 22, shadowOffset: { width: 0, height: 10 }, marginTop: 12, marginBottom: 10 },
+    ctaLabel: { color: '#fff', fontWeight: '700', fontSize: Typography.heading },
+
+    minorBtn: { alignItems: 'center', paddingVertical: 4 },
+    minorLabel: { fontWeight: '600', fontSize: Typography.rowLabel },
+    footerLinks: { flexDirection: 'row', justifyContent: 'center', gap: 12, marginTop: 9 },
+    footerLink: { fontWeight: '500', fontSize: Typography.body, color: p.inkMuted },
+    footerDot: { fontSize: Typography.body, color: p.inkMuted },
+  });
+}

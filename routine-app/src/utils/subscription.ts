@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 
+import { Colors, type PremiumPalette } from '@/constants/theme';
 import { formatPrice, PREMIUM_SKUS, type Billing, type PremiumPrices } from '@/lib/iap';
 import type { SubscriptionDetails, SubscriptionState } from '@/store/types';
 import { FREE_ACTIVE_PLAN_LIMIT } from '@/utils/premium';
@@ -61,6 +62,8 @@ export interface SubscriptionInputs {
   activePlans: number;
   /** Storefront prices from `usePremiumPrices`. */
   prices: PremiumPrices;
+  /** Current Appearance's theme + Premium palette (`useTheme` / `usePremiumColors`). */
+  colors: { theme: (typeof Colors)[keyof typeof Colors]; premium: PremiumPalette };
   now?: number;
 }
 
@@ -88,13 +91,16 @@ function resolvePeriod(state: SubscriptionState, details: SubscriptionDetails | 
  * Content per entitlement state (design_handoff_tickle_subscription/README.md's state table),
  * filled from StoreKit's dates and storefront prices.
  */
-export function getSubscriptionContent(state: SubscriptionState, { details, activePlans, prices, now = Date.now() }: SubscriptionInputs): SubscriptionContent {
+export function getSubscriptionContent(state: SubscriptionState, { details, activePlans, prices, colors, now = Date.now() }: SubscriptionInputs): SubscriptionContent {
   const { billing, start, end } = resolvePeriod(state, details, now);
   const daysLeft = Math.max(0, Math.ceil((end - now) / DAY_MS));
   const elapsedPct = Math.min(100, Math.max(0, ((now - start) / Math.max(1, end - start)) * 100));
   const planName = t(billing === 'annual' ? 'sub.premiumAnnual' : 'sub.premiumMonthly');
   const billPlan = t(billing === 'annual' ? 'sub.billAnnual' : 'sub.billMonthly');
   const daysLabel = t('sub.daysLeft', { count: daysLeft });
+  const { theme, premium: p } = colors;
+  // Dark heroes are the ink card, which keeps the light theme's azure in both modes.
+  const azure = Colors.light.accent;
   const price = (amount: number) => formatPrice(amount, prices.currency, prices.like);
 
   switch (state) {
@@ -102,22 +108,22 @@ export function getSubscriptionContent(state: SubscriptionState, { details, acti
       const day = Math.min(TRIAL_DAYS, Math.max(1, Math.floor((now - start) / DAY_MS) + 1));
       return {
         pillLabel: t('sub.trialPill', { days: daysLabel }).toUpperCase(),
-        pillBg: '#1B76E8',
-        pillInk: '#fff',
+        pillBg: azure,
+        pillInk: p.cardInk,
         dark: true,
         planName,
         priceLine: t(billing === 'annual' ? 'sub.afterTrialYear' : 'sub.afterTrialMonth', { price: prices.display[billing] }),
         meterLabel: t('sub.trialEnds', { date: fmtDay(end) }),
         meterValue: t('sub.trialDay', { day, total: TRIAL_DAYS }),
         pct: elapsedPct,
-        barColor: '#1B76E8',
+        barColor: azure,
         billPlan,
         billNext: fmtDay(end),
         billPay: billedBy(),
         ctaLabel: t('sub.manage'),
         ctaAction: 'store',
         minorLabel: t('sub.cancelTrial'),
-        minorInk: '#5A6A80',
+        minorInk: p.inkMuted,
         minorAction: 'store',
         listTitle: t('sub.included'),
         listGrey: false,
@@ -126,22 +132,22 @@ export function getSubscriptionContent(state: SubscriptionState, { details, acti
     case 'monthly':
       return {
         pillLabel: t('sub.active'),
-        pillBg: 'rgba(79,216,164,0.2)',
-        pillInk: '#8FEAC4',
+        pillBg: p.mintBg,
+        pillInk: p.mint,
         dark: true,
         planName: t('sub.premiumMonthly'),
         priceLine: t('sub.perMonth', { price: prices.display.monthly }),
         meterLabel: t('sub.renews', { date: fmtDay(end) }),
         meterValue: t('sub.perYearAtRate', { price: price(prices.amount.monthly * 12) }),
         pct: 100,
-        barColor: '#1B76E8',
+        barColor: azure,
         billPlan: t('sub.billMonthly'),
         billNext: fmtDay(end),
         billPay: billedBy(),
         ctaLabel: t('sub.switchAnnual'),
         ctaAction: 'paywall',
         minorLabel: t('sub.cancel'),
-        minorInk: '#5A6A80',
+        minorInk: p.inkMuted,
         minorAction: 'store',
         listTitle: t('sub.included'),
         listGrey: false,
@@ -149,22 +155,22 @@ export function getSubscriptionContent(state: SubscriptionState, { details, acti
     case 'annual':
       return {
         pillLabel: t('sub.active'),
-        pillBg: 'rgba(79,216,164,0.2)',
-        pillInk: '#8FEAC4',
+        pillBg: p.mintBg,
+        pillInk: p.mint,
         dark: true,
         planName: t('sub.premiumAnnual'),
         priceLine: t('sub.perYearApprox', { price: prices.display.annual, mo: price(prices.amount.annual / 12) }),
         meterLabel: t('sub.renews', { date: fmtDay(end) }),
         meterValue: t('sub.approxMonth', { mo: price(prices.amount.annual / 12) }),
         pct: 100,
-        barColor: '#1B76E8',
+        barColor: azure,
         billPlan: t('sub.billAnnual'),
         billNext: fmtDay(end),
         billPay: billedBy(),
         ctaLabel: t('sub.manage'),
         ctaAction: 'store',
         minorLabel: t('sub.cancel'),
-        minorInk: '#5A6A80',
+        minorInk: p.inkMuted,
         minorAction: 'store',
         listTitle: t('sub.included'),
         listGrey: false,
@@ -173,8 +179,8 @@ export function getSubscriptionContent(state: SubscriptionState, { details, acti
       const endDate = new Date(end);
       return {
         pillLabel: t('sub.ends', { date: fmtDate(endDate) }).toUpperCase(),
-        pillBg: 'rgba(184,134,43,0.22)',
-        pillInk: '#EFC985',
+        pillBg: p.goldBg,
+        pillInk: p.gold,
         dark: true,
         planName,
         priceLine: t('sub.cancelled'),
@@ -182,14 +188,14 @@ export function getSubscriptionContent(state: SubscriptionState, { details, acti
         meterValue: daysLabel,
         // Drains toward the end date.
         pct: 100 - elapsedPct,
-        barColor: '#D9A356',
+        barColor: p.goldBar,
         billPlan,
         billNext: '—',
         billPay: billedBy(),
         ctaLabel: t('sub.keepPremium'),
         ctaAction: 'store',
         minorLabel: t('sub.freeChangesTitle'),
-        minorInk: '#0F5FC4',
+        minorInk: theme.accentStrong,
         minorAction: 'ending-info',
         listTitle: t('sub.included'),
         listGrey: false,
@@ -200,22 +206,22 @@ export function getSubscriptionContent(state: SubscriptionState, { details, acti
       const atLimit = activePlans >= FREE_ACTIVE_PLAN_LIMIT;
       return {
         pillLabel: t('sub.freePlan'),
-        pillBg: '#EEF3FA',
-        pillInk: '#3A4759',
+        pillBg: p.chip,
+        pillInk: p.inkBody,
         dark: false,
         planName: t('paywall.free'),
         priceLine: t('sub.freeForever', { price: price(0) }),
         meterLabel: t('sub.activeUsed'),
         meterValue: t('common.of', { n: Math.min(activePlans, FREE_ACTIVE_PLAN_LIMIT), total: FREE_ACTIVE_PLAN_LIMIT }),
         pct: Math.min(100, (activePlans / FREE_ACTIVE_PLAN_LIMIT) * 100),
-        barColor: atLimit ? '#D9A356' : '#1B76E8',
+        barColor: atLimit ? p.goldBar : theme.accent,
         billPlan: t('paywall.free'),
         billNext: '—',
         billPay: '—',
         ctaLabel: t('paywall.cta.trial'),
         ctaAction: 'paywall',
         minorLabel: t('sub.restorePurchases'),
-        minorInk: '#5A6A80',
+        minorInk: p.inkMuted,
         minorAction: 'restore',
         listTitle: t('sub.unlock'),
         listGrey: true,

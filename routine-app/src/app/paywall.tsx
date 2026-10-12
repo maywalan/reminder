@@ -247,7 +247,8 @@ export default function PaywallScreen() {
   const ctaLabel = cta === 'done' ? t('paywall.cta.done') : tier === 'premium' ? t('paywall.cta.trial') : t('paywall.cta.free');
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 16 }]}>
+    // A modal sheet already starts below the status bar, so no top inset here.
+    <View style={[styles.screen, { paddingTop: 16, paddingBottom: insets.bottom + 28 }]}>
       <View style={styles.utilityRow}>
         <View style={styles.currencyPill}>
           {PAYWALL_CURRENCIES.map((c) => (
@@ -286,7 +287,7 @@ export default function PaywallScreen() {
 
       <View style={styles.cardsRow}>
         <Animated.View style={[styles.cardOuter, freeEnter]}>
-          <Animated.View style={[styles.cardOuter, freeLift]}>
+          <Animated.View style={[styles.cardInner, freeLift]}>
             <Pressable
               onPress={() => selectTier('free')}
               style={[styles.card, styles.freeCard, tier === 'free' ? styles.freeCardSelected : styles.freeCardUnselected]}>
@@ -312,7 +313,7 @@ export default function PaywallScreen() {
         </Animated.View>
 
         <Animated.View style={[styles.cardOuter, premiumEnter]}>
-          <Animated.View style={[styles.cardOuter, premiumLift]}>
+          <Animated.View style={[styles.cardInner, premiumLift]}>
             <Pressable
               onPress={() => selectTier('premium')}
               style={[styles.card, styles.premiumCard, tier === 'premium' ? styles.premiumCardSelected : styles.premiumCardUnselected]}>
@@ -340,6 +341,9 @@ export default function PaywallScreen() {
           </Animated.View>
         </Animated.View>
       </View>
+
+      {/* Prices stay up top; the button block sits at the bottom (user's pick, 2026-10-13). */}
+      <View style={styles.spacer} />
 
       <Animated.View style={ctaEnter}>
         <Pressable onPress={handlePrimaryPress} style={[styles.ctaBtn, cta === 'done' && styles.ctaBtnDone]}>
@@ -409,9 +413,12 @@ function makeStyles(c: Theme, p: PremiumPalette) {
     saveBadge: { paddingVertical: 2, paddingHorizontal: 6, borderRadius: 7, backgroundColor: p.saveBg },
     saveBadgeText: { fontSize: Typography.caption, fontWeight: '700', letterSpacing: 0.2, color: p.saveInk },
 
-    cardsRow: { flex: 1, flexDirection: 'row', gap: 10, marginBottom: 10 },
+    // Cards size to their (short) feature lists; the leftover height goes to `spacer`.
+    cardsRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
     cardOuter: { flex: 1, minWidth: 0 },
-    card: { flex: 1, minWidth: 0, borderRadius: 20, paddingVertical: 18, paddingHorizontal: 14, gap: 13 },
+    // flexGrow (not flex: 1) so a card keeps its content height but stretches to match the taller one.
+    cardInner: { flexGrow: 1 },
+    card: { flexGrow: 1, minWidth: 0, borderRadius: 20, paddingVertical: 18, paddingHorizontal: 14, gap: 13 },
     freeCard: { backgroundColor: c.surface },
     freeCardSelected: { borderWidth: 1.5, borderColor: c.accent, shadowColor: '#10203A', shadowOpacity: 0.1, shadowRadius: 22, shadowOffset: { width: 0, height: 10 } },
     freeCardUnselected: { borderWidth: 1, borderColor: c.cardBorder },
@@ -439,7 +446,8 @@ function makeStyles(c: Theme, p: PremiumPalette) {
     dividerLight: { height: 1, backgroundColor: p.chip },
     dividerDark: { height: 1, backgroundColor: p.cardDivider },
 
-    featureList: { flex: 1, gap: 7 },
+    featureList: { gap: 7 },
+    spacer: { flex: 1, minHeight: 12 },
 
     ctaBtn: { height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', backgroundColor: c.accent, shadowColor: c.accent, shadowOpacity: 0.32, shadowRadius: 22, shadowOffset: { width: 0, height: 10 }, marginBottom: 8 },
     ctaBtnDone: { backgroundColor: Colors.light.accentStrong, shadowColor: Colors.light.accentStrong, shadowOpacity: 0.34 },

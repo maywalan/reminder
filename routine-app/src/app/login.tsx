@@ -23,7 +23,7 @@ export default function LoginScreen() {
   const signInWithEmail = useAuthStore((s) => s.signInWithEmail);
   const signUpWithEmail = useAuthStore((s) => s.signUpWithEmail);
   const signInWithOAuth = useAuthStore((s) => s.signInWithOAuth);
-  const { toastMessage, showToast } = useToast();
+  const { toastMessage, toastKind, showToast } = useToast();
 
   const [mode, setMode] = useState<Mode>('signIn');
   const [name, setName] = useState('');
@@ -165,7 +165,7 @@ export default function LoginScreen() {
               </Text>
             </Pressable>
             {mode === 'signIn' && (
-              <Pressable onPress={() => showToast(t('login.resetSoon'))} hitSlop={6}>
+              <Pressable onPress={() => showToast(t('login.resetSoon'), 'info')} hitSlop={6}>
                 <Text style={{ color: theme.accentStrong, fontSize: Typography.body, fontWeight: '600' }}>{t('login.forgot')}</Text>
               </Pressable>
             )}
@@ -192,7 +192,7 @@ export default function LoginScreen() {
           </Pressable>
 
           <Pressable
-            onPress={() => showToast(t('login.appleSoon'))}
+            onPress={() => showToast(t('login.appleSoon'), 'info')}
             style={[styles.oauthButton, { backgroundColor: theme.surface, borderColor: theme.cardBorder, opacity: 0.5 }]}>
             <AppleLogoIcon size={18} color={theme.text} />
             <Text style={[styles.oauthButtonText, { color: theme.text }]}>{t('login.apple')}</Text>
@@ -203,7 +203,7 @@ export default function LoginScreen() {
           </Pressable>
         </ScrollView>
 
-        <Toast message={toastMessage} />
+        <Toast message={toastMessage} kind={toastKind} />
       </View>
     </KeyboardAvoidingView>
   );

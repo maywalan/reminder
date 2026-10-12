@@ -171,7 +171,7 @@ export default function AddPlanScreen() {
     if (!q) return COMMON_TIME_ZONES;
     return listTimeZones().filter((tz) => tz.toLowerCase().includes(q.replace(/\s+/g, '_')) || timeZoneCityLabel(tz).toLowerCase().includes(q));
   }, [timeZoneQuery]);
-  const { toastMessage, showToast } = useToast();
+  const { toastMessage, toastKind, showToast } = useToast();
 
   // Back from Create Group (pushed on top of this form, so every field here is still as the user
   // left it): take the group it picked or created, and adopt its color.
@@ -233,7 +233,7 @@ export default function AddPlanScreen() {
   function handleSave() {
     if (!name.trim()) {
       setError(true);
-      showToast(t('plan.nameRequired'));
+      showToast(t('plan.nameRequired'), 'error');
       return;
     }
     if (atPlanLimit) {
@@ -821,7 +821,7 @@ export default function AddPlanScreen() {
         )}
       </ScrollView>
 
-      <Toast message={toastMessage} />
+      <Toast message={toastMessage} kind={toastKind} />
 
       <PhotoViewer uris={photoUris} index={previewIndex} onClose={() => setPreviewIndex(null)} />
 

@@ -2,7 +2,7 @@ import { StyleSheet, View } from 'react-native';
 import { Circle, Svg } from 'react-native-svg';
 
 import { Text } from '@/components/text';
-import { Radii } from '@/constants/theme';
+import { Radii, Typography } from '@/constants/theme';
 import { t } from '@/i18n';
 
 const RING_SIZE = 76;
@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
   holeValue: { fontWeight: '500', fontSize: 18, color: '#fff' },
   holeCaption: { fontWeight: '600', fontSize: 8.5, color: 'rgba(255,255,255,0.55)', letterSpacing: 0.4 },
   text: { flex: 1, minWidth: 0 },
-  eyebrow: { fontWeight: '600', fontSize: 10, color: 'rgba(255,255,255,0.55)', letterSpacing: 0.5 },
-  line: { fontWeight: '700', fontSize: 16, color: '#fff', marginTop: 3, lineHeight: 21 },
-  delta: { fontWeight: '500', fontSize: 11.5, color: 'rgba(255,255,255,0.6)', marginTop: 4 },
+  eyebrow: { fontWeight: '600', fontSize: Typography.caption, color: 'rgba(255,255,255,0.55)', letterSpacing: 0.5 },
+  line: { fontWeight: '700', fontSize: Typography.sheetTitle, color: '#fff', marginTop: 3, lineHeight: 21 },
+  delta: { fontWeight: '500', fontSize: Typography.label, color: 'rgba(255,255,255,0.6)', marginTop: 4 },
 });

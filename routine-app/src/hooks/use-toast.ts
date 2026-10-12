@@ -1,17 +1,19 @@
 import { useCallback, useRef, useState } from 'react';
 
+import type { ToastKind } from '@/components/toast';
+
 export function useToast(durationMs = 1600) {
-  const [message, setMessage] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; kind: ToastKind } | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showToast = useCallback(
-    (text: string) => {
+    (text: string, kind: ToastKind = 'success') => {
       if (timer.current) clearTimeout(timer.current);
-      setMessage(text);
-      timer.current = setTimeout(() => setMessage(null), durationMs);
+      setToast({ message: text, kind });
+      timer.current = setTimeout(() => setToast(null), durationMs);
     },
     [durationMs]
   );
 
-  return { toastMessage: message, showToast };
+  return { toastMessage: toast?.message ?? null, toastKind: toast?.kind ?? 'success', showToast };
 }

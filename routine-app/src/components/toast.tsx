@@ -1,19 +1,24 @@
 import { StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/text';
-import { CheckIcon } from '@/components/icon';
-import { Fonts, Radii, Typography } from '@/constants/theme';
+import { CheckIcon, WarningIcon } from '@/components/icon';
+import { Colors, Fonts, Radii, Typography } from '@/constants/theme';
+
+/** success = green tick; error = warning sign (failed purchase, missing field); info = text only (not available yet, nothing found). */
+export type ToastKind = 'success' | 'error' | 'info';
 
 interface ToastProps {
   message: string | null;
+  kind?: ToastKind;
 }
 
-/** Small floating confirmation pill — ink bg, white text, a green tick, matching the design's toast spec. */
-export function Toast({ message }: ToastProps) {
+/** Small floating pill — ink bg, white text, matching the design's toast spec. */
+export function Toast({ message, kind = 'success' }: ToastProps) {
   if (!message) return null;
   return (
     <View style={styles.toast} pointerEvents="none">
-      <CheckIcon size={14} color="#4FC98A" strokeWidth={3} />
+      {kind === 'success' && <CheckIcon size={14} color="#4FC98A" strokeWidth={3} />}
+      {kind === 'error' && <WarningIcon size={15} color={Colors.dark.danger} strokeWidth={2.2} />}
       <Text style={styles.text}>{message}</Text>
     </View>
   );

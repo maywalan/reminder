@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   trialPill: { alignSelf: 'flex-start', paddingVertical: 3, paddingHorizontal: 8, borderRadius: 9, backgroundColor: GOLD_TINT },
-  trialText: { color: GOLD, fontSize: 9.5, fontWeight: '700', letterSpacing: 0.7 },
+  trialText: { color: GOLD, fontSize: Typography.tabLabel, fontWeight: '700', letterSpacing: 0.7 },
   title: { color: '#FFFFFF', fontSize: Typography.sheetTitle, fontWeight: '700', marginTop: 5 },
   sub: { color: MUTED_ON_INK, fontSize: Typography.body, fontWeight: '500', marginTop: 2 },
   meter: { flexDirection: 'row', gap: 4 },

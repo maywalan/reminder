@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 
-import { PREMIUM_SKUS } from '@/lib/iap';
+import { formatPrice, PREMIUM_SKUS, type Billing, type PremiumPrices } from '@/lib/iap';
 import type { SubscriptionDetails, SubscriptionState } from '@/store/types';
 import { FREE_ACTIVE_PLAN_LIMIT } from '@/utils/premium';
 import { t } from '@/i18n';
@@ -42,15 +42,9 @@ export interface SubscriptionContent {
   listGrey: boolean;
 }
 
-type Billing = 'monthly' | 'annual';
-
 const DAY_MS = 86_400_000;
 const TRIAL_DAYS = 7;
-// Same fallback USD prices as the paywall's PRICE table (Tickle.storekit's displayPrice).
-const PRICE_USD: Record<Billing, number> = { monthly: 2.69, annual: 16.99 };
 const billedBy = () => t(Platform.OS === 'android' ? 'sub.googlePlay' : 'sub.appStore');
-
-const usd = (n: number) => `$${n.toFixed(2)}`;
 
 const fmtDay = (ms: number) => fmtDate(new Date(ms), { year: true }, 'dm');
 
@@ -65,6 +59,8 @@ export interface SubscriptionInputs {
   /** From the last StoreKit refresh; null on Free or while a Profile > Testing state is forced. */
   details: SubscriptionDetails | null;
   activePlans: number;
+  /** Storefront prices from `usePremiumPrices`. */
+  prices: PremiumPrices;
   now?: number;
 }
 
@@ -90,16 +86,16 @@ function resolvePeriod(state: SubscriptionState, details: SubscriptionDetails | 
 
 /**
  * Content per entitlement state (design_handoff_tickle_subscription/README.md's state table),
- * filled from StoreKit's dates. Prices are still the fixed USD fallback until the paywall reads
- * localized prices from StoreKit.
+ * filled from StoreKit's dates and storefront prices.
  */
-export function getSubscriptionContent(state: SubscriptionState, { details, activePlans, now = Date.now() }: SubscriptionInputs): SubscriptionContent {
+export function getSubscriptionContent(state: SubscriptionState, { details, activePlans, prices, now = Date.now() }: SubscriptionInputs): SubscriptionContent {
   const { billing, start, end } = resolvePeriod(state, details, now);
   const daysLeft = Math.max(0, Math.ceil((end - now) / DAY_MS));
   const elapsedPct = Math.min(100, Math.max(0, ((now - start) / Math.max(1, end - start)) * 100));
   const planName = t(billing === 'annual' ? 'sub.premiumAnnual' : 'sub.premiumMonthly');
   const billPlan = t(billing === 'annual' ? 'sub.billAnnual' : 'sub.billMonthly');
   const daysLabel = t('sub.daysLeft', { count: daysLeft });
+  const price = (amount: number) => formatPrice(amount, prices.currency, prices.like);
 
   switch (state) {
     case 'trial': {
@@ -110,7 +106,7 @@ export function getSubscriptionContent(state: SubscriptionState, { details, acti
         pillInk: '#fff',
         dark: true,
         planName,
-        priceLine: t(billing === 'annual' ? 'sub.afterTrialYear' : 'sub.afterTrialMonth', { price: usd(PRICE_USD[billing]) }),
+        priceLine: t(billing === 'annual' ? 'sub.afterTrialYear' : 'sub.afterTrialMonth', { price: prices.display[billing] }),
         meterLabel: t('sub.trialEnds', { date: fmtDay(end) }),
         meterValue: t('sub.trialDay', { day, total: TRIAL_DAYS }),
         pct: elapsedPct,
@@ -134,9 +130,9 @@ export function getSubscriptionContent(state: SubscriptionState, { details, acti
         pillInk: '#8FEAC4',
         dark: true,
         planName: t('sub.premiumMonthly'),
-        priceLine: t('sub.perMonth', { price: usd(PRICE_USD.monthly) }),
+        priceLine: t('sub.perMonth', { price: prices.display.monthly }),
         meterLabel: t('sub.renews', { date: fmtDay(end) }),
-        meterValue: t('sub.perYearAtRate', { price: usd(PRICE_USD.monthly * 12) }),
+        meterValue: t('sub.perYearAtRate', { price: price(prices.amount.monthly * 12) }),
         pct: 100,
         barColor: '#1B76E8',
         billPlan: t('sub.billMonthly'),
@@ -157,9 +153,9 @@ export function getSubscriptionContent(state: SubscriptionState, { details, acti
         pillInk: '#8FEAC4',
         dark: true,
         planName: t('sub.premiumAnnual'),
-        priceLine: t('sub.perYearApprox', { price: usd(PRICE_USD.annual), mo: usd(PRICE_USD.annual / 12) }),
+        priceLine: t('sub.perYearApprox', { price: prices.display.annual, mo: price(prices.amount.annual / 12) }),
         meterLabel: t('sub.renews', { date: fmtDay(end) }),
-        meterValue: t('sub.approxMonth', { mo: usd(PRICE_USD.annual / 12) }),
+        meterValue: t('sub.approxMonth', { mo: price(prices.amount.annual / 12) }),
         pct: 100,
         barColor: '#1B76E8',
         billPlan: t('sub.billAnnual'),
@@ -208,7 +204,7 @@ export function getSubscriptionContent(state: SubscriptionState, { details, acti
         pillInk: '#3A4759',
         dark: false,
         planName: t('paywall.free'),
-        priceLine: t('sub.freeForever'),
+        priceLine: t('sub.freeForever', { price: price(0) }),
         meterLabel: t('sub.activeUsed'),
         meterValue: t('common.of', { n: Math.min(activePlans, FREE_ACTIVE_PLAN_LIMIT), total: FREE_ACTIVE_PLAN_LIMIT }),
         pct: Math.min(100, (activePlans / FREE_ACTIVE_PLAN_LIMIT) * 100),

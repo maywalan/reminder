@@ -1,5 +1,5 @@
 import * as Haptics from 'expo-haptics';
-import { finishTransaction, useIAP } from 'expo-iap';
+import { ErrorCode, finishTransaction, useIAP } from 'expo-iap';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Linking, Pressable, StyleSheet, View } from 'react-native';
@@ -12,12 +12,10 @@ import { t } from '@/i18n';
 import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
 import { useToast } from '@/hooks/use-toast';
-import { PREMIUM_SKUS, refreshSubscriptionState } from '@/lib/iap';
+import { annualSavingsPct, formatPrice, PREMIUM_SKUS, refreshSubscriptionState, usePremiumPrices, type Billing, type PremiumPrices } from '@/lib/iap';
 import { usePlannerStore } from '@/store/use-planner-store';
 import { useThink } from '@/utils/motion';
 
-type Billing = 'monthly' | 'annual';
-type Currency = 'usd' | 'thb';
 type Tier = 'free' | 'premium';
 type CtaState = 'idle' | 'loading' | 'done';
 
@@ -26,23 +24,18 @@ const EASE = Easing.bezier(0.22, 1, 0.36, 1);
 const FREE_FEATURES = ['feature.free.plans', 'feature.free.repeat', 'feature.free.calendar', 'feature.free.reminder', 'feature.free.today', 'feature.free.widgets'] as const;
 const PREMIUM_FEATURES = ['feature.pro.plans', 'feature.pro.repeat', 'feature.pro.calendar', 'feature.pro.reminders', 'feature.pro.history', 'feature.pro.themes'] as const;
 
-// Display-conversion fallback copy (design_handoff_tickle_paywall/README.md) for when a real
-// storefront hasn't loaded yet — the live screen must read localized prices from StoreKit / Play
-// Billing instead of these once purchases are wired up.
-const PRICE: Record<Currency, Record<Billing, string>> = {
-  usd: { monthly: '$2.69', annual: '$16.99' },
-  thb: { monthly: '฿89', annual: '฿555' },
-};
-const PER_MONTH: Record<Currency, string> = { usd: '$1.42', thb: '฿46.25' };
+// Prices come from the App Store storefront (`usePremiumPrices`); until StoreKit answers, the
+// fallback from the design handoff shows with a note that the App Store price may differ.
+const perMonth = (prices: PremiumPrices) => formatPrice(prices.amount.annual / 12, prices.currency, prices.like);
 
-function periodLine(currency: Currency, billing: Billing) {
-  return billing === 'monthly' ? t('paywall.perMonth') : t('paywall.perYear', { mo: PER_MONTH[currency] });
+function periodLine(prices: PremiumPrices, billing: Billing) {
+  return billing === 'monthly' ? t('paywall.perMonth') : t('paywall.perYear', { mo: perMonth(prices) });
 }
 
-function finePrint(currency: Currency, billing: Billing) {
-  const price = PRICE[currency][billing];
-  const base = billing === 'monthly' ? t('paywall.fine.monthly', { price }) : t('paywall.fine.annual', { price, mo: PER_MONTH[currency] });
-  return currency === 'thb' ? `${base} ${t('paywall.fine.localNote')}` : base;
+function finePrint(prices: PremiumPrices, billing: Billing) {
+  const price = prices.display[billing];
+  const base = billing === 'monthly' ? t('paywall.fine.monthly', { price }) : t('paywall.fine.annual', { price, mo: perMonth(prices) });
+  return prices.fromStore ? base : `${base} ${t('paywall.fine.localNote')}`;
 }
 
 // Entrance stagger (design_handoff_tickle_paywall/README.md "Motion"): header -> toggle ->
@@ -120,11 +113,11 @@ function FeatureRow({ text, dark }: { text: string; dark: boolean }) {
 export default function PaywallScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { toastMessage, showToast } = useToast();
+  const { toastMessage, toastKind, showToast } = useToast();
 
   const [tier, setTier] = useState<Tier>('premium');
   const [billing, setBilling] = useState<Billing>('annual');
-  const [currency, setCurrency] = useState<Currency>('usd');
+  const prices = usePremiumPrices();
   const [cta, setCta] = useState<CtaState>('idle');
   const [trackWidth, setTrackWidth] = useState(0);
 
@@ -139,7 +132,9 @@ export default function PaywallScreen() {
     },
     onPurchaseError: (error) => {
       setCta('idle');
-      showToast(error.message || t('paywall.purchaseFailed'));
+      // Closing Apple's purchase sheet isn't a failure — no toast.
+      if (error.code === ErrorCode.UserCancelled) return;
+      showToast(error.message || t('paywall.purchaseFailed'), 'error');
     },
   });
 
@@ -182,12 +177,6 @@ export default function PaywallScreen() {
     setBilling(next);
   }
 
-  function selectCurrency(next: Currency) {
-    if (next === currency) return;
-    Haptics.selectionAsync();
-    setCurrency(next);
-  }
-
   async function handlePrimaryPress() {
     if (tier === 'free') {
       router.back();
@@ -201,7 +190,7 @@ export default function PaywallScreen() {
       await requestPurchase({ request: { apple: { sku: PREMIUM_SKUS[billing] } }, type: 'subs' });
     } catch (e) {
       setCta('idle');
-      showToast(e instanceof Error ? e.message : t('paywall.purchaseFailed'));
+      showToast(e instanceof Error ? e.message : t('paywall.purchaseFailed'), 'error');
     }
   }
 
@@ -211,9 +200,9 @@ export default function PaywallScreen() {
       setSubscriptionTestOverride(false);
       await refreshSubscriptionState();
       const has = usePlannerStore.getState().mockSubscriptionState !== 'free';
-      showToast(t(has ? 'restore.done' : 'restore.none'));
+      showToast(t(has ? 'restore.done' : 'restore.none'), has ? 'success' : 'info');
     } catch {
-      showToast(t('restore.failed'));
+      showToast(t('restore.failed'), 'error');
     }
   }
 
@@ -225,14 +214,6 @@ export default function PaywallScreen() {
   return (
     <View style={[styles.screen, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 16 }]}>
       <View style={styles.utilityRow}>
-        <View style={styles.currencyPill}>
-          <Pressable onPress={() => selectCurrency('usd')} style={[styles.pillBtn, currency === 'usd' && styles.pillBtnActive]}>
-            <Text style={[styles.pillLabel, currency === 'usd' && styles.pillLabelActive]}>USD</Text>
-          </Pressable>
-          <Pressable onPress={() => selectCurrency('thb')} style={[styles.pillBtn, currency === 'thb' && styles.pillBtnActive]}>
-            <Text style={[styles.pillLabel, currency === 'thb' && styles.pillLabelActive]}>THB</Text>
-          </Pressable>
-        </View>
         <Pressable onPress={() => router.back()} style={styles.closeBtn} hitSlop={8}>
           <XIcon size={13} color="rgba(16,32,58,0.5)" strokeWidth={2.4} />
         </Pressable>
@@ -256,7 +237,7 @@ export default function PaywallScreen() {
         <Pressable style={styles.billingSeg} onPress={() => selectBilling('annual')}>
           <Text style={[styles.billingLabel, billing === 'annual' && styles.billingLabelActive]}>{t('paywall.annual')}</Text>
           <View style={styles.saveBadge}>
-            <Text style={styles.saveBadgeText}>{t('paywall.save')}</Text>
+            <Text style={styles.saveBadgeText}>{t('paywall.save', { pct: annualSavingsPct(prices) })}</Text>
           </View>
         </Pressable>
       </Animated.View>
@@ -270,7 +251,7 @@ export default function PaywallScreen() {
               <View style={styles.cardTop}>
                 <View style={styles.cardTopText}>
                   <Text style={styles.cardName}>{t('paywall.free')}</Text>
-                  <Text style={styles.priceLight}>{currency === 'usd' ? '$0' : '฿0'}</Text>
+                  <Text style={styles.priceLight}>{formatPrice(0, prices.currency, prices.like)}</Text>
                   <Text style={styles.periodLight}>{t('paywall.forever')}</Text>
                 </View>
                 <PlanCheck selected={tier === 'free'} dark={false} />
@@ -299,8 +280,8 @@ export default function PaywallScreen() {
               <View style={styles.cardTop}>
                 <View style={styles.cardTopText}>
                   <Text style={styles.cardNameDark}>Premium</Text>
-                  <Text style={styles.priceDark}>{PRICE[currency][billing]}</Text>
-                  <Text style={styles.periodDark}>{periodLine(currency, billing)}</Text>
+                  <Text style={styles.priceDark}>{prices.display[billing]}</Text>
+                  <Text style={styles.periodDark}>{periodLine(prices, billing)}</Text>
                 </View>
                 <PlanCheck selected={tier === 'premium'} dark />
               </View>
@@ -332,7 +313,7 @@ export default function PaywallScreen() {
       </Animated.View>
 
       <Animated.View style={fineEnter}>
-        <Text style={styles.fine}>{finePrint(currency, billing)}</Text>
+        <Text style={styles.fine}>{finePrint(prices, billing)}</Text>
         <View style={styles.footerLinks}>
           <Pressable onPress={handleRestore} hitSlop={6}>
             <Text style={styles.footerLink}>{t('legal.restore')}</Text>
@@ -348,19 +329,14 @@ export default function PaywallScreen() {
         </View>
       </Animated.View>
 
-      <Toast message={toastMessage} />
+      <Toast message={toastMessage} kind={toastKind} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#F7FAFF', paddingHorizontal: 16 },
-  utilityRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
-  currencyPill: { flexDirection: 'row', gap: 2, padding: 3, backgroundColor: '#EAF0F9', borderRadius: 12 },
-  pillBtn: { paddingVertical: 4, paddingHorizontal: 9, borderRadius: 9 },
-  pillBtnActive: { backgroundColor: '#fff', shadowColor: '#10203A', shadowOpacity: 0.1, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
-  pillLabel: { fontSize: Typography.label, fontWeight: '700', letterSpacing: 0.3, color: 'rgba(16,32,58,0.45)' },
-  pillLabelActive: { color: '#10203A' },
+  utilityRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', marginBottom: 8 },
   closeBtn: { width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(16,32,58,0.06)', alignItems: 'center', justifyContent: 'center' },
 
   header: { flexDirection: 'row', alignItems: 'center', gap: 11, marginBottom: 10 },

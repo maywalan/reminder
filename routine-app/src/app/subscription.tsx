@@ -10,7 +10,7 @@ import { Typography } from '@/constants/theme';
 import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
 import { useToast } from '@/hooks/use-toast';
-import { refreshSubscriptionState } from '@/lib/iap';
+import { refreshSubscriptionState, usePremiumPrices } from '@/lib/iap';
 import { usePlannerStore } from '@/store/use-planner-store';
 import { countActivePlans } from '@/utils/premium';
 import { getSubscriptionContent } from '@/utils/subscription';
@@ -72,14 +72,15 @@ function fmtDateLong(iso: string) {
 export default function SubscriptionScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { toastMessage, showToast } = useToast();
+  const { toastMessage, toastKind, showToast } = useToast();
 
   const state = usePlannerStore((s) => s.mockSubscriptionState);
   const setSubscriptionTestOverride = usePlannerStore((s) => s.setSubscriptionTestOverride);
   const firstUsedAt = usePlannerStore((s) => s.firstUsedAt);
   const details = usePlannerStore((s) => s.subscriptionDetails);
+  const prices = usePremiumPrices();
   const plans = usePlannerStore((s) => s.plans);
-  const content = getSubscriptionContent(state, { details, activePlans: countActivePlans(plans) });
+  const content = getSubscriptionContent(state, { details, activePlans: countActivePlans(plans), prices });
   const memberSince = firstUsedAt ? fmtDateLong(firstUsedAt) : '—';
 
   const { restorePurchases } = useIAP();
@@ -109,9 +110,9 @@ export default function SubscriptionScreen() {
       setSubscriptionTestOverride(false);
       await refreshSubscriptionState();
       const has = usePlannerStore.getState().mockSubscriptionState !== 'free';
-      showToast(t(has ? 'restore.done' : 'restore.none'));
+      showToast(t(has ? 'restore.done' : 'restore.none'), has ? 'success' : 'info');
     } catch {
-      showToast(t('restore.failed'));
+      showToast(t('restore.failed'), 'error');
     }
   }
 
@@ -228,7 +229,7 @@ export default function SubscriptionScreen() {
         </View>
       </Animated.View>
 
-      <Toast message={toastMessage} />
+      <Toast message={toastMessage} kind={toastKind} />
     </View>
   );
 }

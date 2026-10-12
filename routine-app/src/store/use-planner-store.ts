@@ -45,7 +45,7 @@ interface PlannerState {
   lastDeletedSnapshot: Plan[] | null;
   /** Home's Groups filter: a plan shows when it's in any of these. Empty = every group. */
   filterGroupIds: string[];
-  filterColor: string | null;
+  filterColors: string[];
   selectMode: boolean;
   selectedIds: string[];
   pendingSaveToast: string | null;
@@ -90,7 +90,8 @@ interface PlannerState {
   toggleFilterGroup: (groupId: string) => void;
   clearFilterGroups: () => void;
   addFilterGroup: (groupId: string) => void;
-  setFilterColor: (color: string | null) => void;
+  toggleFilterColor: (color: string) => void;
+  clearFilterColors: () => void;
   resetData: () => void;
   setSelectMode: (on: boolean) => void;
   toggleSelected: (id: string) => void;
@@ -107,7 +108,7 @@ export const usePlannerStore = create<PlannerState>()(
       settings: SEED_SETTINGS,
       lastDeletedSnapshot: null,
       filterGroupIds: [],
-      filterColor: null,
+      filterColors: [],
       selectMode: false,
       selectedIds: [],
       pendingSaveToast: null,
@@ -239,7 +240,13 @@ export const usePlannerStore = create<PlannerState>()(
       clearFilterGroups: () => set({ filterGroupIds: [] }),
       addFilterGroup: (groupId) =>
         set((state) => (state.filterGroupIds.includes(groupId) ? state : { filterGroupIds: [...state.filterGroupIds, groupId] })),
-      setFilterColor: (color) => set({ filterColor: color }),
+      toggleFilterColor: (color) =>
+        set((state) => ({
+          filterColors: state.filterColors.includes(color)
+            ? state.filterColors.filter((c) => c !== color)
+            : [...state.filterColors, color],
+        })),
+      clearFilterColors: () => set({ filterColors: [] }),
 
       resetData: () => {
         set({
@@ -247,7 +254,7 @@ export const usePlannerStore = create<PlannerState>()(
           groups: [],
           lastDeletedSnapshot: null,
           filterGroupIds: [],
-          filterColor: null,
+          filterColors: [],
           selectMode: false,
           selectedIds: [],
         });
@@ -264,10 +271,10 @@ export const usePlannerStore = create<PlannerState>()(
         })),
 
       selectAll: () => {
-        const { plans, filterGroupIds, filterColor, selectedIds } = get();
+        const { plans, filterGroupIds, filterColors, selectedIds } = get();
         const todayISO = toISO(new Date());
         const matchesFilter = (p: Plan) =>
-          (filterGroupIds.length === 0 || (!!p.groupId && filterGroupIds.includes(p.groupId))) && (!filterColor || p.color === filterColor);
+          (filterGroupIds.length === 0 || (!!p.groupId && filterGroupIds.includes(p.groupId))) && (filterColors.length === 0 || filterColors.includes(p.color));
         const todayIds = plans.filter((p) => p.date === todayISO && matchesFilter(p)).map((p) => p.id);
         const pastIds = findPastPlans(plans).filter(matchesFilter).map((p) => p.id);
         const futureIds = findFuturePlans(plans).filter(matchesFilter).map((p) => p.id);

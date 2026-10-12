@@ -122,8 +122,9 @@ export default function HomeScreen() {
   const filterGroupIds = usePlannerStore((s) => s.filterGroupIds);
   const toggleFilterGroup = usePlannerStore((s) => s.toggleFilterGroup);
   const clearFilterGroups = usePlannerStore((s) => s.clearFilterGroups);
-  const filterColor = usePlannerStore((s) => s.filterColor);
-  const setFilterColor = usePlannerStore((s) => s.setFilterColor);
+  const filterColors = usePlannerStore((s) => s.filterColors);
+  const toggleFilterColor = usePlannerStore((s) => s.toggleFilterColor);
+  const clearFilterColors = usePlannerStore((s) => s.clearFilterColors);
   const selectMode = usePlannerStore((s) => s.selectMode);
   const selectedIds = usePlannerStore((s) => s.selectedIds);
   const setSelectMode = usePlannerStore((s) => s.setSelectMode);
@@ -184,8 +185,8 @@ export default function HomeScreen() {
   const nowMs = useClock(fastClock);
   const matches = useCallback(
     (p: Plan) =>
-      (filterGroupIds.length === 0 || (!!p.groupId && filterGroupIds.includes(p.groupId))) && (!filterColor || p.color === filterColor),
-    [filterGroupIds, filterColor]
+      (filterGroupIds.length === 0 || (!!p.groupId && filterGroupIds.includes(p.groupId))) && (filterColors.length === 0 || filterColors.includes(p.color)),
+    [filterGroupIds, filterColors]
   );
   const feed = useMemo(() => buildHomeFeed(plans, nowMs, matches), [plans, nowMs, matches]);
   const searching = query.trim().length > 0;
@@ -209,7 +210,7 @@ export default function HomeScreen() {
   const firstName = profileName.trim().split(/\s+/)[0];
 
   const openPlan = (id: string) => router.push({ pathname: '/add-plan', params: { id } });
-  const filtering = filterGroupIds.length > 0 || !!filterColor;
+  const filtering = filterGroupIds.length > 0 || filterColors.length > 0;
   // The Groups button's dot shows the first selected group's color.
   const activeGroup = groups.find((g) => filterGroupIds.includes(g.id));
   const emptyText = filtering
@@ -248,7 +249,7 @@ export default function HomeScreen() {
 
           <View style={styles.toolRow}>
             <SearchField value={query} onChangeText={setQuery} inputRef={searchRef} collapsed={!!panel} active={searching} onExpand={expandSearch} />
-            <ToolButton open={panel === 'colors'} label={tr('home.colors')} dot={filterColor} icon={(c) => <PaletteIcon size={16} color={c} />} onPress={() => togglePanel('colors')} />
+            <ToolButton open={panel === 'colors'} label={tr('home.colors')} dot={filterColors[0]} icon={(c) => <PaletteIcon size={16} color={c} />} onPress={() => togglePanel('colors')} />
             <ToolButton open={panel === 'groups'} label={tr('home.groups')} dot={activeGroup?.color} icon={(c) => <TagIcon size={16} color={c} />} onPress={() => togglePanel('groups')} />
             {panel && (
               // Keyed by panel: switching Colors ⇄ Groups fades the old chips out while the new
@@ -260,20 +261,20 @@ export default function HomeScreen() {
                     <>
                       <BouncyPressable
                         entering={chipIn(0)}
-                        onPress={() => setFilterColor(null)}
+                        onPress={clearFilterColors}
                         style={[
                           styles.chip,
-                          { borderColor: filterColor === null ? 'transparent' : theme.cardBorder, backgroundColor: filterColor === null ? theme.accentSoft : theme.surface },
+                          { borderColor: filterColors.length === 0 ? 'transparent' : theme.cardBorder, backgroundColor: filterColors.length === 0 ? theme.accentSoft : theme.surface },
                         ]}>
-                        <Text style={chipText(filterColor === null)}>{tr('home.all')}</Text>
+                        <Text style={chipText(filterColors.length === 0)}>{tr('home.all')}</Text>
                       </BouncyPressable>
                       {SwatchColors.map((c, i) => (
                         <BouncyPressable
                           key={c}
                           entering={chipIn(i + 1)}
-                          onPress={() => setFilterColor(filterColor === c ? null : c)}
-                          style={[styles.colorSwatch, { backgroundColor: c, borderColor: filterColor === c ? theme.text : 'transparent' }]}>
-                          {filterColor === c && (
+                          onPress={() => toggleFilterColor(c)}
+                          style={[styles.colorSwatch, { backgroundColor: c, borderColor: filterColors.includes(c) ? theme.text : 'transparent' }]}>
+                          {filterColors.includes(c) && (
                             <Reanimated.View entering={ZoomIn.springify().damping(12)}>
                               <CheckIcon size={14} color="#fff" strokeWidth={3} />
                             </Reanimated.View>

@@ -106,7 +106,7 @@ export function MonthView({ year, month, todayISO, selectedDate, plans, colorFor
               {holidayName && (
                 <View style={[styles.chip, styles.holidayChip]}>
                   <Text numberOfLines={1} style={[styles.chipText, styles.holidayChipText]}>
-                    🎉 {holidayName}
+                    {holidayName}
                   </Text>
                 </View>
               )}

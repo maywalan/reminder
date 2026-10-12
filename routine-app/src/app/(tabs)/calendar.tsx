@@ -214,7 +214,7 @@ export default function CalendarScreen() {
                       {selectedDate === todayISO ? t('calendar.todayLabel', { date: selectedDateLabel }) : selectedDateLabel}
                     </Text>
                     {holidays[selectedDate] && (
-                      <Text style={[styles.holidayLabel, { color: theme.accent }]}>🎉 {holidays[selectedDate]}</Text>
+                      <Text style={[styles.holidayLabel, { color: theme.accent }]}>{holidays[selectedDate]}</Text>
                     )}
                   </View>
                   <Pressable

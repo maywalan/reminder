@@ -24,6 +24,7 @@ import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
 import { UpgradeBanner } from '@/components/upgrade-banner';
 import { WidgetPreview } from '@/components/widget-preview';
+import { PRIVACY_URL } from '@/constants/legal';
 import { Radii, RowMinHeight, Spacing, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useToast } from '@/hooks/use-toast';
@@ -446,7 +447,7 @@ export default function ProfileScreen() {
             ? t('profile.privacySynced')
             : t('profile.privacyGuest')}
         </Text>
-        <Pressable onPress={() => Linking.openURL('https://maywalan.github.io/reminder/privacy.html')} hitSlop={4}>
+        <Pressable onPress={() => Linking.openURL(PRIVACY_URL)} hitSlop={4}>
           <Text style={[styles.privacyText, { color: theme.accentStrong, marginTop: -6 }]}>{t('profile.privacyPolicy')}</Text>
         </Pressable>
         <Pressable onPress={handleClearData} style={[styles.clearDataBtn, { backgroundColor: theme.dangerSoft, borderColor: theme.dangerBorder }]}>

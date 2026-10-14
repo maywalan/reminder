@@ -15,6 +15,7 @@ import { refreshSubscriptionState, usePremiumPrices } from '@/lib/iap';
 import { usePlannerStore } from '@/store/use-planner-store';
 import { countActivePlans, PREMIUM_FEATURES } from '@/utils/premium';
 import { getSubscriptionContent } from '@/utils/subscription';
+import { PRIVACY_URL, termsUrl } from '@/constants/legal';
 import { t } from '@/i18n';
 import { fmtDate } from '@/i18n/format';
 import { fromISO } from '@/utils/dates';
@@ -223,11 +224,11 @@ export default function SubscriptionScreen() {
             <Text style={styles.footerLink}>{t('legal.restore')}</Text>
           </Pressable>
           <Text style={styles.footerDot}>·</Text>
-          <Pressable onPress={() => showToast(t('legal.termsSoon'))} hitSlop={6}>
+          <Pressable onPress={() => Linking.openURL(termsUrl())} hitSlop={6}>
             <Text style={styles.footerLink}>{t('legal.terms')}</Text>
           </Pressable>
           <Text style={styles.footerDot}>·</Text>
-          <Pressable onPress={() => Linking.openURL('https://maywalan.github.io/reminder/privacy.html')} hitSlop={6}>
+          <Pressable onPress={() => Linking.openURL(PRIVACY_URL)} hitSlop={6}>
             <Text style={styles.footerLink}>{t('legal.privacy')}</Text>
           </Pressable>
         </View>

@@ -33,7 +33,6 @@ export default {
   'legal.restore': { en: 'Restore', th: 'กู้คืน' },
   'legal.terms': { en: 'Terms', th: 'ข้อกำหนด' },
   'legal.privacy': { en: 'Privacy', th: 'ความเป็นส่วนตัว' },
-  'legal.termsSoon': { en: 'Terms coming soon', th: 'ข้อกำหนดการใช้งานจะมาเร็วๆ นี้' },
   'restore.done': { en: 'Purchases restored', th: 'กู้คืนการซื้อแล้ว' },
   'restore.none': { en: 'No purchase to restore', th: 'ไม่พบการซื้อที่จะกู้คืน' },
   'restore.failed': { en: 'Restore failed', th: 'กู้คืนไม่สำเร็จ' },

@@ -9,6 +9,7 @@ import { Text } from '@/components/text';
 import { CheckIcon, XIcon } from '@/components/icon';
 import { Colors, Typography, type PremiumPalette } from '@/constants/theme';
 import { usePremiumColors, useTheme } from '@/hooks/use-theme';
+import { PRIVACY_URL, termsUrl } from '@/constants/legal';
 import { t } from '@/i18n';
 import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
@@ -366,11 +367,11 @@ export default function PaywallScreen() {
             <Text style={styles.footerLink}>{t('legal.restore')}</Text>
           </Pressable>
           <Text style={styles.footerDot}>·</Text>
-          <Pressable onPress={() => showToast(t('legal.termsSoon'))} hitSlop={6}>
+          <Pressable onPress={() => Linking.openURL(termsUrl())} hitSlop={6}>
             <Text style={styles.footerLink}>{t('legal.terms')}</Text>
           </Pressable>
           <Text style={styles.footerDot}>·</Text>
-          <Pressable onPress={() => Linking.openURL('https://maywalan.github.io/reminder/privacy.html')} hitSlop={6}>
+          <Pressable onPress={() => Linking.openURL(PRIVACY_URL)} hitSlop={6}>
             <Text style={styles.footerLink}>{t('legal.privacy')}</Text>
           </Pressable>
         </View>

@@ -206,13 +206,10 @@ export default function AddPlanScreen() {
   const [iconSheetOpen, setIconSheetOpen] = useState(false);
   const autoIcon = matchIcons(name)[0]?.id;
   const shownIcon = planIconDef(icon)?.id ?? autoIcon ?? null;
-  // Counts from saved plans, plus this pick, so the RECENT row reorders as the user picks.
-  const usage = useMemo(() => {
-    const u = iconUsage(plans.filter((p) => p.id !== editing?.id));
-    const def = planIconDef(icon);
-    if (def) u.set(def.id, (u.get(def.id) ?? 0) + 1);
-    return u;
-  }, [plans, editing?.id, icon]);
+  // Counts from saved plans only (this plan excluded). A pick counts once the plan is saved — counting it
+  // live reordered the Suggested/RECENT rows under the user's finger, so a tapped chip seemed to jump
+  // away and couldn't be chosen (bug, 2026-10-19).
+  const usage = useMemo(() => iconUsage(plans.filter((p) => p.id !== editing?.id)), [plans, editing?.id]);
   const suggested = useMemo(() => suggestIcons(name, usage, icon), [name, usage, icon]);
   // Sorted earliest-first (see sortAlertsByEarliness) so row position always matches how far
   // ahead of the plan each alert fires, regardless of the order they were picked in. A brand-new

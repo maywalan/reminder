@@ -1,10 +1,11 @@
 import type { Plan } from '@/store/types';
-import { findFuturePlans, findPastPlans, planDateTime, planEndDateTime } from '@/utils/countdown';
+import { findPastPlans, planDateTime, planEndDateTime } from '@/utils/countdown';
 import { pad, timeToMinutes, toISO } from '@/utils/dates';
 import { t } from '@/i18n';
 
 /**
- * Derived state for the Home screen (design_handoff_tickle_home_7). The store only knows
+ * Derived state for the Home screen (design_handoff_tickle_home_7, week strip + feed from
+ * design_handoff_tickle_home_timeline). The store only knows
  * `completed`; everything else — live, overtime, missed — is derived from the clock:
  *
  * - A **time-range** task goes live on its own at its start time and stays live (overtime past its
@@ -20,75 +21,89 @@ import { t } from '@/i18n';
 /** How long a point reminder stays live ("due now") past its time before it counts as missed. */
 export const POINT_DUE_MS = 15 * 60_000;
 
-/** Free time between two rail items at or above this many minutes shows as an "N hr free" row. */
-export const FREE_GAP_MIN = 60;
-
 function hasStarted(plan: Plan, nowMs: number) {
   return planDateTime(plan).getTime() <= nowMs;
 }
 
-function isMissedToday(plan: Plan, nowMs: number) {
+export function isMissedToday(plan: Plan, nowMs: number) {
   return !plan.completed && !plan.allDay && !plan.endTime && planDateTime(plan).getTime() <= nowMs - POINT_DUE_MS;
 }
 
+export interface UpcomingDay {
+  dateISO: string;
+  plans: Plan[];
+}
+
 export interface HomeFeed {
-  /** Open + live tasks for today, in rail order. */
-  today: Plan[];
+  /** The day picked in the week strip (today by default). */
+  dayISO: string;
+  isToday: boolean;
+  /** Every plan on that day, done ones included, in timeline order. */
+  day: Plan[];
+  /** The running plan — only when the picked day is today. */
   live: Plan | null;
-  /** How many of `today` aren't the live one. */
+  /** Plans on the picked day not yet done (today: not missed either). */
   leftCount: number;
-  /** Index into `today` the idle Now line sits above (`today.length` = after the last row); null while a session is live. */
-  nowLineIndex: number | null;
-  /** Next few incomplete tasks after today, soonest first. */
-  upcoming: Plan[];
+  /** Plans left undone on a past day. */
+  missedCount: number;
+  /** Incomplete plans on each of the next 3 days after today, days with none left out. */
+  upcoming: UpcomingDay[];
   /** Today's done + missed tasks, most recent first. */
   earlier: Plan[];
   /** Done + missed tasks from previous days (for "See all"), most recent first. */
   older: Plan[];
 }
 
-export function buildHomeFeed(plans: Plan[], nowMs: number, matches: (p: Plan) => boolean, upcomingLimit = 3): HomeFeed {
+/** Whether a plan is over: its end (or, for a point reminder, its time) has passed. All-day plans end with their day. */
+export function planIsPast(plan: Plan, nowMs: number): boolean {
   const todayISO = toISO(new Date(nowMs));
-  const dayPlans = plans.filter((p) => p.date === todayISO && matches(p));
+  if (plan.date !== todayISO) return plan.date < todayISO;
+  if (plan.allDay) return false;
+  return (planEndDateTime(plan) ?? planDateTime(plan)).getTime() <= nowMs;
+}
 
-  const live =
-    dayPlans
-      .filter((p) => !p.completed && !p.allDay && hasStarted(p, nowMs) && (p.endTime || !isMissedToday(p, nowMs)))
-      .sort((a, b) => a.time.localeCompare(b.time))[0] ?? null;
+export function buildHomeFeed(plans: Plan[], nowMs: number, matches: (p: Plan) => boolean, dayISO?: string, upcomingDays = 3): HomeFeed {
+  const todayISO = toISO(new Date(nowMs));
+  const selected = dayISO ?? todayISO;
+  const isToday = selected === todayISO;
+  const todayPlans = plans.filter((p) => p.date === todayISO && matches(p));
+  const dayPlans = isToday ? todayPlans : plans.filter((p) => p.date === selected && matches(p));
+
+  const live = isToday
+    ? (dayPlans
+        .filter((p) => !p.completed && !p.allDay && hasStarted(p, nowMs) && (p.endTime || !isMissedToday(p, nowMs)))
+        .sort((a, b) => a.time.localeCompare(b.time))[0] ?? null)
+    : null;
 
   const hasManualOrder = dayPlans.some((p) => p.order !== undefined);
-  const today = dayPlans
-    .filter((p) => !p.completed && !isMissedToday(p, nowMs))
-    .sort((a, b) => {
-      // All-day tasks have no real time, so they sit at the top of the rail.
-      if (!!a.allDay !== !!b.allDay) return a.allDay ? -1 : 1;
-      return hasManualOrder ? (a.order ?? Infinity) - (b.order ?? Infinity) : a.time.localeCompare(b.time);
-    });
+  const day = [...dayPlans].sort((a, b) => {
+    // All-day tasks have no real time, so they sit at the top of the timeline.
+    if (!!a.allDay !== !!b.allDay) return a.allDay ? -1 : 1;
+    return hasManualOrder ? (a.order ?? Infinity) - (b.order ?? Infinity) : a.time.localeCompare(b.time);
+  });
 
-  let nowLineIndex: number | null = null;
-  if (!live && today.length > 0) {
-    const firstFuture = today.findIndex((p) => !p.allDay && !hasStarted(p, nowMs));
-    nowLineIndex = firstFuture === -1 ? today.length : firstFuture;
-  }
+  const undone = day.filter((p) => !p.completed);
+  const leftCount = selected < todayISO ? 0 : undone.filter((p) => !isToday || !isMissedToday(p, nowMs)).length;
+  const missedCount = selected < todayISO ? undone.length : 0;
 
-  const earlier = dayPlans
+  const earlier = todayPlans
     .filter((p) => p.completed || isMissedToday(p, nowMs))
     .sort((a, b) => (b.endTime ?? b.time).localeCompare(a.endTime ?? a.time));
 
-  const older = findPastPlans(plans)
-    .filter((p) => p.date < todayISO && matches(p));
+  const older = findPastPlans(plans).filter((p) => p.date < todayISO && matches(p));
 
-  const upcoming = findFuturePlans(plans)
-    .filter((p) => !p.completed && matches(p))
-    .slice(0, upcomingLimit);
+  const upcoming: UpcomingDay[] = [];
+  for (let i = 1; i <= upcomingDays; i++) {
+    const d = new Date(nowMs);
+    d.setDate(d.getDate() + i);
+    const iso = toISO(d);
+    const items = plans
+      .filter((p) => p.date === iso && !p.completed && matches(p))
+      .sort((a, b) => (!!a.allDay !== !!b.allDay ? (a.allDay ? -1 : 1) : a.time.localeCompare(b.time)));
+    if (items.length) upcoming.push({ dateISO: iso, plans: items });
+  }
 
-  return { today, live, leftCount: today.length - (live ? 1 : 0), nowLineIndex, upcoming, earlier, older };
-}
-
-/** Minutes of free time between the end of `prev` and the start of `next`, or 0 when they touch/overlap or aren't comparable. */
-export function freeMinutesBetween(prev: Plan | undefined, next: Plan): number {
-  if (!prev || prev.allDay || next.allDay) return 0;
-  return timeToMinutes(next.time) - timeToMinutes(prev.endTime ?? prev.time);
+  return { dayISO: selected, isToday, day, live, leftCount, missedCount, upcoming, earlier, older };
 }
 
 export function durationMinutes(plan: Plan): number {

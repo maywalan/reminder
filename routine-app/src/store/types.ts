@@ -19,6 +19,10 @@ export interface Plan {
   photoUris?: string[]; // up to 3
   live: boolean;
   completed: boolean;
+  /** When it was last checked off (epoch ms) — Home's Earlier list shows "done 06:34". */
+  completedAt?: number;
+  /** A PlanIconId (src/utils/plan-icons.ts) the user picked; unset = suggested from the title. */
+  icon?: string;
   /** IANA zone the date/time is wall-clock-in — e.g. a 9am flight always means 9am at the airport's zone. Undefined = device's current zone (legacy plans, and the common case). */
   timezone?: string;
   color: string;

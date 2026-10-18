@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><style>body{margin:0;background:#E9EEF6;font-family:'Anuphan',sans-serif}a{color:#0F5FC4;text-decoration:none}a:hover{color:#1B76E8}@keyframes tk-breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.035,.985)}}@keyframes tk-blink{0%,93%,100%{transform:scaleY(1)}96.5%{transform:scaleY(.12)}}@keyframes tk-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}@media (prefers-reduced-motion: reduce){*{animation:none !important}}</style></helmet>
+<div style="min-height:100vh;display:flex;flex-wrap:wrap;gap:48px;align-items:flex-start;padding:40px;box-sizing:border-box">
+<div style="display:flex;flex-direction:column;gap:12px"><div style="font-weight:700;font-size:14px;color:#10203A">A · Home — timeline</div>
+<div data-screen-label="Home timeline" style="width:390px;height:844px;position:relative;background:#F4F7FC;border-radius:46px;border:1px solid #DDE5F1;box-shadow:0 24px 60px rgba(16,32,58,.14);overflow:hidden;display:flex;flex-direction:column;font-family:'Anuphan',sans-serif;color:#10203A">
+
+  <div style="height:50px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:12px 30px 0;font-weight:600;font-size:15px"><span>9:41</span><div style="width:110px;height:30px;border-radius:16px;background:#10203A"></div><span style="font-size:11px;opacity:.5">▮▮▮ ▮</span></div>
+
+  <div style="flex:none;padding:14px 20px 0;display:flex;align-items:center;gap:12px">
+    <div style="width:46px;height:46px;position:relative;flex:none;transform-origin:50% 90%;animation:tk-breathe 4s ease-in-out infinite">
+      <div style="position:absolute;left:3px;top:14px;width:36px;height:31px;border-radius:18px 18px 16px 16px;background:linear-gradient(150deg,#E3F0FE,#B9D8FA)"></div>
+      <div style="position:absolute;left:12px;top:26px;width:6px;height:6px;border-radius:3px;background:#10203A;animation:tk-blink 6s ease-in-out infinite"></div>
+      <div style="position:absolute;left:24px;top:26px;width:6px;height:6px;border-radius:3px;background:#10203A;animation:tk-blink 6s ease-in-out infinite"></div>
+      <div style="position:absolute;left:33px;top:4px;width:9px;height:9px;border-radius:4.5px;background:#1B76E8;animation:tk-float 4s ease-in-out infinite;box-shadow:0 3px 7px rgba(27,118,232,.4)"></div>
+    </div>
+    <div style="flex:1;min-width:0;font-weight:700;font-size:23px;letter-spacing:-.4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ greeting }}</div>
+    <a href="#" style="font-weight:600;font-size:15px;color:#0F5FC4;flex:none">Edit</a>
+  </div>
+
+  <div style="flex:none;padding:14px 20px 0;display:flex;gap:10px;align-items:center">
+    <div style="flex:1;min-width:0;height:44px;border-radius:22px;background:#fff;border:1px solid #E3EAF4;display:flex;align-items:center;gap:9px;padding:0 15px;box-shadow:0 2px 6px rgba(16,32,58,.04)">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="6.5" stroke="rgba(16,32,58,.45)" stroke-width="2"></circle><path d="M16 16l4 4" stroke="rgba(16,32,58,.45)" stroke-width="2" stroke-linecap="round"></path></svg>
+      <span style="min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500;font-size:14px;color:rgba(16,32,58,.4)">Search tasks, groups, dates</span>
+    </div>
+    <div style="width:44px;height:44px;border-radius:22px;background:#fff;border:1px solid #E3EAF4;display:flex;align-items:center;justify-content:center;flex:none"><svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M12 3a9 9 0 100 18c1.2 0 1.8-.9 1.8-1.8 0-1.3-1-1.6-1-2.7 0-1 .8-1.7 1.8-1.7H17a4 4 0 004-4c0-4.2-4-7.8-9-7.8z" stroke="#10203A" stroke-width="1.8" stroke-linejoin="round"></path><circle cx="7.5" cy="11" r="1.3" fill="#10203A"></circle><circle cx="10" cy="7" r="1.3" fill="#10203A"></circle><circle cx="15" cy="7.5" r="1.3" fill="#10203A"></circle></svg></div>
+    <div style="width:44px;height:44px;border-radius:22px;background:#fff;border:1px solid #E3EAF4;display:flex;align-items:center;justify-content:center;flex:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3.5 12.2V4.5a1 1 0 011-1h7.7l8.3 8.3a1.4 1.4 0 010 2l-6.2 6.2a1.4 1.4 0 01-2 0z" stroke="#10203A" stroke-width="1.8" stroke-linejoin="round"></path><circle cx="8" cy="8" r="1.5" fill="#10203A"></circle></svg></div>
+  </div>
+
+  <div style="flex:none;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 16px 9px">
+    <div onClick="{{ prevWeek }}" style="width:34px;height:34px;border-radius:17px;background:#fff;border:1px solid #E3EAF4;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none" style-active="transform:scale(.92)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="#10203A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+    <div style="display:flex;align-items:center;gap:8px;min-width:0">
+      <div style="display:flex;flex-direction:column;align-items:center;line-height:1.25"><span style="font-weight:700;font-size:15px;color:#10203A">Week {{ weekNo }}</span><span style="font-weight:500;font-size:12px;color:rgba(16,32,58,.5);white-space:nowrap">{{ weekRange }}</span></div>
+      <sc-if value="{{ offWeek }}" hint-placeholder-val="{{ false }}"><div onClick="{{ thisWeek }}" style="display:flex;align-items:center;gap:4px;height:26px;padding:0 10px;border-radius:13px;background:#EAF2FE;color:#0F5FC4;font-weight:600;font-size:12px;cursor:pointer;white-space:nowrap" style-active="transform:scale(.95)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4h4" stroke="#1B76E8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>Today</div></sc-if>
+    </div>
+    <div onClick="{{ nextWeek }}" style="width:34px;height:34px;border-radius:17px;background:#fff;border:1px solid #E3EAF4;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none" style-active="transform:scale(.92)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="#10203A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+  </div>
+  <div style="flex:none;padding:0 16px;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px">
+    <sc-for list="{{ days }}" as="d" hint-placeholder-count="7">
+      <div onClick="{{ d.pick }}" style="cursor:pointer;border-radius:12px;overflow:hidden;background:{{ d.bg }};box-shadow:{{ d.shadow }};display:flex;flex-direction:column;align-items:center;transition:transform .15s" style-active="transform:scale(.95)">
+        <div style="width:100%;text-align:center;font-weight:600;font-size:11px;padding:3px 0;background:{{ d.capBg }};color:{{ d.capFg }}">{{ d.dow }}</div>
+        <div style="font-weight:700;font-size:19px;padding:6px 0 7px;color:{{ d.numFg }}">{{ d.num }}</div>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="flex:1;min-height:0;margin-top:16px;background:#fff;border-radius:30px 30px 0 0;box-shadow:0 -4px 20px rgba(16,32,58,.05);display:flex;flex-direction:column;overflow:hidden">
+    <div style="flex:none;padding:20px 22px 6px">
+      <div style="font-weight:700;font-size:21px;letter-spacing:-.3px">{{ dayTitle }}</div>
+      <div style="font-weight:500;font-size:13.5px;color:rgba(16,32,58,.5);margin-top:2px">You completed <span style="font-weight:700;color:#1B76E8">{{ doneCount }}</span><span style="font-weight:700;color:#10203A">/{{ total }}</span> plans scheduled</div>
+    </div>
+    <div style="flex:1;min-height:0;overflow-y:auto;scrollbar-width:none;padding:8px 18px 120px 10px">
+      <sc-for list="{{ rows }}" as="r" hint-placeholder-count="5">
+        <div style="display:flex;gap:8px;align-items:stretch">
+          <div style="width:52px;flex:none;display:flex;flex-direction:column;align-items:center;padding-top:6px">
+            <sc-if value="{{ r.isNow }}" hint-placeholder-val="{{ false }}"><span style="padding:3px 9px;border-radius:10px;background:#35B978;color:#fff;font-weight:700;font-size:11.5px">Now</span></sc-if>
+            <sc-if value="{{ r.notNow }}" hint-placeholder-val="{{ true }}"><span style="font-weight:600;font-size:12px;color:rgba(16,32,58,.5)">{{ r.start }}</span></sc-if>
+            <div style="flex:1;width:0;border-left:3px dotted {{ r.rail }};margin-top:6px;min-height:22px"></div>
+          </div>
+          <div style="flex:1;min-width:0;padding-bottom:12px">
+            <div style="position:relative;border-radius:20px;padding:15px 14px 15px 16px;display:flex;align-items:center;gap:10px;background:linear-gradient(100deg,{{ r.tint }} 0%,#FFFFFF 92%);border:1px solid {{ r.edge }};box-shadow:0 4px 14px rgba(16,32,58,.06);opacity:{{ r.op }}">
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:700;font-size:17px;letter-spacing:-.2px;text-decoration:{{ r.strike }}">{{ r.title }}</div>
+                <div style="display:flex;align-items:center;gap:5px;margin-top:4px;font-size:12.5px;color:rgba(16,32,58,.55)">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="{{ r.subColor }}" stroke-width="2"></circle><path d="M12 7.5V12l3 2" stroke="{{ r.subColor }}" stroke-width="2" stroke-linecap="round"></path></svg>
+                  <span style="font-weight:700;color:{{ r.subColor }}">{{ r.subStrong }}</span><span style="font-weight:500">{{ r.subRest }}</span>
+                </div>
+              </div>
+              <div style="width:46px;height:46px;border-radius:15px;background:{{ r.iconBg }};display:flex;align-items:center;justify-content:center;flex:none"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="{{ r.icon }}" stroke="{{ r.color }}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+              <div onClick="{{ r.toggle }}" style="cursor:pointer;position:absolute;top:-6px;left:-6px;width:22px;height:22px;border-radius:11px;background:{{ r.checkBg }};border:2px solid {{ r.checkEdge }};display:flex;align-items:center;justify-content:center;box-sizing:border-box"><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+            </div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="position:absolute;left:0;right:0;bottom:0;height:92px;background:#fff;box-shadow:0 -8px 24px rgba(16,32,58,.06);display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:start;padding:10px 6px 0;box-sizing:border-box;z-index:5">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer"><div style="width:60px;height:38px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:#EAF2FE"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 11.5 12 4l8 7.5M6 10v9a1 1 0 001 1h4v-6h2v6h4a1 1 0 001-1v-9" stroke="#1B76E8" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span style="font-weight:600;font-size:12px;color:#0F5FC4">Home</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer"><div style="width:60px;height:38px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:transparent"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="2.5" stroke="rgba(16,32,58,.45)" stroke-width="1.8"></rect><path d="M4 9.5h16M8 3v3.5M16 3v3.5" stroke="rgba(16,32,58,.45)" stroke-width="1.8" stroke-linecap="round"></path></svg></div><span style="font-weight:500;font-size:12px;color:rgba(16,32,58,.45)">Calendar</span></div>
+    <div style="position:relative;display:flex;justify-content:center"><div style="position:absolute;top:-46px;width:72px;height:72px;border-radius:50%;background:linear-gradient(140deg,#1B76E8,#5AA0F5);border:6px solid #fff;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 22px rgba(27,118,232,.35);cursor:pointer" style-active="transform:scale(.94)"><svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.4" stroke-linecap="round"></path></svg></div></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer"><div style="width:60px;height:38px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:transparent"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M5 20V12M10 20V6M15 20v-9M3 20h18" stroke="rgba(16,32,58,.45)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span style="font-weight:500;font-size:12px;color:rgba(16,32,58,.45)">Progress</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer"><div style="width:60px;height:38px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:transparent"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.6" stroke="rgba(16,32,58,.45)" stroke-width="1.8"></circle><path d="M4.5 20c1.5-4 4.2-6 7.5-6s6 2 7.5 6" stroke="rgba(16,32,58,.45)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span style="font-weight:500;font-size:12px;color:rgba(16,32,58,.45)">Profile</span></div>
+  </div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px"><div style="font-weight:700;font-size:14px;color:#10203A">B · Home — upcoming &amp; earlier <span style="font-weight:500;color:rgba(16,32,58,.5)">full scroll unrolled</span></div>
+<div data-screen-label="Home upcoming earlier" style="width:390px;min-height:844px;position:relative;background:#F4F7FC;border-radius:46px;border:1px solid #DDE5F1;box-shadow:0 24px 60px rgba(16,32,58,.14);overflow:hidden;display:flex;flex-direction:column;font-family:'Anuphan',sans-serif;color:#10203A">
+<div style="height:50px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:12px 30px 0;font-weight:600;font-size:15px"><span>9:41</span><div style="width:110px;height:30px;border-radius:16px;background:#10203A"></div><span style="font-size:11px;opacity:.5">▮▮▮ ▮</span></div>
+
+  <div style="flex:none;padding:14px 20px 0;display:flex;align-items:center;gap:12px">
+    <div style="width:46px;height:46px;position:relative;flex:none;transform-origin:50% 90%;animation:tk-breathe 4s ease-in-out infinite">
+      <div style="position:absolute;left:3px;top:14px;width:36px;height:31px;border-radius:18px 18px 16px 16px;background:linear-gradient(150deg,#E3F0FE,#B9D8FA)"></div>
+      <div style="position:absolute;left:12px;top:26px;width:6px;height:6px;border-radius:3px;background:#10203A;animation:tk-blink 6s ease-in-out infinite"></div>
+      <div style="position:absolute;left:24px;top:26px;width:6px;height:6px;border-radius:3px;background:#10203A;animation:tk-blink 6s ease-in-out infinite"></div>
+      <div style="position:absolute;left:33px;top:4px;width:9px;height:9px;border-radius:4.5px;background:#1B76E8;animation:tk-float 4s ease-in-out infinite;box-shadow:0 3px 7px rgba(27,118,232,.4)"></div>
+    </div>
+    <div style="flex:1;min-width:0;font-weight:700;font-size:23px;letter-spacing:-.4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ greeting }}</div>
+    <a href="#" style="font-weight:600;font-size:15px;color:#0F5FC4;flex:none">Edit</a>
+  </div>
+
+  <div style="flex:none;padding:14px 20px 0;display:flex;gap:10px;align-items:center">
+    <div style="flex:1;min-width:0;height:44px;border-radius:22px;background:#fff;border:1px solid #E3EAF4;display:flex;align-items:center;gap:9px;padding:0 15px;box-shadow:0 2px 6px rgba(16,32,58,.04)">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="6.5" stroke="rgba(16,32,58,.45)" stroke-width="2"></circle><path d="M16 16l4 4" stroke="rgba(16,32,58,.45)" stroke-width="2" stroke-linecap="round"></path></svg>
+      <span style="min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500;font-size:14px;color:rgba(16,32,58,.4)">Search tasks, groups, dates</span>
+    </div>
+    <div style="width:44px;height:44px;border-radius:22px;background:#fff;border:1px solid #E3EAF4;display:flex;align-items:center;justify-content:center;flex:none"><svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M12 3a9 9 0 100 18c1.2 0 1.8-.9 1.8-1.8 0-1.3-1-1.6-1-2.7 0-1 .8-1.7 1.8-1.7H17a4 4 0 004-4c0-4.2-4-7.8-9-7.8z" stroke="#10203A" stroke-width="1.8" stroke-linejoin="round"></path><circle cx="7.5" cy="11" r="1.3" fill="#10203A"></circle><circle cx="10" cy="7" r="1.3" fill="#10203A"></circle><circle cx="15" cy="7.5" r="1.3" fill="#10203A"></circle></svg></div>
+    <div style="width:44px;height:44px;border-radius:22px;background:#fff;border:1px solid #E3EAF4;display:flex;align-items:center;justify-content:center;flex:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3.5 12.2V4.5a1 1 0 011-1h7.7l8.3 8.3a1.4 1.4 0 010 2l-6.2 6.2a1.4 1.4 0 01-2 0z" stroke="#10203A" stroke-width="1.8" stroke-linejoin="round"></path><circle cx="8" cy="8" r="1.5" fill="#10203A"></circle></svg></div>
+  </div>
+
+  <div style="flex:none;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 16px 9px">
+    <div onClick="{{ prevWeek }}" style="width:34px;height:34px;border-radius:17px;background:#fff;border:1px solid #E3EAF4;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none" style-active="transform:scale(.92)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="#10203A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+    <div style="display:flex;align-items:center;gap:8px;min-width:0">
+      <div style="display:flex;flex-direction:column;align-items:center;line-height:1.25"><span style="font-weight:700;font-size:15px;color:#10203A">Week {{ weekNo }}</span><span style="font-weight:500;font-size:12px;color:rgba(16,32,58,.5);white-space:nowrap">{{ weekRange }}</span></div>
+      <sc-if value="{{ offWeek }}" hint-placeholder-val="{{ false }}"><div onClick="{{ thisWeek }}" style="display:flex;align-items:center;gap:4px;height:26px;padding:0 10px;border-radius:13px;background:#EAF2FE;color:#0F5FC4;font-weight:600;font-size:12px;cursor:pointer;white-space:nowrap" style-active="transform:scale(.95)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4h4" stroke="#1B76E8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>Today</div></sc-if>
+    </div>
+    <div onClick="{{ nextWeek }}" style="width:34px;height:34px;border-radius:17px;background:#fff;border:1px solid #E3EAF4;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none" style-active="transform:scale(.92)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="#10203A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+  </div>
+  <div style="flex:none;padding:0 16px;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px">
+    <sc-for list="{{ days }}" as="d" hint-placeholder-count="7">
+      <div onClick="{{ d.pick }}" style="cursor:pointer;border-radius:12px;overflow:hidden;background:{{ d.bg }};box-shadow:{{ d.shadow }};display:flex;flex-direction:column;align-items:center;transition:transform .15s" style-active="transform:scale(.95)">
+        <div style="width:100%;text-align:center;font-weight:600;font-size:11px;padding:3px 0;background:{{ d.capBg }};color:{{ d.capFg }}">{{ d.dow }}</div>
+        <div style="font-weight:700;font-size:19px;padding:6px 0 7px;color:{{ d.numFg }}">{{ d.num }}</div>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="flex:1;margin-top:16px;background:#fff;border-radius:30px 30px 0 0;box-shadow:0 -4px 20px rgba(16,32,58,.05);padding:20px 18px 130px 10px;display:flex;flex-direction:column">
+  <div style="display:flex;align-items:baseline;gap:6px;padding:0 4px 0 12px"><span style="font-weight:700;font-size:23px;letter-spacing:-.3px;color:#1B76E8">Today</span><span style="font-weight:500;font-size:15px;color:rgba(16,32,58,.5)">· Wed, 14 May</span><span style="margin-left:auto;font-weight:500;font-size:13.5px;color:rgba(16,32,58,.5)">{{ leftLabel }}</span></div>
+  <div style="padding:10px 0 0"><sc-for list="{{ todayRows }}" as="r" hint-placeholder-count="5">
+        <div style="display:flex;gap:8px;align-items:stretch">
+          <div style="width:52px;flex:none;display:flex;flex-direction:column;align-items:center;padding-top:6px">
+            <sc-if value="{{ r.isNow }}" hint-placeholder-val="{{ false }}"><span style="padding:3px 9px;border-radius:10px;background:#35B978;color:#fff;font-weight:700;font-size:11.5px">Now</span></sc-if>
+            <sc-if value="{{ r.notNow }}" hint-placeholder-val="{{ true }}"><span style="font-weight:600;font-size:12px;color:rgba(16,32,58,.5)">{{ r.start }}</span></sc-if>
+            <div style="flex:1;width:0;border-left:3px dotted {{ r.rail }};margin-top:6px;min-height:22px"></div>
+          </div>
+          <div style="flex:1;min-width:0;padding-bottom:12px">
+            <div style="position:relative;border-radius:20px;padding:15px 14px 15px 16px;display:flex;align-items:center;gap:10px;background:linear-gradient(100deg,{{ r.tint }} 0%,#FFFFFF 92%);border:1px solid {{ r.edge }};box-shadow:0 4px 14px rgba(16,32,58,.06);opacity:{{ r.op }}">
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:700;font-size:17px;letter-spacing:-.2px;text-decoration:{{ r.strike }}">{{ r.title }}</div>
+                <div style="display:flex;align-items:center;gap:5px;margin-top:4px;font-size:12.5px;color:rgba(16,32,58,.55)">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="{{ r.subColor }}" stroke-width="2"></circle><path d="M12 7.5V12l3 2" stroke="{{ r.subColor }}" stroke-width="2" stroke-linecap="round"></path></svg>
+                  <span style="font-weight:700;color:{{ r.subColor }}">{{ r.subStrong }}</span><span style="font-weight:500">{{ r.subRest }}</span>
+                </div>
+              </div>
+              <div style="width:46px;height:46px;border-radius:15px;background:{{ r.iconBg }};display:flex;align-items:center;justify-content:center;flex:none"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="{{ r.icon }}" stroke="{{ r.color }}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+              <div onClick="{{ r.toggle }}" style="cursor:pointer;position:absolute;top:-6px;left:-6px;width:22px;height:22px;border-radius:11px;background:{{ r.checkBg }};border:2px solid {{ r.checkEdge }};display:flex;align-items:center;justify-content:center;box-sizing:border-box"><svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+            </div>
+          </div>
+        </div>
+      </sc-for></div>
+  <div style="padding-left:12px;display:flex;flex-direction:column">
+  <div style="display:flex;align-items:baseline;justify-content:space-between;padding:22px 4px 10px"><span style="font-weight:700;font-size:18px;letter-spacing:-.2px">Upcoming</span><span style="font-weight:500;font-size:13px;color:rgba(16,32,58,.5)">Next 3 days</span></div>
+  <sc-for list="{{ upDays }}" as="day" hint-placeholder-count="2">
+    <div style="display:flex;flex-direction:column;gap:8px;padding-bottom:14px">
+      <div style="font-weight:600;font-size:13px;color:rgba(16,32,58,.5);padding:0 4px">{{ day.label }}</div>
+      <sc-for list="{{ day.items }}" as="it" hint-placeholder-count="2">
+        <div style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:18px;background:#F9FBFF;border:1px solid #EDF2FA">
+          <div style="width:40px;height:40px;border-radius:13px;background:{{ it.iconBg }};display:flex;align-items:center;justify-content:center;flex:none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="{{ it.icon }}" stroke="{{ it.color }}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+          <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:15px">{{ it.title }}</div><div style="font-weight:500;font-size:12px;color:rgba(16,32,58,.5);margin-top:1px">{{ it.sub }}</div></div>
+          <span style="padding:5px 9px;border-radius:10px;background:#EAF2FE;font-weight:700;font-size:12.5px;color:#0F5FC4;flex:none">{{ it.time }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </sc-for>
+  <div style="display:flex;align-items:baseline;justify-content:space-between;padding:10px 4px 6px"><span style="font-weight:700;font-size:18px;letter-spacing:-.2px">Earlier</span><a href="#" style="font-weight:600;font-size:14px;color:#0F5FC4">See all</a></div>
+  <sc-for list="{{ pastDays }}" as="day" hint-placeholder-count="2">
+    <div style="display:flex;flex-direction:column;padding-bottom:10px">
+      <div style="font-weight:600;font-size:13px;color:rgba(16,32,58,.5);padding:6px 4px 2px">{{ day.label }}</div>
+      <sc-for list="{{ day.items }}" as="it" hint-placeholder-count="2">
+        <div style="display:flex;align-items:center;gap:11px;padding:11px 4px;border-bottom:1px solid #F1F4FA">
+          <sc-if value="{{ it.isDone }}" hint-placeholder-val="{{ true }}"><div style="width:22px;height:22px;border-radius:11px;background:#35B978;display:flex;align-items:center;justify-content:center;flex:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></div></sc-if>
+          <sc-if value="{{ it.isMissed }}" hint-placeholder-val="{{ false }}"><div style="width:22px;height:22px;border-radius:11px;border:2px solid #F0A0A8;box-sizing:border-box;display:flex;align-items:center;justify-content:center;flex:none"><svg width="9" height="9" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="#E0616F" stroke-width="3.4" stroke-linecap="round"></path></svg></div></sc-if>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="flex:none"><path d="{{ it.icon }}" stroke="rgba(16,32,58,.4)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          <span style="flex:1;min-width:0;font-weight:500;font-size:14.5px;color:rgba(16,32,58,.6);text-decoration:{{ it.strike }}">{{ it.title }}</span>
+          <span style="font-weight:500;font-size:12.5px;color:{{ it.metaColor }};flex:none">{{ it.meta }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </sc-for>
+  </div>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:0;height:92px;background:#fff;box-shadow:0 -8px 24px rgba(16,32,58,.06);display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:start;padding:10px 6px 0;box-sizing:border-box;z-index:5">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer"><div style="width:60px;height:38px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:#EAF2FE"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 11.5 12 4l8 7.5M6 10v9a1 1 0 001 1h4v-6h2v6h4a1 1 0 001-1v-9" stroke="#1B76E8" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span style="font-weight:600;font-size:12px;color:#0F5FC4">Home</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer"><div style="width:60px;height:38px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:transparent"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="2.5" stroke="rgba(16,32,58,.45)" stroke-width="1.8"></rect><path d="M4 9.5h16M8 3v3.5M16 3v3.5" stroke="rgba(16,32,58,.45)" stroke-width="1.8" stroke-linecap="round"></path></svg></div><span style="font-weight:500;font-size:12px;color:rgba(16,32,58,.45)">Calendar</span></div>
+    <div style="position:relative;display:flex;justify-content:center"><div style="position:absolute;top:-46px;width:72px;height:72px;border-radius:50%;background:linear-gradient(140deg,#1B76E8,#5AA0F5);border:6px solid #fff;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 22px rgba(27,118,232,.35);cursor:pointer" style-active="transform:scale(.94)"><svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.4" stroke-linecap="round"></path></svg></div></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer"><div style="width:60px;height:38px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:transparent"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M5 20V12M10 20V6M15 20v-9M3 20h18" stroke="rgba(16,32,58,.45)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span style="font-weight:500;font-size:12px;color:rgba(16,32,58,.45)">Progress</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer"><div style="width:60px;height:38px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:transparent"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.6" stroke="rgba(16,32,58,.45)" stroke-width="1.8"></circle><path d="M4.5 20c1.5-4 4.2-6 7.5-6s6 2 7.5 6" stroke="rgba(16,32,58,.45)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span style="font-weight:500;font-size:12px;color:rgba(16,32,58,.45)">Profile</span></div>
+  </div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px"><div style="font-weight:700;font-size:14px;color:#10203A">C · New plan — icon row <span style="font-weight:500;color:rgba(16,32,58,.5)">sits below the Alert section · tap a chip, or All icons → D</span></div>
+<div data-screen-label="New plan with icon" style="width:390px;height:844px;position:relative;background:#F4F7FC;border-radius:46px;border:1px solid #DDE5F1;box-shadow:0 24px 60px rgba(16,32,58,.14);overflow:hidden;display:flex;flex-direction:column;font-family:'Anuphan',sans-serif;color:#10203A">
+<div style="height:50px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:12px 30px 0;font-weight:600;font-size:15px"><span>9:41</span><div style="width:110px;height:30px;border-radius:16px;background:#10203A"></div><span style="font-size:11px;opacity:.5">▮▮▮ ▮</span></div>
+<div style="flex:none;display:flex;align-items:center;justify-content:space-between;padding:12px 20px 14px"><span style="font-weight:600;font-size:16px;color:rgba(16,32,58,.5)">Cancel</span><span style="font-weight:700;font-size:18px">New Plan</span><span style="font-weight:700;font-size:16px;color:#1B76E8">Save</span></div>
+<div style="flex:1;min-height:0;overflow-y:auto;scrollbar-width:none;padding:0 16px 30px;display:flex;flex-direction:column;gap:14px">
+  <div style="flex:none;background:#fff;border:1px solid #E7EDF6;border-radius:22px;overflow:hidden"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:15px 18px;"><span style="font-weight:600;font-size:16px">Morning run</span></div><div style="height:1px;background:#EEF2F8"></div><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:15px 18px;"><span style="font-weight:500;font-size:16px;color:rgba(16,32,58,.38)">Location</span></div></div>
+  <div style="flex:none;background:#fff;border:1px solid #E7EDF6;border-radius:22px;overflow:hidden"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:15px 18px;padding:12px 12px 12px 18px"><span style="font-weight:600;font-size:16px">Group</span><div style="display:flex;align-items:center;gap:10px"><span style="font-weight:500;font-size:15px;color:rgba(16,32,58,.4)">No group</span><span style="padding:8px 13px;border-radius:16px;background:#EAF2FE;font-weight:700;font-size:14px;color:#0F5FC4">+ Create group</span></div></div></div>
+  <div style="flex:none;background:#fff;border:1px solid #E7EDF6;border-radius:22px;overflow:hidden">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 14px">
+      <div onClick="{{ segSpecific }}" style="cursor:pointer;padding:11px 0;text-align:center;border-radius:20px;font-weight:700;font-size:14.5px;background:{{ segA.bg }};color:{{ segA.fg }};border:1px solid {{ segA.edge }}">Specific Time</div>
+      <div onClick="{{ segRange }}" style="cursor:pointer;padding:11px 0;text-align:center;border-radius:20px;font-weight:700;font-size:14.5px;background:{{ segB.bg }};color:{{ segB.fg }};border:1px solid {{ segB.edge }}">Time Range</div>
+    </div>
+    <div style="height:1px;background:#EEF2F8"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:15px 18px;padding:12px 18px"><span style="font-weight:600;font-size:16px">All Day</span><div onClick="{{ toggleAllDay }}" style="cursor:pointer;width:51px;height:31px;border-radius:16px;background:{{ adBg }};position:relative;transition:background .2s"><div style="position:absolute;top:2px;left:{{ adKnob }};width:27px;height:27px;border-radius:14px;background:#fff;box-shadow:0 2px 5px rgba(0,0,0,.18);transition:left .2s"></div></div></div>
+    <div style="height:1px;background:#EEF2F8"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr">
+      <div style="padding:12px 18px;display:flex;flex-direction:column;gap:7px;border-right:1px solid #EEF2F8"><span style="font-weight:600;font-size:11.5px;letter-spacing:.8px;color:rgba(16,32,58,.45)">DATE</span><span style="align-self:flex-start;padding:7px 11px;border-radius:9px;background:#F0F2F5;font-weight:500;font-size:16px">14 May 2569</span></div>
+      <div style="padding:12px 18px;display:flex;flex-direction:column;gap:7px"><span style="font-weight:600;font-size:11.5px;letter-spacing:.8px;color:rgba(16,32,58,.45)">TIME</span><span style="align-self:flex-start;padding:7px 11px;border-radius:9px;background:#F0F2F5;font-weight:500;font-size:16px">6:30 AM</span></div>
+    </div>
+    <div style="height:1px;background:#EEF2F8"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:15px 18px;"><span style="font-weight:600;font-size:16px">Time Zone</span><span style="display:flex;align-items:center;gap:8px;font-weight:500;font-size:15px;color:rgba(16,32,58,.45)">Bangkok<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="rgba(16,32,58,.4)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></div>
+    <div style="height:1px;background:#EEF2F8"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:15px 18px;"><div><div style="font-weight:600;font-size:11.5px;letter-spacing:.8px;color:rgba(16,32,58,.45)">REPEAT</div><div style="font-weight:600;font-size:16px;margin-top:3px">Does not repeat</div></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="rgba(16,32,58,.4)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+    <div style="height:1px;background:#EEF2F8"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:15px 18px;"><span style="font-weight:600;font-size:16px">Alert</span><span style="display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px;color:#0F5FC4">5 minutes before<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="rgba(16,32,58,.4)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></div>
+    <div style="height:1px;background:#EEF2F8"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:15px 18px;"><span style="font-weight:600;font-size:16px">Second Alert</span><span style="display:flex;align-items:center;gap:8px;font-weight:500;font-size:15px;color:rgba(16,32,58,.45)">None<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="rgba(16,32,58,.4)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></div>
+  </div>
+  <div style="flex:none;background:#fff;border:1px solid #E7EDF6;border-radius:22px;overflow:hidden;padding:14px 16px 16px;display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="width:46px;height:46px;border-radius:15px;background:{{ selBg }};display:flex;align-items:center;justify-content:center;flex:none;box-shadow:0 0 0 2px #fff,0 0 0 4px {{ selColor }}"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="{{ selIcon }}" stroke="{{ selColor }}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+      <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:16px">Icon</div><div style="font-weight:500;font-size:13px;color:rgba(16,32,58,.5)">{{ selLabel }}</div></div>
+      <span style="display:flex;align-items:center;gap:3px;font-weight:600;font-size:14.5px;color:#0F5FC4">All icons<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="#0F5FC4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="font-weight:600;font-size:11.5px;letter-spacing:.8px;color:rgba(16,32,58,.45)">SUGGESTED FOR “RUN”</div>
+      <div style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px">
+        <sc-for list="{{ suggested }}" as="ic" hint-placeholder-count="6">
+          <div onClick="{{ ic.pick }}" style="cursor:pointer;aspect-ratio:1;border-radius:14px;background:{{ ic.bg }};box-shadow:{{ ic.ring }};display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="{{ ic.d }}" stroke="{{ ic.stroke }}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px"><div style="font-weight:700;font-size:14px;color:#10203A">D · Choose icon sheet</div>
+<div data-screen-label="Icon picker sheet" style="width:390px;height:844px;position:relative;background:#F4F7FC;border-radius:46px;border:1px solid #DDE5F1;box-shadow:0 24px 60px rgba(16,32,58,.14);overflow:hidden;display:flex;flex-direction:column;font-family:'Anuphan',sans-serif;color:#10203A">
+<div style="height:50px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:12px 30px 0;font-weight:600;font-size:15px"><span>9:41</span><div style="width:110px;height:30px;border-radius:16px;background:#10203A"></div><span style="font-size:11px;opacity:.5">▮▮▮ ▮</span></div>
+<div style="flex:none;display:flex;align-items:center;justify-content:space-between;padding:12px 20px 14px;opacity:.35"><span style="font-weight:600;font-size:16px">Cancel</span><span style="font-weight:700;font-size:18px">New Plan</span><span style="font-weight:700;font-size:16px;color:#1B76E8">Save</span></div>
+<div style="position:absolute;inset:0;background:rgba(16,32,58,.28)"></div>
+<div style="position:absolute;left:0;right:0;bottom:0;top:96px;background:#F4F7FC;border-radius:28px 28px 0 0;display:flex;flex-direction:column;box-shadow:0 -10px 30px rgba(16,32,58,.15)">
+  <div style="width:38px;height:5px;border-radius:3px;background:rgba(16,32,58,.18);align-self:center;margin-top:8px"></div>
+  <div style="flex:none;display:flex;align-items:center;justify-content:space-between;padding:12px 20px 0"><span style="width:44px"></span><span style="font-weight:700;font-size:17px">Choose icon</span><span style="font-weight:700;font-size:16px;color:#1B76E8">Done</span></div>
+  <div style="flex:none;margin:14px 16px 0;height:42px;border-radius:21px;background:#fff;border:1px solid #E3EAF4;display:flex;align-items:center;gap:9px;padding:0 15px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="6.5" stroke="rgba(16,32,58,.45)" stroke-width="2"></circle><path d="M16 16l4 4" stroke="rgba(16,32,58,.45)" stroke-width="2" stroke-linecap="round"></path></svg><span style="font-weight:500;font-size:14.5px;color:rgba(16,32,58,.4)">Search icons</span></div>
+  <div style="flex:none;display:flex;align-items:center;gap:10px;padding:14px 20px 4px"><span style="font-weight:500;font-size:13px;color:rgba(16,32,58,.55);flex:1">Colour follows the plan's group</span>
+    <sc-for list="{{ groupDots }}" as="g" hint-placeholder-count="5"><div onClick="{{ g.pick }}" style="cursor:pointer;width:22px;height:22px;border-radius:11px;background:{{ g.color }};box-shadow:{{ g.ring }}"></div></sc-for>
+  </div>
+  <div style="flex:1;min-height:0;overflow-y:auto;scrollbar-width:none;padding:6px 16px 30px">
+    <sc-for list="{{ sheetCats }}" as="cat" hint-placeholder-count="4">
+      <div style="display:flex;flex-direction:column;gap:9px;padding-top:14px">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;padding:0 4px"><span style="font-weight:600;font-size:11.5px;letter-spacing:.8px;color:rgba(16,32,58,.45)">{{ cat.name }}</span><span style="font-weight:500;font-size:12px;color:rgba(16,32,58,.45)">{{ cat.note }}</span></div>
+        <div style="background:#fff;border:1px solid #E7EDF6;border-radius:20px;padding:12px;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px">
+          <sc-for list="{{ cat.items }}" as="ic" hint-placeholder-count="6">
+            <div onClick="{{ ic.pick }}" style="cursor:pointer;aspect-ratio:1;border-radius:14px;background:{{ ic.bg }};box-shadow:{{ ic.ring }};display:flex;align-items:center;justify-content:center" style-active="transform:scale(.92)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="{{ ic.d }}" stroke="{{ ic.stroke }}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px"><div style="font-weight:700;font-size:14px;color:#10203A">E · Tickle icon set <span style="font-weight:500;color:rgba(16,32,58,.5)">24 icons · v1</span></div>
+<div style="width:620px;background:#fff;border:1px solid #DDE5F1;border-radius:28px;padding:26px 28px;box-sizing:border-box;display:flex;flex-direction:column;gap:22px;font-family:'Anuphan',sans-serif;color:#10203A">
+  <div style="font-weight:500;font-size:14px;line-height:1.6;color:rgba(16,32,58,.62);text-wrap:pretty">Drawn on a 24pt grid with a 1.9 stroke, round caps and joins, no fills — the same line as the tab bar and alert glyphs. On a plan they sit in a soft chip tinted at 10% of the group colour; with no group they fall back to azure.</div>
+  <sc-for list="{{ cats }}" as="cat" hint-placeholder-count="4">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="font-weight:600;font-size:11.5px;letter-spacing:.8px;color:rgba(16,32,58,.45)">{{ cat.name }}</div>
+      <div style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px">
+        <sc-for list="{{ cat.items }}" as="ic" hint-placeholder-count="6">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:7px">
+            <div style="width:56px;height:56px;border-radius:18px;background:#EAF2FE;display:flex;align-items:center;justify-content:center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="{{ ic.d }}" stroke="#1B76E8" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+            <span style="font-weight:500;font-size:12px;color:rgba(16,32,58,.6)">{{ ic.label }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-for>
+  <div style="height:1px;background:#EEF2F8"></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+    <div style="display:flex;flex-direction:column;gap:10px"><div style="font-weight:600;font-size:11.5px;letter-spacing:.8px;color:rgba(16,32,58,.45)">GROUP COLOURS</div><div style="display:flex;gap:8px">
+      <sc-for list="{{ groupSwatches }}" as="g" hint-placeholder-count="5"><div style="display:flex;flex-direction:column;align-items:center;gap:5px"><div style="width:44px;height:44px;border-radius:14px;background:{{ g.bg }};display:flex;align-items:center;justify-content:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="{{ g.d }}" stroke="{{ g.color }}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span style="font-weight:500;font-size:11px;color:rgba(16,32,58,.55)">{{ g.name }}</span></div></sc-for>
+    </div></div>
+    <div style="display:flex;flex-direction:column;gap:10px"><div style="font-weight:600;font-size:11.5px;letter-spacing:.8px;color:rgba(16,32,58,.45)">SIZES</div><div style="display:flex;gap:14px;align-items:flex-end">
+      <sc-for list="{{ sizes }}" as="z" hint-placeholder-count="3"><div style="display:flex;flex-direction:column;align-items:center;gap:5px"><div style="width:{{ z.box }};height:{{ z.box }};border-radius:{{ z.rad }};background:#E6F6F5;display:flex;align-items:center;justify-content:center"><svg width="{{ z.ic }}" height="{{ z.ic }}" viewBox="0 0 24 24" fill="none"><path d="{{ z.d }}" stroke="#17A8A0" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><span style="font-weight:500;font-size:11px;color:rgba(16,32,58,.55)">{{ z.name }}</span></div></sc-for>
+    </div></div>
+  </div>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;username&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;May&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;timeOfDay&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;morning&quot;,&quot;afternoon&quot;,&quot;evening&quot;],&quot;default&quot;:&quot;morning&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;showLive&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  state = { sel: 2, wk: 0, done: { run: true }, secs: 34 * 60 + 12, icon: 'run', grp: 'none', usage: { run: 14, people: 11, work: 8, book: 6, coffee: 4, leaf: 3, cart: 2, mail: 1 }, seg: 0, allDay: false };
+  componentDidMount() { this.t = setInterval(() => this.setState(s => ({ secs: Math.max(0, s.secs - 1) })), 1000); }
+  componentWillUnmount() { clearInterval(this.t); }
+  renderVals() {
+    const name = this.props.username ?? 'May';
+    const tod = this.props.timeOfDay ?? 'morning';
+    const live = this.props.showLive ?? true;
+    const G = { work: '#7B61FF', study: '#A455D6', health: '#17A8A0', personal: '#F08A3C', home: '#1B76E8', none: '#1B76E8' };
+    const ICONS = [
+      ['Work & study', [
+        ['work', 'Work', 'M4 8h16v11H4zM9 8V5.5h6V8M4 13h16'],
+        ['people', 'Meeting', 'M8 11a3 3 0 100-6 3 3 0 000 6zM16 11a3 3 0 100-6 3 3 0 000 6zM2.5 20c.8-3.2 2.8-5 5.5-5s4.7 1.8 5.5 5M13.5 16c.7-.7 1.5-1 2.5-1 2.7 0 4.7 1.8 5.5 5'],
+        ['laptop', 'Code', 'M5 6h14v9H5zM3 18.5h18M10 9l-2 2 2 2M14 9l2 2-2 2'],
+        ['mail', 'Email', 'M3.5 6h17v12h-17zM3.5 6.5 12 13l8.5-6.5'],
+        ['book', 'Study', 'M4 5.5C6.5 4 9.5 4 12 6c2.5-2 5.5-2 8-.5V19c-2.5-1.5-5.5-1.5-8 .5-2.5-2-5.5-2-8-.5zM12 6v13.5'],
+        ['brush', 'Create', 'M14.5 4.5l5 5L12 17l-5-5zM7 12c-2.5 0-3.5 2-3.5 4.5 0 1.5-.5 2.5-1 3 3.5.5 7.5-.5 7.5-4.5']
+      ]],
+      ['Health', [
+        ['run', 'Run', 'M14 5a1.6 1.6 0 100 .1M8 20l3-5 3 2v4M6.5 11l3-3h3.5l2 3.5 3 .5M11 15l1.5-7'],
+        ['gym', 'Workout', 'M3 10v4M6 7.5v9M18 7.5v9M21 10v4M6 12h12'],
+        ['heart', 'Wellbeing', 'M12 20s-7.5-4.5-7.5-10A4.2 4.2 0 0112 7.5a4.2 4.2 0 017.5 2.5C19.5 15.5 12 20 12 20z'],
+        ['pill', 'Meds', 'M10.5 4.5a4.2 4.2 0 016 6l-6 6a4.2 4.2 0 01-6-6zM7.5 7.5l6 6'],
+        ['tooth', 'Dentist', 'M7 4c2 0 3 1 5 1s3-1 5-1c2.5 0 3.5 2.5 3 5-.5 2.5-1.5 3.5-2 6.5-.4 2.5-1 5-2.5 5S14 16 12 16s-1.5 4.5-3.5 4.5S6.4 18 6 15.5C5.5 12.5 4.5 11.5 4 9c-.5-2.5.5-5 3-5z'],
+        ['moon', 'Sleep', 'M19 14.5A7.5 7.5 0 019.5 5a7.5 7.5 0 109.5 9.5z']
+      ]],
+      ['Home & life', [
+        ['home', 'Home', 'M4 11.5 12 4l8 7.5M6 10v9.5h12V10'],
+        ['leaf', 'Plants', 'M5 19C5 10 10 5 20 5c0 10-5 15-14 14zM5 19l8-8'],
+        ['cart', 'Shopping', 'M3 4h2.5l2 11h10.5l2-8H7M9.5 19.5a.8.8 0 100 .1M17 19.5a.8.8 0 100 .1'],
+        ['meal', 'Meal', 'M7 3v7a2 2 0 002 2v9M11 3v7a2 2 0 01-2 2M9 3v6M17 21V3c-2 1.5-3 4-3 7v3h3'],
+        ['coffee', 'Coffee', 'M5 9h11v5a5 5 0 01-5 5h-1a5 5 0 01-5-5zM16 10.5h1.5a2.5 2.5 0 010 5H16M8.5 3.5V6M12 3.5V6'],
+        ['paw', 'Pet', 'M12 13c-3 0-5 3-5 5 0 1.5 1.5 2 2.5 1.7 1-.3 1.7-.7 2.5-.7s1.5.4 2.5.7c1 .3 2.5-.2 2.5-1.7 0-2-2-5-5-5zM6 9a1.5 2 0 100 .1M18 9a1.5 2 0 100 .1M9.5 5a1.5 2 0 100 .1M14.5 5a1.5 2 0 100 .1']
+      ]],
+      ['Out & occasions', [
+        ['plane', 'Travel', 'M10.5 13.5 3.5 11 5 9.5l7.5.5 4-4c1-1 2.5-1.5 3.5-.5s.5 2.5-.5 3.5l-4 4 .5 7.5-1.5 1.5-2.5-7z'],
+        ['car', 'Drive', 'M4 16v-4l2-5h12l2 5v4zM4 16v2.5M20 16v2.5M4 12h16M7.5 14.2h.1M16.5 14.2h.1'],
+        ['gift', 'Gift', 'M4 9h16v4H4zM5.5 13v7h13v-7M12 9v11M12 9c-1-3-5-4-5-1.5S12 9 12 9zM12 9c1-3 5-4 5-1.5S12 9 12 9z'],
+        ['cake', 'Birthday', 'M5 12h14v8H5zM5 15.5c2 1.5 4.5 1.5 7 0s5-1.5 7 0M12 12V8.5M12 4.5c1 1 1 2.5 0 3-1-.5-1-2 0-3z'],
+        ['money', 'Bills', 'M3.5 7h17v10h-17zM12 14.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM6.5 10v4M17.5 10v4'],
+        ['music', 'Music', 'M9 18V6l10-2v12M9 18a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0zM19 16a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z']
+      ]]
+    ];
+    const I = {}, LBL = {};
+    ICONS.forEach(([, list]) => list.forEach(([id, l, d]) => { I[id] = d; LBL[id] = l; }));
+    const pc = G[this.state.grp];
+    const mkPick = id => {
+      const on = this.state.icon === id;
+      return { d: I[id], label: LBL[id], pick: () => this.setState(s => ({ icon: id, usage: { ...s.usage, [id]: (s.usage[id] || 0) + 1 } })),
+        bg: on ? pc + '1F' : '#F4F7FC', stroke: on ? pc : 'rgba(16,32,58,.55)', ring: on ? '0 0 0 2px ' + pc : 'none' };
+    };
+    const cats = ICONS.map(([n, list]) => ({ name: n.toUpperCase(), note: '', items: list.map(([id]) => mkPick(id)) }));
+    const recentIds = Object.entries(this.state.usage).sort((x, y) => y[1] - x[1]).slice(0, 6).map(([id]) => id);
+    const sheetCats = [{ name: 'RECENT', note: 'Your most used', items: recentIds.map(mkPick) }, ...cats];
+    const plans = [
+      { id: 'run', title: 'Morning run', start: '06:30', end: '07:00', g: 'health', icon: I.run, past: true },
+      { id: 'mei', title: 'Design review with Mei', start: '09:15', end: '10:15', g: 'work', icon: I.people, now: live },
+      { id: 'stats', title: 'Stats problem set', start: '13:00', end: '14:00', g: 'study', icon: I.book },
+      { id: 'dent', title: 'Dentist appointment', start: '16:30', end: '17:15', g: 'personal', icon: I.tooth },
+      { id: 'plants', title: 'Water the plants', start: '18:30', end: '18:45', g: 'home', icon: I.leaf }
+    ];
+    const mm = Math.floor(this.state.secs / 60), ss = String(this.state.secs % 60).padStart(2, '0');
+    const doneCount = plans.filter(p => this.state.done[p.id]).length;
+    const mkRow = p => {
+      const c = G[p.g], d = !!this.state.done[p.id];
+      return {
+        title: p.title, start: p.start, color: c, icon: p.icon, isNow: !!p.now, notNow: !p.now,
+        tint: c + '24', edge: c + '22', iconBg: c + '1A',
+        rail: (p.past || p.now) ? '#35B978' : '#D3DBE7',
+        op: d ? .6 : 1, strike: d ? 'line-through' : 'none',
+        subColor: p.now ? '#1B76E8' : 'rgba(16,32,58,.5)',
+        subStrong: p.now ? mm + ':' + ss : '', subRest: p.now ? 'remaining' : p.start + ' – ' + p.end,
+        checkBg: d ? '#35B978' : '#fff', checkEdge: d ? '#35B978' : '#DDE3EE',
+        toggle: () => this.setState(s => ({ done: { ...s.done, [p.id]: !s.done[p.id] } }))
+      };
+    };
+    const rows = plans.map(mkRow);
+    const todayRows = plans.filter(p => !p.past).map(mkRow);
+    const up = (title, sub, time, g, icon) => ({ title, sub, time, color: G[g], iconBg: G[g] + '1A', icon: I[icon] });
+    const upDays = [
+      { label: 'Tomorrow · Thu 15', items: [up('Team standup', 'Work · 15 min', '09:30', 'work', 'people'), up('Grocery run', 'Personal · Villa Market', '18:00', 'personal', 'cart')] },
+      { label: 'Fri 16', items: [up('Yoga class', 'Health · 1 hr', '07:00', 'health', 'heart'), up('Send Q2 handoff', 'Work · 2 subtasks', '16:00', 'work', 'mail')] },
+      { label: 'Sat 17', items: [up("Mum's birthday", 'Personal · repeats yearly', 'All day', 'personal', 'cake')] }
+    ];
+    const past = (title, icon, st, meta) => ({ title, icon: I[icon], isDone: st === 'done', isMissed: st === 'missed',
+      strike: st === 'done' ? 'line-through' : 'none', meta, metaColor: st === 'missed' ? '#C24A57' : 'rgba(16,32,58,.45)' });
+    const runDone = !!this.state.done.run;
+    const pastDays = [
+      { label: 'Today', items: [past('Morning run', 'run', runDone ? 'done' : 'missed', runDone ? 'done 06:34' : 'missed 06:30'), past('Standup notes', 'mail', 'missed', 'missed 09:00')] },
+      { label: 'Yesterday · Tue 13', items: [past('Pay electricity bill', 'money', 'done', 'done 20:12'), past('Read 20 pages', 'book', 'done', 'done 22:40'), past('Walk Mochi', 'paw', 'done', 'done 18:05')] }
+    ];
+    const left = todayRows.filter((r, i) => !this.state.done[plans.filter(p => !p.past)[i].id]).length;
+    const dows = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const wkOff = this.state.wk, base = new Date(2025, 4, 12 + wkOff * 7);
+    const dayAt = i => new Date(base.getFullYear(), base.getMonth(), base.getDate() + i);
+    const isoWeek = d => { const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate() + 3)); const y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 4)); return 1 + Math.round(((t - y0) / 864e5 - 3 + ((y0.getUTCDay() + 6) % 7)) / 7); };
+    const d0 = dayAt(0), d6 = dayAt(6);
+    const weekRange = d0.getMonth() === d6.getMonth() ? d0.getDate() + '–' + d6.getDate() + ' ' + MON[d0.getMonth()] : d0.getDate() + ' ' + MON[d0.getMonth()] + ' – ' + d6.getDate() + ' ' + MON[d6.getMonth()];
+    const days = dows.map((dow, i) => {
+      const sel = i === this.state.sel, today = wkOff === 0 && i === 2, wk = i >= 5;
+      return {
+        dow, num: dayAt(i).getDate(), pick: () => this.setState({ sel: i }),
+        bg: sel ? '#EAF2FE' : '#fff',
+        shadow: sel ? '0 0 0 2px #1B76E8' : '0 2px 8px rgba(16,32,58,.06)',
+        capBg: sel ? '#1B76E8' : wk ? '#FCE9EB' : '#F1F5FB',
+        capFg: sel ? '#fff' : wk ? '#C24A57' : 'rgba(16,32,58,.55)',
+        numFg: sel ? '#0F5FC4' : wk ? '#C24A57' : today ? '#1B76E8' : '#10203A'
+      };
+    });
+    const sel = this.state.sel;
+    const segOn = { bg: '#1B76E8', fg: '#fff', edge: '#1B76E8' }, segOff = { bg: '#fff', fg: '#10203A', edge: '#E3EAF4' };
+    const gNames = { none: 'None', work: 'Work', study: 'Study', health: 'Health', personal: 'Personal' };
+    return {
+      greeting: 'Good ' + tod + ', ' + name,
+      days, rows, todayRows, upDays, pastDays, doneCount, total: plans.length,
+      leftLabel: left ? left + ' left' : 'All clear',
+      dayTitle: wkOff === 0 && sel === 2 ? 'Today' : wkOff === 0 && sel === 3 ? 'Tomorrow' : dows[sel] + ' ' + dayAt(sel).getDate() + ' ' + MON[dayAt(sel).getMonth()],
+      weekNo: isoWeek(d0) + (d0.getFullYear() !== 2025 || d6.getFullYear() !== 2025 ? ' · ' + d6.getFullYear() : ''), weekRange, offWeek: wkOff !== 0,
+      prevWeek: () => this.setState(s => ({ wk: s.wk - 1, sel: 0 })), nextWeek: () => this.setState(s => ({ wk: s.wk + 1, sel: 0 })),
+      thisWeek: () => this.setState({ wk: 0, sel: 2 }),
+      cats, sheetCats, suggested: ['run', 'gym', 'heart', 'moon', 'leaf', 'music'].map(mkPick),
+      selIcon: I[this.state.icon], selLabel: LBL[this.state.icon] + (this.state.grp === 'none' ? ' · azure (no group)' : ' · ' + gNames[this.state.grp] + ' colour'),
+      selColor: pc, selBg: pc + '1F',
+      groupDots: Object.keys(gNames).map(k => ({ color: G[k], ring: this.state.grp === k ? '0 0 0 2px #F4F7FC,0 0 0 4px ' + G[k] : 'none', pick: () => this.setState({ grp: k }) })),
+      groupSwatches: ['work', 'study', 'health', 'personal', 'home'].map(k => ({ name: k[0].toUpperCase() + k.slice(1), color: G[k], bg: G[k] + '1A', d: I.heart })),
+      sizes: [['Card', 46, 15, 26], ['List', 40, 13, 22], ['Inline', 28, 9, 16]].map(([n, b, r, ic]) => ({ name: n + ' ' + b, box: b + 'px', rad: r + 'px', ic, d: I.run })),
+      segA: this.state.seg === 0 ? segOn : segOff, segB: this.state.seg === 1 ? segOn : segOff,
+      segSpecific: () => this.setState({ seg: 0 }), segRange: () => this.setState({ seg: 1 }),
+      adBg: this.state.allDay ? '#35B978' : '#E3E7EE', adKnob: this.state.allDay ? '22px' : '2px',
+      toggleAllDay: () => this.setState(s => ({ allDay: !s.allDay }))
+    };
+  }
+}
+</script>
+</body>
+</html>

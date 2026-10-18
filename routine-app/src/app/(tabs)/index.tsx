@@ -9,9 +9,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BouncyPressable } from '@/components/bouncy-pressable';
 import { EarlierBlock, SearchResults, UpcomingBlock } from '@/components/home/feed-sections';
+import { DayTimeline } from '@/components/home/day-timeline';
 import { SearchField, toolRowLayout } from '@/components/home/search-field';
 import { ToolButton } from '@/components/home/tool-button';
-import { TodaySheet } from '@/components/home/today-sheet';
+import { addDays, FEED_INSET, startOfISOWeek, WeekStrip } from '@/components/home/week-strip';
 import { useHomeTokens, useHomeType } from '@/components/home/tokens';
 import { CheckIcon, PaletteIcon, PlusIcon, TagIcon } from '@/components/icon';
 import { Text } from '@/components/text';
@@ -57,7 +58,7 @@ function useClock(fast: boolean) {
 const EASE = Easing.bezier(0.22, 1, 0.36, 1);
 const BLUR_START = 22;
 
-// Entrance for the two feed blocks (Today sheet, which holds Upcoming, then Earlier) — 100ms apart, same style
+// Entrance for the feed sheet's two halves (the day timeline, then Upcoming + Earlier) — 100ms apart, same style
 // of animation as src/app/subscription.tsx's per-section entrance. playToken changes on every screen
 // focus (including the first), so it replays each time the user comes back to Today — not just on
 // mount. Drives both the fade/slide-up (native driver) and a dissolving BlurView veil on top
@@ -102,7 +103,10 @@ type Panel = 'colors' | 'groups';
 /** Panel chips slide in one after another, 35ms apart, once the row has made room. */
 const chipIn = (i: number) => FadeInLeft.delay(80 + i * 35).springify().damping(16).stiffness(200);
 
-/** Home — design_handoff_tickle_home_7 (7a live / 7b idle / 7c ranges). */
+/**
+ * Home — header, search and filters from design_handoff_tickle_home_7; the week strip and the feed
+ * sheet (day timeline · Upcoming · Earlier) from design_handoff_tickle_home_timeline.
+ */
 export default function HomeScreen() {
   const theme = useTheme();
   const k = useHomeTokens();
@@ -188,7 +192,33 @@ export default function HomeScreen() {
       (filterGroupIds.length === 0 || (!!p.groupId && filterGroupIds.includes(p.groupId))) && (filterColors.length === 0 || filterColors.includes(p.color)),
     [filterGroupIds, filterColors]
   );
-  const feed = useMemo(() => buildHomeFeed(plans, nowMs, matches), [plans, nowMs, matches]);
+  // Week strip: `weekOffset` weeks from the current one, and the picked day (today on open).
+  const todayISO = toISO(new Date(nowMs));
+  const [weekOffset, setWeekOffset] = useState(0);
+  const [selectedISO, setSelectedISO] = useState(todayISO);
+  const [weekDir, setWeekDir] = useState(0);
+  const thisWeekStart = useMemo(() => startOfISOWeek(new Date(`${todayISO}T00:00:00`)), [todayISO]);
+  const weekStart = addDays(thisWeekStart, weekOffset * 7);
+  // Past midnight the strip jumps to the new today, so "Today" never points at yesterday.
+  const prevToday = useRef(todayISO);
+  useEffect(() => {
+    if (prevToday.current === todayISO) return;
+    prevToday.current = todayISO;
+    setWeekOffset(0);
+    setSelectedISO(todayISO);
+  }, [todayISO]);
+  const stepWeek = (delta: -1 | 1) => {
+    setWeekDir(delta);
+    setWeekOffset(weekOffset + delta);
+    setSelectedISO(toISO(addDays(thisWeekStart, (weekOffset + delta) * 7)));
+  };
+  const backToToday = () => {
+    setWeekDir(weekOffset > 0 ? -1 : 1);
+    setWeekOffset(0);
+    setSelectedISO(todayISO);
+  };
+
+  const feed = useMemo(() => buildHomeFeed(plans, nowMs, matches, selectedISO), [plans, nowMs, matches, selectedISO]);
   const searching = query.trim().length > 0;
   const searchSections = useMemo(
     () => (searching ? groupSearchResults(searchPlans(plans.filter(matches), groups, query, nowMs), nowMs) : []),
@@ -206,18 +236,19 @@ export default function HomeScreen() {
   useEffect(() => setFastClock(fast), [fast]);
 
   const now = new Date(nowMs);
-  const todayISO = toISO(now);
   const firstName = profileName.trim().split(/\s+/)[0];
 
   const openPlan = (id: string) => router.push({ pathname: '/add-plan', params: { id } });
   const filtering = filterGroupIds.length > 0 || filterColors.length > 0;
   // The Groups button's dot shows the first selected group's color.
   const activeGroup = groups.find((g) => filterGroupIds.includes(g.id));
-  const emptyText = filtering
-    ? tr('home.empty.filter')
-    : feed.earlier.length > 0
-      ? tr('home.empty.allDone')
-      : tr('home.empty.nothing');
+  const emptyText = feed.isToday
+    ? filtering
+      ? tr('home.empty.filter')
+      : tr('home.empty.nothing')
+    : filtering
+      ? tr('home.empty.dayFilter')
+      : tr('home.empty.day');
 
   const selectProps = { selectMode, selectedIds, onToggleSelect: toggleSelected, onOpen: openPlan };
 
@@ -230,7 +261,9 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.screen, { backgroundColor: k.page }]}>
-      <NestableScrollContainer contentContainerStyle={{ paddingTop: insets.top, paddingBottom: 130 }} keyboardDismissMode="on-drag">
+      <NestableScrollContainer
+        contentContainerStyle={{ paddingTop: insets.top, paddingBottom: 130 }}
+        keyboardDismissMode="on-drag">
         {/* A tap on empty space unfocuses the search bar (fading its azure focus ring) — done here
             rather than via keyboardShouldPersistTaps, which only fires while the on-screen keyboard
             is showing (not with a hardware keyboard). Buttons and rows still take their own taps. */}
@@ -337,47 +370,50 @@ export default function HomeScreen() {
               <SearchResults sections={searchSections} groups={groups} {...selectProps} />
             </View>
           ) : (
-            <View style={styles.feed}>
-              <EntranceBox entrance={todayEnter} blurTint={blurTint}>
-                <TodaySheet
-                  feed={feed}
-                  nowMs={nowMs}
-                  groups={groups}
-                  emptyText={emptyText}
-                  countdownPlanId={countdownPlanId}
-                  selectMode={selectMode}
-                  selectedIds={selectedIds}
-                  onToggleComplete={toggleComplete}
-                  onToggleSelect={toggleSelected}
-                  onOpen={openPlan}
-                  onDelete={deletePlan}
-                  onExtend={(p) => p.endTime && updatePlan(p.id, { endTime: addMinutesToTime(p.endTime, 10) })}
-                  onReorder={(ids) => reorderPlans(todayISO, ids)}
-                  footer={
-                    feed.upcoming.length > 0 ? (
-                      <UpcomingBlock items={feed.upcoming} onCalendar={() => router.navigate('/calendar')} {...selectProps} />
-                    ) : undefined
-                  }
-                />
-              </EntranceBox>
+            <>
+              <WeekStrip
+                weekStart={weekStart}
+                weekOffset={weekOffset}
+                selectedISO={selectedISO}
+                todayISO={todayISO}
+                direction={weekDir}
+                onStep={stepWeek}
+                onToday={backToToday}
+                onSelect={setSelectedISO}
+              />
+              <View style={styles.feedArea}>
+                {/* Only the day's timeline sits in the white box (old Home style); Upcoming and Earlier live on the grey page below it (user, 2026-10-19). */}
+                <EntranceBox entrance={todayEnter} blurTint={blurTint}>
+                  <View style={[styles.todayBox, { backgroundColor: k.sheet, borderColor: k.sheetBorder }]}>
+                  <DayTimeline
+                    feed={feed}
+                    nowMs={nowMs}
+                    emptyText={emptyText}
+                    countdownPlanId={feed.isToday ? countdownPlanId : null}
+                    selectMode={selectMode}
+                    selectedIds={selectedIds}
+                    onToggleComplete={toggleComplete}
+                    onToggleSelect={toggleSelected}
+                    onOpen={openPlan}
+                    onDelete={deletePlan}
+                    onExtend={(p) => p.endTime && updatePlan(p.id, { endTime: addMinutesToTime(p.endTime, 10) })}
+                    onReorder={(ids) => reorderPlans(selectedISO, ids)}
+                  />
+                  </View>
+                </EntranceBox>
 
-              {lastDeletedSnapshot && !selectMode && (
-                <Pressable onPress={undoDelete} style={[styles.undoBar, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
-                  <Text style={{ color: theme.textSecondary, fontSize: Typography.rowValue, fontWeight: '500' }}>{tr('home.undoDelete')}</Text>
-                </Pressable>
-              )}
+                {lastDeletedSnapshot && !selectMode && (
+                  <Pressable onPress={undoDelete} style={[styles.undoBar, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
+                    <Text style={{ color: theme.textSecondary, fontSize: Typography.rowValue, fontWeight: '500' }}>{tr('home.undoDelete')}</Text>
+                  </Pressable>
+                )}
 
-              <EntranceBox entrance={earlierEnter} blurTint={blurTint}>
-                <EarlierBlock
-                  items={feed.earlier}
-                  older={feed.older}
-                  seeAll={seeAll}
-                  onToggleSeeAll={() => setSeeAll((v) => !v)}
-                  onRedo={openPlan}
-                  {...selectProps}
-                />
-              </EntranceBox>
-            </View>
+                <EntranceBox entrance={earlierEnter} blurTint={blurTint}>
+                  <UpcomingBlock days={feed.upcoming} groups={groups} {...selectProps} />
+                  <EarlierBlock items={feed.earlier} older={feed.older} seeAll={seeAll} onToggleSeeAll={() => setSeeAll((v) => !v)} {...selectProps} />
+                </EntranceBox>
+              </View>
+            </>
           )}
         </Pressable>
       </NestableScrollContainer>
@@ -393,7 +429,7 @@ const styles = StyleSheet.create({
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 },
   headerText: { flexShrink: 1 },
   editBtn: { fontSize: Typography.rowValue },
-  toolRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingBottom: 14 },
+  toolRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: FEED_INSET, paddingBottom: 14 },
   panel: { flex: 1 },
   panelRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingRight: 12 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 12, borderRadius: Radii.chip + 6, borderWidth: 1 },
@@ -402,5 +438,20 @@ const styles = StyleSheet.create({
   colorSwatch: { width: 26, height: 26, borderRadius: 13, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   dashedChip: { borderStyle: 'dashed', backgroundColor: 'transparent' },
   feed: { paddingHorizontal: 12, gap: 20 },
-  undoBar: { marginTop: -8, padding: 10, borderRadius: Radii.card, borderWidth: 1, alignItems: 'center' },
+  feedArea: { paddingHorizontal: FEED_INSET, paddingTop: 10 },
+  // The old Home's floating Today card (design_handoff_tickle_home_7) with a subtle drop shadow.
+  todayBox: {
+    borderRadius: 22,
+    borderWidth: 1,
+    // Roomier inside, same outer size (user, 2026-10-19).
+    paddingTop: 18,
+    paddingHorizontal: 18,
+    paddingBottom: 14,
+    shadowColor: '#10203A',
+    shadowOpacity: 0.07,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
+  },
+  undoBar: { marginTop: 10, padding: 10, borderRadius: Radii.card, borderWidth: 1, alignItems: 'center' },
 });

@@ -162,7 +162,7 @@ export const usePlannerStore = create<PlannerState>()(
 
       toggleComplete: (id) => {
         set((state) => ({
-          plans: state.plans.map((p) => (p.id === id ? { ...p, completed: !p.completed } : p)),
+          plans: state.plans.map((p) => (p.id === id ? { ...p, completed: !p.completed, completedAt: p.completed ? undefined : Date.now() } : p)),
         }));
         const updated = get().plans.find((p) => p.id === id);
         if (updated) syncUpsertPlan(updated);

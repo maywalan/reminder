@@ -1,5 +1,7 @@
 import { Circle, Path, Rect, Svg } from 'react-native-svg';
 
+import { planIconDef } from '@/utils/plan-icons';
+
 /** Line icons ported 1:1 from planner-app-prototype.html's inline SVGs (viewBox 0 0 24 24). */
 
 export interface IconProps {
@@ -354,6 +356,17 @@ export function LockIcon({ size = 24, color, strokeWidth = 1.9 }: IconProps) {
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Rect x={5} y={10.5} width={14} height={10} rx={2.5} stroke={color} strokeWidth={strokeWidth} />
       <Path d="M8 10.5V8a4 4 0 018 0v2.5" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+/** One of the 24 plan icons (src/utils/plan-icons.ts) — design_handoff_tickle_home_timeline: 1.9 stroke, round caps/joins, no fill. */
+export function PlanIcon({ id, size = 24, color, strokeWidth = 1.9 }: IconProps & { id: string }) {
+  const def = planIconDef(id);
+  if (!def) return null;
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d={def.d} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
     </Svg>
   );
 }

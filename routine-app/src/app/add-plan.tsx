@@ -17,10 +17,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, TextInput } from '@/components/text';
 import { BottomSheet } from '@/components/bottom-sheet';
 import { PhotoViewer } from '@/components/photo-viewer';
-import { CameraIcon, CheckIcon, ChevronRightIcon, LockIcon, PlusIcon, XIcon } from '@/components/icon';
+import { CameraIcon, CheckIcon, ChevronRightIcon, LockIcon, PlanIcon, PlusIcon, XIcon } from '@/components/icon';
+import { IconGrid, IconPickerSheet } from '@/components/icon-picker';
 import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
-import { DefaultTaskColor, Radii, SwatchColors, Typography } from '@/constants/theme';
+import { DefaultTaskColor, Fonts, Radii, SwatchColorNames, SwatchColors, Typography } from '@/constants/theme';
 import { findPastPlans } from '@/utils/countdown';
 import { countActivePlans, FREE_ACTIVE_PLAN_LIMIT, isPremium } from '@/utils/premium';
 import { usePlaceSearch } from '@/hooks/use-place-search';
@@ -39,6 +40,7 @@ import {
   REPEAT_OPTIONS,
   type RepeatType,
 } from '@/utils/repeat';
+import { iconUsage, matchIcons, planIconDef, recentIcons, suggestIcons, type PlanIconId } from '@/utils/plan-icons';
 import { COMMON_TIME_ZONES, deviceTimeZone, listTimeZones, timeZoneCityLabel, timeZoneOffsetLabel } from '@/utils/timezone';
 
 const MAX_PHOTOS = 3;
@@ -76,6 +78,63 @@ function combineDateAndTime(dateISO: string, time: string) {
   const [h, m] = time.split(':').map(Number);
   d.setHours(h, m, 0, 0);
   return d;
+}
+
+/** New plan's Icon card (design_handoff_tickle_home_timeline, screen 2): the selected icon, its label, "All icons ›", and six suggestions from the title. */
+function IconCard({
+  icon,
+  color,
+  groupName,
+  suggested,
+  onPick,
+  onAllIcons,
+}: {
+  icon: PlanIconId | null;
+  color: string;
+  groupName?: string;
+  suggested: { keyword: string | null; ids: PlanIconId[] };
+  onPick: (id: PlanIconId) => void;
+  onAllIcons: () => void;
+}) {
+  const theme = useTheme();
+  const k = Typography.body / 13;
+  const f = (size: number, weight: 500 | 600 | 700) => ({ fontSize: size * k, fontWeight: String(weight) as '500', fontFamily: Fonts[weight] });
+  const def = planIconDef(icon);
+  const colorKey = SwatchColorNames[color];
+  const colorName = colorKey ? (lang() === 'en' ? t(colorKey).toLowerCase() : t(colorKey)) : color;
+  const label = !def
+    ? t('plan.iconNone')
+    : groupName
+      ? t('plan.iconGroupColour', { icon: t(def.labelKey), group: groupName })
+      : t('plan.iconNoGroup', { icon: t(def.labelKey), color: colorName });
+  const ink45 = useEffectiveScheme() === 'dark' ? 'rgba(242,245,250,0.45)' : 'rgba(16,32,58,0.45)';
+
+  return (
+    <View style={[styles.iconCard, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
+      <View style={styles.iconTop}>
+        <Pressable onPress={onAllIcons} accessibilityLabel={t('plan.allIcons')}>
+          <View pointerEvents="none" style={[styles.iconSelRing, { borderColor: color }]} />
+          <View style={[styles.iconSel, { backgroundColor: `${color}1F` }]}>
+            {def ? <PlanIcon id={def.id} size={26} color={color} /> : <PlusIcon size={20} color={color} strokeWidth={2.2} />}
+          </View>
+        </Pressable>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text style={[f(16, 600), { color: theme.text }]}>{t('plan.icon')}</Text>
+          <Text numberOfLines={1} style={[f(13, 500), { color: theme.textSecondary }]}>
+            {label}
+          </Text>
+        </View>
+        <Pressable onPress={onAllIcons} hitSlop={10} style={styles.allIcons}>
+          <Text style={[f(14.5, 600), { color: theme.accentStrong }]}>{t('plan.allIcons')}</Text>
+          <ChevronRightIcon size={14} color={theme.accentStrong} strokeWidth={2.2} />
+        </Pressable>
+      </View>
+      <Text style={[f(11.5, 600), { letterSpacing: 0.8, color: ink45 }]}>
+        {suggested.keyword ? t('plan.iconSuggestedFor', { word: lang() === 'en' ? suggested.keyword.toUpperCase() : suggested.keyword }) : t('plan.iconSuggested')}
+      </Text>
+      <IconGrid ids={suggested.ids} selected={icon} color={color} onPick={onPick} />
+    </View>
+  );
 }
 
 export default function AddPlanScreen() {
@@ -142,6 +201,19 @@ export default function AddPlanScreen() {
   const [groupId, setGroupId] = useState<string | null>(editing?.groupId ?? null);
   const group = groups.find((g) => g.id === groupId);
   const [live, setLive] = useState(editing?.live ?? false);
+  // Picked icon; unset means the title's suggestion is used (and shown as selected).
+  const [icon, setIcon] = useState<string | undefined>(editing?.icon);
+  const [iconSheetOpen, setIconSheetOpen] = useState(false);
+  const autoIcon = matchIcons(name)[0]?.id;
+  const shownIcon = planIconDef(icon)?.id ?? autoIcon ?? null;
+  // Counts from saved plans, plus this pick, so the RECENT row reorders as the user picks.
+  const usage = useMemo(() => {
+    const u = iconUsage(plans.filter((p) => p.id !== editing?.id));
+    const def = planIconDef(icon);
+    if (def) u.set(def.id, (u.get(def.id) ?? 0) + 1);
+    return u;
+  }, [plans, editing?.id, icon]);
+  const suggested = useMemo(() => suggestIcons(name, usage, icon), [name, usage, icon]);
   // Sorted earliest-first (see sortAlertsByEarliness) so row position always matches how far
   // ahead of the plan each alert fires, regardless of the order they were picked in. A brand-new
   // plan (and any plan saved before it had alerts) defaults to a single 5-minutes-before alert.
@@ -250,6 +322,7 @@ export default function AddPlanScreen() {
       groupId,
       live,
       alerts,
+      icon,
       notes: notes.trim() || undefined,
       location: location.trim() || undefined,
       photoUris,
@@ -684,6 +757,15 @@ export default function AddPlanScreen() {
           })}
         </View>
 
+        <IconCard
+          icon={shownIcon}
+          color={color}
+          groupName={group?.name}
+          suggested={suggested}
+          onPick={(id) => setIcon(id)}
+          onAllIcons={() => setIconSheetOpen(true)}
+        />
+
         {editing && (
           <Text style={[styles.footnote, { color: theme.textTertiary }]}>
             {t('plan.repeatEditNote')}
@@ -824,6 +906,17 @@ export default function AddPlanScreen() {
       <Toast message={toastMessage} kind={toastKind} />
 
       <PhotoViewer uris={photoUris} index={previewIndex} onClose={() => setPreviewIndex(null)} />
+
+      <IconPickerSheet
+        visible={iconSheetOpen}
+        onClose={() => setIconSheetOpen(false)}
+        selected={shownIcon}
+        color={color}
+        colors={COLOR_PICKER_ORDER}
+        onColor={setColor}
+        recent={recentIcons(usage)}
+        onPick={(id) => setIcon(id)}
+      />
 
       <BottomSheet
         visible={alertSlot !== null}
@@ -1065,6 +1158,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  iconCard: { borderRadius: 22, borderWidth: 1, paddingTop: 14, paddingHorizontal: 16, paddingBottom: 16, gap: 14, marginBottom: 14 },
+  iconTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  // The handoff's ring is box-shadow 0 0 0 2 #fff, 0 0 0 4 colour: a 2pt colour line 2pt outside the tile.
+  iconSelRing: { position: 'absolute', top: -4, left: -4, right: -4, bottom: -4, borderRadius: 19, borderWidth: 2 },
+  iconSel: { width: 46, height: 46, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  allIcons: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   liveActivityGroup: {
     shadowColor: '#1B76E8',
     shadowOpacity: 0.07,

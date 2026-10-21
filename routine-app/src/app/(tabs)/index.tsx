@@ -219,6 +219,7 @@ export default function HomeScreen() {
   };
 
   const feed = useMemo(() => buildHomeFeed(plans, nowMs, matches, selectedISO), [plans, nowMs, matches, selectedISO]);
+  const markedISOs = useMemo(() => new Set(plans.filter(matches).map((p) => p.date)), [plans, matches]);
   const searching = query.trim().length > 0;
   const searchSections = useMemo(
     () => (searching ? groupSearchResults(searchPlans(plans.filter(matches), groups, query, nowMs), nowMs) : []),
@@ -376,6 +377,7 @@ export default function HomeScreen() {
                 weekOffset={weekOffset}
                 selectedISO={selectedISO}
                 todayISO={todayISO}
+                markedISOs={markedISOs}
                 direction={weekDir}
                 onStep={stepWeek}
                 onToday={backToToday}
@@ -410,7 +412,7 @@ export default function HomeScreen() {
 
                 <EntranceBox entrance={earlierEnter} blurTint={blurTint}>
                   <UpcomingBlock days={feed.upcoming} groups={groups} {...selectProps} />
-                  <EarlierBlock items={feed.earlier} older={feed.older} seeAll={seeAll} onToggleSeeAll={() => setSeeAll((v) => !v)} {...selectProps} />
+                  <EarlierBlock older={feed.older} seeAll={seeAll} onToggleSeeAll={() => setSeeAll((v) => !v)} {...selectProps} />
                 </EntranceBox>
               </View>
             </>
@@ -438,7 +440,8 @@ const styles = StyleSheet.create({
   colorSwatch: { width: 26, height: 26, borderRadius: 13, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   dashedChip: { borderStyle: 'dashed', backgroundColor: 'transparent' },
   feed: { paddingHorizontal: 12, gap: 20 },
-  feedArea: { paddingHorizontal: FEED_INSET, paddingTop: 10 },
+  // Room under the week strip's dots so the Today box doesn't crowd them (user, 2026-10-22).
+  feedArea: { paddingHorizontal: FEED_INSET, paddingTop: 20 },
   // The old Home's floating Today card (design_handoff_tickle_home_7) with a subtle drop shadow.
   todayBox: {
     borderRadius: 22,

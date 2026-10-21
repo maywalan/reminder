@@ -1,5 +1,5 @@
-import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
 import { useEffect, useRef } from 'react';
 import { Alert, Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 import { BorderlessButton, RectButton, Swipeable } from 'react-native-gesture-handler';
@@ -21,7 +21,8 @@ import { resolvePlanIcon } from '@/utils/plan-icons';
 /**
  * The day section at the top of Home's feed sheet (design_handoff_tickle_home_timeline, "1a.
  * Today"): a title that follows the week strip's selection, then one timeline row per plan — a
- * tinted card with the plan's icon chip and a check circle on its top-left corner.
+ * card tinted in the plan's colour with its icon tile on the left, title and time next to it, and a check
+ * button behind a divider on the right (user's reference, 2026-10-22).
  *
  * The time column and rail are the previous Home's (design_handoff_tickle_home_7; user's call,
  * 2026-10-18): right-aligned start time with the end time under it, a thin rail through every row,
@@ -39,8 +40,8 @@ const COL_GAP = 10;
 const RAIL_X = TIME_COL + COL_GAP + MARKER_COL / 2 - 0.5;
 /** Card top padding + half a time line: where the start time, its dot and the card title share a line. */
 const MARK_Y = 13;
-/** Extra room between the rail and the cards, so the check circle on a card's corner doesn't crowd the markers (user, 2026-10-18). */
-const CARD_GAP = 10;
+/** Room between the rail markers and the cards. */
+const CARD_GAP = 4;
 
 interface RowHandlers {
   selectMode: boolean;
@@ -216,8 +217,13 @@ function TimelineRow({
           end={{ x: 1, y: 0.59 }}
           style={styles.cardTint}
         />
+        {icon && (
+          <View style={[styles.iconChip, { backgroundColor: `${color}1F` }]}>
+            <PlanIcon id={icon} size={17} color={color} strokeWidth={1.9} />
+          </View>
+        )}
         <View style={styles.cardText}>
-          <Text numberOfLines={2} style={[t.cardTitle, { color: k.ink, textDecorationLine: done ? 'line-through' : 'none' }]}>
+          <Text numberOfLines={1} style={[t.cardTitle, { color: k.ink, textDecorationLine: done ? 'line-through' : 'none' }]}>
             {plan.name}
           </Text>
           <View style={styles.subRow}>
@@ -232,22 +238,20 @@ function TimelineRow({
             )}
           </View>
         </View>
-        {icon && (
-          <View style={[styles.iconChip, { backgroundColor: `${color}1A` }]}>
-            <PlanIcon id={icon} size={19} color={color} strokeWidth={1.9} />
-          </View>
-        )}
         {showCheck && (
-          <BorderlessButton
-            onPress={toggle}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            style={[styles.check, { backgroundColor: checkOn ? checkFill : k.sheet, borderColor: checkOn ? checkFill : k.checkEdge }]}>
-            {checkOn && (
-              <Reanimated.View entering={ZoomIn.springify().damping(12).stiffness(260)}>
-                <CheckIcon size={10} color="#fff" strokeWidth={3.2} />
-              </Reanimated.View>
-            )}
-          </BorderlessButton>
+          <>
+            <View style={[styles.divider, { backgroundColor: k.earlierBorder }]} />
+            <BorderlessButton
+              onPress={toggle}
+              hitSlop={{ top: 14, bottom: 14, left: 10, right: 10 }}
+              style={[styles.check, { backgroundColor: checkOn ? checkFill : k.sheet, borderColor: checkOn ? checkFill : k.checkEdge }]}>
+              {checkOn && (
+                <Reanimated.View entering={ZoomIn.springify().damping(12).stiffness(260)}>
+                  <CheckIcon size={13} color="#fff" strokeWidth={3} />
+                </Reanimated.View>
+              )}
+            </BorderlessButton>
+          </>
         )}
       </View>
     </View>
@@ -370,8 +374,7 @@ const styles = StyleSheet.create({
   title: { flex: 1, minWidth: 0 },
   empty: { paddingVertical: 12 },
 
-  // Row top padding makes room for the check circle that sits 6pt above the card (rows are
-  // clipped by Swipeable); the card's 6pt bottom margin keeps the handoff's 12pt between cards.
+  // Row top padding + the card's bottom margin give 10pt between cards (rows are clipped by Swipeable).
   row: { flexDirection: 'row', gap: COL_GAP, paddingTop: 6 },
   railLine: { position: 'absolute', left: RAIL_X, top: 20, bottom: 14, width: 1 },
   // Old Home rail (design_handoff_tickle_home_7), but times left-aligned on the screen's shared left edge (user, 2026-10-19); a range's end time sits at the card's bottom.
@@ -407,10 +410,9 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     borderRadius: 16,
     borderWidth: 1,
-    paddingTop: 9,
-    paddingRight: 9,
-    paddingBottom: 9,
-    paddingLeft: 12,
+    paddingVertical: 10,
+    paddingLeft: 9,
+    paddingRight: 12,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
@@ -421,12 +423,13 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   cardSelected: { borderWidth: 1.5 },
-  cardTint: { ...StyleSheet.absoluteFillObject, borderRadius: 15 },
   cardText: { flex: 1, minWidth: 0, gap: 2 },
   subRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   subText: { flexShrink: 1 },
-  iconChip: { width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
-  check: { position: 'absolute', top: -6, left: -6, width: 18, height: 18, borderRadius: 9, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  cardTint: { ...StyleSheet.absoluteFillObject, borderRadius: 15 },
+  iconChip: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  divider: { width: 1, alignSelf: 'stretch', marginVertical: -2 },
+  check: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
 
   deleteAction: { width: 64, alignItems: 'center', justifyContent: 'center', borderRadius: 16, marginLeft: 6, marginTop: 6, marginBottom: 4 },
   dragging: {

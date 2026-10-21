@@ -1,9 +1,10 @@
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import Reanimated, { FadeInUp, LinearTransition } from 'react-native-reanimated';
+import Reanimated, { FadeInUp, useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 
-import { BouncyPressable } from '@/components/bouncy-pressable';
-import { CheckIcon, PlanIcon, XIcon } from '@/components/icon';
+import { CheckIcon, ChevronRightIcon, PlanIcon, XIcon } from '@/components/icon';
 import { Text } from '@/components/text';
+import { TOOL_ROW_SPRING } from '@/components/home/search-field';
 import { planPalette, useHomeTokens, useHomeType } from '@/components/home/tokens';
 import { useTheme } from '@/hooks/use-theme';
 import type { Group, Plan } from '@/store/types';
@@ -73,14 +74,81 @@ function upcomingDayLabel(dateISO: string, todayISO: string) {
   return dateISO === toISO(t) ? `${tr('home.tomorrow')} · ${short}` : short;
 }
 
-/** "Today", "Yesterday · Tue 13", else "Mon 12" — Earlier's day labels. */
+/** "Today", "Yesterday", else "Mon 12" — the label on each Earlier summary card. */
 function earlierDayLabel(dateISO: string, todayISO: string) {
   if (dateISO === todayISO) return tr('home.today');
-  const d = fromISO(dateISO);
-  const short = `${weekdayShort(d.getDay())} ${d.getDate()}`;
   const y = fromISO(todayISO);
   y.setDate(y.getDate() - 1);
-  return dateISO === toISO(y) ? `${tr('home.yesterday')} · ${short}` : short;
+  if (dateISO === toISO(y)) return tr('home.yesterday');
+  const d = fromISO(dateISO);
+  return `${weekdayShort(d.getDay())} ${d.getDate()}`;
+}
+
+/**
+ * One day's card in Upcoming and Earlier (user's design, 2026-10-22): a day label over a one-line
+ * summary ("5 missed · 1 done", "2 tasks · 09:00") on a white card, with Review › on the right.
+ * Tapping it grows the card open to show the day's rows inside it, on the search row's spring.
+ */
+function DayCard({ label, summary, open, onPress, children }: { label: string; summary: React.ReactNode; open: boolean; onPress: () => void; children: React.ReactNode }) {
+  const k = useHomeTokens();
+  const t = useHomeType();
+  const reduceMotion = useReducedMotion();
+  const progress = useSharedValue(open ? 1 : 0);
+  const bodyHeight = useSharedValue(0);
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    progress.value = reduceMotion ? (open ? 1 : 0) : withSpring(open ? 1 : 0, TOOL_ROW_SPRING);
+  }, [open, reduceMotion, progress]);
+
+  const press = () => {
+    if (!reduceMotion) scale.value = withSequence(withTiming(0.97, { duration: 90 }), withSpring(1, { damping: 9, stiffness: 300, mass: 0.6 }));
+    onPress();
+  };
+
+  const cardStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const bodyStyle = useAnimatedStyle(() => ({ height: Math.max(0, bodyHeight.value * progress.value), opacity: Math.min(1, progress.value) }));
+  const chevron = useAnimatedStyle(() => ({ transform: [{ rotate: `${progress.value * 90}deg` }] }));
+
+  return (
+    <Reanimated.View style={[styles.dayCard, { backgroundColor: k.sheet, borderColor: k.upcomingBorder }, cardStyle]}>
+      <Pressable onPress={press} accessibilityRole="button" accessibilityState={{ expanded: open }} style={styles.summary}>
+        <View style={styles.summaryText}>
+          <Text numberOfLines={1} style={[t.sumLabel, { color: k.ink50 }]}>
+            {label}
+          </Text>
+          <Text numberOfLines={1} style={[t.sumCount, { color: k.ink }]}>
+            {summary}
+          </Text>
+        </View>
+        <View style={styles.review}>
+          <Text style={[t.blockLink, { color: k.azureDark }]}>{open ? tr('home.hide') : tr('home.review')}</Text>
+          <Reanimated.View style={chevron}>
+            <ChevronRightIcon size={14} color={k.azureDark} strokeWidth={2.4} />
+          </Reanimated.View>
+        </View>
+      </Pressable>
+      {/* Rows are always laid out (absolutely, so they keep their natural height) and the clip animates to that height. */}
+      <Reanimated.View style={[styles.dayBody, bodyStyle]}>
+        <View onLayout={(e) => (bodyHeight.value = e.nativeEvent.layout.height)} style={[styles.dayRows, { borderTopColor: k.earlierBorder }]}>
+          {children}
+        </View>
+      </Reanimated.View>
+    </Reanimated.View>
+  );
+}
+
+/** "5 missed · 1 done" — either half is left out when it's zero. */
+function EarlierSummary({ missed, done }: { missed: number; done: number }) {
+  const k = useHomeTokens();
+  const t = useHomeType();
+  return (
+    <>
+      {missed > 0 && <Text style={[t.sumCount, { color: k.rose }]}>{tr('home.missedCount', { n: missed })}</Text>}
+      {missed > 0 && done > 0 && <Text style={[t.sumCount, { color: k.ink45 }]}>{' · '}</Text>}
+      {done > 0 && tr('home.doneCount', { n: done })}
+    </>
+  );
 }
 
 function BlockHeader({ title, right }: { title: string; right: React.ReactNode }) {
@@ -94,56 +162,80 @@ function BlockHeader({ title, right }: { title: string; right: React.ReactNode }
   );
 }
 
-/** Upcoming (design_handoff_tickle_home_timeline 1b): the next 3 days' plans, one soft card row each, grouped by day. No checkbox — a future plan can't be completed. */
+/**
+ * Upcoming: the next 3 days, one DayCard each ("Tomorrow · Fri 23" / "2 tasks · 09:00"), opening to
+ * that day's plans. No checkbox — a future plan can't be completed. With nothing coming up, a
+ * single white card says so (user, 2026-10-22).
+ */
 export function UpcomingBlock({ days, groups, ...s }: SelectProps & { days: UpcomingDay[]; groups: Group[] }) {
   const k = useHomeTokens();
   const t = useHomeType();
-  if (days.length === 0) return null;
+  const [openDays, setOpenDays] = useState<string[]>([]);
+  const toggleDay = (iso: string) => setOpenDays((v) => (v.includes(iso) ? v.filter((d) => d !== iso) : [...v, iso]));
   const todayISO = toISO(new Date());
   return (
     <View>
       <BlockHeader title={tr('home.upcoming')} right={<Text style={[t.blockNote, { color: k.ink50 }]}>{tr('home.nextDays')}</Text>} />
-      {days.map((d) => (
-        <View key={d.dateISO} style={styles.dayGroup}>
-          <Text style={[t.groupLabel, styles.dayLabel, { color: k.ink50 }]}>{upcomingDayLabel(d.dateISO, todayISO)}</Text>
-          {d.plans.map((p) => {
-            const icon = resolvePlanIcon(p);
-            const group = groups.find((g) => g.id === p.groupId);
-            const detail = p.endTime && !p.allDay ? formatDuration(durationMinutes(p)) : p.location;
-            const sub = [group?.name, detail].filter(Boolean).join(' · ');
-            const selected = s.selectMode && s.selectedIds.includes(p.id);
-            return (
-              <BouncyPressable
-                key={p.id}
-                pressedScale={0.97}
-                onPress={() => (s.selectMode ? s.onToggleSelect(p.id) : s.onOpen(p.id))}
-                style={[
-                  styles.upRow,
-                  { backgroundColor: selected ? k.azureTint : k.sheet, borderColor: selected ? k.azure : k.upcomingBorder },
-                ]}>
-                {icon && (
-                  <View style={[styles.upIcon, { backgroundColor: `${p.color}1A` }]}>
-                    <PlanIcon id={icon} size={16} color={p.color} />
-                  </View>
-                )}
-                <View style={styles.upText}>
-                  <Text numberOfLines={1} style={[t.upTitle, { color: k.ink }]}>
-                    {p.name}
-                  </Text>
-                  {!!sub && (
-                    <Text numberOfLines={1} style={[t.upSub, { color: k.ink50 }]}>
-                      {sub}
-                    </Text>
-                  )}
-                </View>
-                <View style={[styles.timeChip, { backgroundColor: k.azureTint }]}>
-                  <Text style={[t.timeChip, { color: k.azureDark }]}>{p.allDay ? tr('home.allDay') : p.time}</Text>
-                </View>
-              </BouncyPressable>
-            );
-          })}
-        </View>
-      ))}
+      {days.length === 0 && (
+        <Reanimated.View entering={FadeInUp.duration(260)} style={[styles.dayCard, styles.emptyCard, { backgroundColor: k.sheet, borderColor: k.upcomingBorder }]}>
+          <Text style={[t.sumLabel, { color: k.ink50 }]}>{tr('home.noUpcoming')}</Text>
+        </Reanimated.View>
+      )}
+      {days.map((d) => {
+        const first = d.plans[0];
+        return (
+          <Reanimated.View key={d.dateISO} entering={FadeInUp.duration(260)} style={styles.pastGroup}>
+            <DayCard
+              label={upcomingDayLabel(d.dateISO, todayISO)}
+              summary={
+                <>
+                  <Text style={[t.sumCount, { color: k.azure }]}>{tr('home.taskCount', { count: d.plans.length })}</Text>
+                  <Text style={[t.sumCount, { color: k.ink45 }]}>{` · ${first.allDay ? tr('home.allDay') : first.time}`}</Text>
+                </>
+              }
+              open={s.selectMode || openDays.includes(d.dateISO)}
+              onPress={() => toggleDay(d.dateISO)}>
+              {d.plans.map((p, i) => {
+                const icon = resolvePlanIcon(p);
+                const group = groups.find((g) => g.id === p.groupId);
+                const detail = p.endTime && !p.allDay ? formatDuration(durationMinutes(p)) : p.location;
+                const sub = [group?.name, detail].filter(Boolean).join(' · ');
+                const selected = s.selectMode && s.selectedIds.includes(p.id);
+                return (
+                  <Pressable
+                    key={p.id}
+                    onPress={() => (s.selectMode ? s.onToggleSelect(p.id) : s.onOpen(p.id))}
+                    style={({ pressed }) => [
+                      styles.upRow,
+                      { borderBottomColor: k.earlierBorder },
+                      i === d.plans.length - 1 && { borderBottomWidth: 0 },
+                      (pressed || selected) && { backgroundColor: selected ? k.azureTint : k.rail },
+                    ]}>
+                    {icon && (
+                      <View style={[styles.upIcon, { backgroundColor: `${p.color}1A` }]}>
+                        <PlanIcon id={icon} size={14} color={p.color} />
+                      </View>
+                    )}
+                    <View style={styles.upText}>
+                      <Text numberOfLines={1} style={[t.upTitle, { color: k.ink }]}>
+                        {p.name}
+                      </Text>
+                      {!!sub && (
+                        <Text numberOfLines={1} style={[t.upSub, { color: k.ink50 }]}>
+                          {sub}
+                        </Text>
+                      )}
+                    </View>
+                    <View style={[styles.timeChip, { backgroundColor: k.azureTint }]}>
+                      <Text style={[t.timeChip, { color: k.azureDark }]}>{p.allDay ? tr('home.allDay') : p.time}</Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </DayCard>
+          </Reanimated.View>
+        );
+      })}
     </View>
   );
 }
@@ -155,29 +247,29 @@ function hhmm(ms: number) {
 
 /**
  * Earlier (design_handoff_tickle_home_timeline 1c): past plans grouped by day, newest first —
- * today's and yesterday's by default, the last 30 days with See all. Tapping a row opens the plan
- * (a missed one can be rescheduled from there).
+ * only yesterday's by default (today's are already in the timeline above; user, 2026-10-22), the
+ * last 30 days with See all. Tapping a row opens the plan (a missed one can be rescheduled from there).
  */
 export function EarlierBlock({
-  items,
   older,
   seeAll,
   onToggleSeeAll,
   ...s
 }: SelectProps & {
-  items: Plan[];
   older: Plan[];
   seeAll: boolean;
   onToggleSeeAll: () => void;
 }) {
   const k = useHomeTokens();
   const t = useHomeType();
-  if (items.length === 0 && older.length === 0) return null;
+  const [openDays, setOpenDays] = useState<string[]>([]);
+  if (older.length === 0) return null;
+  const toggleDay = (iso: string) => setOpenDays((v) => (v.includes(iso) ? v.filter((d) => d !== iso) : [...v, iso]));
   const todayISO = toISO(new Date());
   const y = fromISO(todayISO);
   y.setDate(y.getDate() - 1);
   const yesterdayISO = toISO(y);
-  const rows = [...items, ...(seeAll ? older : older.filter((p) => p.date === yesterdayISO))];
+  const rows = seeAll ? older : older.filter((p) => p.date === yesterdayISO);
   const days: { dateISO: string; plans: Plan[] }[] = [];
   for (const p of rows) {
     const last = days[days.length - 1];
@@ -198,42 +290,53 @@ export function EarlierBlock({
           ) : null
         }
       />
-      {days.length === 0 && <Text style={[t.upSub, styles.none, { color: k.ink45 }]}>{tr('home.noneChecked')}</Text>}
+      {days.length === 0 && (
+        <View style={[styles.dayCard, styles.emptyCard, { backgroundColor: k.sheet, borderColor: k.upcomingBorder }]}>
+          <Text style={[t.sumLabel, { color: k.ink50 }]}>{tr('home.noneYesterday')}</Text>
+        </View>
+      )}
       {days.map((d) => (
-        <Reanimated.View key={d.dateISO} entering={FadeInUp.duration(260)} layout={LinearTransition.duration(220)} style={styles.pastGroup}>
-          <Text style={[t.groupLabel, styles.dayLabel, { color: k.ink50 }]}>{earlierDayLabel(d.dateISO, todayISO)}</Text>
-          {d.plans.map((p) => {
-            const done = p.completed;
-            const icon = resolvePlanIcon(p);
-            const selected = s.selectMode && s.selectedIds.includes(p.id);
-            const when = p.allDay ? tr('home.allDayLower') : p.time;
-            const meta = done ? tr('home.doneAt', { time: p.completedAt ? hhmm(p.completedAt) : when }) : tr('home.missedAt', { time: when });
-            return (
-              <Pressable
-                key={p.id}
-                onPress={() => (s.selectMode ? s.onToggleSelect(p.id) : s.onOpen(p.id))}
-                style={({ pressed }) => [
-                  styles.pastRow,
-                  { borderBottomColor: k.earlierBorder },
-                  (pressed || selected) && { backgroundColor: selected ? k.azureTint : k.rail },
-                ]}>
-                {done ? (
-                  <View style={[styles.mark, { backgroundColor: k.green }]}>
-                    <CheckIcon size={10} color="#fff" strokeWidth={3.2} />
-                  </View>
-                ) : (
-                  <View style={[styles.mark, styles.missedMark, { borderColor: k.roseRing }]}>
-                    <XIcon size={9} color={k.roseMark} strokeWidth={3} />
-                  </View>
-                )}
-                {icon && <PlanIcon id={icon} size={15} color={k.ink40} />}
-                <Text numberOfLines={1} style={[t.pastTitle, styles.pastTitle, { color: k.ink60, textDecorationLine: done ? 'line-through' : 'none' }]}>
-                  {p.name}
-                </Text>
-                <Text style={[t.pastMeta, { color: done ? k.ink45 : k.rose }]}>{meta}</Text>
-              </Pressable>
-            );
-          })}
+        <Reanimated.View key={d.dateISO} entering={FadeInUp.duration(260)} style={styles.pastGroup}>
+          <DayCard
+            label={earlierDayLabel(d.dateISO, todayISO)}
+            summary={<EarlierSummary missed={d.plans.filter((p) => !p.completed).length} done={d.plans.filter((p) => p.completed).length} />}
+            open={s.selectMode || openDays.includes(d.dateISO)}
+            onPress={() => toggleDay(d.dateISO)}>
+            {/* Rows stay open in Edit mode so they can be selected. */}
+              {d.plans.map((p, i) => {
+                const done = p.completed;
+                const icon = resolvePlanIcon(p);
+                const selected = s.selectMode && s.selectedIds.includes(p.id);
+                const when = p.allDay ? tr('home.allDayLower') : p.time;
+                const meta = done ? tr('home.doneAt', { time: p.completedAt ? hhmm(p.completedAt) : when }) : tr('home.missedAt', { time: when });
+                return (
+                  <Pressable
+                    key={p.id}
+                    onPress={() => (s.selectMode ? s.onToggleSelect(p.id) : s.onOpen(p.id))}
+                    style={({ pressed }) => [
+                      styles.pastRow,
+                      { borderBottomColor: k.earlierBorder },
+                      i === d.plans.length - 1 && { borderBottomWidth: 0 },
+                      (pressed || selected) && { backgroundColor: selected ? k.azureTint : k.rail },
+                    ]}>
+                    {done ? (
+                      <View style={[styles.mark, { backgroundColor: k.green }]}>
+                        <CheckIcon size={10} color="#fff" strokeWidth={3.2} />
+                      </View>
+                    ) : (
+                      <View style={[styles.mark, styles.missedMark, { borderColor: k.roseRing }]}>
+                        <XIcon size={9} color={k.roseMark} strokeWidth={3} />
+                      </View>
+                    )}
+                    {icon && <PlanIcon id={icon} size={15} color={k.ink40} />}
+                    <Text numberOfLines={1} style={[t.pastTitle, styles.pastTitle, { color: k.ink60, textDecorationLine: done ? 'line-through' : 'none' }]}>
+                      {p.name}
+                    </Text>
+                    <Text style={[t.pastMeta, { color: done ? k.ink45 : k.rose }]}>{meta}</Text>
+                  </Pressable>
+                );
+              })}
+          </DayCard>
         </Reanimated.View>
       ))}
     </View>
@@ -312,14 +415,20 @@ const styles = StyleSheet.create({
   // Everything starts on the sheet's content edge (no extra left padding), so titles, day labels,
   // Upcoming cards and Earlier marks line up with the timeline above.
   blockHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingTop: 16, paddingBottom: 6 },
-  dayGroup: { gap: 6, marginBottom: 10 },
   dayLabel: {},
-  upRow: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 7, paddingHorizontal: 9, borderRadius: 13, borderWidth: 1 },
-  upIcon: { width: 29, height: 29, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
+  upRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6, borderBottomWidth: 1 },
+  upIcon: { width: 26, height: 26, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   upText: { flex: 1, minWidth: 0, gap: 0 },
   timeChip: { paddingVertical: 3, paddingHorizontal: 7, borderRadius: 8 },
   // Earlier is a tight list: short rows and little space between day groups (user, 2026-10-19).
   pastGroup: { gap: 0, marginBottom: 8 },
+  dayCard: { borderRadius: 16, borderWidth: 1, overflow: 'hidden' },
+  emptyCard: { paddingVertical: 14, paddingHorizontal: 16, marginBottom: 8 },
+  summary: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 16 },
+  summaryText: { flex: 1, minWidth: 0, gap: 1 },
+  review: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  dayBody: { overflow: 'hidden' },
+  dayRows: { position: 'absolute', top: 0, left: 0, right: 0, paddingHorizontal: 16, paddingTop: 4, paddingBottom: 6, borderTopWidth: 1 },
   pastRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 4, borderBottomWidth: 1 },
   mark: { width: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
   missedMark: { borderWidth: 2 },
@@ -345,7 +454,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   title: { flex: 1, minWidth: 0 },
-  none: { paddingVertical: 7 },
   results: { gap: 16 },
   noResults: { textAlign: 'center', paddingVertical: 32 },
   groupTag: { maxWidth: 110 },

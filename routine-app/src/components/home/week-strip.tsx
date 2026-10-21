@@ -1,20 +1,21 @@
 import * as Haptics from 'expo-haptics';
 import { StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Reanimated, { FadeIn, FadeInLeft, FadeInRight, FadeOut } from 'react-native-reanimated';
+import Reanimated, { FadeIn, FadeInLeft, FadeInRight, FadeOut, ZoomIn } from 'react-native-reanimated';
 import { Path, Svg } from 'react-native-svg';
 
 import { BouncyPressable } from '@/components/bouncy-pressable';
 import { useHomeTokens, useHomeType } from '@/components/home/tokens';
 import { Text } from '@/components/text';
 import { t as tr } from '@/i18n';
-import { displayYear, monthShort, weekdayShort } from '@/i18n/format';
+import { displayYear, monthShort, weekdayLetter } from '@/i18n/format';
 import { toISO } from '@/utils/dates';
 
 /**
  * Home's week strip (design_handoff_tickle_home_timeline, screen 1): a "Week 20 / 12–18 May"
  * header between ‹ › buttons, a "Today" chip whenever another week is showing, and a Mon–Sun row
- * of day cells. A horizontal swipe on the day row also steps the week.
+ * of days: weekday letter over a bold date, the selected day in a filled azure circle and a dot
+ * under days that have plans (user, 2026-10-21). A horizontal swipe on the day row also steps the week.
  */
 
 /** Monday of the ISO week `d` is in, at local midnight. */
@@ -57,6 +58,8 @@ interface Props {
   weekOffset: number;
   selectedISO: string;
   todayISO: string;
+  /** Days (ISO) that get a dot because they have at least one plan. */
+  markedISOs: Set<string>;
   /** -1 / +1 for the last step direction, so the new week slides in from the matching side. */
   direction: number;
   onStep: (delta: -1 | 1) => void;
@@ -70,7 +73,7 @@ interface Props {
  */
 export const FEED_INSET = 20;
 
-export function WeekStrip({ weekStart, weekOffset, selectedISO, todayISO, direction, onStep, onToday, onSelect }: Props) {
+export function WeekStrip({ weekStart, weekOffset, selectedISO, todayISO, markedISOs, direction, onStep, onToday, onSelect }: Props) {
   const k = useHomeTokens();
   const t = useHomeType();
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -129,32 +132,30 @@ export function WeekStrip({ weekStart, weekOffset, selectedISO, todayISO, direct
 
       <GestureDetector gesture={swipe}>
         <Reanimated.View key={toISO(weekStart)} entering={entering} style={styles.row}>
-          {days.map((d, i) => {
+          {days.map((d) => {
             const iso = toISO(d);
             const sel = iso === selectedISO;
-            const weekend = i >= 5;
             const today = iso === todayISO;
-            const capBg = sel ? k.azure : weekend ? k.weekendCap : k.cap;
-            const capFg = sel ? '#fff' : weekend ? k.rose : k.ink55;
-            const numFg = sel ? k.azureDark : weekend ? k.rose : today ? k.azure : k.ink;
+            const numFg = sel ? '#fff' : today ? k.azure : k.ink;
             return (
               <BouncyPressable
                 key={iso}
-                pressedScale={0.95}
+                pressedScale={0.9}
                 onPress={() => {
                   if (!sel) Haptics.selectionAsync();
                   onSelect(iso);
                 }}
                 accessibilityRole="button"
                 accessibilityState={{ selected: sel }}
-                style={[styles.cellWrap, sel ? styles.cellSelected : styles.cellShadow, { backgroundColor: sel ? k.azureTint : k.cell }]}>
-                {sel && <View pointerEvents="none" style={[styles.ring, { borderColor: k.azure }]} />}
-                <View style={styles.cell}>
-                  <Text numberOfLines={1} style={[t.dayCap, styles.cap, { backgroundColor: capBg, color: capFg }]}>
-                    {weekdayShort(d.getDay())}
-                  </Text>
-                  <Text style={[t.dayNum, styles.num, { color: numFg }]}>{d.getDate()}</Text>
+                style={styles.cell}>
+                <Text numberOfLines={1} style={[t.dayCap, { color: k.ink45 }]}>
+                  {weekdayLetter(d.getDay())}
+                </Text>
+                <View style={styles.numWrap}>
+                  {sel && <Reanimated.View entering={ZoomIn.springify().damping(14).stiffness(260)} style={[styles.circle, { backgroundColor: k.azure }]} />}
+                  <Text style={[t.dayNum, { color: numFg }]}>{d.getDate()}</Text>
                 </View>
+                <View style={[styles.dot, { backgroundColor: markedISOs.has(iso) ? k.dayDot : 'transparent' }]} />
               </BouncyPressable>
             );
           })}
@@ -174,14 +175,9 @@ const styles = StyleSheet.create({
   divider: { width: 1.5, height: 12, borderRadius: 1 },
   todayChip: { flexDirection: 'row', alignItems: 'center', gap: 4, height: 22, paddingHorizontal: 8, borderRadius: 11 },
   // Days stretch to the search row's full width (user, 2026-10-19).
-  row: { flexDirection: 'row', gap: 6, paddingHorizontal: FEED_INSET },
-  cellWrap: { flex: 1, minWidth: 0, borderRadius: 9 },
-  cellShadow: { shadowColor: '#10203A', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 2 }, elevation: 1 },
-  cellSelected: {},
-  // The handoff's selected state is a 2px ring outside the cell (box-shadow 0 0 0 2px), so it
-  // doesn't shrink the cap — drawn here as an outline 2pt outside the cell.
-  ring: { position: 'absolute', top: -2, left: -2, right: -2, bottom: -2, borderRadius: 11, borderWidth: 2 },
-  cell: { borderRadius: 9, overflow: 'hidden', alignItems: 'stretch' },
-  cap: { textAlign: 'center', paddingVertical: 1.5 },
-  num: { textAlign: 'center', paddingTop: 2, paddingBottom: 3 },
+  row: { flexDirection: 'row', paddingHorizontal: FEED_INSET },
+  cell: { flex: 1, minWidth: 0, alignItems: 'center', gap: 4 },
+  numWrap: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+  circle: { ...StyleSheet.absoluteFillObject, borderRadius: 18 },
+  dot: { width: 4, height: 4, borderRadius: 2 },
 });

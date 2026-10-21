@@ -48,8 +48,6 @@ export interface HomeFeed {
   missedCount: number;
   /** Incomplete plans on each of the next 3 days after today, days with none left out. */
   upcoming: UpcomingDay[];
-  /** Today's done + missed tasks, most recent first. */
-  earlier: Plan[];
   /** Done + missed tasks from previous days (for "See all"), most recent first. */
   older: Plan[];
 }
@@ -86,10 +84,6 @@ export function buildHomeFeed(plans: Plan[], nowMs: number, matches: (p: Plan) =
   const leftCount = selected < todayISO ? 0 : undone.filter((p) => !isToday || !isMissedToday(p, nowMs)).length;
   const missedCount = selected < todayISO ? undone.length : 0;
 
-  const earlier = todayPlans
-    .filter((p) => p.completed || isMissedToday(p, nowMs))
-    .sort((a, b) => (b.endTime ?? b.time).localeCompare(a.endTime ?? a.time));
-
   const older = findPastPlans(plans).filter((p) => p.date < todayISO && matches(p));
 
   const upcoming: UpcomingDay[] = [];
@@ -103,7 +97,7 @@ export function buildHomeFeed(plans: Plan[], nowMs: number, matches: (p: Plan) =
     if (items.length) upcoming.push({ dateISO: iso, plans: items });
   }
 
-  return { dayISO: selected, isToday, day, live, leftCount, missedCount, upcoming, earlier, older };
+  return { dayISO: selected, isToday, day, live, leftCount, missedCount, upcoming, older };
 }
 
 export function durationMinutes(plan: Plan): number {

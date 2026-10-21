@@ -11,7 +11,7 @@ import { planPalette, useHomeTokens, useHomeType } from '@/components/home/token
 import { Text } from '@/components/text';
 import { useTheme } from '@/hooks/use-theme';
 import { t as tr } from '@/i18n';
-import { fmtDate, monthShort, weekdayShort, lang } from '@/i18n/format';
+import { fmtDate, weekdayLong } from '@/i18n/format';
 import type { Plan } from '@/store/types';
 import { planDateTime } from '@/utils/countdown';
 import { fromISO, toISO } from '@/utils/dates';
@@ -295,11 +295,6 @@ function TimelineRow({
   );
 }
 
-/** "Fri 16 May" (Thai: "ศ. 16 ต.ค.") — the title for a day that isn't today or tomorrow. */
-export function shortDayTitle(d: Date) {
-  return lang() === 'th' ? fmtDate(d, { weekday: 'short' }) : `${weekdayShort(d.getDay())} ${d.getDate()} ${monthShort(d.getMonth())}`;
-}
-
 export function DayTimeline({ feed, nowMs, emptyText, countdownPlanId, onReorder, ...h }: Props) {
   const k = useHomeTokens();
   const t = useHomeType();
@@ -310,8 +305,9 @@ export function DayTimeline({ feed, nowMs, emptyText, countdownPlanId, onReorder
   const isTomorrow = dayISO === toISO(tomorrow);
   const todayISO = toISO(new Date(nowMs));
 
-  const title = isToday ? tr('home.today') : isTomorrow ? tr('home.tomorrow') : shortDayTitle(date);
-  const dateLine = isToday || isTomorrow ? fmtDate(date, { weekday: 'short' }, 'dm') : null;
+  // Every day reads "<word> · <grey date>": "Today · Thu, 22 Oct", "Wednesday · 21 Oct" (user, 2026-10-22).
+  const title = isToday ? tr('home.today') : isTomorrow ? tr('home.tomorrow') : weekdayLong(date.getDay());
+  const dateLine = isToday || isTomorrow ? fmtDate(date, { weekday: 'short' }, 'dm') : fmtDate(date, {}, 'dm');
   const past = dayISO < todayISO;
   const count =
     day.length === 0

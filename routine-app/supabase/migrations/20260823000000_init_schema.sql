@@ -165,3 +165,12 @@ create policy "plans: update own" on public.plans
   for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "plans: delete own" on public.plans
   for delete using (auth.uid() = user_id);
+
+-- ---------------------------------------------------------------------------
+-- Data API grants: Supabase stops auto-granting new public tables on 2026-10-30,
+-- so a fresh project / `supabase db reset` needs these explicitly. No anon grant:
+-- every table is per-user, so only signed-in clients (and the server) touch them.
+-- ---------------------------------------------------------------------------
+grant select, insert, update, delete
+  on public.profiles, public.settings, public.groups, public.plans
+  to authenticated, service_role;

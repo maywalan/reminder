@@ -25,7 +25,7 @@ import { useToast } from '@/hooks/use-toast';
 import { usePlannerStore } from '@/store/use-planner-store';
 import type { Plan } from '@/store/types';
 import { toISO } from '@/utils/dates';
-import { addMinutesToTime, buildHomeFeed, findLiveActivityPlan } from '@/utils/home-feed';
+import { buildHomeFeed, findLiveActivityPlan } from '@/utils/home-feed';
 import { groupSearchResults, searchPlans } from '@/utils/plan-search';
 
 const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
@@ -118,7 +118,6 @@ export default function HomeScreen() {
   const groups = usePlannerStore((s) => s.groups);
   const profileName = usePlannerStore((s) => s.profile.name);
   const toggleComplete = usePlannerStore((s) => s.toggleComplete);
-  const updatePlan = usePlannerStore((s) => s.updatePlan);
   const deletePlan = usePlannerStore((s) => s.deletePlan);
   const reorderPlans = usePlannerStore((s) => s.reorderPlans);
   const undoDelete = usePlannerStore((s) => s.undoDelete);
@@ -196,7 +195,6 @@ export default function HomeScreen() {
   const todayISO = toISO(new Date(nowMs));
   const [weekOffset, setWeekOffset] = useState(0);
   const [selectedISO, setSelectedISO] = useState(todayISO);
-  const [weekDir, setWeekDir] = useState(0);
   const thisWeekStart = useMemo(() => startOfISOWeek(new Date(`${todayISO}T00:00:00`)), [todayISO]);
   const weekStart = addDays(thisWeekStart, weekOffset * 7);
   // Past midnight the strip jumps to the new today, so "Today" never points at yesterday.
@@ -208,12 +206,10 @@ export default function HomeScreen() {
     setSelectedISO(todayISO);
   }, [todayISO]);
   const stepWeek = (delta: -1 | 1) => {
-    setWeekDir(delta);
     setWeekOffset(weekOffset + delta);
     setSelectedISO(toISO(addDays(thisWeekStart, (weekOffset + delta) * 7)));
   };
   const backToToday = () => {
-    setWeekDir(weekOffset > 0 ? -1 : 1);
     setWeekOffset(0);
     setSelectedISO(todayISO);
   };
@@ -276,9 +272,6 @@ export default function HomeScreen() {
                 {firstName ? tr('home.greeting.withName', { greeting: greeting(now.getHours()), name: firstName }) : greeting(now.getHours())}
               </Text>
             </View>
-            <Pressable onPress={() => setSelectMode(!selectMode)} hitSlop={10}>
-              <Text style={[t.link, styles.editBtn, { color: k.link }]}>{selectMode ? tr('common.done') : tr('home.edit')}</Text>
-            </Pressable>
           </View>
 
           <View style={styles.toolRow}>
@@ -372,21 +365,21 @@ export default function HomeScreen() {
             </View>
           ) : (
             <>
-              <WeekStrip
-                weekStart={weekStart}
-                weekOffset={weekOffset}
-                selectedISO={selectedISO}
-                todayISO={todayISO}
-                markedISOs={markedISOs}
-                direction={weekDir}
-                onStep={stepWeek}
-                onToday={backToToday}
-                onSelect={setSelectedISO}
-              />
               <View style={styles.feedArea}>
-                {/* Only the day's timeline sits in the white box (old Home style); Upcoming and Earlier live on the grey page below it (user, 2026-10-19). */}
+                {/* The week strip and the selected day's timeline share the white box (user's reference, 2026-10-22); Upcoming and Earlier live on the grey page below it. */}
                 <EntranceBox entrance={todayEnter} blurTint={blurTint}>
                   <View style={[styles.todayBox, { backgroundColor: k.sheet, borderColor: k.sheetBorder }]}>
+                  <WeekStrip
+                    weekStart={weekStart}
+                    weekOffset={weekOffset}
+                    selectedISO={selectedISO}
+                    todayISO={todayISO}
+                    markedISOs={markedISOs}
+                    onStep={stepWeek}
+                    onToday={backToToday}
+                    onSelect={setSelectedISO}
+                    embedded
+                  />
                   <DayTimeline
                     feed={feed}
                     nowMs={nowMs}
@@ -398,8 +391,8 @@ export default function HomeScreen() {
                     onToggleSelect={toggleSelected}
                     onOpen={openPlan}
                     onDelete={deletePlan}
-                    onExtend={(p) => p.endTime && updatePlan(p.id, { endTime: addMinutesToTime(p.endTime, 10) })}
                     onReorder={(ids) => reorderPlans(selectedISO, ids)}
+                    onToggleEdit={() => setSelectMode(!selectMode)}
                   />
                   </View>
                 </EntranceBox>
@@ -430,7 +423,6 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 8, paddingHorizontal: 22, paddingBottom: 16 },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 },
   headerText: { flexShrink: 1 },
-  editBtn: { fontSize: Typography.rowValue },
   toolRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: FEED_INSET, paddingBottom: 14 },
   panel: { flex: 1 },
   panelRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingRight: 12 },
@@ -440,8 +432,8 @@ const styles = StyleSheet.create({
   colorSwatch: { width: 26, height: 26, borderRadius: 13, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   dashedChip: { borderStyle: 'dashed', backgroundColor: 'transparent' },
   feed: { paddingHorizontal: 12, gap: 20 },
-  // Room under the week strip's dots so the Today box doesn't crowd them (user, 2026-10-22).
-  feedArea: { paddingHorizontal: FEED_INSET, paddingTop: 20 },
+  // The week strip now lives inside the Today box, so only a small gap under the search row.
+  feedArea: { paddingHorizontal: FEED_INSET, paddingTop: 12 },
   // The old Home's floating Today card (design_handoff_tickle_home_7) with a subtle drop shadow.
   todayBox: {
     borderRadius: 22,

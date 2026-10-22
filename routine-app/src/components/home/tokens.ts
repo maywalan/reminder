@@ -75,25 +75,23 @@ export function useHomeType() {
     });
     return {
       todayHeading: { ...t(18, 700), letterSpacing: -0.2 },
-      greeting: { ...t(20, 700), letterSpacing: -0.3 },
+      greeting: { ...t(17, 700), letterSpacing: -0.3 },
       todayDate: t(13, 500),
 
       // design_handoff_tickle_home_timeline type ramp.
       // Scaled down ~15–20% from the handoff's sizes (user, 2026-10-18: "way too large").
-      weekNo: t(12, 700),
-      weekRange: t(12, 500),
+      weekNo: t(14, 700),
+      weekRange: t(14, 500),
       chip: t(10.5, 600),
       dayCap: t(11, 500),
       dayNum: t(16.5, 700),
-      feedTitle: { ...t(17.5, 700), letterSpacing: -0.3 },
-      feedDate: t(12, 500),
-      feedCount: t(11.5, 500),
       tlTime: t(10, 600),
       nowPill: t(9, 700),
       cardTitle: { ...t(13.5, 700), letterSpacing: -0.2 },
       cardSub: t(11, 500),
       cardSubStrong: t(11, 700),
       blockTitle: t(15, 700),
+      blockTitleDate: t(15, 500),
       blockNote: t(11.5, 500),
       blockLink: t(12, 600),
       groupLabel: t(11, 600),

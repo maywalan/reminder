@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 import { Alert, Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 import { BorderlessButton, RectButton, Swipeable } from 'react-native-gesture-handler';
 import { NestableDraggableFlatList } from 'react-native-draggable-flatlist';
-import Reanimated, { useReducedMotion, ZoomIn } from 'react-native-reanimated';
+import Reanimated, { Easing as REasing, FadeIn, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming, ZoomIn } from 'react-native-reanimated';
 
 import { CheckIcon, ClockIcon, PlanIcon, TrashIcon } from '@/components/icon';
 import { planPalette, useHomeTokens, useHomeType } from '@/components/home/tokens';
@@ -30,7 +30,7 @@ import { resolvePlanIcon } from '@/utils/plan-icons';
  * for the running plan a line that fills as time passes with a pulsing Now dot in the plan's colour.
  *
  * Kept from the previous Home (user's call, 2026-10-18): swipe left to delete, Edit-mode
- * multi-select, long-press drag to reorder, and +10 min on the live plan.
+ * multi-select and long-press drag to reorder. The +10 min link on the live plan was removed (user, 2026-10-22).
  */
 
 const TIME_COL = 38;
@@ -50,7 +50,6 @@ interface RowHandlers {
   onToggleSelect: (id: string) => void;
   onOpen: (id: string) => void;
   onDelete: (id: string) => void;
-  onExtend: (plan: Plan) => void;
 }
 
 interface Props extends RowHandlers {
@@ -60,6 +59,8 @@ interface Props extends RowHandlers {
   /** The Live-Activity task counting down to its start (from findLiveActivityPlan), shown with a ticking "starts in m:ss". */
   countdownPlanId: string | null;
   onReorder: (orderedIds: string[]) => void;
+  /** Edit / Done for multi-select, in the box's header where the day count used to be (user, 2026-10-23). */
+  onToggleEdit: () => void;
 }
 
 /** The running plan's marker: start dot, a line filling to `pct`, and the pulsing Now dot, in the plan's colour, riding it. */
@@ -140,6 +141,24 @@ function TimelineRow({
   const p = planPalette(color, k.dark);
   const range = !!plan.endTime && !plan.allDay;
 
+  // Checking a task off fades the card down and draws a strike through the title left to right;
+  // unchecking undoes both quicker (user, 2026-10-22).
+  const reduceMotion = useReducedMotion();
+  const dimmed = done && !h.selectMode;
+  const cardOpacity = useSharedValue(dimmed ? 0.6 : 1);
+  const strike = useSharedValue(done ? 1 : 0);
+  const titleW = useSharedValue(0);
+  useEffect(() => {
+    const to = dimmed ? 0.6 : 1;
+    cardOpacity.value = reduceMotion ? to : withTiming(to, { duration: dimmed ? 500 : 260, easing: REasing.out(REasing.cubic) });
+  }, [dimmed, reduceMotion, cardOpacity]);
+  useEffect(() => {
+    const to = done ? 1 : 0;
+    strike.value = reduceMotion ? to : withTiming(to, { duration: done ? 450 : 200, easing: REasing.out(REasing.cubic) });
+  }, [done, reduceMotion, strike]);
+  const cardFade = useAnimatedStyle(() => ({ opacity: cardOpacity.value }));
+  const strikeDraw = useAnimatedStyle(() => ({ width: strike.value * titleW.value }));
+
   // Sub line: times normally; the live plan's countdown; a Live-Activity task's "starts in".
   let sub: React.ReactNode;
   let subColor: string = k.ink50;
@@ -194,7 +213,7 @@ function TimelineRow({
         {live ? (
           <LiveMarker color={p.base} pct={livePct(plan, nowMs)} />
         ) : done ? (
-          <View style={[styles.dot9, styles.markerTop, { backgroundColor: k.green }]} />
+          <Reanimated.View entering={reduceMotion ? undefined : FadeIn.duration(700)} style={[styles.dot9, styles.markerTop, { backgroundColor: k.green }]} />
         ) : range ? (
           <View style={[styles.bar, { backgroundColor: p.barTint, borderColor: p.base }]} />
         ) : (
@@ -202,12 +221,12 @@ function TimelineRow({
         )}
       </View>
 
-      <View
+      <Reanimated.View
         style={[
           styles.card,
           { backgroundColor: k.sheet, borderColor: h.selectMode && selected ? k.azure : `${color}22` },
           h.selectMode && selected && styles.cardSelected,
-          { opacity: done && !h.selectMode ? 0.6 : 1 },
+          cardFade,
         ]}>
         <LinearGradient
           pointerEvents="none"
@@ -223,19 +242,20 @@ function TimelineRow({
           </View>
         )}
         <View style={styles.cardText}>
-          <Text numberOfLines={1} style={[t.cardTitle, { color: k.ink, textDecorationLine: done ? 'line-through' : 'none' }]}>
-            {plan.name}
-          </Text>
+          <View style={styles.titleWrap}>
+            <Text
+              numberOfLines={1}
+              onTextLayout={(e) => (titleW.value = e.nativeEvent.lines[0]?.width ?? 0)}
+              style={[t.cardTitle, { color: k.ink }]}>
+              {plan.name}
+            </Text>
+            <Reanimated.View pointerEvents="none" style={[styles.strike, { backgroundColor: k.ink }, strikeDraw]} />
+          </View>
           <View style={styles.subRow}>
             <ClockIcon size={11} color={subColor} strokeWidth={2} />
             <Text numberOfLines={1} style={[t.cardSub, styles.subText, { color: k.ink50 }]}>
               {sub}
             </Text>
-            {live && plan.endTime && !h.selectMode && (
-              <Pressable onPress={() => h.onExtend(plan)} hitSlop={10}>
-                <Text style={[t.cardSubStrong, { color: k.azureDark }]}>{tr('home.plus10')}</Text>
-              </Pressable>
-            )}
           </View>
         </View>
         {showCheck && (
@@ -253,7 +273,7 @@ function TimelineRow({
             </BorderlessButton>
           </>
         )}
-      </View>
+      </Reanimated.View>
     </View>
   );
 
@@ -300,10 +320,10 @@ export function shortDayTitle(d: Date) {
   return lang() === 'th' ? fmtDate(d, { weekday: 'short' }) : `${weekdayShort(d.getDay())} ${d.getDate()} ${monthShort(d.getMonth())}`;
 }
 
-export function DayTimeline({ feed, nowMs, emptyText, countdownPlanId, onReorder, ...h }: Props) {
+export function DayTimeline({ feed, nowMs, emptyText, countdownPlanId, onReorder, onToggleEdit, ...h }: Props) {
   const k = useHomeTokens();
   const t = useHomeType();
-  const { day, live, dayISO, isToday, leftCount, missedCount } = feed;
+  const { day, live, dayISO, isToday } = feed;
   const date = fromISO(dayISO);
   const tomorrow = new Date(nowMs);
   tomorrow.setDate(tomorrow.getDate() + 1);
@@ -312,17 +332,6 @@ export function DayTimeline({ feed, nowMs, emptyText, countdownPlanId, onReorder
 
   const title = isToday ? tr('home.today') : isTomorrow ? tr('home.tomorrow') : shortDayTitle(date);
   const dateLine = isToday || isTomorrow ? fmtDate(date, { weekday: 'short' }, 'dm') : null;
-  const past = dayISO < todayISO;
-  const count =
-    day.length === 0
-      ? ''
-      : past
-        ? missedCount > 0
-          ? tr('home.count.missed', { count: missedCount })
-          : tr('home.count.allClear')
-        : leftCount > 0
-          ? tr('home.count.left', { count: leftCount })
-          : tr('home.count.allClear');
 
   function countdownFor(plan: Plan): string | null {
     if (plan.id !== countdownPlanId) return null;
@@ -333,11 +342,17 @@ export function DayTimeline({ feed, nowMs, emptyText, countdownPlanId, onReorder
   return (
     <View>
       <View style={styles.head}>
-        <Text numberOfLines={1} style={[t.feedTitle, styles.title, { color: isToday ? k.azure : k.ink }]}>
-          {title}
-          {dateLine && <Text style={[t.feedDate, { color: k.ink50 }]}>{` · ${dateLine}`}</Text>}
-        </Text>
-        {!!count && <Text style={[t.feedCount, { color: k.ink50 }]}>{count}</Text>}
+        {/* Day label in an azure pill, sized like the Upcoming / Earlier headings (user, 2026-10-23). */}
+        <View style={[styles.titlePill, { backgroundColor: k.azure }]}>
+          <Text numberOfLines={1} style={[t.blockTitle, { color: '#fff' }]}>
+            {title}
+            {dateLine && <Text style={[t.blockTitleDate, styles.pillDate]}>{` · ${dateLine}`}</Text>}
+          </Text>
+        </View>
+        <View style={styles.title} />
+        <Pressable onPress={onToggleEdit} hitSlop={10}>
+          <Text style={[t.blockLink, { color: k.azureDark }]}>{h.selectMode ? tr('common.done') : tr('home.edit')}</Text>
+        </Pressable>
       </View>
 
       {day.length === 0 ? (
@@ -370,7 +385,9 @@ export function DayTimeline({ feed, nowMs, emptyText, countdownPlanId, onReorder
 }
 
 const styles = StyleSheet.create({
-  head: { flexDirection: 'row', alignItems: 'baseline', gap: 6, paddingBottom: 8 },
+  head: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingBottom: 10 },
+  titlePill: { flexShrink: 1, paddingVertical: 4, paddingHorizontal: 11, borderRadius: 999 },
+  pillDate: { color: 'rgba(255,255,255,0.8)' },
   title: { flex: 1, minWidth: 0 },
   empty: { paddingVertical: 12 },
 
@@ -424,6 +441,9 @@ const styles = StyleSheet.create({
   },
   cardSelected: { borderWidth: 1.5 },
   cardText: { flex: 1, minWidth: 0, gap: 2 },
+  /** The strike line's width comes from the title's measured line, so it spans only the text. */
+  titleWrap: { justifyContent: 'center' },
+  strike: { position: 'absolute', left: 0, height: 1.5, borderRadius: 1, top: '52%' },
   subRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   subText: { flexShrink: 1 },
   cardTint: { ...StyleSheet.absoluteFillObject, borderRadius: 15 },

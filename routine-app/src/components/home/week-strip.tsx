@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Reanimated, { FadeIn, FadeInLeft, FadeInRight, FadeOut, ZoomIn } from 'react-native-reanimated';
+import Reanimated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { Path, Svg } from 'react-native-svg';
 
 import { BouncyPressable } from '@/components/bouncy-pressable';
@@ -60,11 +60,11 @@ interface Props {
   todayISO: string;
   /** Days (ISO) that get a dot because they have at least one plan. */
   markedISOs: Set<string>;
-  /** -1 / +1 for the last step direction, so the new week slides in from the matching side. */
-  direction: number;
   onStep: (delta: -1 | 1) => void;
   onToday: () => void;
   onSelect: (iso: string) => void;
+  /** Inside the Today box with the day's timeline (user's reference, 2026-10-22): no page inset or pull-up. */
+  embedded?: boolean;
 }
 
 /**
@@ -73,7 +73,7 @@ interface Props {
  */
 export const FEED_INSET = 20;
 
-export function WeekStrip({ weekStart, weekOffset, selectedISO, todayISO, markedISOs, direction, onStep, onToday, onSelect }: Props) {
+export function WeekStrip({ weekStart, weekOffset, selectedISO, todayISO, markedISOs, onStep, onToday, onSelect, embedded }: Props) {
   const k = useHomeTokens();
   const t = useHomeType();
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -96,23 +96,26 @@ export function WeekStrip({ weekStart, weekOffset, selectedISO, todayISO, marked
       else if (e.translationX > 50 || e.velocityX > 600) step(-1);
     });
 
-  const entering = direction > 0 ? FadeInRight.springify().damping(18).stiffness(220) : direction < 0 ? FadeInLeft.springify().damping(18).stiffness(220) : undefined;
-
   return (
-    <View>
-      <View style={styles.head}>
-        <BouncyPressable pressedScale={0.92} onPress={() => step(-1)} accessibilityLabel={tr('home.prevWeek')} style={[styles.nav, { backgroundColor: k.cell, borderColor: k.navBorder }]}>
+    <View style={embedded && styles.embedded}>
+      <View style={[styles.head, embedded && styles.headEmbedded]}>
+        <BouncyPressable pressedScale={0.92} onPress={() => step(-1)} accessibilityLabel={tr('home.prevWeek')} style={styles.nav}>
           <Chevron dir="left" color={k.ink} />
         </BouncyPressable>
         <View style={styles.centre}>
           <View style={styles.centreText}>
             <Text numberOfLines={1} style={[t.weekNo, { color: k.ink, flexShrink: 0 }]}>
-              {tr('home.week', { n: weekNo })}
+              {weekOffset === 0 ? tr('home.thisWeek') : tr('home.week', { n: weekNo })}
             </Text>
-            <View style={[styles.divider, { backgroundColor: k.railFuture }]} />
-            <Text numberOfLines={1} style={[t.weekRange, { color: k.ink50 }]}>
-              {weekRange(d0, d6)}
-            </Text>
+            {/* The current week is just "This week", no range (user, 2026-10-23). */}
+            {weekOffset !== 0 && (
+              <>
+                <View style={[styles.divider, { backgroundColor: k.railFuture }]} />
+                <Text numberOfLines={1} style={[t.weekRange, { color: k.ink50 }]}>
+                  {weekRange(d0, d6)}
+                </Text>
+              </>
+            )}
           </View>
           {weekOffset !== 0 && (
             <Reanimated.View entering={FadeIn.duration(160)} exiting={FadeOut.duration(120)}>
@@ -125,13 +128,14 @@ export function WeekStrip({ weekStart, weekOffset, selectedISO, todayISO, marked
             </Reanimated.View>
           )}
         </View>
-        <BouncyPressable pressedScale={0.92} onPress={() => step(1)} accessibilityLabel={tr('home.nextWeek')} style={[styles.nav, { backgroundColor: k.cell, borderColor: k.navBorder }]}>
+        <BouncyPressable pressedScale={0.92} onPress={() => step(1)} accessibilityLabel={tr('home.nextWeek')} style={styles.nav}>
           <Chevron dir="right" color={k.ink} />
         </BouncyPressable>
       </View>
 
       <GestureDetector gesture={swipe}>
-        <Reanimated.View key={toISO(weekStart)} entering={entering} style={styles.row}>
+        {/* No slide when the week changes; the new days just swap in (user, 2026-10-23). */}
+        <View style={[styles.row, embedded && styles.rowEmbedded]}>
           {days.map((d) => {
             const iso = toISO(d);
             const sel = iso === selectedISO;
@@ -152,14 +156,14 @@ export function WeekStrip({ weekStart, weekOffset, selectedISO, todayISO, marked
                   {weekdayLetter(d.getDay())}
                 </Text>
                 <View style={styles.numWrap}>
-                  {sel && <Reanimated.View entering={ZoomIn.springify().damping(14).stiffness(260)} style={[styles.circle, { backgroundColor: k.azure }]} />}
+                  {sel && <View style={[styles.circle, { backgroundColor: k.azure }]} />}
                   <Text style={[t.dayNum, { color: numFg }]}>{d.getDate()}</Text>
                 </View>
                 <View style={[styles.dot, { backgroundColor: markedISOs.has(iso) ? k.dayDot : 'transparent' }]} />
               </BouncyPressable>
             );
           })}
-        </Reanimated.View>
+        </View>
       </GestureDetector>
     </View>
   );
@@ -168,14 +172,18 @@ export function WeekStrip({ weekStart, weekOffset, selectedISO, todayISO, marked
 const styles = StyleSheet.create({
   // Pulled up into the search row's 14pt bottom padding (search row itself left as is) — user, 2026-10-19.
   head: { marginTop: -7, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingHorizontal: FEED_INSET, paddingBottom: 6 },
-  nav: { width: 26, height: 26, borderRadius: 13, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  // Bare chevrons, no circle (user, 2026-10-22); the 26pt box keeps the tap target.
+  nav: { width: 26, height: 26, alignItems: 'center', justifyContent: 'center' },
   centre: { flexDirection: 'row', alignItems: 'center', gap: 8, minWidth: 0, flexShrink: 1 },
   // Week number and date range on one line (user, 2026-10-18).
   centreText: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 },
-  divider: { width: 1.5, height: 12, borderRadius: 1 },
+  divider: { width: 1.5, height: 14, borderRadius: 1 },
   todayChip: { flexDirection: 'row', alignItems: 'center', gap: 4, height: 22, paddingHorizontal: 8, borderRadius: 11 },
   // Days stretch to the search row's full width (user, 2026-10-19).
   row: { flexDirection: 'row', paddingHorizontal: FEED_INSET },
+  embedded: { marginBottom: 16 },
+  headEmbedded: { marginTop: 0, paddingHorizontal: 0, paddingBottom: 8 },
+  rowEmbedded: { paddingHorizontal: 0 },
   cell: { flex: 1, minWidth: 0, alignItems: 'center', gap: 4 },
   numWrap: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   circle: { ...StyleSheet.absoluteFillObject, borderRadius: 18 },

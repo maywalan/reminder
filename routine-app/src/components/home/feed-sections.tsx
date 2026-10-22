@@ -151,11 +151,11 @@ function EarlierSummary({ missed, done }: { missed: number; done: number }) {
   );
 }
 
-function BlockHeader({ title, right }: { title: string; right: React.ReactNode }) {
+function BlockHeader({ title, right, tight }: { title: string; right: React.ReactNode; tight?: boolean }) {
   const k = useHomeTokens();
   const t = useHomeType();
   return (
-    <View style={styles.blockHead}>
+    <View style={[styles.blockHead, tight && styles.blockHeadTight]}>
       <Text style={[t.blockTitle, { color: k.ink }]}>{title}</Text>
       {right}
     </View>
@@ -281,6 +281,7 @@ export function EarlierBlock({
   return (
     <View>
       <BlockHeader
+        tight
         title={tr('home.earlier')}
         right={
           showToggle ? (
@@ -415,6 +416,8 @@ const styles = StyleSheet.create({
   // Everything starts on the sheet's content edge (no extra left padding), so titles, day labels,
   // Upcoming cards and Earlier marks line up with the timeline above.
   blockHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingTop: 16, paddingBottom: 6 },
+  // Earlier sits right under Upcoming's last card (which already has an 8pt margin), so less room above it (user, 2026-10-22).
+  blockHeadTight: { paddingTop: 6 },
   dayLabel: {},
   upRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6, borderBottomWidth: 1 },
   upIcon: { width: 26, height: 26, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },

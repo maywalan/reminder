@@ -53,7 +53,7 @@ export default {
   'home.over.pre': { en: '', th: 'เกินมา ' },
   'home.over.post': { en: ' over', th: '' },
   'home.dueAt': { en: 'Due now · {time}', th: 'ถึงเวลาแล้ว · {time}' },
-  'home.nextDays': { en: 'Next 3 days', th: '3 วันข้างหน้า' },
+  'home.nextDays': { en: 'Next 7 days', th: '7 วันข้างหน้า' },
   'home.doneAt': { en: 'done {time}', th: 'เสร็จ {time}' },
   'home.missedAt': { en: 'missed {time}', th: 'เลยเวลา {time}' },
 

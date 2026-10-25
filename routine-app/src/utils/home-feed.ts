@@ -46,7 +46,7 @@ export interface HomeFeed {
   leftCount: number;
   /** Plans left undone on a past day. */
   missedCount: number;
-  /** Incomplete plans on each of the next 3 days after today, days with none left out. */
+  /** Incomplete plans on each of the next 7 days after today, days with none left out. */
   upcoming: UpcomingDay[];
   /** Done + missed tasks from previous days (for "See all"), most recent first. */
   older: Plan[];
@@ -60,7 +60,7 @@ export function planIsPast(plan: Plan, nowMs: number): boolean {
   return (planEndDateTime(plan) ?? planDateTime(plan)).getTime() <= nowMs;
 }
 
-export function buildHomeFeed(plans: Plan[], nowMs: number, matches: (p: Plan) => boolean, dayISO?: string, upcomingDays = 3): HomeFeed {
+export function buildHomeFeed(plans: Plan[], nowMs: number, matches: (p: Plan) => boolean, dayISO?: string, upcomingDays = 7): HomeFeed {
   const todayISO = toISO(new Date(nowMs));
   const selected = dayISO ?? todayISO;
   const isToday = selected === todayISO;

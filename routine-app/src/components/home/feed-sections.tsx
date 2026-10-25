@@ -163,7 +163,7 @@ function BlockHeader({ title, right, tight }: { title: string; right: React.Reac
 }
 
 /**
- * Upcoming: the next 3 days, one DayCard each ("Tomorrow · Fri 23" / "2 tasks · 09:00"), opening to
+ * Upcoming: the next 7 days, one DayCard each ("Tomorrow · Fri 23" / "2 tasks · 09:00"), opening to
  * that day's plans. No checkbox — a future plan can't be completed. With nothing coming up, a
  * single white card says so (user, 2026-10-22).
  */

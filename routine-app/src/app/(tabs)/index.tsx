@@ -2,31 +2,29 @@ import { useFocusEffect } from '@react-navigation/native';
 import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Animated, Easing, Keyboard, Pressable, ScrollView, StyleSheet, View, type TextInput as RNTextInput } from 'react-native';
+import type { MenuAction } from '@react-native-menu/menu';
+import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 import { NestableScrollContainer } from 'react-native-draggable-flatlist';
-import Reanimated, { FadeIn, FadeInLeft, FadeOut, ZoomIn } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { BouncyPressable } from '@/components/bouncy-pressable';
-import { EarlierBlock, SearchResults, UpcomingBlock } from '@/components/home/feed-sections';
+import { EarlierBlock, UpcomingBlock } from '@/components/home/feed-sections';
 import { DayTimeline } from '@/components/home/day-timeline';
-import { SearchField, toolRowLayout } from '@/components/home/search-field';
-import { ToolButton } from '@/components/home/tool-button';
-import { addDays, FEED_INSET, startOfISOWeek, WeekStrip } from '@/components/home/week-strip';
+import { FilterMenuButton } from '@/components/home/filter-menu-button';
+import { addDays, FEED_INSET, startOfWeek, WeekStrip } from '@/components/home/week-strip';
 import { useHomeTokens, useHomeType } from '@/components/home/tokens';
-import { CheckIcon, PaletteIcon, PlusIcon, TagIcon } from '@/components/icon';
+import { PaletteIcon, TagIcon } from '@/components/icon';
 import { Text } from '@/components/text';
 import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
 import { t as tr } from '@/i18n';
-import { Fonts, Radii, SwatchColors, Typography } from '@/constants/theme';
+import { fmtDate } from '@/i18n/format';
+import { Radii, SwatchColorNames, SwatchColors, Typography } from '@/constants/theme';
 import { useEffectiveScheme, useTheme } from '@/hooks/use-theme';
 import { useToast } from '@/hooks/use-toast';
 import { usePlannerStore } from '@/store/use-planner-store';
 import type { Plan } from '@/store/types';
 import { toISO } from '@/utils/dates';
 import { buildHomeFeed, findLiveActivityPlan } from '@/utils/home-feed';
-import { groupSearchResults, searchPlans } from '@/utils/plan-search';
 
 const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
 
@@ -98,11 +96,6 @@ function EntranceBox({ entrance, blurTint, children }: { entrance: Entrance; blu
   );
 }
 
-type Panel = 'colors' | 'groups';
-
-/** Panel chips slide in one after another, 35ms apart, once the row has made room. */
-const chipIn = (i: number) => FadeInLeft.delay(80 + i * 35).springify().damping(16).stiffness(200);
-
 /**
  * Home — header, search and filters from design_handoff_tickle_home_7; the week strip and the feed
  * sheet (day timeline · Upcoming · Earlier) from design_handoff_tickle_home_timeline.
@@ -136,12 +129,7 @@ export default function HomeScreen() {
   const setPendingSaveToast = usePlannerStore((s) => s.setPendingSaveToast);
   const liveActivitiesEnabled = usePlannerStore((s) => s.settings.liveActivitiesEnabled);
 
-  // The search bar is always there; opening Colors or Groups collapses it into its icon on the
-  // left to make room for that panel's chips. Only one panel is open at a time.
-  const [panel, setPanel] = useState<Panel | null>(null);
-  const [query, setQuery] = useState('');
   const [seeAll, setSeeAll] = useState(false);
-  const searchRef = useRef<RNTextInput>(null);
   const { toastMessage, showToast } = useToast();
 
   const [enterToken, setEnterToken] = useState(0);
@@ -153,16 +141,6 @@ export default function HomeScreen() {
 
   const todayEnter = useEntrance(ENTER_DELAY.today, enterToken);
   const earlierEnter = useEntrance(ENTER_DELAY.earlier, enterToken);
-
-  function togglePanel(which: Panel) {
-    Keyboard.dismiss();
-    setPanel(panel === which ? null : which);
-  }
-
-  function expandSearch() {
-    setPanel(null);
-    setTimeout(() => searchRef.current?.focus(), 260);
-  }
 
   const openCreateGroup = () => router.push('/create-group');
 
@@ -195,7 +173,7 @@ export default function HomeScreen() {
   const todayISO = toISO(new Date(nowMs));
   const [weekOffset, setWeekOffset] = useState(0);
   const [selectedISO, setSelectedISO] = useState(todayISO);
-  const thisWeekStart = useMemo(() => startOfISOWeek(new Date(`${todayISO}T00:00:00`)), [todayISO]);
+  const thisWeekStart = useMemo(() => startOfWeek(new Date(`${todayISO}T00:00:00`)), [todayISO]);
   const weekStart = addDays(thisWeekStart, weekOffset * 7);
   // Past midnight the strip jumps to the new today, so "Today" never points at yesterday.
   const prevToday = useRef(todayISO);
@@ -216,11 +194,6 @@ export default function HomeScreen() {
 
   const feed = useMemo(() => buildHomeFeed(plans, nowMs, matches, selectedISO), [plans, nowMs, matches, selectedISO]);
   const markedISOs = useMemo(() => new Set(plans.filter(matches).map((p) => p.date)), [plans, matches]);
-  const searching = query.trim().length > 0;
-  const searchSections = useMemo(
-    () => (searching ? groupSearchResults(searchPlans(plans.filter(matches), groups, query, nowMs), nowMs) : []),
-    [searching, plans, matches, groups, query, nowMs]
-  );
   const liveActivity = useMemo(
     () => (liveActivitiesEnabled ? findLiveActivityPlan(plans.filter(matches), nowMs) : null),
     [liveActivitiesEnabled, plans, matches, nowMs]
@@ -249,168 +222,113 @@ export default function HomeScreen() {
 
   const selectProps = { selectMode, selectedIds, onToggleSelect: toggleSelected, onOpen: openPlan };
 
-  const chipText = (active: boolean) => ({
-    color: active ? theme.accentStrong : theme.text,
-    fontSize: Typography.rowValue,
-    fontWeight: '700' as const,
-    fontFamily: Fonts[700],
-  });
+  // Native iOS pull-down menus for the two filters (user, 2026-10-25). Each tap toggles one item
+  // and closes the menu, as UIMenu does; "All" clears that filter.
+  const colorActions: MenuAction[] = [
+    { id: 'all', title: tr('home.all'), state: filterColors.length === 0 ? 'on' : 'off' },
+    {
+      id: 'swatches',
+      title: '',
+      displayInline: true,
+      subactions: SwatchColors.map((c) => ({
+        id: c,
+        title: tr(SwatchColorNames[c] ?? 'color.other'),
+        image: 'circle.fill',
+        imageColor: c,
+        state: filterColors.includes(c) ? 'on' : 'off',
+      })),
+    },
+  ];
+  const newGroupAction: MenuAction = { id: 'new', title: tr('home.createGroup'), image: 'plus' };
+  const groupActions: MenuAction[] =
+    groups.length === 0
+      ? [newGroupAction]
+      : [
+          { id: 'all', title: tr('home.all'), state: filterGroupIds.length === 0 ? 'on' : 'off' },
+          {
+            id: 'groups',
+            title: '',
+            displayInline: true,
+            subactions: groups.map((g) => ({
+              id: g.id,
+              title: g.name,
+              image: 'circle.fill',
+              imageColor: g.color,
+              state: filterGroupIds.includes(g.id) ? 'on' : 'off',
+            })),
+          },
+          { id: 'create', title: '', displayInline: true, subactions: [newGroupAction] },
+        ];
+  const onColorAction = (id: string) => (id === 'all' ? clearFilterColors() : toggleFilterColor(id));
+  const onGroupAction = (id: string) => (id === 'new' ? openCreateGroup() : id === 'all' ? clearFilterGroups() : toggleFilterGroup(id));
 
   return (
     <View style={[styles.screen, { backgroundColor: k.page }]}>
       <NestableScrollContainer
         contentContainerStyle={{ paddingTop: insets.top, paddingBottom: 130 }}
         keyboardDismissMode="on-drag">
-        {/* A tap on empty space unfocuses the search bar (fading its azure focus ring) — done here
-            rather than via keyboardShouldPersistTaps, which only fires while the on-screen keyboard
-            is showing (not with a hardware keyboard). Buttons and rows still take their own taps. */}
-        <Pressable onPress={() => searchRef.current?.blur()} accessible={false}>
-          <View style={styles.header}>
-            <View style={styles.headerLeft}>
-              <Tickle size={34} mood="idle" animated />
-              <Text numberOfLines={1} style={[t.greeting, styles.headerText, { color: k.ink }]}>
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <Tickle size={34} mood="idle" animated />
+            {/* Today's date under the greeting, smaller and grey (user, 2026-10-25). */}
+            <View style={styles.headerText}>
+              <Text numberOfLines={1} style={[t.greeting, { color: k.ink }]}>
                 {firstName ? tr('home.greeting.withName', { greeting: greeting(now.getHours()), name: firstName }) : greeting(now.getHours())}
+              </Text>
+              <Text numberOfLines={1} style={[t.todayDate, { color: k.ink50 }]}>
+                {fmtDate(now, { weekday: 'long', month: 'long' }, 'dm')}
               </Text>
             </View>
           </View>
-
-          <View style={styles.toolRow}>
-            <SearchField value={query} onChangeText={setQuery} inputRef={searchRef} collapsed={!!panel} active={searching} onExpand={expandSearch} />
-            <ToolButton open={panel === 'colors'} label={tr('home.colors')} dot={filterColors[0]} icon={(c) => <PaletteIcon size={16} color={c} />} onPress={() => togglePanel('colors')} />
-            <ToolButton open={panel === 'groups'} label={tr('home.groups')} dot={activeGroup?.color} icon={(c) => <TagIcon size={16} color={c} />} onPress={() => togglePanel('groups')} />
-            {panel && (
-              // Keyed by panel: switching Colors ⇄ Groups fades the old chips out while the new
-              // ones slide in one by one, instead of swapping in place.
-              <Reanimated.View key={panel} entering={FadeIn.duration(160)} exiting={FadeOut.duration(110)} layout={toolRowLayout} style={styles.panel}>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.panelRow}>
-                  <View style={[styles.chipDivider, { backgroundColor: theme.cardBorder }]} />
-                  {panel === 'colors' ? (
-                    <>
-                      <BouncyPressable
-                        entering={chipIn(0)}
-                        onPress={clearFilterColors}
-                        style={[
-                          styles.chip,
-                          { borderColor: filterColors.length === 0 ? 'transparent' : theme.cardBorder, backgroundColor: filterColors.length === 0 ? theme.accentSoft : theme.surface },
-                        ]}>
-                        <Text style={chipText(filterColors.length === 0)}>{tr('home.all')}</Text>
-                      </BouncyPressable>
-                      {SwatchColors.map((c, i) => (
-                        <BouncyPressable
-                          key={c}
-                          entering={chipIn(i + 1)}
-                          onPress={() => toggleFilterColor(c)}
-                          style={[styles.colorSwatch, { backgroundColor: c, borderColor: filterColors.includes(c) ? theme.text : 'transparent' }]}>
-                          {filterColors.includes(c) && (
-                            <Reanimated.View entering={ZoomIn.springify().damping(12)}>
-                              <CheckIcon size={14} color="#fff" strokeWidth={3} />
-                            </Reanimated.View>
-                          )}
-                        </BouncyPressable>
-                      ))}
-                    </>
-                  ) : groups.length === 0 ? (
-                    <BouncyPressable entering={chipIn(0)} onPress={openCreateGroup} style={[styles.chip, styles.dashedChip, { borderColor: theme.dividerStrong }]}>
-                      <Text style={[chipText(false), { color: theme.textSecondary }]}>{tr('home.noGroups')}</Text>
-                      <Text style={chipText(true)}>{tr('home.createOne')}</Text>
-                    </BouncyPressable>
-                  ) : (
-                    <>
-                      <BouncyPressable
-                        entering={chipIn(0)}
-                        onPress={clearFilterGroups}
-                        style={[
-                          styles.chip,
-                          {
-                            borderColor: filterGroupIds.length === 0 ? 'transparent' : theme.cardBorder,
-                            backgroundColor: filterGroupIds.length === 0 ? theme.accentSoft : theme.surface,
-                          },
-                        ]}>
-                        <Text style={chipText(filterGroupIds.length === 0)}>{tr('home.all')}</Text>
-                      </BouncyPressable>
-                      {groups.map((g, i) => {
-                        const on = filterGroupIds.includes(g.id);
-                        return (
-                          <BouncyPressable
-                            key={g.id}
-                            entering={chipIn(i + 1)}
-                            onPress={() => toggleFilterGroup(g.id)}
-                            accessibilityState={{ selected: on }}
-                            style={[styles.chip, { borderColor: on ? 'transparent' : theme.cardBorder, backgroundColor: on ? g.color : theme.surface }]}>
-                            {on ? (
-                              <Reanimated.View entering={ZoomIn.springify().damping(12)}>
-                                <CheckIcon size={11} color="#fff" strokeWidth={3} />
-                              </Reanimated.View>
-                            ) : (
-                              <View style={[styles.chipDot, { backgroundColor: g.color }]} />
-                            )}
-                            <Text style={[chipText(false), on && { color: '#fff' }]}>{g.name}</Text>
-                          </BouncyPressable>
-                        );
-                      })}
-                      <BouncyPressable entering={chipIn(groups.length + 1)} onPress={openCreateGroup} accessibilityLabel={tr('home.createGroup')} style={[styles.chip, styles.dashedChip, { borderColor: theme.dividerStrong }]}>
-                        <PlusIcon size={11} color={theme.accentStrong} strokeWidth={2.6} />
-                        <Text style={chipText(true)}>{tr('home.newChip')}</Text>
-                      </BouncyPressable>
-                    </>
-                  )}
-                </ScrollView>
-              </Reanimated.View>
-            )}
+          <View style={styles.headerTools}>
+            <FilterMenuButton label={tr('home.colors')} dot={filterColors[0]} icon={(c) => <PaletteIcon size={16} color={c} />} actions={colorActions} onAction={onColorAction} />
+            <FilterMenuButton label={tr('home.groups')} dot={activeGroup?.color} icon={(c) => <TagIcon size={16} color={c} />} actions={groupActions} onAction={onGroupAction} />
           </View>
+        </View>
 
-          {searching ? (
-            <View style={styles.feed}>
-              <SearchResults sections={searchSections} groups={groups} {...selectProps} />
+        <View style={styles.feedArea}>
+          {/* The week strip and the selected day's timeline share the white box (user's reference, 2026-10-22); Upcoming and Earlier live on the grey page below it. */}
+          <EntranceBox entrance={todayEnter} blurTint={blurTint}>
+            <View style={[styles.todayBox, { backgroundColor: k.sheet, borderColor: k.sheetBorder }]}>
+            <WeekStrip
+              weekStart={weekStart}
+              weekOffset={weekOffset}
+              selectedISO={selectedISO}
+              todayISO={todayISO}
+              markedISOs={markedISOs}
+              onStep={stepWeek}
+              onToday={backToToday}
+              onSelect={setSelectedISO}
+              embedded
+            />
+            <DayTimeline
+              feed={feed}
+              nowMs={nowMs}
+              emptyText={emptyText}
+              countdownPlanId={feed.isToday ? countdownPlanId : null}
+              selectMode={selectMode}
+              selectedIds={selectedIds}
+              onToggleComplete={toggleComplete}
+              onToggleSelect={toggleSelected}
+              onOpen={openPlan}
+              onDelete={deletePlan}
+              onReorder={(ids) => reorderPlans(selectedISO, ids)}
+              onToggleEdit={() => setSelectMode(!selectMode)}
+            />
             </View>
-          ) : (
-            <>
-              <View style={styles.feedArea}>
-                {/* The week strip and the selected day's timeline share the white box (user's reference, 2026-10-22); Upcoming and Earlier live on the grey page below it. */}
-                <EntranceBox entrance={todayEnter} blurTint={blurTint}>
-                  <View style={[styles.todayBox, { backgroundColor: k.sheet, borderColor: k.sheetBorder }]}>
-                  <WeekStrip
-                    weekStart={weekStart}
-                    weekOffset={weekOffset}
-                    selectedISO={selectedISO}
-                    todayISO={todayISO}
-                    markedISOs={markedISOs}
-                    onStep={stepWeek}
-                    onToday={backToToday}
-                    onSelect={setSelectedISO}
-                    embedded
-                  />
-                  <DayTimeline
-                    feed={feed}
-                    nowMs={nowMs}
-                    emptyText={emptyText}
-                    countdownPlanId={feed.isToday ? countdownPlanId : null}
-                    selectMode={selectMode}
-                    selectedIds={selectedIds}
-                    onToggleComplete={toggleComplete}
-                    onToggleSelect={toggleSelected}
-                    onOpen={openPlan}
-                    onDelete={deletePlan}
-                    onReorder={(ids) => reorderPlans(selectedISO, ids)}
-                    onToggleEdit={() => setSelectMode(!selectMode)}
-                  />
-                  </View>
-                </EntranceBox>
+          </EntranceBox>
 
-                {lastDeletedSnapshot && !selectMode && (
-                  <Pressable onPress={undoDelete} style={[styles.undoBar, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
-                    <Text style={{ color: theme.textSecondary, fontSize: Typography.rowValue, fontWeight: '500' }}>{tr('home.undoDelete')}</Text>
-                  </Pressable>
-                )}
-
-                <EntranceBox entrance={earlierEnter} blurTint={blurTint}>
-                  <UpcomingBlock days={feed.upcoming} groups={groups} {...selectProps} />
-                  <EarlierBlock older={feed.older} seeAll={seeAll} onToggleSeeAll={() => setSeeAll((v) => !v)} {...selectProps} />
-                </EntranceBox>
-              </View>
-            </>
+          {lastDeletedSnapshot && !selectMode && (
+            <Pressable onPress={undoDelete} style={[styles.undoBar, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
+              <Text style={{ color: theme.textSecondary, fontSize: Typography.rowValue, fontWeight: '500' }}>{tr('home.undoDelete')}</Text>
+            </Pressable>
           )}
-        </Pressable>
+
+          <EntranceBox entrance={earlierEnter} blurTint={blurTint}>
+            <UpcomingBlock days={feed.upcoming} groups={groups} {...selectProps} />
+            <EarlierBlock older={feed.older} seeAll={seeAll} onToggleSeeAll={() => setSeeAll((v) => !v)} {...selectProps} />
+          </EntranceBox>
+        </View>
       </NestableScrollContainer>
 
       <Toast message={toastMessage} />
@@ -420,19 +338,12 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 8, paddingHorizontal: 22, paddingBottom: 16 },
+  // The filter buttons' right edge lines up with the Today box (FEED_INSET).
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingTop: 8, paddingLeft: 22, paddingRight: FEED_INSET, paddingBottom: 16 },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 },
   headerText: { flexShrink: 1 },
-  toolRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: FEED_INSET, paddingBottom: 14 },
-  panel: { flex: 1 },
-  panelRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingRight: 12 },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 12, borderRadius: Radii.chip + 6, borderWidth: 1 },
-  chipDot: { width: 7, height: 7, borderRadius: 3.5 },
-  chipDivider: { width: 1, height: 18 },
-  colorSwatch: { width: 26, height: 26, borderRadius: 13, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  dashedChip: { borderStyle: 'dashed', backgroundColor: 'transparent' },
-  feed: { paddingHorizontal: 12, gap: 20 },
-  // The week strip now lives inside the Today box, so only a small gap under the search row.
+  headerTools: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  // The week strip lives inside the Today box, so only a small gap under the header.
   feedArea: { paddingHorizontal: FEED_INSET, paddingTop: 12 },
   // The old Home's floating Today card (design_handoff_tickle_home_7) with a subtle drop shadow.
   todayBox: {

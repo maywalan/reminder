@@ -13,15 +13,15 @@ import { toISO } from '@/utils/dates';
 
 /**
  * Home's week strip (design_handoff_tickle_home_timeline, screen 1): a "Week 20 / 12–18 May"
- * header between ‹ › buttons, a "Today" chip whenever another week is showing, and a Mon–Sun row
+ * header between ‹ › buttons, a "Today" chip whenever another week is showing, and a Sun–Sat row (user, 2026-10-25, matching Calendar)
  * of days: weekday letter over a bold date, the selected day in a filled azure circle and a dot
  * under days that have plans (user, 2026-10-21). A horizontal swipe on the day row also steps the week.
  */
 
-/** Monday of the ISO week `d` is in, at local midnight. */
-export function startOfISOWeek(d: Date): Date {
+/** Sunday of the week `d` is in, at local midnight. */
+export function startOfWeek(d: Date): Date {
   const out = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  out.setDate(out.getDate() - ((out.getDay() + 6) % 7));
+  out.setDate(out.getDate() - out.getDay());
   return out;
 }
 
@@ -29,11 +29,12 @@ export function addDays(d: Date, n: number): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
 }
 
-/** ISO-8601 week number (Monday start; week 1 holds the year's first Thursday). Same maths as the handoff's `isoWeek`. */
-export function isoWeek(d: Date): number {
-  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate() + 3));
-  const y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 4));
-  return 1 + Math.round(((t.getTime() - y0.getTime()) / 864e5 - 3 + ((y0.getUTCDay() + 6) % 7)) / 7);
+/** Sunday-start week number for the Sun–Sat week starting `sunday`: week 1 is the week holding 1 Jan of its Saturday's year. */
+export function weekNumber(sunday: Date): number {
+  const sat = addDays(sunday, 6);
+  const jan1 = new Date(sat.getFullYear(), 0, 1);
+  const week1 = Date.UTC(jan1.getFullYear(), 0, 1 - jan1.getDay());
+  return 1 + Math.round((Date.UTC(sunday.getFullYear(), sunday.getMonth(), sunday.getDate()) - week1) / (7 * 864e5));
 }
 
 /** "12–18 May", or "28 Apr – 4 May" across a month boundary. */
@@ -52,7 +53,7 @@ function Chevron({ dir, color }: { dir: 'left' | 'right'; color: string }) {
 }
 
 interface Props {
-  /** Monday of the visible week. */
+  /** Sunday of the visible week. */
   weekStart: Date;
   /** 0 = the current week. */
   weekOffset: number;
@@ -80,7 +81,7 @@ export function WeekStrip({ weekStart, weekOffset, selectedISO, todayISO, marked
   const d0 = days[0];
   const d6 = days[6];
   const thisYear = new Date().getFullYear();
-  const weekNo = isoWeek(d0) + (d0.getFullYear() !== thisYear || d6.getFullYear() !== thisYear ? ` · ${displayYear(d6.getFullYear())}` : '');
+  const weekNo = weekNumber(d0) + (d0.getFullYear() !== thisYear || d6.getFullYear() !== thisYear ? ` · ${displayYear(d6.getFullYear())}` : '');
 
   const step = (delta: -1 | 1) => {
     Haptics.selectionAsync();
@@ -140,7 +141,9 @@ export function WeekStrip({ weekStart, weekOffset, selectedISO, todayISO, marked
             const iso = toISO(d);
             const sel = iso === selectedISO;
             const today = iso === todayISO;
-            const numFg = sel ? '#fff' : today ? k.azure : k.ink;
+            // Sat/Sun dates are azure too (user, 2026-10-25).
+            const weekend = d.getDay() === 0 || d.getDay() === 6;
+            const numFg = sel ? '#fff' : today || weekend ? k.azure : k.ink;
             return (
               <BouncyPressable
                 key={iso}

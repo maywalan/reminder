@@ -7,6 +7,7 @@
     "@expo-google-fonts/anuphan": "^0.4.1",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/datetimepicker": "8.4.4",
+    "@react-native-menu/menu": "^2.0.0",
     "@supabase/supabase-js": "^2.112.3",
     "expo": "~54.0.37",
     "expo-blur": "~15.0.8",

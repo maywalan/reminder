@@ -1,21 +1,22 @@
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useEffect, useRef } from 'react';
-import { Alert, Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Animated, Easing, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { BorderlessButton, RectButton, Swipeable } from 'react-native-gesture-handler';
 import { NestableDraggableFlatList } from 'react-native-draggable-flatlist';
-import Reanimated, { Easing as REasing, FadeIn, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming, ZoomIn } from 'react-native-reanimated';
+import Reanimated, { Easing as REasing, FadeIn, FadeOut, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming, ZoomIn } from 'react-native-reanimated';
 
-import { CheckIcon, ClockIcon, PlanIcon, TrashIcon } from '@/components/icon';
+import { CheckIcon, ClockIcon, PlanIcon, TrashIcon, XIcon } from '@/components/icon';
 import { planPalette, useHomeTokens, useHomeType } from '@/components/home/tokens';
 import { Text } from '@/components/text';
+import { Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { t as tr } from '@/i18n';
 import { fmtDate, monthShort, weekdayShort, lang } from '@/i18n/format';
 import type { Plan } from '@/store/types';
+import { usePlannerStore } from '@/store/use-planner-store';
 import { planDateTime } from '@/utils/countdown';
 import { fromISO, toISO } from '@/utils/dates';
-import { dueProgress, formatLiveCountdown, liveProgress, type HomeFeed } from '@/utils/home-feed';
+import { dueProgress, formatLiveCountdown, formatStartsIn, liveProgress, type HomeFeed } from '@/utils/home-feed';
 import { resolvePlanIcon } from '@/utils/plan-icons';
 
 /**
@@ -40,6 +41,16 @@ const COL_GAP = 10;
 const RAIL_X = TIME_COL + COL_GAP + MARKER_COL / 2 - 0.5;
 /** Card top padding + half a time line: where the start time, its dot and the card title share a line. */
 const MARK_Y = 13;
+/**
+ * The time column grows with larger text (iOS Text Size or Settings > Font Size) so "16:00" isn't
+ * cut to "16:…"; at the default size it stays TIME_COL and the rail sits exactly where it was.
+ */
+function useTimeCol() {
+  const scale = useWindowDimensions().fontScale * (Typography.body / 13);
+  const width = Math.ceil(TIME_COL * Math.max(1, scale));
+  return { width, railX: RAIL_X + width - TIME_COL };
+}
+
 /** Room between the rail markers and the cards. */
 const CARD_GAP = 4;
 
@@ -133,6 +144,7 @@ function TimelineRow({
 }) {
   const k = useHomeTokens();
   const t = useHomeType();
+  const timeCol = useTimeCol();
   const danger = useTheme().danger;
   const color = plan.color;
   const done = plan.completed;
@@ -199,7 +211,7 @@ function TimelineRow({
 
   const body = (
     <View style={styles.row}>
-      <View style={[styles.timeCol, (range || live) && styles.timeColRange]}>
+      <View style={[styles.timeCol, { width: timeCol.width }, (range || live) && styles.timeColRange]}>
         <Text numberOfLines={1} style={[styles.timeRight, plan.allDay ? t.endTime : t.railTime, { color: plan.allDay ? k.ink50 : k.ink }]}>
           {plan.allDay ? tr('home.allDay') : plan.time}
         </Text>
@@ -224,18 +236,11 @@ function TimelineRow({
       <Reanimated.View
         style={[
           styles.card,
-          { backgroundColor: k.sheet, borderColor: h.selectMode && selected ? k.azure : `${color}22` },
-          h.selectMode && selected && styles.cardSelected,
+          { backgroundColor: k.sheet, borderColor: h.selectMode && selected ? k.azure : 'transparent' },
           cardFade,
         ]}>
-        <LinearGradient
-          pointerEvents="none"
-          colors={[`${color}24`, `${color}00`]}
-          locations={[0, 0.92]}
-          start={{ x: 0, y: 0.41 }}
-          end={{ x: 1, y: 0.59 }}
-          style={styles.cardTint}
-        />
+        {/* A flat wash of the plan's colour; the Today box already carries the border and shadow (critique, 2026-10-28). */}
+        <View pointerEvents="none" style={[styles.cardTint, { backgroundColor: `${color}${k.dark ? '26' : '14'}` }]} />
         {icon && (
           <View style={[styles.iconChip, { backgroundColor: `${color}1F` }]}>
             <PlanIcon id={icon} size={17} color={color} strokeWidth={1.9} />
@@ -315,6 +320,27 @@ function TimelineRow({
   );
 }
 
+/**
+ * One-time tip under the day's plans: swipe to delete, hold and drag to reorder (critique,
+ * 2026-10-28). Gone for good once closed, or once the user deletes or reorders a plan here.
+ */
+function GestureHint({ onClose }: { onClose: () => void }) {
+  const k = useHomeTokens();
+  const t = useHomeType();
+  const reduceMotion = useReducedMotion();
+  return (
+    <Reanimated.View
+      entering={reduceMotion ? undefined : FadeIn.duration(260)}
+      exiting={reduceMotion ? undefined : FadeOut.duration(180)}
+      style={[styles.hint, { backgroundColor: k.azureTint }]}>
+      <Text style={[t.cardSub, styles.hintText, { color: k.azureDark }]}>{tr('home.gestureHint')}</Text>
+      <BorderlessButton onPress={onClose} hitSlop={12} accessibilityLabel={tr('home.gestureHintClose')} style={styles.hintClose}>
+        <XIcon size={12} color={k.azureDark} strokeWidth={2.4} />
+      </BorderlessButton>
+    </Reanimated.View>
+  );
+}
+
 /** "Fri 16 May" (Thai: "ศ. 16 ต.ค.") — the title for a day that isn't today or tomorrow. */
 export function shortDayTitle(d: Date) {
   return lang() === 'th' ? fmtDate(d, { weekday: 'short' }) : `${weekdayShort(d.getDay())} ${d.getDate()} ${monthShort(d.getMonth())}`;
@@ -322,8 +348,19 @@ export function shortDayTitle(d: Date) {
 
 export function DayTimeline({ feed, nowMs, emptyText, countdownPlanId, onReorder, onToggleEdit, ...h }: Props) {
   const k = useHomeTokens();
+  const timeCol = useTimeCol();
   const t = useHomeType();
+  const hintSeen = usePlannerStore((s) => s.homeGestureHintSeen);
+  const dismissHint = usePlannerStore((s) => s.dismissHomeGestureHint);
   const { day, live, dayISO, isToday } = feed;
+  // Using either gesture counts as having learned it.
+  const rowHandlers = {
+    ...h,
+    onDelete: (id: string) => {
+      dismissHint();
+      h.onDelete(id);
+    },
+  };
   const date = fromISO(dayISO);
   const tomorrow = new Date(nowMs);
   tomorrow.setDate(tomorrow.getDate() + 1);
@@ -331,12 +368,13 @@ export function DayTimeline({ feed, nowMs, emptyText, countdownPlanId, onReorder
   const todayISO = toISO(new Date(nowMs));
 
   const title = isToday ? tr('home.today') : isTomorrow ? tr('home.tomorrow') : shortDayTitle(date);
-  const dateLine = isToday || isTomorrow ? fmtDate(date, { weekday: 'short' }, 'dm') : null;
+  // Today's date is already under the greeting, so its pill is just "Today" (critique, 2026-10-28).
+  const dateLine = isTomorrow ? fmtDate(date, { weekday: 'short' }, 'dm') : null;
 
   function countdownFor(plan: Plan): string | null {
     if (plan.id !== countdownPlanId) return null;
-    const untilMs = planDateTime(plan).getTime() - nowMs;
-    return untilMs > 0 ? tr('home.startsIn', { time: formatLiveCountdown(Math.ceil(untilMs / 1000)) }) : tr('home.now');
+    // A far-off m:ss countdown read like a clock time (critique, 2026-10-28), so it only ticks in the last 10 minutes.
+    return formatStartsIn(planDateTime(plan).getTime() - nowMs);
   }
 
   return (
@@ -359,11 +397,14 @@ export function DayTimeline({ feed, nowMs, emptyText, countdownPlanId, onReorder
         <Text style={[t.cardSub, styles.empty, { color: k.ink50 }]}>{emptyText}</Text>
       ) : (
         <View>
-          <View pointerEvents="none" style={[styles.railLine, { backgroundColor: k.rail }]} />
+          <View pointerEvents="none" style={[styles.railLine, { left: timeCol.railX, backgroundColor: k.rail }]} />
           <NestableDraggableFlatList
           data={day}
           keyExtractor={(item) => item.id}
-          onDragEnd={({ data }) => onReorder(data.map((p) => p.id))}
+          onDragEnd={({ data }) => {
+            dismissHint();
+            onReorder(data.map((p) => p.id));
+          }}
           onPlaceholderIndexChange={() => Haptics.selectionAsync()}
           renderItem={({ item, drag, isActive }) => (
             <TimelineRow
@@ -374,12 +415,13 @@ export function DayTimeline({ feed, nowMs, emptyText, countdownPlanId, onReorder
               canCheck={dayISO <= todayISO}
               isActive={isActive}
               drag={drag}
-              h={h}
+              h={rowHandlers}
             />
           )}
           />
         </View>
       )}
+      {!hintSeen && day.length > 0 && !h.selectMode && <GestureHint onClose={dismissHint} />}
     </View>
   );
 }
@@ -393,7 +435,7 @@ const styles = StyleSheet.create({
 
   // Row top padding + the card's bottom margin give 10pt between cards (rows are clipped by Swipeable).
   row: { flexDirection: 'row', gap: COL_GAP, paddingTop: 6 },
-  railLine: { position: 'absolute', left: RAIL_X, top: 20, bottom: 14, width: 1 },
+  railLine: { position: 'absolute', top: 20, bottom: 14, width: 1 },
   // Old Home rail (design_handoff_tickle_home_7), but times left-aligned on the screen's shared left edge (user, 2026-10-19); a range's end time sits at the card's bottom.
   timeCol: { width: TIME_COL, paddingTop: 7, marginBottom: 4 },
   timeColRange: { justifyContent: 'space-between', paddingBottom: 7 },
@@ -426,30 +468,29 @@ const styles = StyleSheet.create({
     marginLeft: CARD_GAP,
     marginBottom: 4,
     borderRadius: 16,
-    borderWidth: 1,
-    paddingVertical: 10,
-    paddingLeft: 9,
-    paddingRight: 12,
+    // Transparent until selected in Edit mode, so selecting doesn't shift the row.
+    borderWidth: 1.5,
+    paddingVertical: 9.5,
+    paddingLeft: 8.5,
+    paddingRight: 11.5,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    shadowColor: '#10203A',
-    shadowOpacity: 0.06,
-    shadowRadius: 7,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
   },
-  cardSelected: { borderWidth: 1.5 },
   cardText: { flex: 1, minWidth: 0, gap: 2 },
   /** The strike line's width comes from the title's measured line, so it spans only the text. */
   titleWrap: { justifyContent: 'center' },
   strike: { position: 'absolute', left: 0, height: 1.5, borderRadius: 1, top: '52%' },
   subRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   subText: { flexShrink: 1 },
-  cardTint: { ...StyleSheet.absoluteFillObject, borderRadius: 15 },
+  cardTint: { ...StyleSheet.absoluteFillObject, borderRadius: 14.5 },
   iconChip: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   divider: { width: 1, alignSelf: 'stretch', marginVertical: -2 },
   check: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+
+  hint: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8, paddingVertical: 8, paddingLeft: 12, paddingRight: 10, borderRadius: 12 },
+  hintText: { flex: 1, minWidth: 0 },
+  hintClose: { width: 20, height: 20, alignItems: 'center', justifyContent: 'center' },
 
   deleteAction: { width: 64, alignItems: 'center', justifyContent: 'center', borderRadius: 16, marginLeft: 6, marginTop: 6, marginBottom: 4 },
   dragging: {

@@ -100,7 +100,7 @@ export function WeekStrip({ weekStart, weekOffset, selectedISO, todayISO, marked
   return (
     <View style={embedded && styles.embedded}>
       <View style={[styles.head, embedded && styles.headEmbedded]}>
-        <BouncyPressable pressedScale={0.92} onPress={() => step(-1)} accessibilityLabel={tr('home.prevWeek')} style={styles.nav}>
+        <BouncyPressable pressedScale={0.92} onPress={() => step(-1)} hitSlop={9} accessibilityLabel={tr('home.prevWeek')} style={styles.nav}>
           <Chevron dir="left" color={k.ink} />
         </BouncyPressable>
         <View style={styles.centre}>
@@ -129,7 +129,7 @@ export function WeekStrip({ weekStart, weekOffset, selectedISO, todayISO, marked
             </Reanimated.View>
           )}
         </View>
-        <BouncyPressable pressedScale={0.92} onPress={() => step(1)} accessibilityLabel={tr('home.nextWeek')} style={styles.nav}>
+        <BouncyPressable pressedScale={0.92} onPress={() => step(1)} hitSlop={9} accessibilityLabel={tr('home.nextWeek')} style={styles.nav}>
           <Chevron dir="right" color={k.ink} />
         </BouncyPressable>
       </View>
@@ -141,9 +141,10 @@ export function WeekStrip({ weekStart, weekOffset, selectedISO, todayISO, marked
             const iso = toISO(d);
             const sel = iso === selectedISO;
             const today = iso === todayISO;
-            // Sat/Sun dates are azure too (user, 2026-10-25).
+            // Only today is azure, ringed when another day is picked; weekends read lighter so they
+            // can't be mistaken for it (critique, 2026-10-28 — replaces azure weekends from 2026-10-25).
             const weekend = d.getDay() === 0 || d.getDay() === 6;
-            const numFg = sel ? '#fff' : today || weekend ? k.azure : k.ink;
+            const numFg = sel ? '#fff' : today ? k.azure : weekend ? k.ink50 : k.ink;
             return (
               <BouncyPressable
                 key={iso}
@@ -160,6 +161,7 @@ export function WeekStrip({ weekStart, weekOffset, selectedISO, todayISO, marked
                 </Text>
                 <View style={styles.numWrap}>
                   {sel && <View style={[styles.circle, { backgroundColor: k.azure }]} />}
+                  {today && !sel && <View style={[styles.circle, styles.todayRing, { borderColor: k.azure }]} />}
                   <Text style={[t.dayNum, { color: numFg }]}>{d.getDate()}</Text>
                 </View>
                 <View style={[styles.dot, { backgroundColor: markedISOs.has(iso) ? k.dayDot : 'transparent' }]} />
@@ -175,7 +177,7 @@ export function WeekStrip({ weekStart, weekOffset, selectedISO, todayISO, marked
 const styles = StyleSheet.create({
   // Pulled up into the search row's 14pt bottom padding (search row itself left as is) — user, 2026-10-19.
   head: { marginTop: -7, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingHorizontal: FEED_INSET, paddingBottom: 6 },
-  // Bare chevrons, no circle (user, 2026-10-22); the 26pt box keeps the tap target.
+  // Bare chevrons, no circle (user, 2026-10-22); hitSlop grows the 26pt box to a 44pt target.
   nav: { width: 26, height: 26, alignItems: 'center', justifyContent: 'center' },
   centre: { flexDirection: 'row', alignItems: 'center', gap: 8, minWidth: 0, flexShrink: 1 },
   // Week number and date range on one line (user, 2026-10-18).
@@ -190,5 +192,6 @@ const styles = StyleSheet.create({
   cell: { flex: 1, minWidth: 0, alignItems: 'center', gap: 4 },
   numWrap: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   circle: { ...StyleSheet.absoluteFillObject, borderRadius: 18 },
+  todayRing: { borderWidth: 1.5 },
   dot: { width: 4, height: 4, borderRadius: 2 },
 });

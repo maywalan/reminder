@@ -89,7 +89,22 @@ function earlierDayLabel(dateISO: string, todayISO: string) {
  * summary ("5 missed · 1 done", "2 tasks · 09:00") on a white card, with Review › on the right.
  * Tapping it grows the card open to show the day's rows inside it, on the search row's spring.
  */
-function DayCard({ label, summary, open, onPress, children }: { label: string; summary: React.ReactNode; open: boolean; onPress: () => void; children: React.ReactNode }) {
+function DayCard({
+  label,
+  summary,
+  more,
+  open,
+  onPress,
+  children,
+}: {
+  label: string;
+  summary: React.ReactNode;
+  /** Replaces "Review" while closed, e.g. Upcoming's "+2 more". */
+  more?: string;
+  open: boolean;
+  onPress: () => void;
+  children: React.ReactNode;
+}) {
   const k = useHomeTokens();
   const t = useHomeType();
   const reduceMotion = useReducedMotion();
@@ -122,7 +137,7 @@ function DayCard({ label, summary, open, onPress, children }: { label: string; s
           </Text>
         </View>
         <View style={styles.review}>
-          <Text style={[t.blockLink, { color: k.azureDark }]}>{open ? tr('home.hide') : tr('home.review')}</Text>
+          <Text style={[t.blockLink, { color: k.azureDark }]}>{open ? tr('home.hide') : (more ?? tr('home.review'))}</Text>
           <Reanimated.View style={chevron}>
             <ChevronRightIcon size={14} color={k.azureDark} strokeWidth={2.4} />
           </Reanimated.View>
@@ -187,12 +202,14 @@ export function UpcomingBlock({ days, groups, ...s }: SelectProps & { days: Upco
           <Reanimated.View key={d.dateISO} entering={FadeInUp.duration(260)} style={styles.pastGroup}>
             <DayCard
               label={upcomingDayLabel(d.dateISO, todayISO)}
+              // The day's first plan by name, quieter than today's cards, so tomorrow can be read without a tap (critique, 2026-10-28).
               summary={
                 <>
-                  <Text style={[t.sumCount, { color: k.azure }]}>{tr('home.taskCount', { count: d.plans.length })}</Text>
-                  <Text style={[t.sumCount, { color: k.ink45 }]}>{` · ${first.allDay ? tr('home.allDay') : first.time}`}</Text>
+                  <Text style={[t.upTitle, { color: k.ink }]}>{first.name}</Text>
+                  <Text style={[t.upTitle, { color: k.ink45 }]}>{` · ${first.allDay ? tr('home.allDay') : first.time}`}</Text>
                 </>
               }
+              more={d.plans.length > 1 ? tr('home.moreCount', { n: d.plans.length - 1 }) : undefined}
               open={s.selectMode || openDays.includes(d.dateISO)}
               onPress={() => toggleDay(d.dateISO)}>
               {d.plans.map((p, i) => {
@@ -427,7 +444,7 @@ const styles = StyleSheet.create({
   pastGroup: { gap: 0, marginBottom: 8 },
   dayCard: { borderRadius: 16, borderWidth: 1, overflow: 'hidden' },
   emptyCard: { paddingVertical: 14, paddingHorizontal: 16, marginBottom: 8 },
-  summary: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 16 },
+  summary: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 16 },
   summaryText: { flex: 1, minWidth: 0, gap: 1 },
   review: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   dayBody: { overflow: 'hidden' },

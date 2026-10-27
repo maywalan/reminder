@@ -1,5 +1,6 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { MenuAction } from '@react-native-menu/menu';
@@ -24,11 +25,14 @@ import { useToast } from '@/hooks/use-toast';
 import { usePlannerStore } from '@/store/use-planner-store';
 import type { Plan } from '@/store/types';
 import { toISO } from '@/utils/dates';
-import { buildHomeFeed, findLiveActivityPlan } from '@/utils/home-feed';
+import { planDateTime } from '@/utils/countdown';
+import { buildHomeFeed, findLiveActivityPlan, START_TICK_MS } from '@/utils/home-feed';
 
 const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
 
 function greeting(hour: number) {
+  // After midnight neither "good morning" nor "good evening" fits.
+  if (hour < 5) return tr('home.greeting.night');
   if (hour < 12) return tr('home.greeting.morning');
   if (hour < 18) return tr('home.greeting.afternoon');
   return tr('home.greeting.evening');
@@ -202,7 +206,9 @@ export default function HomeScreen() {
   // later day still gets the Lock Screen countdown via useLiveActivitySync.
   const countdownPlanId =
     liveActivity?.phase === 'upcoming' && liveActivity.plan.date === toISO(new Date(nowMs)) ? liveActivity.plan.id : null;
-  const fast = !!feed.live || !!countdownPlanId;
+  // The "starts in" line only shows seconds in its last 10 minutes; before that the minute clock is enough.
+  const countdownTicking = !!countdownPlanId && !!liveActivity && planDateTime(liveActivity.plan).getTime() - nowMs <= START_TICK_MS;
+  const fast = !!feed.live || countdownTicking;
   useEffect(() => setFastClock(fast), [fast]);
 
   const now = new Date(nowMs);
@@ -331,6 +337,9 @@ export default function HomeScreen() {
         </View>
       </NestableScrollContainer>
 
+      {/* The feed fades into the page above the tab bar, so whatever sits under the + button at rest dissolves instead of being cut off (critique, 2026-10-28). */}
+      <LinearGradient pointerEvents="none" colors={[`${k.page}00`, k.page]} style={styles.bottomFade} />
+
       <Toast message={toastMessage} />
     </View>
   );
@@ -359,5 +368,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     elevation: 3,
   },
+  bottomFade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 56 },
   undoBar: { marginTop: 10, padding: 10, borderRadius: Radii.card, borderWidth: 1, alignItems: 'center' },
 });

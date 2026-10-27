@@ -68,6 +68,9 @@ interface PlannerState {
   /** When Profile's upgrade banner was last dismissed (epoch ms) — it stays hidden for 7 days. */
   upgradeBannerDismissedAt: number | null;
   dismissUpgradeBanner: () => void;
+  /** Home's one-time "swipe to delete · hold and drag to reorder" tip has been closed or acted on (this device only). */
+  homeGestureHintSeen: boolean;
+  dismissHomeGestureHint: () => void;
   setPendingSaveToast: (message: string | null) => void;
   /**
    * A group the Create Group screen picked or created for the New/Edit Plan form underneath it.
@@ -118,6 +121,7 @@ export const usePlannerStore = create<PlannerState>()(
       subscriptionDetails: null,
       subscriptionTestOverride: false,
       upgradeBannerDismissedAt: null,
+      homeGestureHintSeen: false,
 
       ensureFirstUsedAt: () => {
         if (!get().firstUsedAt) set({ firstUsedAt: toISO(new Date()) });
@@ -130,6 +134,8 @@ export const usePlannerStore = create<PlannerState>()(
       setSubscriptionTestOverride: (on) => set({ subscriptionTestOverride: on }),
 
       dismissUpgradeBanner: () => set({ upgradeBannerDismissedAt: Date.now() }),
+
+      dismissHomeGestureHint: () => set({ homeGestureHintSeen: true }),
 
       setPendingSaveToast: (message) => set({ pendingSaveToast: message }),
 
@@ -308,6 +314,7 @@ export const usePlannerStore = create<PlannerState>()(
         subscriptionDetails: state.subscriptionDetails,
         subscriptionTestOverride: state.subscriptionTestOverride,
         upgradeBannerDismissedAt: state.upgradeBannerDismissedAt,
+        homeGestureHintSeen: state.homeGestureHintSeen,
       }),
       version: 3,
       migrate: (persisted) => {

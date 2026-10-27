@@ -130,6 +130,17 @@ export function dueProgress(plan: Plan, nowMs: number): { progress: number; seco
   return { progress: Math.min(1, Math.max(0, elapsed / POINT_DUE_MS)), secondsOver: Math.max(0, Math.round(elapsed / 1000)) };
 }
 
+/** A "starts in" countdown ticks m:ss only in its last 10 minutes; before that it reads "42 min" / "15 hr". */
+export const START_TICK_MS = 10 * 60_000;
+
+/** "starts in 9:41" in the last 10 minutes, else "starts in 42 min" / "1 hr 30 min", and whole hours from 2 hours out ("15 hr"); "now" once due. */
+export function formatStartsIn(untilMs: number): string {
+  if (untilMs <= 0) return t('home.now');
+  const min = Math.ceil(untilMs / 60_000);
+  const time = untilMs <= START_TICK_MS ? formatLiveCountdown(Math.ceil(untilMs / 1000)) : formatDuration(min, { dropMinutesAfterHours: min >= 120 });
+  return t('home.startsIn', { time });
+}
+
 /** "36:48", or "1:02:05" over an hour; overtime reads "+m:ss". */
 export function formatLiveCountdown(secondsLeft: number): string {
   const over = secondsLeft < 0;

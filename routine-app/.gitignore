@@ -45,3 +45,6 @@ example
 
 # Supabase CLI cache
 supabase/.temp/
+
+# Impeccable critique snapshots (local only)
+.impeccable/

@@ -40,6 +40,8 @@ import {
   REPEAT_OPTIONS,
   type RepeatType,
 } from '@/utils/repeat';
+import type { Plan } from '@/store/types';
+import { confirmPlanDelete, confirmPlanSave, seriesEndDate } from '@/utils/repeat-scope';
 import { iconUsage, matchIcons, planIconDef, recentIcons, suggestIcons, type PlanIconId } from '@/utils/plan-icons';
 import { COMMON_TIME_ZONES, deviceTimeZone, listTimeZones, timeZoneCityLabel, timeZoneOffsetLabel } from '@/utils/timezone';
 
@@ -149,6 +151,8 @@ export default function AddPlanScreen() {
   const addPlans = usePlannerStore((s) => s.addPlans);
   const updatePlan = usePlannerStore((s) => s.updatePlan);
   const deletePlan = usePlannerStore((s) => s.deletePlan);
+  const deletePlanSeries = usePlannerStore((s) => s.deletePlanSeries);
+  const updatePlanSeries = usePlannerStore((s) => s.updatePlanSeries);
   const duplicatePlan = usePlannerStore((s) => s.duplicatePlan);
   const setPendingSaveToast = usePlannerStore((s) => s.setPendingSaveToast);
   const groups = usePlannerStore((s) => s.groups);
@@ -328,7 +332,20 @@ export default function AddPlanScreen() {
       timezone,
     };
     if (editing) {
-      updatePlan(editing.id, { ...common, date, time });
+      // A repeating plan asks whether the edit covers just this occurrence or every later one too.
+      confirmPlanSave(
+        plans,
+        editing,
+        () => {
+          updatePlan(editing.id, { ...common, date, time });
+          router.back();
+        },
+        () => {
+          updatePlanSeries(editing.id, { ...common, date, time });
+          router.back();
+        }
+      );
+      return;
     } else if (repeatType !== 'none' && repeatUntil) {
       const occurrences = generateRepeatOccurrences(
         date,
@@ -351,9 +368,30 @@ export default function AddPlanScreen() {
     router.back();
   }
 
+  // Confirms like swipe-to-delete; a repeating plan offers this occurrence only or all future ones.
   function handleDelete() {
-    if (editing) deletePlan(editing.id);
-    router.back();
+    if (!editing) return;
+    confirmPlanDelete(
+      plans,
+      editing,
+      () => {
+        deletePlan(editing.id);
+        router.back();
+      },
+      () => {
+        deletePlanSeries(editing.id);
+        router.back();
+      }
+    );
+  }
+
+  /** "Repeats every day until 27 Nov. …" for an occurrence of a repeating series. */
+  function repeatSummary(plan: Plan) {
+    const date = fmtDate(fromISO(seriesEndDate(plans, plan)));
+    const opt = plan.repeatType && plan.repeatType !== 'custom' ? REPEAT_OPTIONS.find((o) => o.value === plan.repeatType) : undefined;
+    if (!opt || opt.value === 'none') return t('plan.repeatsUntil', { date });
+    const rule = t(opt.labelKey);
+    return t('plan.repeatsRuleUntil', { rule: lang() === 'th' ? rule : rule.charAt(0).toLowerCase() + rule.slice(1), date });
   }
 
   function handleDuplicate() {
@@ -765,7 +803,7 @@ export default function AddPlanScreen() {
 
         {editing && (
           <Text style={[styles.footnote, { color: theme.textTertiary }]}>
-            {t('plan.repeatEditNote')}
+            {editing.repeatId ? repeatSummary(editing) : t('plan.repeatEditNote')}
           </Text>
         )}
 

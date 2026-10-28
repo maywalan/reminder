@@ -7,7 +7,8 @@ import { deviceLanguage } from '@/i18n';
 import type { Group, Plan, Profile, Settings, SubscriptionDetails, SubscriptionState } from './types';
 import { syncClearAll, syncDeletePlan, syncDeletePlans, syncUpdateProfile, syncUpdateSettings, syncUpsertGroup, syncUpsertPlan, syncUpsertPlans } from '@/lib/sync';
 import { findFuturePlans, findPastPlans } from '@/utils/countdown';
-import { toISO } from '@/utils/dates';
+import { pad, timeToMinutes, toISO } from '@/utils/dates';
+import { seriesFrom } from '@/utils/repeat-scope';
 
 /**
  * A real UUID (not the old 'p_'-prefixed random string) so ids generated offline are already
@@ -85,6 +86,13 @@ interface PlannerState {
   updatePlan: (id: string, patch: Partial<Plan>) => void;
   toggleComplete: (id: string) => void;
   deletePlan: (id: string) => void;
+  /** Deletes `id` and every later occurrence of its repeating series (iOS Calendar's "Delete All Future Events"). */
+  deletePlanSeries: (id: string) => void;
+  /**
+   * Applies an edit to `id` and every later occurrence of its series. Each occurrence keeps its own
+   * day and completion; a moved date or time shifts them all by the same amount.
+   */
+  updatePlanSeries: (id: string, patch: Partial<Plan>) => void;
   duplicatePlan: (id: string) => void;
   undoDelete: () => void;
   /** Drops the Undo option once its toast times out. */
@@ -102,7 +110,8 @@ interface PlannerState {
   setSelectMode: (on: boolean) => void;
   toggleSelected: (id: string) => void;
   selectAll: () => void;
-  deleteSelected: () => void;
+  /** Deletes the selected plans; `withFuture` also takes the later occurrences of any repeating ones. */
+  deleteSelected: (withFuture?: boolean) => void;
 }
 
 export const usePlannerStore = create<PlannerState>()(
@@ -181,6 +190,41 @@ export const usePlannerStore = create<PlannerState>()(
         const { plans } = get();
         set({ lastDeletedSnapshot: plans.filter((p) => p.id === id), plans: plans.filter((p) => p.id !== id) });
         syncDeletePlan(id);
+      },
+
+      deletePlanSeries: (id) => {
+        const { plans } = get();
+        const plan = plans.find((p) => p.id === id);
+        if (!plan) return;
+        const removed = seriesFrom(plans, plan);
+        const ids = new Set(removed.map((p) => p.id));
+        set({ lastDeletedSnapshot: removed, plans: plans.filter((p) => !ids.has(p.id)) });
+        syncDeletePlans([...ids]);
+      },
+
+      updatePlanSeries: (id, patch) => {
+        const { plans } = get();
+        const plan = plans.find((p) => p.id === id);
+        if (!plan) return;
+        const { date: newDate = plan.date, time: newTime = plan.time, ...rest } = patch;
+        const startMs = (date: string, time: string) => new Date(`${date}T${time}:00`).getTime();
+        const shiftMs = startMs(newDate, newTime) - startMs(plan.date, plan.time);
+        // The edited plan's length, so every occurrence ends the same time after it starts (capped at 23:59).
+        const length = 'endTime' in patch ? (patch.endTime ? timeToMinutes(patch.endTime) - timeToMinutes(newTime) : null) : undefined;
+        const ids = new Set(seriesFrom(plans, plan).map((p) => p.id));
+        const updated: Plan[] = [];
+        const next = plans.map((p) => {
+          if (!ids.has(p.id)) return p;
+          const at = new Date(startMs(p.date, p.time) + shiftMs);
+          const time = `${pad(at.getHours())}:${pad(at.getMinutes())}`;
+          const endMins = length == null ? null : Math.min(23 * 60 + 59, timeToMinutes(time) + length);
+          const endTime = length === undefined ? p.endTime : endMins === null ? undefined : `${pad(Math.floor(endMins / 60))}:${pad(endMins % 60)}`;
+          const u = { ...p, ...rest, date: toISO(at), time, endTime };
+          updated.push(u);
+          return u;
+        });
+        set({ plans: next });
+        syncUpsertPlans(updated);
       },
 
       duplicatePlan: (id) => {
@@ -298,16 +342,19 @@ export const usePlannerStore = create<PlannerState>()(
         set({ selectedIds: allSelected ? [] : allIds });
       },
 
-      deleteSelected: () => {
+      deleteSelected: (withFuture = false) => {
         const { plans, selectedIds } = get();
         const idSet = new Set(selectedIds);
+        if (withFuture) {
+          for (const p of plans) if (idSet.has(p.id)) for (const s of seriesFrom(plans, p)) idSet.add(s.id);
+        }
         set({
           lastDeletedSnapshot: plans.filter((p) => idSet.has(p.id)),
           plans: plans.filter((p) => !idSet.has(p.id)),
           selectedIds: [],
           selectMode: false,
         });
-        syncDeletePlans(selectedIds);
+        syncDeletePlans([...idSet]);
       },
     }),
     {

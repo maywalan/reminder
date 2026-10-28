@@ -1,4 +1,4 @@
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useScrollToTop } from '@react-navigation/native';
 import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
@@ -84,6 +84,9 @@ export default function ProgressScreen() {
   const blurTint = useEffectiveScheme() === 'dark' ? 'dark' : 'light';
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  // Tapping this tab again while on it scrolls back to the top.
+  const scrollRef = useRef<ScrollView>(null);
+  useScrollToTop(scrollRef);
   const plans = usePlannerStore((s) => s.plans);
   const firstUsedAt = usePlannerStore((s) => s.firstUsedAt);
   const authUser = useAuthStore((s) => s.user);
@@ -135,7 +138,7 @@ export default function ProgressScreen() {
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.surface }]}>
-      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 14, paddingBottom: 130 }}>
+      <ScrollView ref={scrollRef} contentContainerStyle={{ paddingTop: insets.top + 14, paddingBottom: 130 }}>
         <View style={styles.headerTop}>
           <View style={{ flex: 1 }}>
             <Text style={[styles.h1, { color: theme.text }]}>{t('tab.progress')}</Text>

@@ -19,7 +19,8 @@ export const Colors = {
     text: '#10203A', // "ink"
     textSecondary: 'rgba(16,32,58,0.5)', // "ink-50"
     textTertiary: 'rgba(16,32,58,0.42)', // "ink-42"
-    textQuaternary: 'rgba(16,32,58,0.38)', // "ink-38" — inactive tab icon + label
+    textQuaternary: 'rgba(16,32,58,0.38)', // "ink-38"
+    tabInactive: 'rgba(16,32,58,0.64)', // inactive tab icon + label — 5:1 on the white bar (critique, 2026-10-29)
     textFaint: 'rgba(16,32,58,0.3)', // "ink-30" — chevrons
     accent: '#1B76E8', // "azure-500" — fills, icon strokes, active states
     accentStrong: '#0F5FC4', // "azure-600" — every blue *word* (Save, Done, Log In, links)
@@ -51,6 +52,7 @@ export const Colors = {
     textSecondary: 'rgba(242,245,250,0.6)',
     textTertiary: 'rgba(242,245,250,0.45)',
     textQuaternary: 'rgba(242,245,250,0.38)',
+    tabInactive: 'rgba(242,245,250,0.6)',
     textFaint: 'rgba(242,245,250,0.3)',
     accent: '#4C9AFB',
     accentStrong: '#7FB4FC',

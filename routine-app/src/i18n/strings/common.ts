@@ -5,6 +5,7 @@ export default {
   'tab.calendar': { en: 'Calendar', th: 'ปฏิทิน' },
   'tab.progress': { en: 'Progress', th: 'สถิติ' },
   'tab.profile': { en: 'Profile', th: 'โปรไฟล์' },
+  'tab.newPlan': { en: 'New plan', th: 'เพิ่มแผน' },
 
   'common.cancel': { en: 'Cancel', th: 'ยกเลิก' },
   'common.delete': { en: 'Delete', th: 'ลบ' },
@@ -23,6 +24,10 @@ export default {
   'plans.deleteTitle': { en: 'Delete Plans?', th: 'ลบแผนที่เลือกไหม?' },
   'plans.deleteBody': { en: '{count} plans will be deleted.', th: 'จะลบ {count} แผน' },
   'plans.deleteBody_one': { en: '1 plan will be deleted.', th: 'จะลบ 1 แผน' },
+  'plans.deleteCount': { en: 'Delete ({count})', th: 'ลบ ({count})' },
+  'plans.repeatingTitle': { en: 'Some of these plans repeat.', th: 'บางแผนที่เลือกเป็นแผนทำซ้ำ' },
+  'plans.deleteSelectedOnly': { en: 'Delete Selected Plans Only', th: 'ลบเฉพาะที่เลือก' },
+  'plans.deleteWithFuture': { en: 'Also Delete Future Plans', th: 'ลบที่เลือกและครั้งถัดไปทั้งหมด' },
   'plan.alert': { en: 'Alert', th: 'แจ้งเตือน' },
   'plan.alerts': { en: '{count} Alerts', th: 'แจ้งเตือน {count} ครั้ง' },
 

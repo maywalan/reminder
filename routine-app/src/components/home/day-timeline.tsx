@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import { useEffect, useRef } from 'react';
-import { Alert, Animated, Easing, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Animated, Easing, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { BorderlessButton, RectButton, Swipeable } from 'react-native-gesture-handler';
 import { NestableDraggableFlatList } from 'react-native-draggable-flatlist';
 import Reanimated, { Easing as REasing, FadeIn, FadeOut, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming, ZoomIn } from 'react-native-reanimated';
@@ -15,6 +15,7 @@ import { fmtDate, monthShort, weekdayShort, lang } from '@/i18n/format';
 import type { Plan } from '@/store/types';
 import { usePlannerStore } from '@/store/use-planner-store';
 import { planDateTime } from '@/utils/countdown';
+import { confirmPlanDelete } from '@/utils/repeat-scope';
 import { fromISO, toISO } from '@/utils/dates';
 import { dueProgress, formatDuration, formatLiveCountdown, formatStartsIn, isMissedToday, liveProgress, type HomeFeed } from '@/utils/home-feed';
 import { resolvePlanIcon } from '@/utils/plan-icons';
@@ -61,9 +62,11 @@ interface RowHandlers {
   onToggleSelect: (id: string) => void;
   onOpen: (id: string) => void;
   onDelete: (id: string) => void;
+  /** Deletes this occurrence and the later ones of its repeating series. */
+  onDeleteSeries: (id: string) => void;
 }
 
-interface Props extends RowHandlers {
+interface Props extends Omit<RowHandlers, 'onDeleteSeries'> {
   feed: HomeFeed;
   nowMs: number;
   emptyText: string;
@@ -311,10 +314,12 @@ function TimelineRow({
   );
 
   function confirmDelete() {
-    Alert.alert(tr('plan.deleteTitle'), tr('plan.deleteBody', { name: plan.name }), [
-      { text: tr('common.cancel'), style: 'cancel' },
-      { text: tr('common.delete'), style: 'destructive', onPress: () => h.onDelete(plan.id) },
-    ]);
+    confirmPlanDelete(
+      usePlannerStore.getState().plans,
+      plan,
+      () => h.onDelete(plan.id),
+      () => h.onDeleteSeries(plan.id)
+    );
   }
 
   return (
@@ -369,6 +374,7 @@ export function DayTimeline({ feed, nowMs, emptyText, countdownPlanId, onReorder
   const t = useHomeType();
   const hintSeen = usePlannerStore((s) => s.homeGestureHintSeen);
   const dismissHint = usePlannerStore((s) => s.dismissHomeGestureHint);
+  const deletePlanSeries = usePlannerStore((s) => s.deletePlanSeries);
   const { day, live, dayISO, isToday } = feed;
   // Using either gesture counts as having learned it.
   const rowHandlers = {
@@ -376,6 +382,10 @@ export function DayTimeline({ feed, nowMs, emptyText, countdownPlanId, onReorder
     onDelete: (id: string) => {
       dismissHint();
       h.onDelete(id);
+    },
+    onDeleteSeries: (id: string) => {
+      dismissHint();
+      deletePlanSeries(id);
     },
   };
   const date = fromISO(dayISO);

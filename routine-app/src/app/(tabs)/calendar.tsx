@@ -1,4 +1,4 @@
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useScrollToTop } from '@react-navigation/native';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -77,6 +77,7 @@ export default function CalendarScreen() {
   const groups = usePlannerStore((s) => s.groups);
   const toggleComplete = usePlannerStore((s) => s.toggleComplete);
   const deletePlan = usePlannerStore((s) => s.deletePlan);
+  const deletePlanSeries = usePlannerStore((s) => s.deletePlanSeries);
 
   const [enterToken, setEnterToken] = useState(0);
   useFocusEffect(
@@ -100,6 +101,8 @@ export default function CalendarScreen() {
   const holidays = useHolidays(calYear);
 
   const scrollRef = useRef<ScrollView>(null);
+  // Tapping this tab again while on it scrolls back to the top.
+  useScrollToTop(scrollRef);
   const dayDetailY = useRef(0);
 
   /** Tapping a date on the grid scrolls the packed dot/chip preview into full detail below. */
@@ -238,6 +241,7 @@ export default function CalendarScreen() {
                       onToggleSelect={() => {}}
                       onPress={() => router.push({ pathname: '/add-plan', params: { id: p.id } })}
                       onDelete={() => deletePlan(p.id)}
+                      onDeleteSeries={() => deletePlanSeries(p.id)}
                       onDrag={() => {}}
                     />
                   ))

@@ -8,7 +8,9 @@ import { CheckIcon, ClockIcon, GripIcon, TrashIcon } from '@/components/icon';
 import { Fonts, Radii, RowMinHeight, Typography } from '@/constants/theme';
 import type { Group, Plan } from '@/store/types';
 import { useTheme } from '@/hooks/use-theme';
+import { usePlannerStore } from '@/store/use-planner-store';
 import { secondsUntilPlan } from '@/utils/countdown';
+import { confirmPlanDelete } from '@/utils/repeat-scope';
 import { t } from '@/i18n';
 import { fmtTime } from '@/i18n/format';
 
@@ -24,6 +26,8 @@ interface Props {
   onToggleSelect: () => void;
   onPress: () => void;
   onDelete: () => void;
+  /** Deletes this occurrence and the later ones of a repeating series; offered only when given. */
+  onDeleteSeries?: () => void;
   onDrag: () => void;
 }
 
@@ -38,6 +42,7 @@ export function TodoItem({
   onToggleSelect,
   onPress,
   onDelete,
+  onDeleteSeries,
   onDrag,
 }: Props) {
   const theme = useTheme();
@@ -163,6 +168,7 @@ export function TodoItem({
   ];
 
   function confirmDelete() {
+    if (onDeleteSeries) return confirmPlanDelete(usePlannerStore.getState().plans, plan, onDelete, onDeleteSeries);
     Alert.alert(t('plan.deleteTitle'), t('plan.deleteBody', { name: plan.name }), [
       { text: t('common.cancel'), style: 'cancel' },
       { text: t('common.delete'), style: 'destructive', onPress: onDelete },

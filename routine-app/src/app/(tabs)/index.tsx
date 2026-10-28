@@ -1,8 +1,8 @@
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useIsFocused, useScrollToTop } from '@react-navigation/native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentRef, type ReactNode } from 'react';
 import type { MenuAction } from '@react-native-menu/menu';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
 import { NestableScrollContainer } from 'react-native-draggable-flatlist';
@@ -117,6 +117,10 @@ export default function HomeScreen() {
   const profileName = usePlannerStore((s) => s.profile.name);
   const toggleComplete = usePlannerStore((s) => s.toggleComplete);
   const deletePlan = usePlannerStore((s) => s.deletePlan);
+  const focused = useIsFocused();
+  // Tapping this tab again while on it scrolls back to the top.
+  const scrollRef = useRef<ComponentRef<typeof NestableScrollContainer>>(null);
+  useScrollToTop(scrollRef);
   const reorderPlans = usePlannerStore((s) => s.reorderPlans);
   const undoDelete = usePlannerStore((s) => s.undoDelete);
   const lastDeletedSnapshot = usePlannerStore((s) => s.lastDeletedSnapshot);
@@ -286,6 +290,7 @@ export default function HomeScreen() {
   return (
     <View style={[styles.screen, { backgroundColor: k.page }]}>
       <NestableScrollContainer
+        ref={scrollRef}
         contentContainerStyle={{ paddingTop: insets.top, paddingBottom: 130 }}
         keyboardDismissMode="on-drag">
         <View style={styles.header}>
@@ -361,7 +366,8 @@ export default function HomeScreen() {
         <LinearGradient colors={[k.page, `${k.page}00`]} style={styles.statusFade} />
       </View>
 
-      <UndoToast visible={!!lastDeletedSnapshot && !selectMode} onUndo={undoDelete} onExpire={clearDeletedSnapshot} />
+      {/* Only while Home is on screen, so a delete made in Calendar or the editor still gets its 6 s of Undo here. */}
+      <UndoToast visible={!!lastDeletedSnapshot && !selectMode && focused} onUndo={undoDelete} onExpire={clearDeletedSnapshot} />
 
       <Toast message={toastMessage} />
     </View>

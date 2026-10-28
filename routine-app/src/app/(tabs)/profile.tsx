@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useScrollToTop } from '@react-navigation/native';
+import { useRef, useState } from 'react';
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -50,6 +51,9 @@ export default function ProfileScreen() {
   const theme = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  // Tapping this tab again while on it scrolls back to the top.
+  const scrollRef = useRef<ScrollView>(null);
+  useScrollToTop(scrollRef);
   const profile = usePlannerStore((s) => s.profile);
   const settings = usePlannerStore((s) => s.settings);
   const updateSettings = usePlannerStore((s) => s.updateSettings);
@@ -118,7 +122,7 @@ export default function ProfileScreen() {
 
   return (
     <View style={[styles.screen, { backgroundColor: theme.surface }]}>
-      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 22, paddingBottom: 130 }}>
+      <ScrollView ref={scrollRef} contentContainerStyle={{ paddingTop: insets.top + 22, paddingBottom: 130 }}>
         <View style={styles.profileHeader}>
           <Pressable onPress={() => router.push('/edit-profile')} style={[styles.avatar, { backgroundColor: profile.avatarColor }]}>
             <Text style={styles.avatarInitials}>{profileInitials(profile.name)}</Text>

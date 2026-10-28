@@ -10,6 +10,7 @@ export default {
   'home.colors': { en: 'Colors', th: 'สี' },
   'home.groups': { en: 'Groups', th: 'กลุ่ม' },
   'home.all': { en: 'All', th: 'ทั้งหมด' },
+  'home.removeFilter': { en: 'Remove filter: {name}', th: 'เอาตัวกรอง {name} ออก' },
   'home.noGroups': { en: 'No groups yet ·', th: 'ยังไม่มีกลุ่ม ·' },
   'home.createOne': { en: 'Create one', th: 'สร้างเลย' },
   'home.createGroup': { en: 'Create group', th: 'สร้างกลุ่ม' },

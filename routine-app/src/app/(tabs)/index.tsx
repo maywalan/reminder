@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EarlierBlock, UpcomingBlock } from '@/components/home/feed-sections';
 import { DayTimeline } from '@/components/home/day-timeline';
+import { FilterChips, type FilterChip } from '@/components/home/filter-chips';
 import { FilterMenuButton } from '@/components/home/filter-menu-button';
 import { addDays, FEED_INSET, startOfWeek, WeekStrip } from '@/components/home/week-strip';
 import { useHomeTokens, useHomeType } from '@/components/home/tokens';
@@ -198,7 +199,11 @@ export default function HomeScreen() {
   };
 
   const feed = useMemo(() => buildHomeFeed(plans, nowMs, matches, selectedISO), [plans, nowMs, matches, selectedISO]);
-  const markedISOs = useMemo(() => new Set(plans.filter(matches).map((p) => p.date)), [plans, matches]);
+  // Dots mark days with something still to do, so a busy past week doesn't dot every day (critique, 2026-10-28).
+  const markedISOs = useMemo(
+    () => new Set(plans.filter((p) => matches(p) && !p.completed && p.date >= todayISO).map((p) => p.date)),
+    [plans, matches, todayISO]
+  );
   const liveActivity = useMemo(
     () => (liveActivitiesEnabled ? findLiveActivityPlan(plans.filter(matches), nowMs) : null),
     [liveActivitiesEnabled, plans, matches, nowMs]
@@ -269,6 +274,12 @@ export default function HomeScreen() {
           },
           { id: 'create', title: '', displayInline: true, subactions: [newGroupAction] },
         ];
+  const filterChips: FilterChip[] = [
+    ...filterColors.map((c) => ({ key: `c-${c}`, label: tr(SwatchColorNames[c] ?? 'color.other'), color: c, onRemove: () => toggleFilterColor(c) })),
+    ...groups
+      .filter((g) => filterGroupIds.includes(g.id))
+      .map((g) => ({ key: `g-${g.id}`, label: g.name, color: g.color, onRemove: () => toggleFilterGroup(g.id) })),
+  ];
   const onColorAction = (id: string) => (id === 'all' ? clearFilterColors() : toggleFilterColor(id));
   const onGroupAction = (id: string) => (id === 'new' ? openCreateGroup() : id === 'all' ? clearFilterGroups() : toggleFilterGroup(id));
 
@@ -295,6 +306,12 @@ export default function HomeScreen() {
             <FilterMenuButton label={tr('home.groups')} dot={activeGroup?.color} icon={(c) => <TagIcon size={16} color={c} />} actions={groupActions} onAction={onGroupAction} />
           </View>
         </View>
+
+        {filterChips.length > 0 && (
+          <View style={styles.chips}>
+            <FilterChips chips={filterChips} />
+          </View>
+        )}
 
         <View style={styles.feedArea}>
           {/* The week strip and the selected day's timeline share the white box (user's reference, 2026-10-22); Upcoming and Earlier live on the grey page below it. */}
@@ -360,6 +377,7 @@ const styles = StyleSheet.create({
   headerTools: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   // The week strip lives inside the Today box, so only a small gap under the header.
   feedArea: { paddingHorizontal: FEED_INSET, paddingTop: 12 },
+  chips: { paddingHorizontal: FEED_INSET, paddingBottom: 2 },
   // The old Home's floating Today card (design_handoff_tickle_home_7) with a subtle drop shadow.
   todayBox: {
     borderRadius: 22,

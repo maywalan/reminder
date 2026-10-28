@@ -102,7 +102,7 @@ function DayCard({
   summary: React.ReactNode;
   /** Shown instead of `summary` while open, so it doesn't repeat the first row (Upcoming's "2 tasks"). */
   openSummary?: React.ReactNode;
-  /** Replaces "Review" while closed, e.g. Upcoming's "+2 more". */
+  /** Replaces "Review" while closed, e.g. Upcoming's "+2 more"; "" shows the chevron alone. */
   more?: string;
   open: boolean;
   onPress: () => void;
@@ -140,7 +140,8 @@ function DayCard({
           </Text>
         </View>
         <View style={styles.review}>
-          <Text style={[t.blockLink, { color: k.azureDark }]}>{open ? tr('home.hide') : (more ?? tr('home.review'))}</Text>
+          {/* Upcoming leaves the text out for a one-plan day ("" from `more`), so every card there reads chevron or "+N more" (critique, 2026-10-28). */}
+          {!!(open || more !== '') && <Text style={[t.blockLink, { color: k.azureDark }]}>{open ? tr('home.hide') : (more ?? tr('home.review'))}</Text>}
           <Reanimated.View style={chevron}>
             <ChevronRightIcon size={14} color={k.azureDark} strokeWidth={2.4} />
           </Reanimated.View>
@@ -213,7 +214,7 @@ export function UpcomingBlock({ days, groups, ...s }: SelectProps & { days: Upco
                 </>
               }
               openSummary={<Text style={[t.upTitle, { color: k.ink }]}>{tr('home.taskCount', { count: d.plans.length })}</Text>}
-              more={d.plans.length > 1 ? tr('home.moreCount', { n: d.plans.length - 1 }) : undefined}
+              more={d.plans.length > 1 ? tr('home.moreCount', { n: d.plans.length - 1 }) : ''}
               open={s.selectMode || openDays.includes(d.dateISO)}
               onPress={() => toggleDay(d.dateISO)}>
               {d.plans.map((p, i) => {

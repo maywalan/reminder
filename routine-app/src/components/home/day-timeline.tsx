@@ -16,7 +16,7 @@ import type { Plan } from '@/store/types';
 import { usePlannerStore } from '@/store/use-planner-store';
 import { planDateTime } from '@/utils/countdown';
 import { fromISO, toISO } from '@/utils/dates';
-import { dueProgress, formatLiveCountdown, formatStartsIn, liveProgress, type HomeFeed } from '@/utils/home-feed';
+import { dueProgress, formatDuration, formatLiveCountdown, formatStartsIn, isMissedToday, liveProgress, type HomeFeed } from '@/utils/home-feed';
 import { resolvePlanIcon } from '@/utils/plan-icons';
 
 /**
@@ -124,6 +124,7 @@ function livePct(plan: Plan, nowMs: number): `${number}%` {
 function TimelineRow({
   plan,
   live,
+  missed,
   nowMs,
   countdown,
   canCheck,
@@ -133,6 +134,8 @@ function TimelineRow({
 }: {
   plan: Plan;
   live: boolean;
+  /** Left undone past its live window today: stated plainly, like Earlier's missed rows. */
+  missed: boolean;
   nowMs: number;
   /** A ticking "starts in m:ss" for the Live-Activity task. */
   countdown: string | null;
@@ -179,16 +182,29 @@ function TimelineRow({
     sub = <Text style={[t.cardSubStrong, { color: k.azure }]}>{tr('home.dueAt', { time: plan.time })}</Text>;
   } else if (live) {
     const { secondsLeft } = liveProgress(plan, nowMs);
-    const over = secondsLeft < 0;
-    const strongColor = over ? k.rose : k.azure;
-    sub = (
-      <>
-        {tr(over ? 'home.over.pre' : 'home.remaining.pre')}
-        <Text style={[t.cardSubStrong, { color: strongColor }]}>{formatLiveCountdown(secondsLeft)}</Text>
-        {tr(over ? 'home.over.post' : 'home.remaining.post')}
-      </>
-    );
-    subColor = strongColor;
+    if (secondsLeft < 0) {
+      // Overtime reads calmly in minutes, grey, until the range counts as missed an hour past its
+      // end (critique, 2026-10-28: a red per-second "+6:11:26" nagged all evening).
+      sub = (
+        <>
+          {tr('home.over.pre')}
+          <Text style={[t.cardSubStrong, { color: k.ink60 }]}>{formatDuration(Math.max(1, Math.floor(-secondsLeft / 60)))}</Text>
+          {tr('home.over.post')}
+        </>
+      );
+    } else {
+      subColor = k.azure;
+      sub = (
+        <>
+          {tr('home.remaining.pre')}
+          <Text style={[t.cardSubStrong, { color: k.azure }]}>{formatLiveCountdown(secondsLeft)}</Text>
+          {tr('home.remaining.post')}
+        </>
+      );
+    }
+  } else if (missed) {
+    subColor = k.rose;
+    sub = <Text style={[t.cardSub, { color: k.rose }]}>{tr('home.missedAt', { time: plan.endTime ? `${plan.time} – ${plan.endTime}` : plan.time })}</Text>;
   } else if (countdown) {
     subColor = k.azure;
     sub = <Text style={[t.cardSubStrong, { color: k.azure }]}>{countdown}</Text>;
@@ -265,7 +281,8 @@ function TimelineRow({
         </View>
         {showCheck && (
           <>
-            <View style={[styles.divider, { backgroundColor: k.earlierBorder }]} />
+            {/* Tinted from the plan so it shows on the wash in both themes. */}
+            <View style={[styles.divider, { backgroundColor: `${color}${k.dark ? '40' : '33'}` }]} />
             <BorderlessButton
               onPress={toggle}
               hitSlop={{ top: 14, bottom: 14, left: 10, right: 10 }}
@@ -410,6 +427,7 @@ export function DayTimeline({ feed, nowMs, emptyText, countdownPlanId, onReorder
             <TimelineRow
               plan={item}
               live={live?.id === item.id}
+              missed={isToday && isMissedToday(item, nowMs)}
               nowMs={nowMs}
               countdown={countdownFor(item)}
               canCheck={dayISO <= todayISO}

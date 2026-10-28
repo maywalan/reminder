@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { MenuAction } from '@react-native-menu/menu';
-import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
+import { Animated, Easing, StyleSheet, View } from 'react-native';
 import { NestableScrollContainer } from 'react-native-draggable-flatlist';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -17,15 +17,16 @@ import { PaletteIcon, TagIcon } from '@/components/icon';
 import { Text } from '@/components/text';
 import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
+import { UndoToast } from '@/components/home/undo-toast';
 import { t as tr } from '@/i18n';
 import { fmtDate } from '@/i18n/format';
-import { Radii, SwatchColorNames, SwatchColors, Typography } from '@/constants/theme';
-import { useEffectiveScheme, useTheme } from '@/hooks/use-theme';
+import { SwatchColorNames, SwatchColors } from '@/constants/theme';
+import { useEffectiveScheme } from '@/hooks/use-theme';
 import { useToast } from '@/hooks/use-toast';
 import { usePlannerStore } from '@/store/use-planner-store';
 import type { Plan } from '@/store/types';
 import { toISO } from '@/utils/dates';
-import { planDateTime } from '@/utils/countdown';
+import { planDateTime, planEndDateTime } from '@/utils/countdown';
 import { buildHomeFeed, findLiveActivityPlan, START_TICK_MS } from '@/utils/home-feed';
 
 const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
@@ -105,7 +106,6 @@ function EntranceBox({ entrance, blurTint, children }: { entrance: Entrance; blu
  * sheet (day timeline · Upcoming · Earlier) from design_handoff_tickle_home_timeline.
  */
 export default function HomeScreen() {
-  const theme = useTheme();
   const k = useHomeTokens();
   const t = useHomeType();
   const blurTint = useEffectiveScheme() === 'dark' ? 'dark' : 'light';
@@ -119,6 +119,7 @@ export default function HomeScreen() {
   const reorderPlans = usePlannerStore((s) => s.reorderPlans);
   const undoDelete = usePlannerStore((s) => s.undoDelete);
   const lastDeletedSnapshot = usePlannerStore((s) => s.lastDeletedSnapshot);
+  const clearDeletedSnapshot = usePlannerStore((s) => s.clearDeletedSnapshot);
   const filterGroupIds = usePlannerStore((s) => s.filterGroupIds);
   const toggleFilterGroup = usePlannerStore((s) => s.toggleFilterGroup);
   const clearFilterGroups = usePlannerStore((s) => s.clearFilterGroups);
@@ -208,7 +209,10 @@ export default function HomeScreen() {
     liveActivity?.phase === 'upcoming' && liveActivity.plan.date === toISO(new Date(nowMs)) ? liveActivity.plan.id : null;
   // The "starts in" line only shows seconds in its last 10 minutes; before that the minute clock is enough.
   const countdownTicking = !!countdownPlanId && !!liveActivity && planDateTime(liveActivity.plan).getTime() - nowMs <= START_TICK_MS;
-  const fast = !!feed.live || countdownTicking;
+  // Seconds only matter while a range counts down to its end; overtime and a due reminder read in minutes.
+  const liveEndMs = feed.live?.endTime ? planEndDateTime(feed.live)?.getTime() : undefined;
+  const liveTicking = liveEndMs !== undefined && liveEndMs > nowMs;
+  const fast = liveTicking || countdownTicking;
   useEffect(() => setFastClock(fast), [fast]);
 
   const now = new Date(nowMs);
@@ -324,12 +328,6 @@ export default function HomeScreen() {
             </View>
           </EntranceBox>
 
-          {lastDeletedSnapshot && !selectMode && (
-            <Pressable onPress={undoDelete} style={[styles.undoBar, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
-              <Text style={{ color: theme.textSecondary, fontSize: Typography.rowValue, fontWeight: '500' }}>{tr('home.undoDelete')}</Text>
-            </Pressable>
-          )}
-
           <EntranceBox entrance={earlierEnter} blurTint={blurTint}>
             <UpcomingBlock days={feed.upcoming} groups={groups} {...selectProps} />
             <EarlierBlock older={feed.older} seeAll={seeAll} onToggleSeeAll={() => setSeeAll((v) => !v)} {...selectProps} />
@@ -339,6 +337,14 @@ export default function HomeScreen() {
 
       {/* The feed fades into the page above the tab bar, so whatever sits under the + button at rest dissolves instead of being cut off (critique, 2026-10-28). */}
       <LinearGradient pointerEvents="none" colors={[`${k.page}00`, k.page]} style={styles.bottomFade} />
+
+      {/* Scrolled content passes under the status bar on a band of page colour instead of colliding with the clock (critique, 2026-10-28). */}
+      <View pointerEvents="none" style={[styles.statusBand, { height: insets.top }]}>
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: k.page }]} />
+        <LinearGradient colors={[k.page, `${k.page}00`]} style={styles.statusFade} />
+      </View>
+
+      <UndoToast visible={!!lastDeletedSnapshot && !selectMode} onUndo={undoDelete} onExpire={clearDeletedSnapshot} />
 
       <Toast message={toastMessage} />
     </View>
@@ -368,6 +374,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     elevation: 3,
   },
+  statusBand: { position: 'absolute', top: 0, left: 0, right: 0 },
+  statusFade: { position: 'absolute', top: '100%', left: 0, right: 0, height: 14 },
   bottomFade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 56 },
-  undoBar: { marginTop: 10, padding: 10, borderRadius: Radii.card, borderWidth: 1, alignItems: 'center' },
 });

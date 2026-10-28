@@ -9,7 +9,7 @@ import { t } from '@/i18n';
  * `completed`; everything else — live, overtime, missed — is derived from the clock:
  *
  * - A **time-range** task goes live on its own at its start time and stays live (overtime past its
- *   end) until checked off.
+ *   end) until checked off, or until an hour past its end, when it counts as missed (user, 2026-10-28).
  * - A **point reminder** goes live ("due now") at its time for 15 minutes, then counts as missed
  *   if it isn't checked off.
  * - Only one task is live at a time: the earliest-started one. Anything else that has started
@@ -20,13 +20,18 @@ import { t } from '@/i18n';
 
 /** How long a point reminder stays live ("due now") past its time before it counts as missed. */
 export const POINT_DUE_MS = 15 * 60_000;
+/** How long a time range stays live (overtime) past its end before it counts as missed. */
+export const RANGE_GRACE_MS = 60 * 60_000;
 
 function hasStarted(plan: Plan, nowMs: number) {
   return planDateTime(plan).getTime() <= nowMs;
 }
 
+/** Not done and past its live window: a point reminder 15 min after its time, a range an hour after its end. */
 export function isMissedToday(plan: Plan, nowMs: number) {
-  return !plan.completed && !plan.allDay && !plan.endTime && planDateTime(plan).getTime() <= nowMs - POINT_DUE_MS;
+  if (plan.completed || plan.allDay) return false;
+  const end = planEndDateTime(plan);
+  return end ? end.getTime() <= nowMs - RANGE_GRACE_MS : planDateTime(plan).getTime() <= nowMs - POINT_DUE_MS;
 }
 
 export interface UpcomingDay {
@@ -69,7 +74,7 @@ export function buildHomeFeed(plans: Plan[], nowMs: number, matches: (p: Plan) =
 
   const live = isToday
     ? (dayPlans
-        .filter((p) => !p.completed && !p.allDay && hasStarted(p, nowMs) && (p.endTime || !isMissedToday(p, nowMs)))
+        .filter((p) => !p.completed && !p.allDay && hasStarted(p, nowMs) && !isMissedToday(p, nowMs))
         .sort((a, b) => a.time.localeCompare(b.time))[0] ?? null)
     : null;
 
@@ -154,7 +159,7 @@ export function formatLiveCountdown(secondsLeft: number): string {
 /**
  * The one task that gets the Live Activity right now, if any — only tasks with their "Live
  * Activity" switch on. A running time-range session today wins (the earliest-started, overtime
- * included, until checked off); otherwise the soonest switched-on task that hasn't started yet,
+ * included, until checked off or an hour past its end); otherwise the soonest switched-on task that hasn't started yet,
  * on any day — it counts down from the moment its switch is on, not from a fixed lead time. A
  * point reminder stays "upcoming" through its 15-minute due window (the Lock Screen shows
  * "Now"), then drops out once it's missed.
@@ -164,7 +169,7 @@ export function findLiveActivityPlan(plans: Plan[], nowMs: number): { plan: Plan
   const candidates = plans.filter((p) => p.live && !p.completed && !p.allDay && p.date >= todayISO);
 
   const running = candidates
-    .filter((p) => p.date === todayISO && p.endTime && hasStarted(p, nowMs))
+    .filter((p) => p.date === todayISO && p.endTime && hasStarted(p, nowMs) && !isMissedToday(p, nowMs))
     .sort((a, b) => a.time.localeCompare(b.time))[0];
   if (running) return { plan: running, phase: 'live' };
 

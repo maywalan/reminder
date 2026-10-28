@@ -92,6 +92,7 @@ function earlierDayLabel(dateISO: string, todayISO: string) {
 function DayCard({
   label,
   summary,
+  openSummary,
   more,
   open,
   onPress,
@@ -99,6 +100,8 @@ function DayCard({
 }: {
   label: string;
   summary: React.ReactNode;
+  /** Shown instead of `summary` while open, so it doesn't repeat the first row (Upcoming's "2 tasks"). */
+  openSummary?: React.ReactNode;
   /** Replaces "Review" while closed, e.g. Upcoming's "+2 more". */
   more?: string;
   open: boolean;
@@ -133,7 +136,7 @@ function DayCard({
             {label}
           </Text>
           <Text numberOfLines={1} style={[t.sumCount, { color: k.ink }]}>
-            {summary}
+            {open && openSummary ? openSummary : summary}
           </Text>
         </View>
         <View style={styles.review}>
@@ -209,6 +212,7 @@ export function UpcomingBlock({ days, groups, ...s }: SelectProps & { days: Upco
                   <Text style={[t.upTitle, { color: k.ink45 }]}>{` · ${first.allDay ? tr('home.allDay') : first.time}`}</Text>
                 </>
               }
+              openSummary={<Text style={[t.upTitle, { color: k.ink }]}>{tr('home.taskCount', { count: d.plans.length })}</Text>}
               more={d.plans.length > 1 ? tr('home.moreCount', { n: d.plans.length - 1 }) : undefined}
               open={s.selectMode || openDays.includes(d.dateISO)}
               onPress={() => toggleDay(d.dateISO)}>

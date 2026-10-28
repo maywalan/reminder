@@ -42,6 +42,7 @@ interface PlannerState {
   groups: Group[];
   profile: Profile;
   settings: Settings;
+  /** The plans removed by the last delete, for Undo (only those plans, so Undo can't roll back anything else). */
   lastDeletedSnapshot: Plan[] | null;
   /** Home's Groups filter: a plan shows when it's in any of these. Empty = every group. */
   filterGroupIds: string[];
@@ -86,6 +87,8 @@ interface PlannerState {
   deletePlan: (id: string) => void;
   duplicatePlan: (id: string) => void;
   undoDelete: () => void;
+  /** Drops the Undo option once its toast times out. */
+  clearDeletedSnapshot: () => void;
   reorderPlans: (date: string, orderedVisibleIds: string[]) => void;
   addGroup: (group: Omit<Group, 'id'>) => Group;
   setProfile: (patch: Partial<Profile>) => void;
@@ -176,7 +179,7 @@ export const usePlannerStore = create<PlannerState>()(
 
       deletePlan: (id) => {
         const { plans } = get();
-        set({ lastDeletedSnapshot: plans, plans: plans.filter((p) => p.id !== id) });
+        set({ lastDeletedSnapshot: plans.filter((p) => p.id === id), plans: plans.filter((p) => p.id !== id) });
         syncDeletePlan(id);
       },
 
@@ -199,10 +202,16 @@ export const usePlannerStore = create<PlannerState>()(
       undoDelete: () => {
         const { lastDeletedSnapshot } = get();
         if (lastDeletedSnapshot) {
-          set({ plans: lastDeletedSnapshot, lastDeletedSnapshot: null });
+          // Put back just the deleted plans; whatever was added or changed since stays as it is.
+          set((state) => {
+            const present = new Set(state.plans.map((p) => p.id));
+            return { plans: [...state.plans, ...lastDeletedSnapshot.filter((p) => !present.has(p.id))], lastDeletedSnapshot: null };
+          });
           syncUpsertPlans(lastDeletedSnapshot);
         }
       },
+
+      clearDeletedSnapshot: () => set({ lastDeletedSnapshot: null }),
 
       reorderPlans: (date, orderedVisibleIds) => {
         set((state) => {
@@ -293,7 +302,7 @@ export const usePlannerStore = create<PlannerState>()(
         const { plans, selectedIds } = get();
         const idSet = new Set(selectedIds);
         set({
-          lastDeletedSnapshot: plans,
+          lastDeletedSnapshot: plans.filter((p) => idSet.has(p.id)),
           plans: plans.filter((p) => !idSet.has(p.id)),
           selectedIds: [],
           selectMode: false,

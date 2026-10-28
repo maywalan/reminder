@@ -1,7 +1,6 @@
 import type { Plan, SubscriptionState } from '@/store/types';
-import { planDateTime } from '@/utils/countdown';
 import { toISO } from '@/utils/dates';
-import { POINT_DUE_MS } from '@/utils/home-feed';
+import { isMissedToday } from '@/utils/home-feed';
 import type { Period } from '@/utils/progress';
 
 /** Free tier's cap on active plans (paywall README: "5 active plans"). */
@@ -19,8 +18,8 @@ export function isPeriodLocked(period: Period, state: SubscriptionState): boolea
 /** An occurrence still to do: not done, not on a past day, and not already missed today. */
 function isOpen(plan: Plan, todayISO: string, nowMs: number): boolean {
   if (plan.completed || plan.date < todayISO) return false;
-  if (plan.date > todayISO || plan.allDay || plan.endTime) return true;
-  return planDateTime(plan).getTime() > nowMs - POINT_DUE_MS;
+  if (plan.date > todayISO) return true;
+  return !isMissedToday(plan, nowMs);
 }
 
 /**

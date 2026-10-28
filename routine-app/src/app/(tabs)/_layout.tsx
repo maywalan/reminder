@@ -5,8 +5,9 @@ import { View } from 'react-native';
 import { AddPlanFab, TabBar } from '@/components/tab-bar';
 import { t } from '@/i18n';
 
-// New Plan floats only where plans are listed; on Progress and Profile it just covered row values.
-const FAB_ROUTES = new Set(['index', 'calendar']);
+// New Plan floats on Home only: on Stats and Profile it covered row values, and Calendar has its
+// own + on the selected day (critique, 2026-10-29).
+const FAB_ROUTES = new Set(['index']);
 
 export default function TabsLayout() {
   // The floating New Plan button sits a fixed gap above the bar, whose height varies with the

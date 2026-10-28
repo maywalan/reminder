@@ -3,7 +3,7 @@ import type { Entry } from './types';
 export default {
   'tab.home': { en: 'Home', th: 'หน้าหลัก' },
   'tab.calendar': { en: 'Calendar', th: 'ปฏิทิน' },
-  'tab.progress': { en: 'Progress', th: 'สถิติ' },
+  'tab.progress': { en: 'Stats', th: 'สถิติ' },
   'tab.profile': { en: 'Profile', th: 'โปรไฟล์' },
   'tab.newPlan': { en: 'New plan', th: 'เพิ่มแผน' },
 

@@ -48,6 +48,7 @@ export function TabBar({
   const selectMode = usePlannerStore((s) => s.selectMode);
   const selectedIds = usePlannerStore((s) => s.selectedIds);
   const selectAll = usePlannerStore((s) => s.selectAll);
+  const setSelectMode = usePlannerStore((s) => s.setSelectMode);
   const deleteSelected = usePlannerStore((s) => s.deleteSelected);
 
   const fade = useRef(new Animated.Value(0)).current;
@@ -166,19 +167,29 @@ export function TabBar({
       <Animated.View
         style={[styles.selectRow, { opacity: fade }]}
         pointerEvents={selectMode ? 'auto' : 'none'}>
-        <Pressable onPress={selectAll} hitSlop={8} accessibilityRole="button">
-          <Text style={[styles.selectAction, { color: theme.accent }]}>{t('common.selectAll')}</Text>
-        </Pressable>
-        <Pressable
-          onPress={handleDelete}
-          hitSlop={8}
-          disabled={selectedIds.length === 0}
-          accessibilityRole="button"
-          accessibilityState={{ disabled: selectedIds.length === 0 }}>
-          <Text style={[styles.selectAction, { color: theme.danger, opacity: selectedIds.length === 0 ? 0.4 : 1 }]}>
-            {selectedIds.length > 0 ? t('plans.deleteCount', { count: selectedIds.length }) : t('common.delete')}
-          </Text>
-        </Pressable>
+        <View style={styles.selectSlot}>
+          <Pressable onPress={selectAll} hitSlop={8} accessibilityRole="button">
+            <Text style={[styles.selectAction, { color: theme.accent }]}>{t('common.selectAll')}</Text>
+          </Pressable>
+        </View>
+        {/* Leave Edit mode from here too; its other exit is up on the Today card (critique, 2026-10-29). */}
+        <View style={[styles.selectSlot, styles.selectSlotCenter]}>
+          <Pressable onPress={() => setSelectMode(false)} hitSlop={8} accessibilityRole="button">
+            <Text style={[styles.selectAction, { color: theme.accentStrong }]}>{t('common.done')}</Text>
+          </Pressable>
+        </View>
+        <View style={[styles.selectSlot, styles.selectSlotEnd]}>
+          <Pressable
+            onPress={handleDelete}
+            hitSlop={8}
+            disabled={selectedIds.length === 0}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: selectedIds.length === 0 }}>
+            <Text style={[styles.selectAction, { color: theme.danger, opacity: selectedIds.length === 0 ? 0.4 : 1 }]}>
+              {selectedIds.length > 0 ? t('plans.deleteCount', { count: selectedIds.length }) : t('common.delete')}
+            </Text>
+          </Pressable>
+        </View>
       </Animated.View>
     </View>
   );
@@ -202,6 +213,10 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 8,
   },
+  // Three equal slots so Done sits at the true centre whatever the side labels' widths.
+  selectSlot: { flex: 1, alignItems: 'flex-start' },
+  selectSlotCenter: { alignItems: 'center' },
+  selectSlotEnd: { alignItems: 'flex-end' },
   selectAction: { fontSize: Typography.rowLabel, fontWeight: '700', fontFamily: Fonts[700] },
   tabBtn: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: 2 },
   tabIconSlot: { paddingHorizontal: PILL_H_PAD, paddingVertical: PILL_V_PAD, alignItems: 'center', justifyContent: 'center', marginBottom: 1 },

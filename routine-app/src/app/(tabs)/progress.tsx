@@ -6,6 +6,7 @@ import { Animated, Easing, Pressable, ScrollView, StyleSheet, View } from 'react
 import Reanimated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ScrollEdgeFades } from '@/components/scroll-edge-fades';
 import { Text } from '@/components/text';
 import { BouncyPressable } from '@/components/bouncy-pressable';
 import { ChevronLeftIcon, ChevronRightIcon, LockIcon, SparkleIcon } from '@/components/icon';
@@ -14,24 +15,26 @@ import { ProgressChart } from '@/components/progress/progress-chart';
 import { ProgressHero } from '@/components/progress/progress-hero';
 import { ProgressStats } from '@/components/progress/progress-stats';
 import { ProgressStreakCard } from '@/components/progress/progress-streak-card';
+import { useHomeTokens } from '@/components/home/tokens';
 import { SegmentedControl } from '@/components/segmented-control';
 import { Typography } from '@/constants/theme';
 import { useEffectiveScheme, useTheme } from '@/hooks/use-theme';
 import { useAuthStore } from '@/store/use-auth-store';
 import { usePlannerStore } from '@/store/use-planner-store';
 import { t } from '@/i18n';
-import { weekdayShort } from '@/i18n/format';
+import { fmtTime, weekdayShort } from '@/i18n/format';
 import { toISO } from '@/utils/dates';
 import { isPeriodLocked } from '@/utils/premium';
 import {
   bestWeekday,
+  busiestHour,
   colorBreakdown,
   currentStreak,
   datesInRange,
   formatPeriodLabel,
   heroEyebrow,
   longestStreak,
-  pctDelta,
+  missedCount,
   previousPeriodLabel,
   progressRange,
   sumHistory,
@@ -81,6 +84,7 @@ function EntranceBox({ entrance, blurTint, children }: { entrance: Entrance; blu
 
 export default function ProgressScreen() {
   const theme = useTheme();
+  const page = useHomeTokens().page;
   const blurTint = useEffectiveScheme() === 'dark' ? 'dark' : 'light';
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -125,29 +129,37 @@ export default function ProgressScreen() {
   const cur = sumHistory(dates, todayISO, plans);
   const prevDates = datesInRange(range.prevStart, range.prevEnd);
   const prev = sumHistory(prevDates, todayISO, plans);
-  const delta = pctDelta(cur.completed, prev.completed);
+  const delta = cur.completed - prev.completed;
 
   const completionRate = cur.total > 0 ? Math.round((cur.completed / cur.total) * 100) : 0;
   const streak = currentStreak(todayISO, plans);
   const longest = useMemo(() => longestStreak(plans), [plans]);
   const best = bestWeekday(dates, todayISO, plans);
+  const missed = missedCount(dates, todayISO, plans, Date.now());
+  const busiest = busiestHour(dates, plans);
   const colors = colorBreakdown(dates, plans);
 
   const canGoPrev = range.start > boundISO;
   const locked = isPeriodLocked(period, subscriptionState);
 
   return (
-    <View style={[styles.screen, { backgroundColor: theme.surface }]}>
+    <View style={[styles.screen, { backgroundColor: page }]}>
       <ScrollView ref={scrollRef} contentContainerStyle={{ paddingTop: insets.top + 14, paddingBottom: 130 }}>
         <View style={styles.headerTop}>
           <View style={{ flex: 1 }}>
             <Text style={[styles.h1, { color: theme.text }]}>{t('tab.progress')}</Text>
             <View style={styles.periodNav}>
-              <Pressable onPress={() => setOffset((o) => o + 1)} disabled={!canGoPrev} hitSlop={8} style={{ opacity: canGoPrev ? 1 : 0.3 }}>
+              <Pressable
+                onPress={() => setOffset((o) => o + 1)}
+                disabled={!canGoPrev}
+                hitSlop={14}
+                accessibilityRole="button"
+                accessibilityLabel={t('progress.prevPeriod')}
+                style={{ opacity: canGoPrev ? 1 : 0.3 }}>
                 <ChevronLeftIcon size={13} color={theme.textSecondary} strokeWidth={2.6} />
               </Pressable>
               <Text style={[styles.periodLabel, { color: theme.textSecondary }]}>{formatPeriodLabel(period, range)}</Text>
-              <Pressable onPress={() => setOffset((o) => o - 1)} hitSlop={8}>
+              <Pressable onPress={() => setOffset((o) => o - 1)} hitSlop={14} accessibilityRole="button" accessibilityLabel={t('progress.nextPeriod')}>
                 <ChevronRightIcon size={13} color={theme.textSecondary} strokeWidth={2.6} />
               </Pressable>
             </View>
@@ -162,8 +174,14 @@ export default function ProgressScreen() {
               onPress={() =>
                 locked ? router.push('/paywall') : router.push({ pathname: '/recap', params: { period, offset: String(offset) } })
               }
+              hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel={t('progress.recap')}
               style={[styles.recapBtn, { backgroundColor: theme.divider }]}>
-              <SparkleIcon size={17} color={theme.text} strokeWidth={1.5} />
+              <SparkleIcon size={15} color={theme.text} strokeWidth={1.7} />
+              <Text maxFontSizeMultiplier={1.3} style={[styles.recapText, { color: theme.text }]}>
+                {t('progress.recap')}
+              </Text>
             </Pressable>
           </View>
         </View>
@@ -189,13 +207,18 @@ export default function ProgressScreen() {
             completed={cur.completed}
             total={cur.total}
             completionRate={completionRate}
-            deltaPct={delta}
+            delta={delta}
             compareLabel={previousPeriodLabel(period, range)}
           />
         </EntranceBox>
 
         <EntranceBox entrance={statsEnter} blurTint={blurTint}>
-          <ProgressStats completed={cur.completed} completionRate={completionRate} streak={streak} bestDay={weekdayShort(best)} />
+          <ProgressStats
+            missed={missed}
+            longest={longest}
+            bestDay={cur.completed > 0 ? weekdayShort(best) : '—'}
+            busiest={busiest === null ? '—' : fmtTime(`${busiest}:00`, { compact: true })}
+          />
         </EntranceBox>
 
         <EntranceBox entrance={chartEnter} blurTint={blurTint}>
@@ -235,6 +258,7 @@ export default function ProgressScreen() {
         )}
         </View>
       </ScrollView>
+      <ScrollEdgeFades color={page} />
     </View>
   );
 }
@@ -247,7 +271,9 @@ const styles = StyleSheet.create({
   periodLabel: { fontSize: Typography.body, fontWeight: '500' },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   todayBtn: { fontSize: Typography.rowValue, fontWeight: '700' },
-  recapBtn: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
+  // A labelled pill, not a bare sparkle: nothing said it opened the recap (critique, 2026-10-29).
+  recapBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, height: 32, paddingHorizontal: 12, borderRadius: 16 },
+  recapText: { fontSize: Typography.label, fontWeight: '700' },
   periodSwitch: { marginHorizontal: 20, marginTop: 12, marginBottom: 0 },
   lockCard: {
     marginHorizontal: 20,

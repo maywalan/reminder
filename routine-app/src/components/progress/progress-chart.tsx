@@ -2,17 +2,18 @@ import { StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/text';
 import { Radii, Typography } from '@/constants/theme';
+import { useHomeTokens } from '@/components/home/tokens';
 import { useTheme } from '@/hooks/use-theme';
 import type { Plan } from '@/store/types';
 import { fromISO } from '@/utils/dates';
 import { t } from '@/i18n';
-import { lang, monthLong, monthShort, weekdayLetter, weekdayLetterList, weekdayLong, weekdayShort } from '@/i18n/format';
+import { lang, monthLong, monthShort, weekdayLetter, weekdayLetterList, weekdayShort } from '@/i18n/format';
 import {
-  bestWeekday,
   datesInRange,
   heatmapCells,
   historyForDate,
   yearMonthCells,
+  weekEndISO,
   type Period,
 } from '@/utils/progress';
 
@@ -28,10 +29,11 @@ interface Props {
 /** 15a's chart card: a 7-bar week chart, a calendar-aligned month heatmap, or a 12-bar year chart, sharing one white card shell with a header row and a "Best day/month" footer. */
 export function ProgressChart({ period, startISO, endISO, todayISO, plans }: Props) {
   const theme = useTheme();
+  // Past bars in the theme's soft azure, so they don't glare in dark mode (was a fixed #D9E7FA).
+  const barSoft = useHomeTokens().azureTint;
   const start = fromISO(startISO);
   const end = fromISO(endISO);
   const today = fromISO(todayISO);
-  const dates = datesInRange(startISO, endISO);
 
   if (period === 'year') {
     const year = start.getFullYear();
@@ -64,7 +66,7 @@ export function ProgressChart({ period, startISO, endISO, todayISO, plans }: Pro
                     style={[
                       styles.bar,
                       styles.barYear,
-                      { height: h, backgroundColor: c.isFuture ? theme.dividerStrong : isCurrent ? theme.accent : '#D9E7FA' },
+                      { height: h, backgroundColor: c.isFuture ? theme.dividerStrong : isCurrent ? theme.accent : barSoft },
                     ]}
                   />
                 </View>
@@ -92,38 +94,40 @@ export function ProgressChart({ period, startISO, endISO, todayISO, plans }: Pro
   }
 
   if (period === 'week') {
-    const counts = dates.map((iso) => historyForDate(iso, todayISO, plans).completed);
+    // The whole Sun–Sat week; days still to come show as short empty bars.
+    const weekDates = datesInRange(startISO, weekEndISO(startISO));
+    const counts = weekDates.map((iso) => (iso > todayISO ? 0 : historyForDate(iso, todayISO, plans).completed));
     const max = Math.max(1, ...counts);
-    const bestIdx = bestWeekday(dates, todayISO, plans);
 
     return (
       <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
         <View style={styles.headerRow}>
           <Text style={[styles.title, { color: theme.text }]}>{t('progress.daily')}</Text>
           <Text style={[styles.caption, { color: theme.textTertiary }]}>
-            {weekdayShort(start.getDay()).toUpperCase()}–{weekdayShort(end.getDay()).toUpperCase()}
+            {weekdayShort(0).toUpperCase()}–{weekdayShort(6).toUpperCase()}
           </Text>
         </View>
         <View style={styles.bars}>
-          {dates.map((iso, i) => {
+          {weekDates.map((iso, i) => {
             const d = fromISO(iso);
             const isToday = iso === todayISO;
+            const isFuture = iso > todayISO;
             const h = 4 + (counts[i] / max) * (PLOT_HEIGHT - 4);
             return (
               <View key={iso} style={styles.barCol}>
                 <View style={styles.plot}>
-                  <View style={[styles.bar, { height: h, backgroundColor: isToday ? theme.accent : '#D9E7FA' }]} />
+                  <View style={[styles.bar, { height: h, backgroundColor: isFuture ? theme.dividerStrong : isToday ? theme.accent : barSoft }]} />
                 </View>
-                <Text style={[styles.barLabelWeek, { color: isToday ? theme.accentStrong : theme.textTertiary, fontWeight: isToday ? '700' : '600' }]}>
+                <Text
+                  style={[
+                    styles.barLabelWeek,
+                    { color: isFuture ? theme.textFaint : isToday ? theme.accentStrong : theme.textTertiary, fontWeight: isToday ? '700' : '600' },
+                  ]}>
                   {weekdayLetter(d.getDay())}
                 </Text>
               </View>
             );
           })}
-        </View>
-        <View style={[styles.footer, { borderTopColor: theme.divider }]}>
-          <Text style={[styles.footerLabel, { color: theme.textSecondary }]}>{t('progress.bestDay')}</Text>
-          <Text style={[styles.footerValue, { color: theme.text }]}>{weekdayLong(bestIdx)}</Text>
         </View>
       </View>
     );
@@ -131,7 +135,6 @@ export function ProgressChart({ period, startISO, endISO, todayISO, plans }: Pro
 
   const { startOffset, cells } = heatmapCells(startISO, endISO, todayISO, plans);
   const max = Math.max(1, ...cells.map((c) => c.completed));
-  const bestIdx = bestWeekday(dates, todayISO, plans);
 
   return (
     <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
@@ -164,10 +167,7 @@ export function ProgressChart({ period, startISO, endISO, todayISO, plans }: Pro
           );
         })}
       </View>
-      <View style={[styles.footer, { borderTopColor: theme.divider }]}>
-        <Text style={[styles.footerLabel, { color: theme.textSecondary }]}>{t('progress.bestDay')}</Text>
-        <Text style={[styles.footerValue, { color: theme.text }]}>{weekdayLong(bestIdx)}</Text>
-      </View>
+      {/* Best day lives in the stat tiles above; it used to repeat here (critique, 2026-10-29). */}
     </View>
   );
 }
@@ -186,13 +186,13 @@ const styles = StyleSheet.create({
   barCol: { flex: 1, alignItems: 'center', gap: 6 },
   bar: { width: '100%', borderRadius: 8 },
   barYear: { borderRadius: 5 },
-  barLabelWeek: { fontSize: Typography.tabLabel },
-  barLabelYear: { fontSize: 8 },
+  barLabelWeek: { fontSize: Typography.label },
+  barLabelYear: { fontSize: 11 },
   footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, paddingTop: 11, borderTopWidth: 1 },
   footerLabel: { fontSize: Typography.label, fontWeight: '500' },
   footerValue: { fontSize: Typography.label, fontWeight: '700' },
   heatDow: { flexDirection: 'row', marginTop: 12, marginBottom: 6 },
-  heatDowText: { flex: 1, textAlign: 'center', fontSize: Typography.tabLabel, fontWeight: '700' },
+  heatDowText: { flex: 1, textAlign: 'center', fontSize: Typography.label, fontWeight: '700' },
   heatGrid: { flexDirection: 'row', flexWrap: 'wrap' },
   heatCellWrap: { width: `${100 / 7}%`, aspectRatio: 1, padding: 2.5 },
   heatCell: { flex: 1, borderRadius: 8 },

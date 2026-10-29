@@ -39,7 +39,9 @@ export default {
   'period.year': { en: 'Year', th: 'ปี' },
 
   'calendar.todayLabel': { en: 'Today, {date}', th: 'วันนี้ · {date}' },
-  'calendar.emptyDay': { en: 'No plans on this day. Tap the date again to add one.', th: 'ยังไม่มีแผนในวันนั้น แตะวันที่อีกครั้งเพื่อเพิ่มเลย' },
+  'calendar.emptyDay': { en: 'No plans on this day. Tap + to add one.', th: 'ยังไม่มีแผนในวันนี้ แตะ + เพื่อเพิ่มได้เลย' },
+  'calendar.prevMonth': { en: 'Previous month', th: 'เดือนก่อน' },
+  'calendar.nextMonth': { en: 'Next month', th: 'เดือนถัดไป' },
   'calendar.noPlans': { en: 'No plans', th: 'ไม่มีแผน' },
   'calendar.addOn': { en: 'Add a plan on {day}', th: 'เพิ่มแผนวัน {day}' },
 

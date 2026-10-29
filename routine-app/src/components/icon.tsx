@@ -37,7 +37,9 @@ export function ChartIcon({ size = 24, color, strokeWidth = 1.8 }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path
-        d="M4 20V10M10 20V4M16 20v-7M22 20H2"
+        // Bars centred on x=12 and rising left to right; the baseline matches the other tab icons'
+        // 4–20 width (critique, 2026-10-29: the old bars sat left of centre and read light).
+        d="M7 20v-6M12 20v-11M17 20V5M4 20h16"
         stroke={color}
         strokeWidth={strokeWidth}
         strokeLinecap="round"

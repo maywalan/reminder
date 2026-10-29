@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/text';
@@ -14,33 +15,49 @@ interface Props {
   plans: Plan[];
   onShiftYear: (delta: number) => void;
   onPressMonth: (month: number) => void;
+  /** Where this month's card sits in the view, reported once so the screen can open on it. */
+  onCurrentMonthLayout?: (y: number) => void;
 }
 
-export function YearView({ year, todayISO, plans, onShiftYear, onPressMonth }: Props) {
+export function YearView({ year, todayISO, plans, onShiftYear, onPressMonth, onCurrentMonthLayout }: Props) {
   const theme = useTheme();
   const planDates = new Set(plans.map((p) => p.date));
+  const [todayYear, todayMonth] = todayISO.split('-').map(Number);
+  const gridY = useRef(0);
+  const reported = useRef(false);
 
   return (
     <View>
       <View style={styles.nav}>
         <Text style={[styles.navLabel, { color: theme.text }]}>{displayYear(year)}</Text>
         <View style={styles.arrows}>
-          <Pressable onPress={() => onShiftYear(-1)} style={[styles.arrowBtn, { borderColor: theme.cardBorder }]}>
+          <Pressable onPress={() => onShiftYear(-1)} hitSlop={7} style={[styles.arrowBtn, { borderColor: theme.cardBorder }]}>
             <ChevronLeftIcon size={14} color={theme.text} strokeWidth={2.3} />
           </Pressable>
-          <Pressable onPress={() => onShiftYear(1)} style={[styles.arrowBtn, { borderColor: theme.cardBorder }]}>
+          <Pressable onPress={() => onShiftYear(1)} hitSlop={7} style={[styles.arrowBtn, { borderColor: theme.cardBorder }]}>
             <ChevronRightIcon size={14} color={theme.text} strokeWidth={2.3} />
           </Pressable>
         </View>
       </View>
 
-      <View style={styles.grid}>
+      <View style={styles.grid} onLayout={(e) => (gridY.current = e.nativeEvent.layout.y)}>
         {monthLongList().map((name, m) => {
           const cells = buildMonthGrid(year, m);
           return (
             <Pressable
               key={m}
               onPress={() => onPressMonth(m)}
+              onLayout={
+                year === todayYear && m === todayMonth - 1
+                  ? (e) => {
+                      if (reported.current) return;
+                      reported.current = true;
+                      const y = e.nativeEvent.layout.y;
+                      // Next frame, once the grid's own offset has been measured too.
+                      requestAnimationFrame(() => onCurrentMonthLayout?.(gridY.current + y));
+                    }
+                  : undefined
+              }
               style={[styles.mini, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
               <Text style={[styles.miniTitle, { color: theme.text }]}>{name}</Text>
               <View style={styles.miniDow}>

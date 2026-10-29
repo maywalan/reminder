@@ -3,6 +3,7 @@ import type { Plan } from '@/store/types';
 import { t } from '@/i18n';
 import { displayYear, fmtDate, lang, monthLong, monthShortList } from '@/i18n/format';
 import { fromISO, toISO } from '@/utils/dates';
+import { isMissedToday } from '@/utils/home-feed';
 
 /** Progress screen data logic — every stat here is derived from real plans in the store. */
 
@@ -131,14 +132,14 @@ export interface RangeResult {
 export function progressRange(period: Period, todayISO: string, offset = 0): RangeResult {
   const todayObj = fromISO(todayISO);
   if (period === 'week') {
-    const end = new Date(todayObj);
-    end.setDate(end.getDate() - 7 * offset);
-    const start = new Date(end);
-    start.setDate(start.getDate() - 6);
-    const prevEnd = new Date(start);
-    prevEnd.setDate(prevEnd.getDate() - 1);
-    const prevStart = new Date(prevEnd);
-    prevStart.setDate(prevStart.getDate() - 6);
+    // The app's Sun–Sat week, like Calendar, Home and the widgets (critique, 2026-10-29: Stats used
+    // the last 7 days, Fri–Thu). The current week runs to today and is compared with the same days
+    // of last week, as month and year already are.
+    const start = new Date(todayObj.getFullYear(), todayObj.getMonth(), todayObj.getDate() - todayObj.getDay() - 7 * offset);
+    const end = offset === 0 ? todayObj : new Date(start.getFullYear(), start.getMonth(), start.getDate() + 6);
+    const elapsed = Math.round((end.getTime() - start.getTime()) / 86_400_000);
+    const prevStart = new Date(start.getFullYear(), start.getMonth(), start.getDate() - 7);
+    const prevEnd = new Date(prevStart.getFullYear(), prevStart.getMonth(), prevStart.getDate() + elapsed);
     return { start: toISO(start), end: toISO(end), prevStart: toISO(prevStart), prevEnd: toISO(prevEnd) };
   }
   if (period === 'month') {
@@ -161,9 +162,31 @@ export function progressRange(period: Period, todayISO: string, offset = 0): Ran
   return { start: toISO(start), end: toISO(end), prevStart: toISO(prevStart), prevEnd: toISO(prevEnd) };
 }
 
-export function pctDelta(cur: number, prev: number): number {
-  if (prev <= 0) return cur > 0 ? 100 : 0;
-  return Math.round(((cur - prev) / prev) * 100);
+/** The Saturday ending the Sun–Sat week that starts on `startISO`. */
+export function weekEndISO(startISO: string): string {
+  const d = fromISO(startISO);
+  d.setDate(d.getDate() + 6);
+  return toISO(d);
+}
+
+/** Unfinished plans in `dates` that are already missed by Home's rule. */
+export function missedCount(dates: string[], todayISO: string, plans: Plan[], nowMs: number): number {
+  const set = new Set(dates);
+  return plans.filter((p) => set.has(p.date) && !p.completed && (p.date < todayISO || (p.date === todayISO && isMissedToday(p, nowMs)))).length;
+}
+
+/** The hour (0–23) when most finished, timed plans in `dates` were set; null when there are none. */
+export function busiestHour(dates: string[], plans: Plan[]): number | null {
+  const set = new Set(dates);
+  const counts = new Map<number, number>();
+  for (const p of plans) {
+    if (!set.has(p.date) || !p.completed || p.allDay) continue;
+    const h = Number(p.time.split(':')[0]);
+    counts.set(h, (counts.get(h) ?? 0) + 1);
+  }
+  let best: number | null = null;
+  for (const [h, n] of counts) if (best === null || n > counts.get(best)!) best = h;
+  return best;
 }
 
 /** Hero card's uppercase eyebrow line — "THIS WEEK" / "AUGUST" / "2026 SO FAR". */
@@ -189,6 +212,8 @@ export function formatPeriodLabel(period: Period, range: RangeResult): string {
   const end = fromISO(range.end);
   if (period === 'year') return String(displayYear(start.getFullYear()));
   if (period === 'month') return `${monthLong(start.getMonth())} ${displayYear(start.getFullYear())}`;
+  // A week always shows its full Sun–Sat span, even while it's still under way.
+  if (period === 'week') end.setTime(fromISO(weekEndISO(range.start)).getTime());
   const sameMonth = start.getMonth() === end.getMonth();
   if (lang() === 'th') {
     // "19 – 25 ส.ค. 2569" / "28 ส.ค. – 3 ก.ย. 2569"

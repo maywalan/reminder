@@ -1,3 +1,6 @@
+import { getCalendars } from 'expo-localization';
+import { AppState } from 'react-native';
+
 import { lang } from './index';
 
 export { lang };
@@ -70,11 +73,44 @@ export function fmtDate(d: Date, { weekday, month = 'short', year = false }: Dat
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
-/** "HH:MM" → "2:30 PM" in English, "14:30" in Thai. */
-export function fmtTime(time: string): string {
+/**
+ * Whether the phone is set to 24-hour time (Settings > General > Date & Time). Read once and
+ * refreshed when the app returns to the foreground: fmtTime runs for every row on every countdown
+ * tick, too often for a native call each time.
+ */
+let phone24h = readPhone24h();
+function readPhone24h() {
+  try {
+    return getCalendars()[0]?.uses24hourClock ?? false;
+  } catch {
+    return false;
+  }
+}
+AppState.addEventListener('change', (state) => {
+  if (state === 'active') phone24h = readPhone24h();
+});
+
+/**
+ * "HH:MM" in the phone's clock style (user, 2026-10-29): "14:30" or "2:30 PM". Thai is always
+ * 24-hour, never Latin AM/PM. `compact` drops ":00" on the hour ("2 PM"), for Home's narrow rail.
+ */
+export function fmtTime(time: string, { compact = false }: { compact?: boolean } = {}): string {
   const [h, m] = time.split(':').map(Number);
-  if (lang() === 'th') return `${pad(h)}:${pad(m)}`;
+  if (lang() === 'th' || phone24h) return `${pad(h)}:${pad(m)}`;
   const ap = h >= 12 ? 'PM' : 'AM';
   const h12 = h % 12 === 0 ? 12 : h % 12;
-  return `${h12}:${pad(m)} ${ap}`;
+  return compact && m === 0 ? `${h12} ${ap}` : `${h12}:${pad(m)} ${ap}`;
+}
+
+/** "10:00 – 11:30 AM": in 12-hour time AM/PM is written once when both ends share it, like iOS Calendar. */
+export function fmtTimeRange(start: string, end: string): string {
+  const a = fmtTime(start);
+  const b = fmtTime(end);
+  if (!uses12hTime() || a.slice(-2) !== b.slice(-2)) return `${a} – ${b}`;
+  return `${a.slice(0, -3)} – ${b}`;
+}
+
+/** True when times show as 12-hour ("2:30 PM"); layouts size time columns from it. */
+export function uses12hTime(): boolean {
+  return lang() !== 'th' && !phone24h;
 }

@@ -9,6 +9,7 @@ import { t } from '@/i18n';
 import { displayYear, monthLong, weekdayLetterList } from '@/i18n/format';
 import { buildMonthGrid } from '@/utils/calendar';
 import { fromISO } from '@/utils/dates';
+import { isMissedToday } from '@/utils/home-feed';
 
 interface Props {
   year: number;
@@ -23,13 +24,20 @@ interface Props {
   holidayByDate: Record<string, string>;
 }
 
-const DETAILED_CHIP_LIMIT = 2;
+/**
+ * The grid is an overview (critique, 2026-10-29): up to three colour dots per day, with names in
+ * the selected day's list below. Name chips were 9pt and cut to four or five letters.
+ */
+const DOT_LIMIT = 3;
+/** iOS's 44pt minimum around the 30pt month arrows. */
+const ARROW_SLOP = 7;
 
 export function MonthView({ year, month, todayISO, selectedDate, plans, colorForPlan, onSelectDate, onShiftMonth, onToday, holidayByDate }: Props) {
   const theme = useTheme();
   const cells = buildMonthGrid(year, month);
   const today = fromISO(todayISO);
   const isCurrentMonth = year === today.getFullYear() && month === today.getMonth();
+  const nowMs = Date.now();
 
   return (
     <View style={[styles.surface, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
@@ -44,10 +52,10 @@ export function MonthView({ year, month, todayISO, selectedDate, plans, colorFor
             </Pressable>
           )}
           <View style={styles.arrows}>
-            <Pressable onPress={() => onShiftMonth(-1)} style={[styles.arrowBtn, { borderColor: theme.cardBorder }]}>
+            <Pressable onPress={() => onShiftMonth(-1)} hitSlop={ARROW_SLOP} accessibilityRole="button" accessibilityLabel={t('calendar.prevMonth')} style={[styles.arrowBtn, { borderColor: theme.cardBorder }]}>
               <ChevronLeftIcon size={14} color={theme.text} strokeWidth={2.3} />
             </Pressable>
-            <Pressable onPress={() => onShiftMonth(1)} style={[styles.arrowBtn, { borderColor: theme.cardBorder }]}>
+            <Pressable onPress={() => onShiftMonth(1)} hitSlop={ARROW_SLOP} accessibilityRole="button" accessibilityLabel={t('calendar.nextMonth')} style={[styles.arrowBtn, { borderColor: theme.cardBorder }]}>
               <ChevronRightIcon size={14} color={theme.text} strokeWidth={2.3} />
             </Pressable>
           </View>
@@ -77,8 +85,12 @@ export function MonthView({ year, month, todayISO, selectedDate, plans, colorFor
           }
           const isToday = cell.date === todayISO;
           const isSelected = cell.date === selectedDate;
-          const dayPlans = plans.filter((p) => p.date === cell.date);
-          const pendingCount = dayPlans.filter((p) => !p.completed).length;
+          const dayPlans = plans.filter((p) => p.date === cell.date).sort((a, b) => a.time.localeCompare(b.time));
+          // Counts are for work still ahead; a past day's unfinished plans are missed, marked in rose
+          // like Home, so history doesn't shout "7 to do" (critique, 2026-10-29).
+          const isPast = cell.date < todayISO;
+          const ahead = isPast ? [] : dayPlans.filter((p) => !p.completed && !(isToday && isMissedToday(p, nowMs)));
+          const hasMissed = dayPlans.some((p) => !p.completed && (isPast || (isToday && isMissedToday(p, nowMs))));
           const holidayName = holidayByDate[cell.date];
 
           return (
@@ -96,44 +108,22 @@ export function MonthView({ year, month, todayISO, selectedDate, plans, colorFor
                   <Text style={[styles.dayNum, { color: isSelected ? '#fff' : isToday ? theme.accent : theme.text }]}>{cell.day}</Text>
                 </View>
                 {holidayName && <View style={styles.holidayDot} />}
-                {pendingCount > 0 && (
+                {ahead.length > 0 ? (
                   <View style={[styles.pendingBadge, { backgroundColor: theme.accent }]}>
-                    <Text style={styles.pendingBadgeText}>{pendingCount}</Text>
+                    <Text maxFontSizeMultiplier={1.3} style={styles.pendingBadgeText}>
+                      {ahead.length}
+                    </Text>
                   </View>
+                ) : (
+                  hasMissed && <View style={[styles.missedDot, { backgroundColor: theme.danger }]} />
                 )}
               </View>
 
-              {holidayName && (
-                <View style={[styles.chip, styles.holidayChip]}>
-                  <Text numberOfLines={1} style={[styles.chipText, styles.holidayChipText]}>
-                    {holidayName}
-                  </Text>
-                </View>
-              )}
-
-                <View style={styles.chips}>
-                  {dayPlans.slice(0, DETAILED_CHIP_LIMIT).map((p) => (
-                    <View
-                      key={p.id}
-                      style={[
-                        styles.chip,
-                        { backgroundColor: p.completed ? theme.dividerStrong : colorForPlan(p) + '2A' },
-                      ]}>
-                      <Text
-                        numberOfLines={1}
-                        style={[
-                          styles.chipText,
-                          { color: p.completed ? theme.textTertiary : colorForPlan(p) },
-                          p.completed && styles.chipTextDone,
-                        ]}>
-                        {p.name}
-                      </Text>
-                    </View>
-                  ))}
-                  {dayPlans.length > DETAILED_CHIP_LIMIT && (
-                    <Text style={[styles.more, { color: theme.textTertiary }]}>{t('common.more', { n: dayPlans.length - DETAILED_CHIP_LIMIT })}</Text>
-                  )}
-                </View>
+              <View style={styles.dots}>
+                {dayPlans.slice(0, DOT_LIMIT).map((p) => (
+                  <View key={p.id} style={[styles.dot, { backgroundColor: p.completed ? theme.dividerStrong : colorForPlan(p) }]} />
+                ))}
+              </View>
             </Pressable>
           );
         })}
@@ -153,18 +143,14 @@ const styles = StyleSheet.create({
   dowRow: { flexDirection: 'row', paddingHorizontal: 10, marginBottom: 4 },
   dow: { flex: 1, textAlign: 'center', fontSize: Typography.label, fontWeight: '700', textTransform: 'uppercase' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 6 },
-  cell: { width: `${100 / 7}%`, minHeight: 62, alignItems: 'stretch', justifyContent: 'flex-start', paddingHorizontal: 3, paddingTop: 4, gap: 2 },
+  cell: { width: `${100 / 7}%`, minHeight: 50, alignItems: 'stretch', justifyContent: 'flex-start', paddingHorizontal: 3, paddingTop: 4, gap: 2 },
   dayNumRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   dayNumWrap: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   dayNum: { fontSize: Typography.body, fontWeight: '600' },
-  pendingBadge: { position: 'absolute', right: 2, top: -1, minWidth: 13, height: 13, borderRadius: 6.5, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 2 },
-  pendingBadgeText: { color: '#fff', fontSize: 8.5, fontWeight: '800' },
+  pendingBadge: { position: 'absolute', right: 0, top: -3, minWidth: 16, height: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },
+  pendingBadgeText: { color: '#fff', fontSize: 11, fontWeight: '800' },
+  missedDot: { position: 'absolute', right: 4, top: 0, width: 7, height: 7, borderRadius: 3.5 },
   holidayDot: { position: 'absolute', left: 2, top: -1, width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#FFB020' },
-  holidayChip: { backgroundColor: 'rgba(255,176,32,0.16)' },
-  holidayChipText: { color: '#B8790C' },
-  chips: { gap: 2, marginTop: 2 },
-  chip: { borderRadius: 4, paddingHorizontal: 3, paddingVertical: 1.5 },
-  chipText: { fontSize: 9, fontWeight: '700' },
-  chipTextDone: { textDecorationLine: 'line-through' },
-  more: { fontSize: 8.5, fontWeight: '700', marginLeft: 2 },
+  dots: { flexDirection: 'row', justifyContent: 'center', gap: 3, height: 6, marginTop: 3 },
+  dot: { width: 6, height: 6, borderRadius: 3 },
 });

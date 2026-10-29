@@ -11,7 +11,7 @@ import { Text } from '@/components/text';
 import { Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { t as tr } from '@/i18n';
-import { fmtDate, monthShort, weekdayShort, lang } from '@/i18n/format';
+import { fmtDate, fmtTime, fmtTimeRange, monthShort, weekdayShort, lang, uses12hTime } from '@/i18n/format';
 import type { Plan } from '@/store/types';
 import { usePlannerStore } from '@/store/use-planner-store';
 import { planDateTime } from '@/utils/countdown';
@@ -36,6 +36,8 @@ import { resolvePlanIcon } from '@/utils/plan-icons';
  */
 
 const TIME_COL = 38;
+/** Wider column for 12-hour times ("11:30 AM"); the rail shifts right by the difference. */
+const TIME_COL_12H = 56;
 const MARKER_COL = 9;
 const COL_GAP = 10;
 /** Centre of the marker column, where the rail runs. */
@@ -48,7 +50,7 @@ const MARK_Y = 13;
  */
 function useTimeCol() {
   const scale = useWindowDimensions().fontScale * (Typography.body / 13);
-  const width = Math.ceil(TIME_COL * Math.max(1, scale));
+  const width = Math.ceil((uses12hTime() ? TIME_COL_12H : TIME_COL) * Math.max(1, scale));
   return { width, railX: RAIL_X + width - TIME_COL };
 }
 
@@ -182,7 +184,7 @@ function TimelineRow({
   let subColor: string = k.ink50;
   if (live && !plan.endTime) {
     subColor = k.azure;
-    sub = <Text style={[t.cardSubStrong, { color: k.azure }]}>{tr('home.dueAt', { time: plan.time })}</Text>;
+    sub = <Text style={[t.cardSubStrong, { color: k.azure }]}>{tr('home.dueAt', { time: fmtTime(plan.time) })}</Text>;
   } else if (live) {
     const { secondsLeft } = liveProgress(plan, nowMs);
     if (secondsLeft < 0) {
@@ -207,14 +209,14 @@ function TimelineRow({
     }
   } else if (missed) {
     subColor = k.rose;
-    sub = <Text style={[t.cardSub, { color: k.rose }]}>{tr('home.missedAt', { time: plan.endTime ? `${plan.time} – ${plan.endTime}` : plan.time })}</Text>;
+    sub = <Text style={[t.cardSub, { color: k.rose }]}>{tr('home.missedAt', { time: plan.endTime ? fmtTimeRange(plan.time, plan.endTime) : fmtTime(plan.time) })}</Text>;
   } else if (countdown) {
     subColor = k.azure;
     sub = <Text style={[t.cardSubStrong, { color: k.azure }]}>{countdown}</Text>;
   } else if (plan.allDay) {
     sub = tr('home.allDay');
   } else {
-    sub = plan.endTime ? `${plan.time} – ${plan.endTime}` : plan.time;
+    sub = plan.endTime ? fmtTimeRange(plan.time, plan.endTime) : fmtTime(plan.time);
   }
 
   function toggle() {
@@ -232,11 +234,11 @@ function TimelineRow({
     <View style={styles.row}>
       <View style={[styles.timeCol, { width: timeCol.width }, (range || live) && styles.timeColRange]}>
         <Text numberOfLines={1} style={[styles.timeRight, plan.allDay ? t.endTime : t.railTime, { color: plan.allDay ? k.ink50 : k.ink }]}>
-          {plan.allDay ? tr('home.allDay') : plan.time}
+          {plan.allDay ? tr('home.allDay') : fmtTime(plan.time, { compact: true })}
         </Text>
         {range && (
           <Text numberOfLines={1} style={[styles.timeRight, t.endTime, { color: k.ink50 }]}>
-            {plan.endTime}
+            {fmtTime(plan.endTime!, { compact: true })}
           </Text>
         )}
       </View>

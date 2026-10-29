@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ScrollEdgeFades } from '@/components/scroll-edge-fades';
 import { Text } from '@/components/text';
 import { BottomSheet } from '@/components/bottom-sheet';
 import {
@@ -273,6 +274,7 @@ export default function ProfileScreen() {
           </Pressable>
         )}
       </ScrollView>
+      <ScrollEdgeFades color={theme.surface} />
 
       <Toast message={toastMessage} />
 

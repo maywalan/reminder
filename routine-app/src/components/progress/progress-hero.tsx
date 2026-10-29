@@ -16,14 +16,19 @@ interface Props {
   completed: number;
   total: number;
   completionRate: number;
-  deltaPct: number;
+  /** Plans finished this period minus the same stretch of the previous one. */
+  delta: number;
   compareLabel: string;
 }
 
 /** Progress screen's hero card — 15a's dark conic-ring, ported to react-native-svg (a stroked circle standing in for the CSS conic-gradient, since RN has no native conic paint). */
-export function ProgressHero({ eyebrow, completed, total, completionRate, deltaPct, compareLabel }: Props) {
+export function ProgressHero({ eyebrow, completed, total, completionRate, delta, compareLabel }: Props) {
   const pct = Math.max(0, Math.min(1, completionRate / 100));
-  const up = deltaPct >= 0;
+  // A plain count (critique, 2026-10-29): "Up 50 points" was really a % change in plans done.
+  const deltaLine =
+    delta === 0
+      ? t('progress.deltaSame', { than: compareLabel })
+      : t(delta > 0 ? 'progress.deltaMore' : 'progress.deltaFewer', { count: Math.abs(delta), than: compareLabel });
 
   return (
     <View style={styles.card}>
@@ -53,8 +58,10 @@ export function ProgressHero({ eyebrow, completed, total, completionRate, deltaP
           )}
         </Svg>
         <View style={styles.hole}>
-          <Text style={styles.holeValue}>{completionRate}</Text>
-          <Text style={styles.holeCaption}>{t('progress.percent')}</Text>
+          <Text style={styles.holeValue}>
+            {completionRate}
+            <Text style={styles.holeUnit}>%</Text>
+          </Text>
         </View>
       </View>
 
@@ -65,8 +72,8 @@ export function ProgressHero({ eyebrow, completed, total, completionRate, deltaP
         <Text style={styles.line} numberOfLines={1}>
           {t('progress.doneOf', { completed, total })}
         </Text>
-        <Text style={styles.delta} numberOfLines={1}>
-          {t(up ? 'progress.deltaUp' : 'progress.deltaDown', { n: Math.abs(deltaPct), than: compareLabel })}
+        <Text style={styles.delta} numberOfLines={2}>
+          {deltaLine}
         </Text>
       </View>
     </View>
@@ -99,7 +106,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   holeValue: { fontWeight: '500', fontSize: 18, color: '#fff' },
-  holeCaption: { fontWeight: '600', fontSize: 8.5, color: 'rgba(255,255,255,0.55)', letterSpacing: 0.4 },
+  holeUnit: { fontWeight: '600', fontSize: Typography.label, color: 'rgba(255,255,255,0.6)' },
   text: { flex: 1, minWidth: 0 },
   eyebrow: { fontWeight: '600', fontSize: Typography.caption, color: 'rgba(255,255,255,0.55)', letterSpacing: 0.5 },
   line: { fontWeight: '700', fontSize: Typography.sheetTitle, color: '#fff', marginTop: 3, lineHeight: 21 },

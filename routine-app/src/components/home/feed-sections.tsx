@@ -13,7 +13,7 @@ import { durationMinutes, formatDuration, type UpcomingDay } from '@/utils/home-
 import { resolvePlanIcon } from '@/utils/plan-icons';
 import { fromISO, toISO } from '@/utils/dates';
 import { t as tr } from '@/i18n';
-import { weekdayShort } from '@/i18n/format';
+import { fmtTime, weekdayShort } from '@/i18n/format';
 
 /**
  * The Upcoming and Earlier sections of Home's feed sheet (design_handoff_tickle_home_timeline),
@@ -210,7 +210,7 @@ export function UpcomingBlock({ days, groups, ...s }: SelectProps & { days: Upco
               summary={
                 <>
                   <Text style={[t.upTitle, { color: k.ink }]}>{first.name}</Text>
-                  <Text style={[t.upTitle, { color: k.ink45 }]}>{` · ${first.allDay ? tr('home.allDay') : first.time}`}</Text>
+                  <Text style={[t.upTitle, { color: k.ink45 }]}>{` · ${first.allDay ? tr('home.allDay') : fmtTime(first.time)}`}</Text>
                 </>
               }
               openSummary={<Text style={[t.upTitle, { color: k.ink }]}>{tr('home.taskCount', { count: d.plans.length })}</Text>}
@@ -249,7 +249,7 @@ export function UpcomingBlock({ days, groups, ...s }: SelectProps & { days: Upco
                       )}
                     </View>
                     <View style={[styles.timeChip, { backgroundColor: k.azureTint }]}>
-                      <Text style={[t.timeChip, { color: k.azureDark }]}>{p.allDay ? tr('home.allDay') : p.time}</Text>
+                      <Text style={[t.timeChip, { color: k.azureDark }]}>{p.allDay ? tr('home.allDay') : fmtTime(p.time)}</Text>
                     </View>
                   </Pressable>
                 );
@@ -264,7 +264,7 @@ export function UpcomingBlock({ days, groups, ...s }: SelectProps & { days: Upco
 
 function hhmm(ms: number) {
   const d = new Date(ms);
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  return fmtTime(`${d.getHours()}:${d.getMinutes()}`);
 }
 
 /**
@@ -330,7 +330,7 @@ export function EarlierBlock({
                 const done = p.completed;
                 const icon = resolvePlanIcon(p);
                 const selected = s.selectMode && s.selectedIds.includes(p.id);
-                const when = p.allDay ? tr('home.allDayLower') : p.time;
+                const when = p.allDay ? tr('home.allDayLower') : fmtTime(p.time);
                 const meta = done ? tr('home.doneAt', { time: p.completedAt ? hhmm(p.completedAt) : when }) : tr('home.missedAt', { time: when });
                 return (
                   <Pressable
@@ -388,7 +388,7 @@ export function SearchResults({ sections, groups, ...s }: SelectProps & { sectio
                   key={p.id}
                   plan={p}
                   s={s}
-                  timeLabel={p.allDay ? tr('home.allDay') : p.time}
+                  timeLabel={p.allDay ? tr('home.allDay') : fmtTime(p.time)}
                   marker={
                     <View
                       style={[

@@ -4,15 +4,17 @@ import { Alert, Animated, Easing, Pressable, StyleSheet, View } from 'react-nati
 import { BorderlessButton, RectButton, Swipeable } from 'react-native-gesture-handler';
 
 import { Text } from '@/components/text';
-import { CheckIcon, ClockIcon, GripIcon, TrashIcon } from '@/components/icon';
+import { CheckIcon, ClockIcon, GripIcon, PlanIcon, TrashIcon } from '@/components/icon';
 import { Fonts, Radii, RowMinHeight, Typography } from '@/constants/theme';
 import type { Group, Plan } from '@/store/types';
-import { useTheme } from '@/hooks/use-theme';
+import { useEffectiveScheme, useTheme } from '@/hooks/use-theme';
 import { usePlannerStore } from '@/store/use-planner-store';
-import { secondsUntilPlan } from '@/utils/countdown';
+import { isMissedToday } from '@/utils/home-feed';
+import { resolvePlanIcon } from '@/utils/plan-icons';
+import { toISO } from '@/utils/dates';
 import { confirmPlanDelete } from '@/utils/repeat-scope';
 import { t } from '@/i18n';
-import { fmtTime } from '@/i18n/format';
+import { fmtTime, fmtTimeRange } from '@/i18n/format';
 
 interface Props {
   plan: Plan;
@@ -47,7 +49,13 @@ export function TodoItem({
 }: Props) {
   const theme = useTheme();
   const taskColor = plan.color || group?.color || theme.accent;
-  const overdue = !plan.completed && !selectMode && !plan.allDay && secondsUntilPlan(plan) < 0;
+  const dark = useEffectiveScheme() === 'dark';
+  const icon = resolvePlanIcon(plan);
+  // Missed by Home's rule (a day already gone, or past its end plus grace today), shown in rose.
+  const todayISO = toISO(new Date());
+  const missed = !plan.completed && !selectMode && (plan.date < todayISO || (plan.date === todayISO && isMissedToday(plan, Date.now())));
+  const metaColor = missed ? theme.danger : theme.textSecondary;
+  const when = plan.allDay ? t('common.allDay') : plan.endTime ? fmtTimeRange(plan.time, plan.endTime) : fmtTime(plan.time);
 
   const checkBg = selectMode ? (selected ? theme.accent : theme.surface) : plan.completed ? theme.accent : theme.surface;
   const checkBorder = selectMode ? (selected ? theme.accent : theme.textFaint) : plan.completed ? theme.accent : theme.textFaint;
@@ -99,12 +107,20 @@ export function TodoItem({
 
   const rowContent = (
     <>
+      {/* Home's card look: a flat wash of the plan's colour, no coloured edge (critique, 2026-10-29). */}
+      <View pointerEvents="none" style={[styles.tint, { backgroundColor: `${taskColor}${dark ? '26' : '14'}` }]} />
       <BorderlessButton
         onPress={selectMode ? onToggleSelect : handleToggleComplete}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         style={[styles.check, { backgroundColor: checkBg, borderColor: checkBorder }]}>
         {!selectMode && plan.completed && <CheckIcon size={13} color="#fff" strokeWidth={3} />}
       </BorderlessButton>
+
+      {icon && (
+        <View style={[styles.iconChip, { backgroundColor: `${taskColor}1F` }]}>
+          <PlanIcon id={icon} size={17} color={taskColor} strokeWidth={1.9} />
+        </View>
+      )}
 
       <View style={styles.main}>
         <Text
@@ -116,14 +132,14 @@ export function TodoItem({
           {plan.name}
         </Text>
         <View style={styles.metaRow}>
-          <ClockIcon size={12} color={overdue ? theme.due : theme.textSecondary} strokeWidth={2} />
-          <Text style={[styles.metaText, { color: overdue ? theme.due : theme.textSecondary }]}>
+          <ClockIcon size={12} color={metaColor} strokeWidth={2} />
+          <Text style={[styles.metaText, { color: metaColor }]}>
             {dateLabel ? `${dateLabel} · ` : ''}
-            {plan.allDay ? t('common.allDay') : plan.endTime ? `${fmtTime(plan.time)} – ${fmtTime(plan.endTime)}` : fmtTime(plan.time)}
+            {missed ? t('home.missedAt', { time: when }) : when}
           </Text>
           {plan.live && <Text style={[styles.metaText, styles.metaBold, { color: theme.successLive }]}> · {t('todo.live')}</Text>}
           {plan.alerts.length > 0 && (
-            <Text style={[styles.metaText, { color: overdue ? theme.due : theme.textSecondary }]}>
+            <Text style={[styles.metaText, { color: theme.textSecondary }]}>
               {' '}
               · {plan.alerts.length > 1 ? t('plan.alerts', { count: plan.alerts.length }) : t('plan.alert')}
             </Text>
@@ -160,8 +176,7 @@ export function TodoItem({
     styles.row,
     {
       backgroundColor: theme.surface,
-      borderColor: theme.cardBorder,
-      borderLeftColor: taskColor,
+      borderColor: 'transparent',
       opacity: plan.completed ? 0.5 : isActive ? 0.9 : 1,
     },
     isActive && styles.rowActive,
@@ -216,7 +231,6 @@ const styles = StyleSheet.create({
     minHeight: RowMinHeight,
     borderRadius: Radii.card,
     borderWidth: 1,
-    borderLeftWidth: 4,
     paddingVertical: 10,
     paddingHorizontal: 12,
     marginHorizontal: 16,
@@ -240,15 +254,13 @@ const styles = StyleSheet.create({
   // Clips the fill to the row's exact rounded rect — without this, a thin, heavily-scaled-down
   // sliver at the start of the scaleX animation renders its own borderRadius poorly and visibly
   // pokes past the row's corner instead of following it. Extended past the padding edge by the
-  // row's own border widths (1 on top/right/bottom, 4 on the accent-colored left) so the fill
-  // starts flush with that left border instead of a few px to the right of it — reads as the
-  // border itself expanding rather than a separate wash appearing mid-row.
+  // row's 1pt border so the fill starts flush with the card's edge.
   completeFillClip: {
     position: 'absolute',
     top: -1,
     right: -1,
     bottom: -1,
-    left: -4,
+    left: -1,
     borderRadius: Radii.card,
     overflow: 'hidden',
   },
@@ -270,6 +282,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  tint: { ...StyleSheet.absoluteFillObject, borderRadius: Radii.card - 1 },
+  iconChip: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   main: { flex: 1, minWidth: 0 },
   name: { fontSize: Typography.rowLabel, fontWeight: '600', fontFamily: Fonts[600], marginBottom: 2 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, flexWrap: 'wrap' },

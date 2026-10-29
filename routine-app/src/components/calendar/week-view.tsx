@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/text';
@@ -9,6 +10,7 @@ import { t } from '@/i18n';
 import { fmtDate, fmtTime, weekdayShort } from '@/i18n/format';
 import { buildWeekDates } from '@/utils/calendar';
 import { fromISO } from '@/utils/dates';
+import { isMissedToday } from '@/utils/home-feed';
 
 interface Props {
   selectedDate: string;
@@ -20,10 +22,14 @@ interface Props {
   onPressPlan: (id: string) => void;
   /** Tapping a day's header adds a plan on that date. */
   onPressDay: (iso: string) => void;
+  /** Where today's block sits in the view, reported once so the screen can open on it. */
+  onTodayLayout?: (y: number) => void;
 }
 
-export function WeekView({ selectedDate, todayISO, plans, colorForPlan, onShiftWeek, onToday, onPressPlan, onPressDay }: Props) {
+export function WeekView({ selectedDate, todayISO, plans, colorForPlan, onShiftWeek, onToday, onPressPlan, onPressDay, onTodayLayout }: Props) {
   const theme = useTheme();
+  const reported = useRef(false);
+  const nowMs = Date.now();
   const weekDates = buildWeekDates(selectedDate, fromISO);
   const start = fromISO(weekDates[0]);
   const end = fromISO(weekDates[6]);
@@ -42,10 +48,10 @@ export function WeekView({ selectedDate, todayISO, plans, colorForPlan, onShiftW
             </Pressable>
           )}
           <View style={styles.arrows}>
-            <Pressable onPress={() => onShiftWeek(-7)} style={[styles.arrowBtn, { borderColor: theme.cardBorder }]}>
+            <Pressable onPress={() => onShiftWeek(-7)} hitSlop={7} style={[styles.arrowBtn, { borderColor: theme.cardBorder }]}>
               <ChevronLeftIcon size={14} color={theme.text} strokeWidth={2.3} />
             </Pressable>
-            <Pressable onPress={() => onShiftWeek(7)} style={[styles.arrowBtn, { borderColor: theme.cardBorder }]}>
+            <Pressable onPress={() => onShiftWeek(7)} hitSlop={7} style={[styles.arrowBtn, { borderColor: theme.cardBorder }]}>
               <ChevronRightIcon size={14} color={theme.text} strokeWidth={2.3} />
             </Pressable>
           </View>
@@ -58,7 +64,18 @@ export function WeekView({ selectedDate, todayISO, plans, colorForPlan, onShiftW
         const dayPlans = plans.filter((p) => p.date === iso).sort((a, b) => a.time.localeCompare(b.time));
 
         return (
-          <View key={iso} style={[styles.block, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
+          <View
+            key={iso}
+            onLayout={
+              isToday
+                ? (e) => {
+                    if (reported.current) return;
+                    reported.current = true;
+                    onTodayLayout?.(e.nativeEvent.layout.y);
+                  }
+                : undefined
+            }
+            style={[styles.block, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
             <Pressable
               onPress={() => onPressDay(iso)}
               accessibilityRole="button"
@@ -69,24 +86,33 @@ export function WeekView({ selectedDate, todayISO, plans, colorForPlan, onShiftW
               ]}>
               <Text style={[styles.blockHeadText, { color: isToday ? theme.accentStrong : theme.text }]}>
                 {weekdayShort(d.getDay())} {d.getDate()}
-                {isToday ? ' · Today' : ''}
+                {isToday ? ` · ${t('home.today')}` : ''}
               </Text>
               <PlusIcon size={13} color={theme.accentStrong} strokeWidth={2.6} />
             </Pressable>
             {dayPlans.length === 0 ? (
               <Text style={[styles.empty, { color: theme.textTertiary }]}>{t('calendar.noPlans')}</Text>
             ) : (
-              dayPlans.map((p) => (
-                <Pressable
-                  key={p.id}
-                  onPress={() => onPressPlan(p.id)}
-                  style={[styles.planRow, { borderColor: theme.cardBorder, borderLeftColor: colorForPlan(p) }]}>
-                  <Text style={[styles.planTime, { color: theme.accentStrong }]}>{p.allDay ? t('common.allDay') : fmtTime(p.time)}</Text>
-                  <Text numberOfLines={1} style={[styles.planName, { color: theme.text }]}>
-                    {p.name}
-                  </Text>
-                </Pressable>
-              ))
+              dayPlans.map((p) => {
+                // Done plans strike through; unfinished ones from an earlier day (or past today's
+                // grace) show their time in rose, Home's "missed" (critique, 2026-10-29).
+                const missed = !p.completed && (iso < todayISO || (isToday && isMissedToday(p, nowMs)));
+                return (
+                  <Pressable
+                    key={p.id}
+                    onPress={() => onPressPlan(p.id)}
+                    style={[styles.planRow, { borderColor: theme.cardBorder, borderLeftColor: colorForPlan(p) }, p.completed && styles.planDone]}>
+                    <Text style={[styles.planTime, { color: missed ? theme.danger : p.completed ? theme.textTertiary : theme.accentStrong }]}>
+                      {p.allDay ? t('common.allDay') : fmtTime(p.time)}
+                    </Text>
+                    <Text
+                      numberOfLines={1}
+                      style={[styles.planName, { color: p.completed ? theme.textTertiary : theme.text }, p.completed && styles.planNameDone]}>
+                      {p.name}
+                    </Text>
+                  </Pressable>
+                );
+              })
             )}
           </View>
         );
@@ -107,6 +133,9 @@ const styles = StyleSheet.create({
   blockHeadText: { fontSize: Typography.body, fontWeight: '700' },
   empty: { padding: 14, fontSize: Typography.body },
   planRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 9, paddingHorizontal: 14, borderLeftWidth: 3, borderBottomWidth: 1 },
-  planTime: { fontSize: Typography.body, fontWeight: '700', width: 62 },
+  // minWidth, not width: "10:00 AM" in 12-hour time is wider than "10:00".
+  planTime: { fontSize: Typography.body, fontWeight: '700', minWidth: 62 },
   planName: { flex: 1, fontSize: Typography.body, fontWeight: '600' },
+  planDone: { opacity: 0.7 },
+  planNameDone: { textDecorationLine: 'line-through' },
 });

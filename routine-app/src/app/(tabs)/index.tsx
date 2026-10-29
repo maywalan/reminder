@@ -1,6 +1,5 @@
 import { useFocusEffect, useIsFocused, useScrollToTop } from '@react-navigation/native';
 import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentRef, type ReactNode } from 'react';
 import type { MenuAction } from '@react-native-menu/menu';
@@ -15,6 +14,7 @@ import { FilterMenuButton } from '@/components/home/filter-menu-button';
 import { addDays, FEED_INSET, startOfWeek, WeekStrip } from '@/components/home/week-strip';
 import { useHomeTokens, useHomeType } from '@/components/home/tokens';
 import { PaletteIcon, TagIcon } from '@/components/icon';
+import { ScrollEdgeFades } from '@/components/scroll-edge-fades';
 import { Text } from '@/components/text';
 import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
@@ -357,14 +357,7 @@ export default function HomeScreen() {
         </View>
       </NestableScrollContainer>
 
-      {/* The feed fades into the page above the tab bar, so whatever sits under the + button at rest dissolves instead of being cut off (critique, 2026-10-28). */}
-      <LinearGradient pointerEvents="none" colors={[`${k.page}00`, k.page]} style={styles.bottomFade} />
-
-      {/* Scrolled content passes under the status bar on a band of page colour instead of colliding with the clock (critique, 2026-10-28). */}
-      <View pointerEvents="none" style={[styles.statusBand, { height: insets.top }]}>
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: k.page }]} />
-        <LinearGradient colors={[k.page, `${k.page}00`]} style={styles.statusFade} />
-      </View>
+      <ScrollEdgeFades color={k.page} />
 
       {/* Only while Home is on screen, so a delete made in Calendar or the editor still gets its 6 s of Undo here. */}
       <UndoToast visible={!!lastDeletedSnapshot && !selectMode && focused} onUndo={undoDelete} onExpire={clearDeletedSnapshot} />
@@ -398,7 +391,4 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     elevation: 3,
   },
-  statusBand: { position: 'absolute', top: 0, left: 0, right: 0 },
-  statusFade: { position: 'absolute', top: '100%', left: 0, right: 0, height: 14 },
-  bottomFade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 56 },
 });

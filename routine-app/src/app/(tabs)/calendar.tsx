@@ -6,7 +6,9 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { Animated, Easing, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ScrollEdgeFades } from '@/components/scroll-edge-fades';
 import { Text } from '@/components/text';
+import { useHomeTokens } from '@/components/home/tokens';
 import { MonthView } from '@/components/calendar/month-view';
 import { WeekView } from '@/components/calendar/week-view';
 import { YearView } from '@/components/calendar/year-view';
@@ -68,6 +70,7 @@ function EntranceBox({ entrance, blurTint, children }: { entrance: Entrance; blu
 
 export default function CalendarScreen() {
   const theme = useTheme();
+  const page = useHomeTokens().page;
   const blurTint = useEffectiveScheme() === 'dark' ? 'dark' : 'light';
   const router = useRouter();
   // Widget taps (targets/widget/TickleCalendarData.swift → CalLink): tickle://calendar?date=…[&plan=…|&add=1]
@@ -104,6 +107,13 @@ export default function CalendarScreen() {
   // Tapping this tab again while on it scrolls back to the top.
   useScrollToTop(scrollRef);
   const dayDetailY = useRef(0);
+  // Week opens on today's block and Year on this month instead of the top of the list; each view
+  // reports where that block sits, relative to its wrapper at contentY.
+  const contentY = useRef(0);
+  const scrollToBlock = useCallback((y: number) => {
+    // Next frame: the wrapper's own onLayout (contentY) can arrive after the child's.
+    requestAnimationFrame(() => scrollRef.current?.scrollTo({ y: Math.max(contentY.current + y - 12, 0), animated: true }));
+  }, []);
 
   /** Tapping a date on the grid scrolls the packed dot/chip preview into full detail below. */
   function openNewPlan(iso: string) {
@@ -111,12 +121,11 @@ export default function CalendarScreen() {
     router.push({ pathname: '/add-plan', params: { date: iso } });
   }
 
-  /** First tap selects a day and scrolls to its tasks; tapping the already-selected day adds a plan on it. */
+  /**
+   * Selects a day and scrolls to its plans. Tapping the selected day again used to open New Plan,
+   * a hidden gesture that made plans on a quick double-tap; the day's + does that (critique, 2026-10-29).
+   */
   function handleSelectDate(iso: string) {
-    if (iso === selectedDate) {
-      openNewPlan(iso);
-      return;
-    }
     setSelectedDate(iso);
     requestAnimationFrame(() => {
       scrollRef.current?.scrollTo({ y: Math.max(dayDetailY.current - 16, 0), animated: true });
@@ -176,7 +185,7 @@ export default function CalendarScreen() {
   const selectedDateLabel = fmtDate(new Date(selectedDate + 'T00:00:00'), { weekday: 'long', month: 'long' });
 
   return (
-    <View style={[styles.screen, { backgroundColor: theme.surface }]}>
+    <View style={[styles.screen, { backgroundColor: page }]}>
       <ScrollView ref={scrollRef} contentContainerStyle={{ paddingTop: insets.top + 8, paddingBottom: 130 }}>
         <Text style={[styles.h1, { color: theme.text }]}>{t('tab.calendar')}</Text>
 
@@ -252,35 +261,42 @@ export default function CalendarScreen() {
         )}
 
         {calView === 'week' && (
-          <EntranceBox entrance={contentEnter} blurTint={blurTint}>
-            <WeekView
-              selectedDate={selectedDate}
-              todayISO={todayISO}
-              plans={plans}
-              colorForPlan={getColor}
-              onShiftWeek={shiftWeek}
-              onToday={() => setSelectedDate(todayISO)}
-              onPressPlan={(id) => router.push({ pathname: '/add-plan', params: { id } })}
-              onPressDay={openNewPlan}
-            />
-          </EntranceBox>
+          <View onLayout={(e) => (contentY.current = e.nativeEvent.layout.y)}>
+            <EntranceBox entrance={contentEnter} blurTint={blurTint}>
+              <WeekView
+                selectedDate={selectedDate}
+                todayISO={todayISO}
+                plans={plans}
+                colorForPlan={getColor}
+                onShiftWeek={shiftWeek}
+                onToday={() => setSelectedDate(todayISO)}
+                onPressPlan={(id) => router.push({ pathname: '/add-plan', params: { id } })}
+                onPressDay={openNewPlan}
+                onTodayLayout={scrollToBlock}
+              />
+            </EntranceBox>
+          </View>
         )}
 
         {calView === 'year' && (
-          <EntranceBox entrance={contentEnter} blurTint={blurTint}>
-            <YearView
-              year={calYear}
-              todayISO={todayISO}
-              plans={plans}
-              onShiftYear={(delta) => setCalYear((y) => y + delta)}
-              onPressMonth={(m) => {
-                setCalMonth(m);
-                setCalView('month');
-              }}
-            />
-          </EntranceBox>
+          <View onLayout={(e) => (contentY.current = e.nativeEvent.layout.y)}>
+            <EntranceBox entrance={contentEnter} blurTint={blurTint}>
+              <YearView
+                year={calYear}
+                todayISO={todayISO}
+                plans={plans}
+                onShiftYear={(delta) => setCalYear((y) => y + delta)}
+                onPressMonth={(m) => {
+                  setCalMonth(m);
+                  setCalView('month');
+                }}
+                onCurrentMonthLayout={scrollToBlock}
+              />
+            </EntranceBox>
+          </View>
         )}
       </ScrollView>
+      <ScrollEdgeFades color={page} />
     </View>
   );
 }

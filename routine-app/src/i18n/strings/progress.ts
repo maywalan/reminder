@@ -14,10 +14,12 @@ export default {
   'progress.prevYear': { en: '{year}', th: 'ปี {year}' },
   'progress.lastWeek': { en: 'last week', th: 'สัปดาห์ที่แล้ว' },
 
-  'progress.percent': { en: 'PERCENT', th: 'เปอร์เซ็นต์' },
   'progress.doneOf': { en: '{completed} of {total} done', th: 'ทำแล้ว {completed} จาก {total}' },
-  'progress.deltaUp': { en: 'Up {n} points on {than}.', th: 'เพิ่มขึ้น {n} จุดจาก{than}' },
-  'progress.deltaDown': { en: 'Down {n} points on {than}.', th: 'ลดลง {n} จุดจาก{than}' },
+  'progress.deltaMore': { en: '{count} more done than {than}.', th: 'ทำได้มากกว่า{than} {count} แผน' },
+  'progress.deltaMore_one': { en: '1 more done than {than}.', th: 'ทำได้มากกว่า{than} 1 แผน' },
+  'progress.deltaFewer': { en: '{count} fewer done than {than}.', th: 'ทำได้น้อยกว่า{than} {count} แผน' },
+  'progress.deltaFewer_one': { en: '1 fewer done than {than}.', th: 'ทำได้น้อยกว่า{than} 1 แผน' },
+  'progress.deltaSame': { en: 'Same as {than}.', th: 'เท่ากับ{than}' },
 
   'progress.byColor': { en: 'By color', th: 'แยกตามสี' },
   'progress.noData': { en: 'No data yet', th: 'ยังไม่มีข้อมูล' },
@@ -28,9 +30,13 @@ export default {
   'progress.daily': { en: 'Daily completion', th: 'ความสำเร็จรายวัน' },
   'progress.bestDay': { en: 'Best day', th: 'วันที่ดีที่สุด' },
 
-  'progress.stat.completed': { en: 'Completed', th: 'ทำเสร็จ' },
-  'progress.stat.rate': { en: 'Rate', th: 'อัตรา' },
-  'progress.stat.streak': { en: 'Streak', th: 'ต่อเนื่อง' },
+  'progress.stat.missed': { en: 'Missed', th: 'เลยเวลา' },
+  'progress.stat.longest': { en: 'Best streak', th: 'ต่อเนื่องสูงสุด' },
+  'progress.stat.busiest': { en: 'Busiest time', th: 'ช่วงที่ทำบ่อย' },
+  'progress.byColorHint': { en: 'Share of the plans you finished', th: 'สัดส่วนของแผนที่ทำเสร็จ' },
+  'progress.recap': { en: 'Recap', th: 'สรุป' },
+  'progress.prevPeriod': { en: 'Previous period', th: 'ช่วงก่อนหน้า' },
+  'progress.nextPeriod': { en: 'Next period', th: 'ช่วงถัดไป' },
   'progress.stat.bestDay': { en: 'Best day', th: 'วันเด่น' },
 
   'streak.record': { en: 'Best streak yet!', th: 'สถิติต่อเนื่องสูงสุดเลย!' },

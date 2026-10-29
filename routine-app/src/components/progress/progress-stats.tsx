@@ -1,32 +1,30 @@
 import { StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/text';
-import { CalendarIcon, CheckIcon, ChartIcon, SparkleIcon } from '@/components/icon';
+import { CalendarIcon, ClockIcon, SparkleIcon, XIcon } from '@/components/icon';
 import { Radii, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { t as tr } from '@/i18n';
 
 interface Props {
-  completed: number;
-  completionRate: number;
-  streak: number;
+  missed: number;
+  longest: number;
   bestDay: string;
+  busiest: string;
 }
 
 /**
- * Not part of 15a's own mockup — the four stats the code already tracks (completion rate,
- * completed, streak, best day), which 15a instead wove into the ring/hero line/streak card/chart
- * footer. Kept here too as a quick-glance row so they're still scannable at once, styled to sit
- * cohesively under the hero card rather than as the old 2x2 tile grid.
+ * A quick-glance row under the hero card. It holds only what the hero and streak card don't
+ * already say (critique, 2026-10-29: Completed, Rate and Streak repeated them).
  */
-export function ProgressStats({ completed, completionRate, streak, bestDay }: Props) {
+export function ProgressStats({ missed, longest, bestDay, busiest }: Props) {
   const theme = useTheme();
 
   const tiles = [
-    { icon: CheckIcon, value: String(completed), label: tr('progress.stat.completed') },
-    { icon: ChartIcon, value: `${completionRate}%`, label: tr('progress.stat.rate') },
-    { icon: SparkleIcon, value: String(streak), label: tr('progress.stat.streak') },
+    { icon: XIcon, value: String(missed), label: tr('progress.stat.missed') },
+    { icon: SparkleIcon, value: String(longest), label: tr('progress.stat.longest') },
     { icon: CalendarIcon, value: bestDay, label: tr('progress.stat.bestDay') },
+    { icon: ClockIcon, value: busiest, label: tr('progress.stat.busiest') },
   ];
 
   return (
@@ -39,7 +37,7 @@ export function ProgressStats({ completed, completionRate, streak, bestDay }: Pr
           <Text numberOfLines={1} style={[styles.value, { color: theme.text }]}>
             {t.value}
           </Text>
-          <Text numberOfLines={1} style={[styles.label, { color: theme.textSecondary }]}>
+          <Text numberOfLines={2} maxFontSizeMultiplier={1.3} style={[styles.label, { color: theme.textSecondary }]}>
             {t.label}
           </Text>
         </View>
@@ -50,8 +48,8 @@ export function ProgressStats({ completed, completionRate, streak, bestDay }: Pr
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 8, paddingHorizontal: 14, marginTop: 14 },
-  tile: { flex: 1, borderRadius: Radii.md, borderWidth: 1, paddingVertical: 10, alignItems: 'center', gap: 4 },
+  tile: { flex: 1, borderRadius: Radii.md, borderWidth: 1, paddingVertical: 10, paddingHorizontal: 4, alignItems: 'center', gap: 4 },
   iconWrap: { width: 22, height: 22, borderRadius: 7, alignItems: 'center', justifyContent: 'center' },
   value: { fontSize: Typography.rowLabel, fontWeight: '800', letterSpacing: -0.2 },
-  label: { fontSize: Typography.tabLabel, fontWeight: '600' },
+  label: { fontSize: Typography.label, fontWeight: '600', textAlign: 'center' },
 });

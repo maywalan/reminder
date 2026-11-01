@@ -353,6 +353,35 @@ export function AppleLogoIcon({ size = 24, color }: IconProps) {
   );
 }
 
+export function MailIcon({ size = 24, color, strokeWidth = 1.9 }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Rect x={3.5} y={5.5} width={17} height={13} rx={2.5} stroke={color} strokeWidth={strokeWidth} />
+      <Path d="M4.5 7.5l7.5 5.5 7.5-5.5" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+export function DocumentIcon({ size = 24, color, strokeWidth = 1.9 }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M14 3.5H7.5a2 2 0 00-2 2v13a2 2 0 002 2h9a2 2 0 002-2V8L14 3.5z" stroke={color} strokeWidth={strokeWidth} strokeLinejoin="round" />
+      <Path d="M14 3.5V8h4.5M9 12.5h6M9 16h4" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+/** Two sliders: settings that tune something (Profile's Notification Options). */
+export function SlidersIcon({ size = 24, color, strokeWidth = 1.9 }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M4 8h9M17 8h3M4 16h3M11 16h9" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <Circle cx={15} cy={8} r={2} stroke={color} strokeWidth={strokeWidth} />
+      <Circle cx={9} cy={16} r={2} stroke={color} strokeWidth={strokeWidth} />
+    </Svg>
+  );
+}
+
 export function LockIcon({ size = 24, color, strokeWidth = 1.9 }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">

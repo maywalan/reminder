@@ -28,7 +28,6 @@ import { countActivePlans, FREE_ACTIVE_PLAN_LIMIT } from '@/utils/premium';
 const INK = PremiumColors.light.card;
 const MUTED_ON_INK = PremiumColors.light.cardInkSoft;
 const GOLD = PremiumColors.light.gold;
-const GOLD_TINT = PremiumColors.light.goldBg;
 const AZURE = Colors.light.accent;
 
 const DISMISS_FOR_MS = 7 * 24 * 60 * 60 * 1000;
@@ -38,7 +37,8 @@ const NEAR_LIMIT_AT = 4;
 const ENTER_SPRING = { damping: 14, stiffness: 170 };
 
 /**
- * Profile's paywall entry point for Free users. Variant "pitch" by default; "near limit" (a 5-segment
+ * Profile's paywall entry point for Free users: one slim ink row (critique, 2026-11-01: the full card
+ * pushed every setting below the fold). Variant "pitch" by default; "near limit" (a 5-segment
  * plan meter) once they're at 4+ active plans. The ✕ hides it for 7 days, unless they reach the
  * near-limit point sooner.
  */
@@ -92,34 +92,29 @@ export function UpgradeBanner() {
           accessibilityRole="button"
           accessibilityLabel={nearLimit ? `${t('banner.title')}. ${t('banner.used', { used, limit: FREE_ACTIVE_PLAN_LIMIT })}` : t('banner.title')}
           style={[styles.card, { backgroundColor: premium.card }]}>
-          <View style={styles.top}>
-            <View style={styles.mascotTile}>
-              <Tickle size={34} mood="idle" animated />
-            </View>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <View style={styles.trialPill}>
-                <Text style={styles.trialText}>{t('paywall.trialBadge')}</Text>
-              </View>
-              <Text style={styles.title} numberOfLines={1}>
-                {t('banner.title')}
-              </Text>
-              <Text style={styles.sub} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
-                {nearLimit ? t('banner.used', { used, limit: FREE_ACTIVE_PLAN_LIMIT }) : t('banner.sub')}
-              </Text>
-            </View>
+          <View style={styles.mascotTile}>
+            <Tickle size={34} mood="idle" animated />
           </View>
-
-          {nearLimit && (
-            <View style={styles.meter}>
-              {Array.from({ length: FREE_ACTIVE_PLAN_LIMIT }, (_, i) => (
-                <MeterSegment key={i} filled={i < used} index={i} reduceMotion={reduceMotion} />
-              ))}
-            </View>
-          )}
-
-          <BouncyPressable onPress={openPaywall} pressedScale={0.96} style={styles.cta}>
-            <Text style={styles.ctaText}>{t('paywall.cta.trial')}</Text>
-          </BouncyPressable>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={styles.title} numberOfLines={1}>
+              {t('banner.title')}
+            </Text>
+            <Text style={styles.sub} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+              {nearLimit ? t('banner.used', { used, limit: FREE_ACTIVE_PLAN_LIMIT }) : t('banner.subTrial')}
+            </Text>
+            {nearLimit && (
+              <View style={styles.meter}>
+                {Array.from({ length: FREE_ACTIVE_PLAN_LIMIT }, (_, i) => (
+                  <MeterSegment key={i} filled={i < used} index={i} reduceMotion={reduceMotion} />
+                ))}
+              </View>
+            )}
+          </View>
+          <View style={styles.cta}>
+            <Text style={styles.ctaText} numberOfLines={1}>
+              {t('banner.try')}
+            </Text>
+          </View>
         </BouncyPressable>
 
         <Pressable onPress={handleDismiss} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('common.dismiss')} style={styles.close}>
@@ -148,9 +143,13 @@ function MeterSegment({ filled, index, reduceMotion }: { filled: boolean; index:
 const styles = StyleSheet.create({
   wrap: { marginHorizontal: 20, marginBottom: 20 },
   card: {
-    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 12,
-    borderRadius: 20,
+    paddingVertical: 12,
+    paddingLeft: 12,
+    paddingRight: 40,
+    borderRadius: 18,
     backgroundColor: INK,
     shadowColor: INK,
     shadowOpacity: 0.18,
@@ -158,23 +157,22 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 10 },
     elevation: 6,
   },
-  top: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingRight: 22 },
+  // 34pt is the smallest Tickle that draws its body (smaller shows only the bubble).
   mascotTile: {
-    width: 46,
-    height: 46,
-    borderRadius: 14,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     backgroundColor: 'rgba(255,255,255,0.08)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  trialPill: { alignSelf: 'flex-start', paddingVertical: 3, paddingHorizontal: 8, borderRadius: 9, backgroundColor: GOLD_TINT },
-  trialText: { color: GOLD, fontSize: Typography.tabLabel, fontWeight: '700', letterSpacing: 0.7 },
-  title: { color: '#FFFFFF', fontSize: Typography.sheetTitle, fontWeight: '700', marginTop: 5 },
+  title: { color: '#FFFFFF', fontSize: Typography.heading, fontWeight: '700' },
   sub: { color: MUTED_ON_INK, fontSize: Typography.body, fontWeight: '500', marginTop: 2 },
-  meter: { flexDirection: 'row', gap: 4 },
+  meter: { flexDirection: 'row', gap: 4, marginTop: 6 },
   segment: { flex: 1, height: 5, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.14)', overflow: 'hidden' },
   segmentFill: { ...StyleSheet.absoluteFillObject, backgroundColor: GOLD, transformOrigin: 'left' },
-  cta: { height: 44, borderRadius: 22, backgroundColor: AZURE, alignItems: 'center', justifyContent: 'center' },
-  ctaText: { color: '#FFFFFF', fontSize: Typography.heading, fontWeight: '700' },
-  close: { position: 'absolute', top: 6, right: 6, width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  cta: { height: 32, paddingHorizontal: 13, borderRadius: 16, backgroundColor: AZURE, alignItems: 'center', justifyContent: 'center' },
+  ctaText: { color: '#FFFFFF', fontSize: Typography.body, fontWeight: '700' },
+  // Vertically centred at the row's right edge, past the Try free pill.
+  close: { position: 'absolute', top: 0, bottom: 0, right: 4, width: 32, alignItems: 'center', justifyContent: 'center' },
 });

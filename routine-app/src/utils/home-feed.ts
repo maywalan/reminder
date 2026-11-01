@@ -1,5 +1,5 @@
 import type { Plan } from '@/store/types';
-import { findPastPlans, planDateTime, planEndDateTime } from '@/utils/countdown';
+import { EARLIER_WINDOW_DAYS, findPastPlans, planDateTime, planEndDateTime } from '@/utils/countdown';
 import { pad, timeToMinutes, toISO } from '@/utils/dates';
 import { t } from '@/i18n';
 
@@ -53,7 +53,7 @@ export interface HomeFeed {
   missedCount: number;
   /** Incomplete plans on each of the next 7 days after today, days with none left out. */
   upcoming: UpcomingDay[];
-  /** Done + missed tasks from previous days (for "See all"), most recent first. */
+  /** Done + missed tasks from the previous EARLIER_WINDOW_DAYS days (for "See all"), most recent first. */
   older: Plan[];
 }
 
@@ -89,7 +89,7 @@ export function buildHomeFeed(plans: Plan[], nowMs: number, matches: (p: Plan) =
   const leftCount = selected < todayISO ? 0 : undone.filter((p) => !isToday || !isMissedToday(p, nowMs)).length;
   const missedCount = selected < todayISO ? undone.length : 0;
 
-  const older = findPastPlans(plans).filter((p) => p.date < todayISO && matches(p));
+  const older = findPastPlans(plans, EARLIER_WINDOW_DAYS).filter((p) => p.date < todayISO && matches(p));
 
   const upcoming: UpcomingDay[] = [];
   for (let i = 1; i <= upcomingDays; i++) {

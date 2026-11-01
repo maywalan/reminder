@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { TextStyle } from 'react-native';
 
-import { Fonts, Typography } from '@/constants/theme';
+import { Fonts, scaledFont, Typography } from '@/constants/theme';
 import { useEffectiveScheme, useTheme } from '@/hooks/use-theme';
 
 /**
@@ -66,10 +66,11 @@ export type HomeTokens = ReturnType<typeof useHomeTokens>;
  * takes effect on the next render.
  */
 export function useHomeType() {
+  // Changes with the font-size setting, so the ramp rebuilds when it does (sizes come from scaledFont).
   const k = Typography.body / 13;
   return useMemo(() => {
     const t = (size: number, weight: 500 | 600 | 700 | 400 = 400): TextStyle => ({
-      fontSize: size * k,
+      fontSize: scaledFont(size),
       fontWeight: String(weight) as TextStyle['fontWeight'],
       fontFamily: Fonts[weight],
     });
@@ -116,6 +117,7 @@ export function useHomeType() {
       dayLabel: t(12, 600),
       nowTime: t(12, 600),
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- k stands for scaledFont's module-level scale
   }, [k]);
 }
 

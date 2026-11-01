@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BouncyPressable } from '@/components/bouncy-pressable';
 import { PlanIcon, SearchIcon } from '@/components/icon';
 import { Text, TextInput } from '@/components/text';
-import { Fonts, Typography } from '@/constants/theme';
+import { Fonts, scaledFont } from '@/constants/theme';
 import { useEffectiveScheme, useTheme } from '@/hooks/use-theme';
 import { t } from '@/i18n';
 import { STRINGS } from '@/i18n/strings';
@@ -17,8 +17,7 @@ import { PLAN_ICON_CATEGORIES, PLAN_ICONS, type PlanIconId } from '@/utils/plan-
  * chips, a 6-column grid of them, and the full-height "Choose icon" sheet.
  */
 
-const scale = () => Typography.body / 13;
-const font = (size: number, weight: 500 | 600 | 700) => ({ fontSize: size * scale(), fontWeight: String(weight) as '500', fontFamily: Fonts[weight] });
+const font = (size: number, weight: 500 | 600 | 700) => ({ fontSize: scaledFont(size), fontWeight: String(weight) as '500', fontFamily: Fonts[weight] });
 
 export function useIconChipColors() {
   const theme = useTheme();
@@ -129,8 +128,8 @@ export function IconPickerSheet({ visible, onClose, selected, color, colors, onC
   const section = (key: string, label: string, note: string | null, ids: PlanIconId[]) => (
     <View key={key} style={styles.section}>
       <View style={styles.sectionHead}>
-        <Text style={[font(11.5, 600), styles.caps, { color: ink45 }]}>{label}</Text>
-        {note && <Text style={[font(11.5, 500), { color: ink45 }]}>{note}</Text>}
+        <Text style={[font(12, 600), styles.caps, { color: ink45 }]}>{label}</Text>
+        {note && <Text style={[font(12, 500), { color: ink45 }]}>{note}</Text>}
       </View>
       <View style={[styles.card, { backgroundColor: card }]}>
         <IconGrid ids={ids} selected={selected} color={color} onPick={pick} />

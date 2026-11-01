@@ -37,7 +37,7 @@ function Illustration() {
               shadowRadius: 8,
               shadowOffset: { width: 0, height: 2 },
             }}>
-            <Text style={{ fontFamily: Fonts[600], fontWeight: '600', fontSize: 11.5, color: i === 0 ? '#fff' : '#10203A' }}>{t(label)}</Text>
+            <Text style={{ fontFamily: Fonts[600], fontWeight: '600', fontSize: 12, color: i === 0 ? '#fff' : '#10203A' }}>{t(label)}</Text>
           </View>
         ))}
       </View>
@@ -53,7 +53,7 @@ function Illustration() {
               justifyContent: 'center',
               backgroundColor: day.active ? '#1B76E8' : '#fff',
             }}>
-            <Text style={{ fontFamily: Fonts[600], fontWeight: '600', fontSize: 11, color: day.active ? '#fff' : 'rgba(16,32,58,0.3)' }}>{weekdayLetter(day.wd)}</Text>
+            <Text style={{ fontFamily: Fonts[600], fontWeight: '600', fontSize: 12, color: day.active ? '#fff' : 'rgba(16,32,58,0.3)' }}>{weekdayLetter(day.wd)}</Text>
           </View>
         ))}
       </View>

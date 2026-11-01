@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
   bar: { width: '100%', borderRadius: 8 },
   barYear: { borderRadius: 5 },
   barLabelWeek: { fontSize: Typography.label },
-  barLabelYear: { fontSize: 11 },
+  barLabelYear: { fontSize: 12 },
   footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, paddingTop: 11, borderTopWidth: 1 },
   footerLabel: { fontSize: Typography.label, fontWeight: '500' },
   footerValue: { fontSize: Typography.label, fontWeight: '700' },

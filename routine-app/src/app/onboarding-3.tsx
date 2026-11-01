@@ -32,11 +32,11 @@ function NotificationPreview() {
       <Tickle size={40} mood="idle" bodyMotion="none" bubbleMotion="tap" animated />
       <View style={{ flex: 1 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          <Text style={{ fontFamily: Fonts[600], fontWeight: '600', fontSize: 10.5, color: theme.textSecondary, letterSpacing: 0.3 }}>TICKLE</Text>
-          <Text style={{ fontSize: 9.5, color: theme.textTertiary }}>{t('onb3.now')}</Text>
+          <Text style={{ fontFamily: Fonts[600], fontWeight: '600', fontSize: 12, color: theme.textSecondary, letterSpacing: 0.3 }}>TICKLE</Text>
+          <Text style={{ fontSize: 12, color: theme.textTertiary }}>{t('onb3.now')}</Text>
         </View>
         <Text style={{ fontFamily: Fonts[700], fontWeight: '700', fontSize: 13, color: theme.text, marginTop: 3 }}>{t('onb3.sampleTitle')}</Text>
-        <Text style={{ fontFamily: Fonts[500], fontWeight: '500', fontSize: 11.5, color: theme.textSecondary, marginTop: 1 }}>{t('onb3.sampleTime')}</Text>
+        <Text style={{ fontFamily: Fonts[500], fontWeight: '500', fontSize: 12, color: theme.textSecondary, marginTop: 1 }}>{t('onb3.sampleTime')}</Text>
       </View>
     </View>
   );

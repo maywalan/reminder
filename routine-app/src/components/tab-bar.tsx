@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
   // too high relative to tabBtn's normal-flow content (which does get pushed down by that padding).
   slidingPill: { position: 'absolute', top: 14, left: 0, width: PILL_WIDTH, height: PILL_HEIGHT, borderRadius: Radii.chip },
   // 11.5pt, up from the 9.5pt tabLabel token: that sat under iOS's 11pt floor (critique, 2026-10-29).
-  tabLabel: { fontSize: 11.5 },
+  tabLabel: { fontSize: 12 },
   // right: 20 lines the button up with Home's card edge (FEED_INSET).
   fabWrap: { position: 'absolute', right: 20 },
   // Full circle, matching every in-screen FAB instance in design_handoff_tickle_draft2 (radius:27

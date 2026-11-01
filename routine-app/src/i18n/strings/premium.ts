@@ -91,5 +91,7 @@ export default {
   // Upgrade banner
   'banner.title': { en: 'Go Premium', th: 'อัปเกรดเป็น Premium' },
   'banner.sub': { en: 'Unlimited plans, month & year recaps', th: 'แผนไม่จำกัด สรุปรายเดือนและรายปี' },
+  'banner.subTrial': { en: '7-day free trial · unlimited plans', th: 'ทดลองฟรี 7 วัน · แผนไม่จำกัด' },
+  'banner.try': { en: 'Try free', th: 'ลองฟรี' },
   'banner.used': { en: '{used} of {limit} free plans used', th: 'ใช้แผนฟรีไปแล้ว {used} จาก {limit}' },
 } satisfies Record<string, Entry>;

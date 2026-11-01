@@ -1,3 +1,4 @@
+import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { useScrollToTop } from '@react-navigation/native';
 import { useRef, useState } from 'react';
@@ -14,19 +15,24 @@ import {
   ChevronRightIcon,
   CircleHalfIcon,
   DeviceIcon,
+  DocumentIcon,
   GlobeIcon,
   GridIcon,
+  LockIcon,
+  MailIcon,
   PencilIcon,
   ShieldIcon,
+  SlidersIcon,
   SparkleIcon,
   TrashIcon,
   WarningIcon,
 } from '@/components/icon';
+import { useHomeTokens } from '@/components/home/tokens';
 import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
 import { UpgradeBanner } from '@/components/upgrade-banner';
 import { WidgetPreview } from '@/components/widget-preview';
-import { PRIVACY_URL } from '@/constants/legal';
+import { PRIVACY_URL, termsUrl } from '@/constants/legal';
 import { Radii, RowMinHeight, Spacing, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useToast } from '@/hooks/use-toast';
@@ -47,9 +53,13 @@ const LANGUAGE_LABEL: Record<Language, string> = { en: 'English', th: 'ไทย
 const LANGUAGE_FLAG: Record<Language, string> = { en: '🇺🇸', th: '🇹🇭', zh: '🇨🇳' };
 const SELECTABLE_LANGUAGES: Language[] = ['en', 'th'];
 const RECAP_HOURS = [6, 7, 8, 9, 10];
+const SUPPORT_EMAIL = 'tickle.daily.app@gmail.com';
+const APP_VERSION = Constants.expoConfig?.version ?? '';
 
 export default function ProfileScreen() {
   const theme = useTheme();
+  // Tinted like the other tabs, so the white groups read as cards (critique, 2026-11-01).
+  const page = useHomeTokens().page;
   const router = useRouter();
   const insets = useSafeAreaInsets();
   // Tapping this tab again while on it scrolls back to the top.
@@ -122,7 +132,7 @@ export default function ProfileScreen() {
   const recapHourLabel = hourLabel(settings.recapHour);
 
   return (
-    <View style={[styles.screen, { backgroundColor: theme.surface }]}>
+    <View style={[styles.screen, { backgroundColor: page }]}>
       <ScrollView ref={scrollRef} contentContainerStyle={{ paddingTop: insets.top + 22, paddingBottom: 130 }}>
         <View style={styles.profileHeader}>
           <Pressable onPress={() => router.push('/edit-profile')} style={[styles.avatar, { backgroundColor: profile.avatarColor }]}>
@@ -131,29 +141,34 @@ export default function ProfileScreen() {
               <CameraIcon size={13} color={theme.accent} strokeWidth={2} />
             </View>
           </Pressable>
-          <Pressable onPress={() => router.push('/edit-profile')} style={styles.nameRow}>
+          <Pressable
+            onPress={() => router.push('/edit-profile')}
+            accessibilityRole="button"
+            accessibilityHint={t('profile.tapToEdit')}
+            style={styles.nameRow}>
             <Text style={[styles.name, { color: theme.text }]}>{profile.name}</Text>
             <PencilIcon size={14} color={theme.textFaint} strokeWidth={2} />
           </Pressable>
-          <Text style={[styles.sub, { color: theme.textTertiary }]}>{t('profile.tapToEdit')}</Text>
+          {/* The account status is one line under the name, not a full-width banner (critique, 2026-11-01). */}
+          {authUser ? (
+            <View style={styles.accountLine}>
+              <ShieldIcon size={13} color={theme.success} strokeWidth={2} />
+              <Text style={[styles.accountText, { color: theme.textSecondary }]} numberOfLines={1}>
+                {t('profile.signedInAs', { email: authUser.email ?? '' })}
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.accountLine}>
+              <WarningIcon size={13} color={theme.textTertiary} strokeWidth={2} />
+              <Text style={[styles.accountText, { color: theme.textSecondary }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
+                {t('profile.guestShort')}
+              </Text>
+              <Pressable onPress={() => router.push('/login')} hitSlop={10} accessibilityRole="button">
+                <Text style={[styles.accountLink, { color: theme.accentStrong }]}>{t('profile.logIn')}</Text>
+              </Pressable>
+            </View>
+          )}
         </View>
-
-        {authUser ? (
-          <View style={[styles.banner, { backgroundColor: theme.successSoft, borderColor: theme.successBorder }]}>
-            <ShieldIcon size={18} color={theme.success} strokeWidth={1.8} />
-            <Text style={[styles.bannerText, { color: theme.text }]} numberOfLines={1}>
-              Signed in as <Text style={{ fontWeight: '500', color: theme.textSecondary }}>{authUser.email}</Text>
-            </Text>
-          </View>
-        ) : (
-          <View style={[styles.banner, { backgroundColor: theme.accentSoft, borderColor: theme.dividerStrong }]}>
-            <WarningIcon size={18} color={theme.accent} strokeWidth={1.8} />
-            <Text style={[styles.bannerText, { color: theme.text }]}>{t('profile.guestBanner')}</Text>
-            <Pressable onPress={() => router.push('/login')} hitSlop={6}>
-              <Text style={[styles.bannerLink, { color: theme.accentStrong }]}>{t('profile.logIn')}</Text>
-            </Pressable>
-          </View>
-        )}
 
         <UpgradeBanner />
 
@@ -183,7 +198,7 @@ export default function ProfileScreen() {
           </View>
           <Pressable onPress={() => setNotifOptionsOpen(true)} style={[styles.row, styles.rowBorder, { borderColor: theme.divider }]}>
             <View style={[styles.rowIcon, { backgroundColor: theme.accentSoft }]}>
-              <GridIcon size={16} color={theme.accent} strokeWidth={2} />
+              <SlidersIcon size={16} color={theme.accent} strokeWidth={2} />
             </View>
             <Text style={[styles.rowLabel, { color: theme.text }]}>{t('profile.notifOptions')}</Text>
             <ChevronRightIcon size={16} color={theme.textFaint} strokeWidth={2} />
@@ -240,28 +255,58 @@ export default function ProfileScreen() {
           </Pressable>
         </View>
 
-        <Text style={[styles.sectionLabel, { color: theme.textTertiary }]}>TESTING</Text>
+        <Text style={[styles.sectionLabel, { color: theme.textTertiary }]}>{t('profile.section.help')}</Text>
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
-          <Pressable onPress={handleReplayOnboarding} style={styles.row}>
+          <Pressable onPress={() => Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(`Tickle ${APP_VERSION}`)}`)} style={styles.row}>
             <View style={[styles.rowIcon, { backgroundColor: theme.accentSoft }]}>
-              <SparkleIcon size={16} color={theme.accent} strokeWidth={1.8} />
+              <MailIcon size={16} color={theme.accent} strokeWidth={2} />
             </View>
-            <Text style={[styles.rowLabel, { color: theme.text }]}>Replay Onboarding</Text>
+            <Text style={[styles.rowLabel, { color: theme.text }]}>{t('profile.contactSupport')}</Text>
             <ChevronRightIcon size={16} color={theme.textFaint} strokeWidth={2} />
           </Pressable>
-          {/* Testing only: forces an entitlement state over what StoreKit reports. Remove before
-              the App Store build. */}
-          <Pressable onPress={() => setSubscriptionStateOpen(true)} style={[styles.row, styles.rowBorder, { borderColor: theme.divider }]}>
+          <Pressable onPress={() => Linking.openURL(termsUrl())} style={[styles.row, styles.rowBorder, { borderColor: theme.divider }]}>
             <View style={[styles.rowIcon, { backgroundColor: theme.accentSoft }]}>
-              <SparkleIcon size={16} color={theme.accent} strokeWidth={1.8} />
+              <DocumentIcon size={16} color={theme.accent} strokeWidth={2} />
             </View>
-            <Text style={[styles.rowLabel, { color: theme.text }]}>Subscription State</Text>
-            <Text style={[styles.rowValue, { color: theme.textTertiary }]}>
-              {subscriptionTestOverride ? subscriptionStateLabel(mockSubscriptionState) : 'Real'}
-            </Text>
+            <Text style={[styles.rowLabel, { color: theme.text }]}>{t('profile.terms')}</Text>
+            <ChevronRightIcon size={16} color={theme.textFaint} strokeWidth={2} />
+          </Pressable>
+          <Pressable onPress={() => Linking.openURL(PRIVACY_URL)} style={[styles.row, styles.rowBorder, { borderColor: theme.divider }]}>
+            <View style={[styles.rowIcon, { backgroundColor: theme.accentSoft }]}>
+              <LockIcon size={16} color={theme.accent} strokeWidth={2} />
+            </View>
+            <Text style={[styles.rowLabel, { color: theme.text }]}>{t('profile.privacyPolicyRow')}</Text>
             <ChevronRightIcon size={16} color={theme.textFaint} strokeWidth={2} />
           </Pressable>
         </View>
+
+        {/* Development builds only (critique, 2026-11-01): Subscription State overrides what StoreKit reports. */}
+        {__DEV__ && (
+          <>
+            <Text style={[styles.sectionLabel, { color: theme.textTertiary }]}>TESTING</Text>
+            <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
+              <Pressable onPress={handleReplayOnboarding} style={styles.row}>
+                <View style={[styles.rowIcon, { backgroundColor: theme.accentSoft }]}>
+                  <SparkleIcon size={16} color={theme.accent} strokeWidth={1.8} />
+                </View>
+                <Text style={[styles.rowLabel, { color: theme.text }]}>Replay Onboarding</Text>
+                <ChevronRightIcon size={16} color={theme.textFaint} strokeWidth={2} />
+              </Pressable>
+              {/* Testing only: forces an entitlement state over what StoreKit reports. Remove before
+                  the App Store build. */}
+              <Pressable onPress={() => setSubscriptionStateOpen(true)} style={[styles.row, styles.rowBorder, { borderColor: theme.divider }]}>
+                <View style={[styles.rowIcon, { backgroundColor: theme.accentSoft }]}>
+                  <SparkleIcon size={16} color={theme.accent} strokeWidth={1.8} />
+                </View>
+                <Text style={[styles.rowLabel, { color: theme.text }]}>Subscription State</Text>
+                <Text style={[styles.rowValue, { color: theme.textTertiary }]}>
+                  {subscriptionTestOverride ? subscriptionStateLabel(mockSubscriptionState) : 'Real'}
+                </Text>
+                <ChevronRightIcon size={16} color={theme.textFaint} strokeWidth={2} />
+              </Pressable>
+            </View>
+          </>
+        )}
 
         {authUser && (
           <Pressable
@@ -273,8 +318,9 @@ export default function ProfileScreen() {
             <Text style={{ color: theme.danger, fontSize: Typography.rowLabel, fontWeight: '700' }}>{t('profile.logOut')}</Text>
           </Pressable>
         )}
+        <Text style={[styles.version, { color: theme.textTertiary }]}>{t('profile.version', { version: APP_VERSION })}</Text>
       </ScrollView>
-      <ScrollEdgeFades color={theme.surface} />
+      <ScrollEdgeFades color={page} />
 
       <Toast message={toastMessage} />
 
@@ -497,20 +543,12 @@ const styles = StyleSheet.create({
   avatarEdit: { position: 'absolute', right: -2, bottom: -2, width: 27, height: 27, borderRadius: 13.5, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   name: { fontSize: Typography.screenTitle, fontWeight: '800', letterSpacing: -0.2 },
-  sub: { fontSize: Typography.label, fontWeight: '600', marginTop: 5 },
-  banner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginHorizontal: 20,
-    marginBottom: 20,
-    padding: 12,
-    borderRadius: Radii.md,
-    borderWidth: 1,
-  },
-  bannerText: { flex: 1, fontSize: Typography.rowValue, fontWeight: '600', lineHeight: 16 },
-  bannerLink: { fontSize: Typography.rowValue, fontWeight: '700' },
-  sectionLabel: { fontSize: Typography.caption, fontWeight: '700', letterSpacing: 0.9, paddingHorizontal: 24, marginBottom: 8, marginTop: 6, textTransform: 'uppercase' },
+  accountLine: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6, maxWidth: '100%' },
+  accountText: { fontSize: Typography.rowValue, fontWeight: '500', flexShrink: 1 },
+  accountLink: { fontSize: Typography.rowValue, fontWeight: '700', marginLeft: 2 },
+  // Strings carry their own casing, so "iOS" survives (critique, 2026-11-01: uppercase transform gave "IOS").
+  sectionLabel: { fontSize: Typography.label, fontWeight: '700', letterSpacing: 0.8, paddingHorizontal: 24, marginBottom: 8, marginTop: 6 },
+  version: { fontSize: Typography.label, fontWeight: '500', textAlign: 'center', marginTop: 18 },
   group: { borderRadius: Radii.card, borderWidth: 1, marginHorizontal: 20, overflow: 'hidden', marginBottom: Spacing.cardGap },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: RowMinHeight, paddingVertical: 9, paddingHorizontal: 14 },
   rowBorder: { borderTopWidth: 1 },

@@ -71,6 +71,12 @@ function effectiveSecondsUntil(plan: Plan): number {
 }
 
 /** Plans that already ended (past the 60s grace window), up to `withinDays` ago, most recent first. */
+/**
+ * How far back Home's Earlier section reaches (user, 2026-11-01: was 30 days). Edit mode's Select All
+ * uses the same window, so it never picks plans the list doesn't show.
+ */
+export const EARLIER_WINDOW_DAYS = 7;
+
 export function findPastPlans(plans: Plan[], withinDays = 30): Plan[] {
   const cutoff = -withinDays * DAY_SECONDS;
   return plans

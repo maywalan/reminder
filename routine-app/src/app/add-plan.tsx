@@ -21,7 +21,7 @@ import { CameraIcon, CheckIcon, ChevronRightIcon, LockIcon, PlanIcon, PlusIcon, 
 import { IconGrid, IconPickerSheet } from '@/components/icon-picker';
 import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
-import { DefaultTaskColor, Fonts, Radii, SwatchColorNames, SwatchColors, Typography } from '@/constants/theme';
+import { DefaultTaskColor, Fonts, Radii, scaledFont, SwatchColorNames, SwatchColors, Typography } from '@/constants/theme';
 import { findPastPlans } from '@/utils/countdown';
 import { countActivePlans, FREE_ACTIVE_PLAN_LIMIT, isPremium } from '@/utils/premium';
 import { usePlaceSearch } from '@/hooks/use-place-search';
@@ -116,8 +116,7 @@ function IconCard({
   onAllIcons: () => void;
 }) {
   const theme = useTheme();
-  const k = Typography.body / 13;
-  const f = (size: number, weight: 500 | 600 | 700) => ({ fontSize: size * k, fontWeight: String(weight) as '500', fontFamily: Fonts[weight] });
+  const f = (size: number, weight: 500 | 600 | 700) => ({ fontSize: scaledFont(size), fontWeight: String(weight) as '500', fontFamily: Fonts[weight] });
   const def = planIconDef(icon);
   const colorKey = SwatchColorNames[color];
   const colorName = colorKey ? (lang() === 'en' ? t(colorKey).toLowerCase() : t(colorKey)) : color;
@@ -148,7 +147,7 @@ function IconCard({
           <ChevronRightIcon size={14} color={theme.accentStrong} strokeWidth={2.2} />
         </Pressable>
       </View>
-      <Text style={[f(11.5, 600), { letterSpacing: 0.8, color: ink45 }]}>
+      <Text style={[f(12, 600), { letterSpacing: 0.8, color: ink45 }]}>
         {suggested.keyword ? t('plan.iconSuggestedFor', { word: lang() === 'en' ? suggested.keyword.toUpperCase() : suggested.keyword }) : t('plan.iconSuggested')}
       </Text>
       <IconGrid ids={suggested.ids} selected={icon} color={color} onPick={onPick} />

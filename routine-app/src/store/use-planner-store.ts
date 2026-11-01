@@ -6,7 +6,7 @@ import { deviceLanguage } from '@/i18n';
 
 import type { Group, Plan, Profile, Settings, SubscriptionDetails, SubscriptionState } from './types';
 import { syncClearAll, syncDeletePlan, syncDeletePlans, syncUpdateProfile, syncUpdateSettings, syncUpsertGroup, syncUpsertPlan, syncUpsertPlans } from '@/lib/sync';
-import { findFuturePlans, findPastPlans } from '@/utils/countdown';
+import { findFuturePlans, EARLIER_WINDOW_DAYS, findPastPlans } from '@/utils/countdown';
 import { pad, timeToMinutes, toISO } from '@/utils/dates';
 import { seriesFrom } from '@/utils/repeat-scope';
 
@@ -335,7 +335,7 @@ export const usePlannerStore = create<PlannerState>()(
         const matchesFilter = (p: Plan) =>
           (filterGroupIds.length === 0 || (!!p.groupId && filterGroupIds.includes(p.groupId))) && (filterColors.length === 0 || filterColors.includes(p.color));
         const todayIds = plans.filter((p) => p.date === todayISO && matchesFilter(p)).map((p) => p.id);
-        const pastIds = findPastPlans(plans).filter(matchesFilter).map((p) => p.id);
+        const pastIds = findPastPlans(plans, EARLIER_WINDOW_DAYS).filter(matchesFilter).map((p) => p.id);
         const futureIds = findFuturePlans(plans).filter(matchesFilter).map((p) => p.id);
         const allIds = [...todayIds, ...pastIds, ...futureIds];
         const allSelected = allIds.length > 0 && allIds.every((id) => selectedIds.includes(id));

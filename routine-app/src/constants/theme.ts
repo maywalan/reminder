@@ -186,7 +186,7 @@ const BASE_TYPOGRAPHY = {
   title: 17, // sheet and modal titles ("New Plan", "Filter by Group")
   heading: 15, // primary emphasized text: row labels, input values, task/plan names
   body: 13, // secondary/meta text: times, descriptions, sub-labels
-  label: 11.5, // all-caps section labels, small counts
+  label: 12, // all-caps section labels, small counts
   // Tickle draft-2 type ramp (see design_handoff_tickle_draft2/README.md's Typography table).
   // Additive alongside the roles above so screens keep their existing sizing until their own
   // redesign PR adopts these.
@@ -195,9 +195,9 @@ const BASE_TYPOGRAPHY = {
   sheetTitle: 16, // sheet title
   headerDate: 16.5, // header date
   rowLabel: 13.5, // row label
-  rowValue: 12.5, // row value (right-aligned, secondary)
-  caption: 10, // section caption, uppercase
-  tabLabel: 9.5, // tab bar label
+  rowValue: 13, // row value (right-aligned, secondary); same as body
+  caption: 12, // section caption, uppercase; same as label
+  tabLabel: 12, // tab bar label
 } as const;
 
 export type FontScale = 0.9 | 1 | 1.15 | 1.3;
@@ -215,9 +215,21 @@ export function setFontScale(scale: FontScale) {
   currentFontScale = scale;
 }
 
+/**
+ * No text in the app is drawn smaller than this, even at Settings > Font Size "Small" (user,
+ * 2026-11-01, following Impeccable's 12pt minimum). The ramp's smallest steps (label, caption,
+ * tabLabel) sit on it.
+ */
+export const MIN_FONT_SIZE = 12;
+
+/** `size` scaled by the user's font-size setting, never below MIN_FONT_SIZE. */
+export function scaledFont(size: number) {
+  return Math.max(MIN_FONT_SIZE, size * currentFontScale);
+}
+
 export const Typography = new Proxy(BASE_TYPOGRAPHY, {
   get(target, prop: keyof typeof BASE_TYPOGRAPHY) {
-    return target[prop] * currentFontScale;
+    return scaledFont(target[prop]);
   },
 }) as typeof BASE_TYPOGRAPHY;
 

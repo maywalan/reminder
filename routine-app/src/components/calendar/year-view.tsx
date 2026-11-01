@@ -74,7 +74,7 @@ export function YearView({ year, todayISO, plans, onShiftYear, onPressMonth, onC
                   return (
                     <View key={i} style={styles.miniDayCell}>
                       {!cell.muted && (
-                        <View style={[styles.miniDayNum, isToday && { backgroundColor: theme.accent, borderRadius: 6 }]}>
+                        <View style={[styles.miniDayNum, isToday && { backgroundColor: theme.accent, borderRadius: 9 }]}>
                           <Text style={[styles.miniDayText, { color: isToday ? '#fff' : theme.textSecondary }]}>{cell.day}</Text>
                         </View>
                       )}
@@ -100,10 +100,11 @@ const styles = StyleSheet.create({
   mini: { width: '47%', borderRadius: Radii.chip, borderWidth: 1, padding: 10 },
   miniTitle: { fontSize: Typography.body, fontWeight: '700', marginBottom: 6 },
   miniDow: { flexDirection: 'row', marginBottom: 2 },
-  miniDowText: { flex: 1, textAlign: 'center', fontSize: 7, fontWeight: '700' },
+  miniDowText: { flex: 1, textAlign: 'center', fontSize: 12, fontWeight: '700' },
   miniDays: { flexDirection: 'row', flexWrap: 'wrap' },
-  miniDayCell: { width: `${100 / 7}%`, alignItems: 'center', justifyContent: 'center', paddingVertical: 1.5, minHeight: 12 },
-  miniDayNum: { minWidth: 12, alignItems: 'center', justifyContent: 'center' },
-  miniDayText: { fontSize: 8.5 },
+  miniDayCell: { width: `${100 / 7}%`, alignItems: 'center', justifyContent: 'center', paddingVertical: 1, minHeight: 18 },
+  // Sized for the 12pt day number, so today's filled circle clears two-digit dates.
+  miniDayNum: { minWidth: 18, height: 18, alignItems: 'center', justifyContent: 'center' },
+  miniDayText: { fontSize: 12 },
   miniDot: { position: 'absolute', bottom: 0, width: 3, height: 3, borderRadius: 1.5 },
 });

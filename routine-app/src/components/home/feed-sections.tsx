@@ -97,6 +97,7 @@ function DayCard({
   open,
   onPress,
   children,
+  inList,
 }: {
   label: string;
   summary: React.ReactNode;
@@ -107,6 +108,11 @@ function DayCard({
   open: boolean;
   onPress: () => void;
   children: React.ReactNode;
+  /**
+   * A day row inside a shared card instead of a card of its own (Earlier, user 2026-11-01): one line
+   * "Thu 29 · 1 missed ›", a hairline above every row but the first, no press-scale.
+   */
+  inList?: { first: boolean };
 }) {
   const k = useHomeTokens();
   const t = useHomeType();
@@ -120,13 +126,44 @@ function DayCard({
   }, [open, reduceMotion, progress]);
 
   const press = () => {
-    if (!reduceMotion) scale.value = withSequence(withTiming(0.97, { duration: 90 }), withSpring(1, { damping: 9, stiffness: 300, mass: 0.6 }));
+    if (!reduceMotion && !inList) scale.value = withSequence(withTiming(0.97, { duration: 90 }), withSpring(1, { damping: 9, stiffness: 300, mass: 0.6 }));
     onPress();
   };
 
   const cardStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   const bodyStyle = useAnimatedStyle(() => ({ height: Math.max(0, bodyHeight.value * progress.value), opacity: Math.min(1, progress.value) }));
   const chevron = useAnimatedStyle(() => ({ transform: [{ rotate: `${progress.value * 90}deg` }] }));
+
+  const body = (
+    <Reanimated.View style={[styles.dayBody, bodyStyle]}>
+      <View onLayout={(e) => (bodyHeight.value = e.nativeEvent.layout.height)} style={[styles.dayRows, inList && styles.dayRowsInList, { borderTopColor: k.earlierBorder }]}>
+        {children}
+      </View>
+    </Reanimated.View>
+  );
+
+  if (inList) {
+    return (
+      <View style={!inList.first && [styles.listRowBorder, { borderTopColor: k.earlierBorder }]}>
+        <Pressable
+          onPress={press}
+          accessibilityRole="button"
+          accessibilityState={{ expanded: open }}
+          style={({ pressed }) => [styles.listSummary, pressed && { backgroundColor: k.rail }]}>
+          <Text numberOfLines={1} style={[t.upTitle, styles.listLabel, { color: k.ink }]}>
+            {label}
+          </Text>
+          <Text numberOfLines={1} style={[t.upTitle, { color: k.ink }]}>
+            {summary}
+          </Text>
+          <Reanimated.View style={chevron}>
+            <ChevronRightIcon size={14} color={k.ink40} strokeWidth={2.4} />
+          </Reanimated.View>
+        </Pressable>
+        {body}
+      </View>
+    );
+  }
 
   return (
     <Reanimated.View style={[styles.dayCard, { backgroundColor: k.sheet, borderColor: k.upcomingBorder }, cardStyle]}>
@@ -148,11 +185,7 @@ function DayCard({
         </View>
       </Pressable>
       {/* Rows are always laid out (absolutely, so they keep their natural height) and the clip animates to that height. */}
-      <Reanimated.View style={[styles.dayBody, bodyStyle]}>
-        <View onLayout={(e) => (bodyHeight.value = e.nativeEvent.layout.height)} style={[styles.dayRows, { borderTopColor: k.earlierBorder }]}>
-          {children}
-        </View>
-      </Reanimated.View>
+      {body}
     </Reanimated.View>
   );
 }
@@ -160,11 +193,10 @@ function DayCard({
 /** "5 missed · 1 done" — either half is left out when it's zero. */
 function EarlierSummary({ missed, done }: { missed: number; done: number }) {
   const k = useHomeTokens();
-  const t = useHomeType();
   return (
     <>
-      {missed > 0 && <Text style={[t.sumCount, { color: k.rose }]}>{tr('home.missedCount', { n: missed })}</Text>}
-      {missed > 0 && done > 0 && <Text style={[t.sumCount, { color: k.ink45 }]}>{' · '}</Text>}
+      {missed > 0 && <Text style={{ color: k.rose }}>{tr('home.missedCount', { n: missed })}</Text>}
+      {missed > 0 && done > 0 && <Text style={{ color: k.ink45 }}>{' · '}</Text>}
       {done > 0 && tr('home.doneCount', { n: done })}
     </>
   );
@@ -270,7 +302,7 @@ function hhmm(ms: number) {
 /**
  * Earlier (design_handoff_tickle_home_timeline 1c): past plans grouped by day, newest first —
  * only yesterday's by default (today's are already in the timeline above; user, 2026-10-22), the
- * last 30 days with See all. Tapping a row opens the plan (a missed one can be rescheduled from there).
+ * last 7 days with See all (EARLIER_WINDOW_DAYS). Tapping a row opens the plan (a missed one can be rescheduled from there).
  */
 export function EarlierBlock({
   older,
@@ -318,9 +350,13 @@ export function EarlierBlock({
           <Text style={[t.sumLabel, { color: k.ink50 }]}>{tr('home.noneYesterday')}</Text>
         </View>
       )}
-      {days.map((d) => (
-        <Reanimated.View key={d.dateISO} entering={FadeInUp.duration(260)} style={styles.pastGroup}>
+      {/* One card, a row per day (user, 2026-11-01: a card per day stacked up). */}
+      {days.length > 0 && (
+      <View style={[styles.dayCard, styles.pastGroup, { backgroundColor: k.sheet, borderColor: k.upcomingBorder }]}>
+      {days.map((d, di) => (
+        <Reanimated.View key={d.dateISO} entering={FadeInUp.duration(260)}>
           <DayCard
+            inList={{ first: di === 0 }}
             label={earlierDayLabel(d.dateISO, todayISO)}
             summary={<EarlierSummary missed={d.plans.filter((p) => !p.completed).length} done={d.plans.filter((p) => p.completed).length} />}
             open={s.selectMode || openDays.includes(d.dateISO)}
@@ -362,6 +398,8 @@ export function EarlierBlock({
           </DayCard>
         </Reanimated.View>
       ))}
+      </View>
+      )}
     </View>
   );
 }
@@ -454,6 +492,11 @@ const styles = StyleSheet.create({
   review: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   dayBody: { overflow: 'hidden' },
   dayRows: { position: 'absolute', top: 0, left: 0, right: 0, paddingHorizontal: 16, paddingTop: 4, paddingBottom: 6, borderTopWidth: 1 },
+  // Inside Earlier's shared card the plans sit under their day row without another hairline.
+  dayRowsInList: { borderTopWidth: 0, paddingTop: 0, paddingLeft: 26 },
+  listRowBorder: { borderTopWidth: 1 },
+  listSummary: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, paddingHorizontal: 16 },
+  listLabel: { flex: 1, minWidth: 0 },
   pastRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 4, borderBottomWidth: 1 },
   mark: { width: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
   missedMark: { borderWidth: 2 },

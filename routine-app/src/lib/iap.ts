@@ -42,27 +42,42 @@ export function deriveSubscriptionState(active: ActiveSubscription[], purchases:
 }
 
 /**
+ * When StoreKit can't be reached, keep the last known Premium only until the period it was paid
+ * for ends; otherwise staying offline after cancelling would keep Premium forever.
+ */
+function expireIfLapsed() {
+  const store = usePlannerStore.getState();
+  const expiresAt = store.subscriptionDetails?.expiresAt;
+  if (store.mockSubscriptionState !== 'free' && expiresAt != null && expiresAt < Date.now()) {
+    store.setMockSubscriptionState('free');
+    store.setSubscriptionDetails(null);
+  }
+}
+
+/**
  * Re-reads the user's entitlement from StoreKit into the planner store. Opens its own connection
  * (the paywall's `useIAP` ends the shared one when it closes). If StoreKit can't be reached the
- * last known state is kept rather than downgrading a paying user. Skipped while a testing
- * override from Profile is on.
+ * last known state is kept rather than downgrading a paying user, until its expiry date. Skipped
+ * while a testing override from Profile is on (dev builds only; release always asks StoreKit).
  */
 export async function refreshSubscriptionState(): Promise<void> {
+  if (__DEV__ && usePlannerStore.getState().subscriptionTestOverride) return;
   try {
-    if (!(await initConnection())) return;
+    if (!(await initConnection())) return expireIfLapsed();
     const [active, purchases] = await Promise.all([
       getActiveSubscriptions(PREMIUM_SKU_LIST),
       getAvailablePurchases({ onlyIncludeActiveItemsIOS: true }),
     ]);
     const store = usePlannerStore.getState();
-    if (store.subscriptionTestOverride) return;
+    if (__DEV__ && store.subscriptionTestOverride) return;
     store.setMockSubscriptionState(deriveSubscriptionState(active ?? [], purchases ?? []));
     const sub = currentPremiumSub(active ?? []);
     store.setSubscriptionDetails(
       sub ? { productId: sub.productId, periodStart: sub.transactionDate, expiresAt: sub.expirationDateIOS ?? null } : null
     );
   } catch {
-    // Offline or StoreKit unavailable — keep the last known state.
+    // Offline or StoreKit unavailable: keep the last known state while it's still paid for.
+    expireIfLapsed();
   }
 }
 

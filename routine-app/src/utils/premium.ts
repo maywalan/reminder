@@ -3,8 +3,8 @@ import { toISO } from '@/utils/dates';
 import { isMissedToday } from '@/utils/home-feed';
 import type { Period } from '@/utils/progress';
 
-/** Free tier's cap on active plans (paywall README: "5 active plans"). */
-export const FREE_ACTIVE_PLAN_LIMIT = 5;
+/** Free tier's cap on active plans (3 since 2026-11-03; was 5). */
+export const FREE_ACTIVE_PLAN_LIMIT = 3;
 
 export function isPremium(state: SubscriptionState): boolean {
   return state !== 'free';

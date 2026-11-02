@@ -22,7 +22,7 @@ export default {
   'paywall.fine.localNote': { en: 'Local pricing — App Store price may vary slightly.', th: 'ราคาท้องถิ่น ราคาใน App Store อาจต่างเล็กน้อย' },
   'paywall.purchaseFailed': { en: 'Purchase failed', th: 'ซื้อไม่สำเร็จ' },
 
-  'feature.free.plans': { en: '5 active plans', th: 'แผนที่ใช้งานได้ 5 แผน' },
+  'feature.free.plans': { en: '3 active plans', th: 'แผนที่ใช้งานได้ 3 แผน' },
   'feature.free.today': { en: 'Today view & streak', th: 'หน้าวันนี้และสถิติต่อเนื่อง' },
   'feature.free.week': { en: 'Weekly recap', th: 'สรุปรายสัปดาห์' },
   'feature.free.widgets': { en: 'Widgets, no expiry', th: 'วิดเจ็ต ใช้ได้ไม่หมดอายุ' },
@@ -45,8 +45,8 @@ export default {
   'sub.memberSince': { en: 'Member since', th: 'เป็นสมาชิกตั้งแต่' },
   'sub.freeChangesTitle': { en: 'What changes on Free?', th: 'แบบฟรีมีอะไรเปลี่ยนไปบ้าง?' },
   'sub.freeChangesBody': {
-    en: 'You keep all your data, but drop to 5 active plans, daily & weekly recurrence only, one reminder per plan, and this month’s calendar view.',
-    th: 'ข้อมูลทั้งหมดยังอยู่ครบ แต่จะเหลือแผนที่ใช้งานได้ 5 แผน ทำซ้ำได้แค่รายวันและรายสัปดาห์ เตือนได้ 1 ครั้งต่อแผน และดูปฏิทินได้เฉพาะเดือนนี้',
+    en: 'You keep all your data, but can only have 3 active plans, and Stats shows just the weekly recap.',
+    th: 'ข้อมูลทั้งหมดยังอยู่ครบ แต่จะมีแผนที่ใช้งานได้แค่ 3 แผน และดูสรุปได้แค่รายสัปดาห์',
   },
   'sub.daysLeft': { en: '{count} days left', th: 'เหลือ {count} วัน' },
   'sub.daysLeft_one': { en: '1 day left', th: 'เหลือ 1 วัน' },

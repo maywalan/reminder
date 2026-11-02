@@ -33,7 +33,7 @@ Tickle is a personal planner and reminder app. It shows what's coming up and how
 
 - Plans have a date and time, a time zone, up to 5 alerts, a color, a group, repeat rules (presets or custom), an optional location, photo and details, and a live toggle.
 - Tabs: Today (Home timeline), Calendar (Week/Month/Year), Progress, and Profile/Settings.
-- Free: 5 active plans, the Today view and streak, the weekly recap, and widgets. Premium (monthly or annual, 7-day trial, StoreKit): unlimited plans plus monthly and yearly recaps. Only list a feature that really exists and is really gated.
+- Free: 3 active plans, the Today view and streak, the weekly recap, and widgets. Premium (monthly or annual, 7-day trial, StoreKit): unlimited plans plus monthly and yearly recaps. Only list a feature that really exists and is really gated.
 - Built with Expo SDK 57, React Native, Expo Router and Reanimated. Widgets are in `targets/widget/`.
 - Open: Apple Sign-In (blocked on Apple Developer enrollment), Google OAuth only works in dev-client builds, in-app notifications UI is still being designed, and calendar sync was floated but not decided.
 

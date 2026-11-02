@@ -31,8 +31,8 @@ const GOLD = PremiumColors.light.gold;
 const AZURE = Colors.light.accent;
 
 const DISMISS_FOR_MS = 7 * 24 * 60 * 60 * 1000;
-/** From this many active plans the banner switches to the "N of 5 used" meter and ignores a dismiss. */
-const NEAR_LIMIT_AT = 4;
+/** From this many active plans the banner switches to the "N of 3 used" meter and ignores a dismiss. */
+const NEAR_LIMIT_AT = FREE_ACTIVE_PLAN_LIMIT - 1;
 
 const ENTER_SPRING = { damping: 14, stiffness: 170 };
 

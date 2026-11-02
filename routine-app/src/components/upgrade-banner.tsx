@@ -38,8 +38,8 @@ const ENTER_SPRING = { damping: 14, stiffness: 170 };
 
 /**
  * Profile's paywall entry point for Free users: one slim ink row (critique, 2026-11-01: the full card
- * pushed every setting below the fold). Variant "pitch" by default; "near limit" (a 5-segment
- * plan meter) once they're at 4+ active plans. The ✕ hides it for 7 days, unless they reach the
+ * pushed every setting below the fold). Variant "pitch" by default; "near limit" (a plan meter,
+ * one segment per free plan) from one plan below the limit. The ✕ hides it for 7 days, unless they reach the
  * near-limit point sooner.
  */
 export function UpgradeBanner() {
@@ -85,7 +85,8 @@ export function UpgradeBanner() {
     <Reanimated.View
       entering={reduceMotion ? undefined : FadeInDown.springify().damping(ENTER_SPRING.damping).stiffness(ENTER_SPRING.stiffness)}
       style={[styles.wrap, collapseStyle]}>
-      <View onLayout={(e) => height === null && setHeight(e.nativeEvent.layout.height)}>
+      {/* Re-measured on every size change: the meter row appears after the first layout. */}
+      <View onLayout={(e) => setHeight(e.nativeEvent.layout.height)}>
         <BouncyPressable
           onPress={openPaywall}
           pressedScale={0.96}

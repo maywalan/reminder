@@ -1,5 +1,13 @@
 import * as Localization from 'expo-localization';
-import { fetchProducts, getActiveSubscriptions, getAvailablePurchases, initConnection, type ActiveSubscription, type Purchase } from 'expo-iap';
+import {
+  fetchProducts,
+  getActiveSubscriptions,
+  getAvailablePurchases,
+  initConnection,
+  isEligibleForIntroOfferIOS,
+  type ActiveSubscription,
+  type Purchase,
+} from 'expo-iap';
 import { useEffect, useState } from 'react';
 
 import type { SubscriptionState } from '@/store/types';
@@ -92,6 +100,11 @@ export interface PremiumPrices {
   /** A price string to copy the currency format from: StoreKit's own, or a symbol template for the fixed prices. */
   like?: string;
   fromStore: boolean;
+  /**
+   * Whether this Apple ID can still get the 7-day free trial. Apple gives it once per subscription
+   * group, so a returning subscriber is charged at once and must not be told "free trial".
+   */
+  trialEligible: boolean;
 }
 
 // Same as Tickle.storekit / the paywall design handoff. Shown only while StoreKit hasn't returned
@@ -144,6 +157,7 @@ export function referencePrices(currency: PaywallCurrency): PremiumPrices {
     display: { monthly: formatPrice(amount.monthly, currency, like), annual: formatPrice(amount.annual, currency, like) },
     like,
     fromStore: false,
+    trialEligible: true,
   };
 }
 
@@ -162,12 +176,17 @@ export async function loadPremiumPrices(): Promise<PremiumPrices | null> {
     const monthly = find(PREMIUM_SKUS.monthly);
     const annual = find(PREMIUM_SKUS.annual);
     if (!monthly || !annual || monthly.price == null || annual.price == null) return null;
+    // The group ID differs between Tickle.storekit and App Store Connect, so read it from the product.
+    const groupId = 'subscriptionGroupIdIOS' in annual ? annual.subscriptionGroupIdIOS : null;
+    // If the check fails, don't promise a trial Apple might not give.
+    const trialEligible = groupId ? await isEligibleForIntroOfferIOS(groupId).catch(() => false) : false;
     cachedPrices = {
       currency: monthly.currency,
       amount: { monthly: monthly.price, annual: annual.price },
       display: { monthly: monthly.displayPrice, annual: annual.displayPrice },
       like: annual.displayPrice,
       fromStore: true,
+      trialEligible,
     };
     return cachedPrices;
   } catch {

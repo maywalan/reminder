@@ -30,7 +30,6 @@ import { usePlannerStore } from '@/store/use-planner-store';
 import { useThink } from '@/utils/motion';
 import { FREE_FEATURES, PREMIUM_FEATURES } from '@/utils/premium';
 
-type Tier = 'free' | 'premium';
 type CtaState = 'idle' | 'loading' | 'done';
 
 const EASE = Easing.bezier(0.22, 1, 0.36, 1);
@@ -45,10 +44,14 @@ function periodLine(prices: PremiumPrices, billing: Billing) {
   return billing === 'monthly' ? t('paywall.perMonth') : t('paywall.perYear', { mo: perMonth(prices) });
 }
 
-function finePrint(prices: PremiumPrices, billing: Billing) {
+function finePrint(prices: PremiumPrices, billing: Billing, trial: boolean) {
   const price = prices.display[billing];
-  const base = billing === 'monthly' ? t('paywall.fine.monthly', { price }) : t('paywall.fine.annual', { price, mo: perMonth(prices) });
-  // Thai breaks at the sentence (\n in the string); the price note always gets its own line.
+  const mo = perMonth(prices);
+  const charge = trial
+    ? t(billing === 'monthly' ? 'paywall.fine.trialMonthly' : 'paywall.fine.trialAnnual', { price, mo })
+    : t(billing === 'monthly' ? 'paywall.fine.monthly' : 'paywall.fine.annual', { price, mo });
+  const base = `${charge} ${t('paywall.fine.renews')}`;
+  // The price note always gets its own line.
   return prices.fromStore ? base : `${base}\n${t('paywall.fine.localNote')}`;
 }
 
@@ -67,55 +70,11 @@ function useEntrance(delayMs: number) {
   return { opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) }] };
 }
 
-/** Selected card lifts 2px, 260ms — the cross-fade beat from the Motion table. */
-function useLift(active: boolean) {
-  const v = useRef(new Animated.Value(active ? 1 : 0)).current;
-  useEffect(() => {
-    Animated.timing(v, { toValue: active ? 1 : 0, duration: 260, easing: EASE, useNativeDriver: true }).start();
-  }, [active, v]);
-  return { transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [0, -2] }) }] };
-}
 
-/** RECOMMENDED tag's ambient pulse — 3.2s, +scale/-translateY at the peak. */
-function useBadgePulse() {
-  const v = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(v, { toValue: 1, duration: 1600, easing: EASE, useNativeDriver: true }),
-        Animated.timing(v, { toValue: 0, duration: 1600, easing: EASE, useNativeDriver: true }),
-      ])
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [v]);
-  return {
-    transform: [
-      { translateY: v.interpolate({ inputRange: [0, 1], outputRange: [0, -1.5] }) },
-      { scale: v.interpolate({ inputRange: [0, 1], outputRange: [1, 1.04] }) },
-    ],
-  };
-}
 
 // The ink Premium card keeps the light theme's azure in both modes (it's dark either way).
 const CARD_ACCENT = Colors.light.accent;
 
-function PlanCheck({ selected, dark }: { selected: boolean; dark: boolean }) {
-  const theme = useTheme();
-  const p = usePremiumColors();
-  const accent = dark ? CARD_ACCENT : theme.accent;
-  return (
-    <View
-      style={[
-        staticStyles.check,
-        selected
-          ? { backgroundColor: accent, borderColor: accent }
-          : { backgroundColor: 'transparent', borderColor: dark ? 'rgba(255,255,255,0.3)' : p.checkOff },
-      ]}>
-      {selected && <CheckIcon size={11} color="#fff" strokeWidth={3.2} />}
-    </View>
-  );
-}
 
 function FeatureRow({ text, dark }: { text: string; dark: boolean }) {
   const theme = useTheme();
@@ -140,7 +99,6 @@ export default function PaywallScreen() {
   const palette = usePremiumColors();
   const styles = useMemo(() => makeStyles(theme, palette), [theme, palette]);
 
-  const [tier, setTier] = useState<Tier>('premium');
   const [billing, setBilling] = useState<Billing>('annual');
   const storePrices = usePremiumPrices();
   // USD/THB switch (user's call, 2026-10-13). Starts on the App Store's currency; that one shows
@@ -149,6 +107,8 @@ export default function PaywallScreen() {
   const [pickedCurrency, setPickedCurrency] = useState<PaywallCurrency | null>(null);
   const currency = pickedCurrency ?? storeCurrency ?? 'USD';
   const prices = currency === storePrices.currency ? storePrices : referencePrices(currency);
+  // Eligibility is per Apple ID, whichever currency is on show.
+  const trial = storePrices.trialEligible;
   const [cta, setCta] = useState<CtaState>('idle');
   const [trackWidth, setTrackWidth] = useState(0);
 
@@ -176,9 +136,6 @@ export default function PaywallScreen() {
   const ctaEnter = useEntrance(ENTER_DELAY.cta);
   const fineEnter = useEntrance(ENTER_DELAY.fine);
 
-  const premiumLift = useLift(tier === 'premium');
-  const freeLift = useLift(tier === 'free');
-  const badgePulse = useBadgePulse();
   const thinkDots = useThink(cta === 'loading');
 
   const thumbX = useRef(new Animated.Value(billing === 'annual' ? 1 : 0)).current;
@@ -196,12 +153,6 @@ export default function PaywallScreen() {
     return () => clearTimeout(t);
   }, [cta, mascotHop, router]);
 
-  function selectTier(next: Tier) {
-    if (next === tier) return;
-    Haptics.selectionAsync();
-    setTier(next);
-  }
-
   function selectBilling(next: Billing) {
     if (next === billing) return;
     Haptics.selectionAsync();
@@ -215,10 +166,6 @@ export default function PaywallScreen() {
   }
 
   async function handlePrimaryPress() {
-    if (tier === 'free') {
-      router.back();
-      return;
-    }
     if (cta !== 'idle') return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setCta('loading');
@@ -246,7 +193,9 @@ export default function PaywallScreen() {
   const segWidth = trackWidth > 0 ? (trackWidth - 8) / 2 : 0;
   const thumbTranslate = thumbX.interpolate({ inputRange: [0, 1], outputRange: [0, segWidth] });
 
-  const ctaLabel = cta === 'done' ? t('paywall.cta.done') : tier === 'premium' ? t('paywall.cta.trial') : t('paywall.cta.free');
+  // Free stays Free by closing the sheet; the button only ever buys Premium.
+  const ctaLabel =
+    cta === 'done' ? t(trial ? 'paywall.cta.done' : 'paywall.cta.doneSubscribed') : t(trial ? 'paywall.cta.trial' : 'paywall.cta.subscribe');
 
   return (
     // A modal sheet already starts below the status bar, so no top inset here.
@@ -289,20 +238,13 @@ export default function PaywallScreen() {
 
       <View style={styles.cardsRow}>
         <Animated.View style={[styles.cardOuter, freeEnter]}>
-          <Animated.View style={[styles.cardInner, freeLift]}>
-            <Pressable
-              onPress={() => selectTier('free')}
-              style={[styles.card, styles.freeCard, tier === 'free' ? styles.freeCardSelected : styles.freeCardUnselected]}>
-              <View style={styles.cardTop}>
-                <View style={styles.cardTopText}>
-                  <Text style={styles.cardName}>{t('paywall.free')}</Text>
-                  <Text style={styles.priceLight}>{formatPrice(0, prices.currency, prices.like)}</Text>
-                  <Text style={styles.periodLight}>{t('paywall.forever')}</Text>
-                </View>
-                <PlanCheck selected={tier === 'free'} dark={false} />
-              </View>
-              <View style={styles.badgeNeutral}>
-                <Text style={styles.badgeNeutralText}>{t('paywall.yourPlanToday')}</Text>
+          <View style={styles.cardInner}>
+            {/* A comparison, not a choice: closing the sheet is how you stay on Free. */}
+            <View style={[styles.card, styles.freeCard, styles.freeCardUnselected]}>
+              <View style={styles.cardTopText}>
+                <Text style={styles.cardName}>{t('paywall.free')}</Text>
+                <Text style={styles.priceLight}>{formatPrice(0, prices.currency, prices.like)}</Text>
+                <Text style={styles.periodLight}>{t('paywall.forever')}</Text>
               </View>
               <View style={styles.dividerLight} />
               <View style={styles.featureList}>
@@ -310,37 +252,31 @@ export default function PaywallScreen() {
                   <FeatureRow key={f} text={t(f)} dark={false} />
                 ))}
               </View>
-            </Pressable>
-          </Animated.View>
+            </View>
+          </View>
         </Animated.View>
 
         <Animated.View style={[styles.cardOuter, premiumEnter]}>
-          <Animated.View style={[styles.cardInner, premiumLift]}>
-            <Pressable
-              onPress={() => selectTier('premium')}
-              style={[styles.card, styles.premiumCard, tier === 'premium' ? styles.premiumCardSelected : styles.premiumCardUnselected]}>
-              <Animated.View style={[styles.recommendedBadge, badgePulse]}>
-                <Text style={styles.recommendedBadgeText}>{t('paywall.recommended')}</Text>
-              </Animated.View>
-              <View style={styles.cardTop}>
-                <View style={styles.cardTopText}>
-                  <Text style={styles.cardNameDark}>Premium</Text>
-                  <Text style={styles.priceDark}>{prices.display[billing]}</Text>
-                  <Text style={styles.periodDark}>{periodLine(prices, billing)}</Text>
+          <View style={styles.cardInner}>
+            <View style={[styles.card, styles.premiumCard, styles.premiumCardSelected]}>
+              <View style={styles.cardTopText}>
+                <Text style={styles.cardNameDark}>Premium</Text>
+                <Text style={styles.priceDark}>{prices.display[billing]}</Text>
+                <Text style={styles.periodDark}>{periodLine(prices, billing)}</Text>
+              </View>
+              {trial && (
+                <View style={styles.badgeWarm}>
+                  <Text style={styles.badgeWarmText}>{t('paywall.trialBadge')}</Text>
                 </View>
-                <PlanCheck selected={tier === 'premium'} dark />
-              </View>
-              <View style={styles.badgeWarm}>
-                <Text style={styles.badgeWarmText}>{t('paywall.trialBadge')}</Text>
-              </View>
+              )}
               <View style={styles.dividerDark} />
               <View style={styles.featureList}>
                 {PREMIUM_FEATURES.map((f) => (
                   <FeatureRow key={f} text={t(f)} dark />
                 ))}
               </View>
-            </Pressable>
-          </Animated.View>
+            </View>
+          </View>
         </Animated.View>
       </View>
 
@@ -361,7 +297,7 @@ export default function PaywallScreen() {
       </Animated.View>
 
       <Animated.View style={fineEnter}>
-        <Text style={styles.fine}>{finePrint(prices, billing)}</Text>
+        <Text style={styles.fine}>{finePrint(prices, billing, trial)}</Text>
         <View style={styles.footerLinks}>
           <Pressable onPress={handleRestore} hitSlop={6}>
             <Text style={styles.footerLink}>{t('legal.restore')}</Text>
@@ -422,17 +358,12 @@ function makeStyles(c: Theme, p: PremiumPalette) {
     cardInner: { flexGrow: 1 },
     card: { flexGrow: 1, minWidth: 0, borderRadius: 20, paddingVertical: 18, paddingHorizontal: 14, gap: 13 },
     freeCard: { backgroundColor: c.surface },
-    freeCardSelected: { borderWidth: 1.5, borderColor: c.accent, shadowColor: '#10203A', shadowOpacity: 0.1, shadowRadius: 22, shadowOffset: { width: 0, height: 10 } },
     freeCardUnselected: { borderWidth: 1, borderColor: c.cardBorder },
     premiumCard: { backgroundColor: p.card, position: 'relative' },
     premiumCardSelected: { borderWidth: 1.5, borderColor: CARD_ACCENT, shadowColor: '#10203A', shadowOpacity: 0.24, shadowRadius: 26, shadowOffset: { width: 0, height: 12 } },
-    premiumCardUnselected: { borderWidth: 1.5, borderColor: p.cardBorder, shadowColor: '#10203A', shadowOpacity: 0.12, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
 
-    recommendedBadge: { position: 'absolute', top: -8, left: 12, paddingVertical: 3, paddingHorizontal: 8, borderRadius: 9, backgroundColor: CARD_ACCENT },
-    recommendedBadgeText: { color: '#fff', fontWeight: '700', fontSize: Typography.caption, letterSpacing: 0.3 },
 
-    cardTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 6 },
-    cardTopText: { flex: 1, minWidth: 0, gap: 5 },
+    cardTopText: { gap: 5 },
     cardName: { fontWeight: '700', fontSize: Typography.heading, color: c.text },
     cardNameDark: { fontWeight: '700', fontSize: Typography.heading, color: p.cardInk },
     priceLight: { fontWeight: '700', fontSize: Typography.screenTitle, fontVariant: ['tabular-nums'], color: c.text },
@@ -440,8 +371,6 @@ function makeStyles(c: Theme, p: PremiumPalette) {
     periodLight: { fontWeight: '500', fontSize: Typography.rowValue, color: p.inkMuted },
     periodDark: { fontWeight: '500', fontSize: Typography.rowValue, color: p.cardInkSoft },
 
-    badgeNeutral: { alignSelf: 'flex-start', paddingVertical: 5, paddingHorizontal: 8, borderRadius: 9, backgroundColor: p.chip },
-    badgeNeutralText: { color: p.inkSub, fontWeight: '700', fontSize: Typography.caption, letterSpacing: 0.2 },
     badgeWarm: { alignSelf: 'flex-start', paddingVertical: 5, paddingHorizontal: 8, borderRadius: 9, backgroundColor: p.goldBg },
     badgeWarmText: { color: p.gold, fontWeight: '700', fontSize: Typography.caption, letterSpacing: 0.2 },
 

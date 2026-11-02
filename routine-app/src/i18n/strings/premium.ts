@@ -2,23 +2,29 @@ import type { Entry } from './types';
 
 export default {
   // Paywall
-  'paywall.title': { en: 'Simple pricing', th: 'ราคาเข้าใจง่าย' },
-  'paywall.sub': { en: 'Two plans. Cancel anytime.', th: 'มีแค่ 2 แบบ ยกเลิกได้ทุกเมื่อ' },
+  'paywall.title': { en: 'Plan without limits', th: 'วางแผนได้ไม่จำกัด' },
+  'paywall.sub': { en: 'Unlimited plans, plus monthly and yearly recaps.', th: 'สร้างแผนได้ไม่จำกัด พร้อมสรุปรายเดือนและรายปี' },
   'paywall.monthly': { en: 'Monthly', th: 'รายเดือน' },
   'paywall.annual': { en: 'Annual', th: 'รายปี' },
   'paywall.save': { en: 'SAVE {pct}%', th: 'ประหยัด {pct}%' },
   'paywall.free': { en: 'Free', th: 'ฟรี' },
   'paywall.forever': { en: 'forever', th: 'ตลอดไป' },
-  'paywall.yourPlanToday': { en: 'YOUR PLAN TODAY', th: 'แพ็กเกจปัจจุบัน' },
-  'paywall.recommended': { en: 'RECOMMENDED', th: 'แนะนำ' },
   'paywall.trialBadge': { en: '7-DAY FREE TRIAL', th: 'ทดลองใช้ฟรี 7 วัน' },
   'paywall.perMonth': { en: 'per month', th: 'ต่อเดือน' },
   'paywall.perYear': { en: 'per year · ≈{mo}/mo', th: 'ต่อปี · ≈{mo}/เดือน' },
   'paywall.cta.trial': { en: 'Start free trial', th: 'เริ่มทดลองใช้ฟรี' },
-  'paywall.cta.free': { en: 'Your plan today', th: 'ใช้แพ็กเกจปัจจุบัน' },
+  'paywall.cta.subscribe': { en: 'Subscribe', th: 'สมัครสมาชิก' },
+  'paywall.cta.doneSubscribed': { en: '✓  Subscribed', th: '✓  สมัครแล้ว' },
   'paywall.cta.done': { en: '✓  Trial started', th: '✓  เริ่มทดลองใช้แล้ว' },
-  'paywall.fine.monthly': { en: 'Billed {price} each month. Cancel anytime from account settings.', th: 'เรียกเก็บ {price} ทุกเดือน\nยกเลิกได้ทุกเมื่อในการตั้งค่าบัญชี' },
-  'paywall.fine.annual': { en: 'Annual billed as one payment of {price}/yr (≈ {mo}/mo). Cancel anytime from account settings.', th: 'รายปีเรียกเก็บครั้งเดียว {price}/ปี (≈ {mo}/เดือน)\nยกเลิกได้ทุกเมื่อในการตั้งค่าบัญชี' },
+  // App Review 3.1.2: say what's charged, when, and that it renews until cancelled.
+  'paywall.fine.trialMonthly': { en: 'Free for 7 days, then {price}/month.', th: 'ใช้ฟรี 7 วัน จากนั้น {price}/เดือน' },
+  'paywall.fine.trialAnnual': { en: 'Free for 7 days, then {price}/year (≈ {mo}/mo).', th: 'ใช้ฟรี 7 วัน จากนั้น {price}/ปี (≈ {mo}/เดือน)' },
+  'paywall.fine.monthly': { en: '{price}/month, charged today.', th: '{price}/เดือน เรียกเก็บวันนี้' },
+  'paywall.fine.annual': { en: '{price}/year (≈ {mo}/mo), charged today.', th: '{price}/ปี (≈ {mo}/เดือน) เรียกเก็บวันนี้' },
+  'paywall.fine.renews': {
+    en: 'Renews automatically until you cancel in Settings at least 24 hours before it renews.',
+    th: 'ต่ออายุอัตโนมัติ ยกเลิกได้ในการตั้งค่า อย่างน้อย 24 ชั่วโมงก่อนรอบถัดไป',
+  },
   'paywall.fine.localNote': { en: 'Local pricing — App Store price may vary slightly.', th: 'ราคาท้องถิ่น ราคาใน App Store อาจต่างเล็กน้อย' },
   'paywall.purchaseFailed': { en: 'Purchase failed', th: 'ซื้อไม่สำเร็จ' },
 

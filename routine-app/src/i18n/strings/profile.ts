@@ -38,17 +38,14 @@ export default {
   'profile.widgets': { en: 'Home Screen Widgets', th: 'วิดเจ็ตหน้าโฮม' },
 
   'profile.sound': { en: 'Sound', th: 'เสียง' },
-  'profile.badges': { en: 'Badges', th: 'ตัวเลขบนไอคอน' },
   'profile.section.dailyRecap': { en: 'DAILY RECAP', th: 'สรุปประจำวัน' },
   'profile.morningAgenda': { en: 'Morning Agenda', th: 'แผนประจำเช้า' },
   'profile.morningAgendaSub': { en: "One notification listing that day's plans.", th: 'แจ้งเตือนครั้งเดียว บอกแผนทั้งหมดของวันนั้น' },
-  'profile.agendaOn': { en: "Every morning at {time}, I'll tap you with that day's plans.", th: 'ทุกเช้าตอน {time} เดี๋ยวเราสะกิดบอกแผนของวันนั้นให้นะ' },
-  'profile.agendaOff': { en: "Turn Morning Agenda on and I'll tap you each morning with the day's plans.", th: 'เปิดแผนประจำเช้าไว้ แล้วเราจะสะกิดบอกแผนของวันให้ทุกเช้า' },
-  'profile.section.alertStyle': { en: 'ALERT STYLE', th: 'รูปแบบการแจ้งเตือน' },
-  'profile.banners': { en: 'Banners', th: 'แบนเนอร์' },
-  'profile.bannersSub': { en: 'Appear briefly, then go away on their own.', th: 'ขึ้นมาแป๊บเดียว แล้วหายไปเอง' },
-  'profile.persistent': { en: 'Persistent', th: 'ค้างไว้' },
-  'profile.persistentSub': { en: 'Stay on screen until dismissed.', th: 'ค้างอยู่บนจอจนกว่าจะปัดออก' },
+  'profile.agendaOn': { en: "Every day at {time}, I'll tap you with that day's plans.", th: 'ทุกวันตอน {time} เดี๋ยวเราสะกิดบอกแผนของวันนั้นให้นะ' },
+  'profile.agendaOff': { en: "Turn Morning Agenda on and I'll tap you every day with the day's plans.", th: 'เปิดแผนประจำเช้าไว้ แล้วเราจะสะกิดบอกแผนของวันให้ทุกวัน' },
+  'profile.recapTime': { en: 'Time', th: 'เวลา' },
+  'profile.iosNotifSettings': { en: 'iOS Notification Settings', th: 'ตั้งค่าการแจ้งเตือนใน iOS' },
+  'profile.iosNotifSettingsSub': { en: 'Banner style, lock screen and grouping.', th: 'รูปแบบแบนเนอร์ หน้าจอล็อก และการจัดกลุ่ม' },
 
   'profile.privacySynced': {
     en: 'Your plans sync to your account so they’re available if you sign in elsewhere. Photos stay on this device — only a local reference is saved, not the image itself.',

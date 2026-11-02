@@ -64,4 +64,6 @@ export interface Settings {
   fontScale: FontScale;
   recapEnabled: boolean;
   recapHour: number; // 0-23, local time
+  /** 0-59, local time. Optional because saves from before 2026-11-02 lack it; read with `?? 0`. */
+  recapMinute?: number;
 }

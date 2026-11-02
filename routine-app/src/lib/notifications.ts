@@ -2,6 +2,7 @@ import * as Notifications from 'expo-notifications';
 
 import { t } from '@/i18n';
 import type { Plan, Settings } from '@/store/types';
+import { usePlannerStore } from '@/store/use-planner-store';
 import { planDateTime } from '@/utils/countdown';
 import { toISO } from '@/utils/dates';
 
@@ -9,8 +10,9 @@ Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowBanner: true,
     shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
+    shouldPlaySound: usePlannerStore.getState().settings.soundEnabled,
+    // Tickle never sets a badge count, so leave the icon alone.
+    shouldSetBadge: false,
   }),
 });
 
@@ -86,7 +88,7 @@ function buildAlertJobs(plans: Plan[]): AlertJob[] {
  * is simpler and less bug-prone than trying to patch individual scheduled notifications in place
  * as plans change.
  */
-export async function rescheduleAllPlanAlerts(plans: Plan[]) {
+export async function rescheduleAllPlanAlerts(plans: Plan[], sound = true) {
   const scheduled = await Notifications.getAllScheduledNotificationsAsync();
   await Promise.all(
     scheduled.filter((n) => n.identifier.startsWith(PLAN_ALERT_PREFIX)).map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier))
@@ -97,7 +99,7 @@ export async function rescheduleAllPlanAlerts(plans: Plan[]) {
     jobs.map((job) =>
       Notifications.scheduleNotificationAsync({
         identifier: `${PLAN_ALERT_PREFIX}${job.plan.id}:${job.offsetMinutes}`,
-        content: { title: job.plan.name, body: alertBody(job.offsetMinutes), sound: true },
+        content: { title: job.plan.name, body: alertBody(job.offsetMinutes), sound },
         trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: job.triggerDate },
       })
     )
@@ -131,13 +133,16 @@ function recapBody(dayPlans: Plan[]): string {
  * between recaps, only the single already-scheduled one fires and content can't refresh further
  * until the app is reopened — an accepted limitation of a backend-less setup.
  */
-export async function refreshDailyRecap(plans: Plan[], settings: Pick<Settings, 'recapEnabled' | 'recapHour'>) {
+export async function refreshDailyRecap(
+  plans: Plan[],
+  settings: Pick<Settings, 'recapEnabled' | 'recapHour' | 'recapMinute' | 'soundEnabled'>
+) {
   await Notifications.cancelScheduledNotificationAsync(RECAP_IDENTIFIER).catch(() => {});
   if (!settings.recapEnabled) return;
 
   const now = new Date();
   const target = new Date(now);
-  target.setHours(settings.recapHour, 0, 0, 0);
+  target.setHours(settings.recapHour, settings.recapMinute ?? 0, 0, 0);
   // Guards against a corrupted/non-numeric recapHour producing an Invalid Date — see
   // buildAlertJobs' comment above for why this must never reach scheduleNotificationAsync.
   if (!Number.isFinite(target.getTime())) return;
@@ -152,7 +157,7 @@ export async function refreshDailyRecap(plans: Plan[], settings: Pick<Settings, 
     content: {
       title: isToday ? t('notif.todayAgenda') : t('notif.tomorrowAgenda'),
       body: recapBody(dayPlans),
-      sound: true,
+      sound: settings.soundEnabled,
     },
     trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: target },
   });

@@ -91,6 +91,7 @@ function settingsToRow(patch: Partial<Settings>) {
   if (patch.fontScale !== undefined) row.font_scale = patch.fontScale;
   if (patch.recapEnabled !== undefined) row.recap_enabled = patch.recapEnabled;
   if (patch.recapHour !== undefined) row.recap_hour = patch.recapHour;
+  if (patch.recapMinute !== undefined) row.recap_minute = patch.recapMinute;
   return row;
 }
 
@@ -106,6 +107,7 @@ function rowToSettings(row: Record<string, any>): Settings {
     fontScale: (row.font_scale as FontScale) ?? 1,
     recapEnabled: row.recap_enabled ?? true,
     recapHour: row.recap_hour ?? 8,
+    recapMinute: row.recap_minute ?? 0,
   };
 }
 

@@ -34,7 +34,7 @@ export function useNotificationsSync() {
       // does not show its native popup a second time after that.
       const { status } = await getNotificationPermissionStatus();
       if (status !== 'granted') return;
-      await rescheduleAllPlanAlerts(plans);
+      await rescheduleAllPlanAlerts(plans, settings.soundEnabled);
       await refreshDailyRecap(plans, settings);
     }
 
@@ -51,6 +51,8 @@ export function useNotificationsSync() {
         state.settings.notificationsEnabled !== prevState.settings.notificationsEnabled ||
         state.settings.recapEnabled !== prevState.settings.recapEnabled ||
         state.settings.recapHour !== prevState.settings.recapHour ||
+        state.settings.recapMinute !== prevState.settings.recapMinute ||
+        state.settings.soundEnabled !== prevState.settings.soundEnabled ||
         state.settings.language !== prevState.settings.language
       ) {
         scheduleSync();

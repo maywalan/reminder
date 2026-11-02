@@ -1,3 +1,4 @@
+import DateTimePicker from '@react-native-community/datetimepicker';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { useScrollToTop } from '@react-navigation/native';
@@ -34,17 +35,17 @@ import { UpgradeBanner } from '@/components/upgrade-banner';
 import { WidgetPreview } from '@/components/widget-preview';
 import { PRIVACY_URL, termsUrl } from '@/constants/legal';
 import { Radii, RowMinHeight, Spacing, Typography } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { useEffectiveScheme, useTheme } from '@/hooks/use-theme';
 import { useToast } from '@/hooks/use-toast';
 import { refreshSubscriptionState } from '@/lib/iap';
 import { getNotificationPermissionStatus, requestNotificationPermissions } from '@/lib/notifications';
 import { useAuthStore } from '@/store/use-auth-store';
 import { useOnboardingStore } from '@/store/use-onboarding-store';
 import { usePlannerStore } from '@/store/use-planner-store';
-import { t } from '@/i18n';
-import { fmtTime } from '@/i18n/format';
+import { lang, t } from '@/i18n';
+import { fmtTime, uses12hTime } from '@/i18n/format';
 import type { StringKey } from '@/i18n/strings';
-import type { AlertStyle, Language, ThemeMode } from '@/store/types';
+import type { Language, ThemeMode } from '@/store/types';
 import { profileInitials } from '@/utils/profile';
 import { SUBSCRIPTION_STATES, subscriptionStateLabel } from '@/utils/subscription';
 
@@ -52,7 +53,6 @@ const THEME_LABEL: Record<ThemeMode, StringKey> = { light: 'theme.light', dark: 
 const LANGUAGE_LABEL: Record<Language, string> = { en: 'English', th: 'ไทย', zh: '中文' };
 const LANGUAGE_FLAG: Record<Language, string> = { en: '🇺🇸', th: '🇹🇭', zh: '🇨🇳' };
 const SELECTABLE_LANGUAGES: Language[] = ['en', 'th'];
-const RECAP_HOURS = [6, 7, 8, 9, 10];
 const SUPPORT_EMAIL = 'tickle.daily.app@gmail.com';
 const APP_VERSION = Constants.expoConfig?.version ?? '';
 
@@ -128,8 +128,12 @@ export default function ProfileScreen() {
   const [widgetsOpen, setWidgetsOpen] = useState(false);
   const [subscriptionStateOpen, setSubscriptionStateOpen] = useState(false);
 
-  const hourLabel = (hour: number) => fmtTime(`${hour}:00`).replace(':00 ', ' ');
-  const recapHourLabel = hourLabel(settings.recapHour);
+  const scheme = useEffectiveScheme();
+  const recapMinute = settings.recapMinute ?? 0;
+  const recapTimeLabel = fmtTime(`${settings.recapHour}:${String(recapMinute).padStart(2, '0')}`);
+  const recapDate = new Date();
+  recapDate.setHours(settings.recapHour, recapMinute, 0, 0);
+  const pickerLocale = lang() === 'th' ? 'th-TH' : uses12hTime() ? 'en-US' : 'en-GB';
 
   return (
     <View style={[styles.screen, { backgroundColor: page }]}>
@@ -394,17 +398,13 @@ export default function ProfileScreen() {
         visible={notifOptionsOpen}
         onClose={() => setNotifOptionsOpen(false)}
         title={t('profile.notifOptions')}
-        left={
-          <Pressable onPress={() => setNotifOptionsOpen(false)} hitSlop={8}>
-            <Text style={{ color: theme.textSecondary, fontSize: Typography.rowLabel, fontWeight: '600' }}>{t('common.cancel')}</Text>
-          </Pressable>
-        }
+        // Every change saves as it's made (like iOS Settings), so there's nothing for a Cancel to undo.
         right={
           <Pressable onPress={() => setNotifOptionsOpen(false)} hitSlop={8}>
             <Text style={{ color: theme.accentStrong, fontSize: Typography.rowLabel, fontWeight: '700' }}>{t('common.done')}</Text>
           </Pressable>
         }>
-        <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.cardBorder, marginTop: 10 }]}>
+        <View style={[styles.group, styles.sheetGroup, { backgroundColor: theme.surface, borderColor: theme.cardBorder, marginTop: 10 }]}>
           <View style={styles.row}>
             <Text style={[styles.rowLabel, { color: theme.text }]}>{t('profile.sound')}</Text>
             <Switch
@@ -413,20 +413,12 @@ export default function ProfileScreen() {
               trackColor={{ true: theme.success, false: theme.switchOff }}
             />
           </View>
-          <View style={[styles.row, styles.rowBorder, { borderColor: theme.divider }]}>
-            <Text style={[styles.rowLabel, { color: theme.text }]}>{t('profile.badges')}</Text>
-            <Switch
-              value={settings.badgesEnabled}
-              onValueChange={(v) => updateSettings({ badgesEnabled: v })}
-              trackColor={{ true: theme.success, false: theme.switchOff }}
-            />
-          </View>
         </View>
-        <Text style={[styles.sectionLabel, { color: theme.textTertiary, paddingHorizontal: 4 }]}>{t('profile.section.dailyRecap')}</Text>
-        <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
+        <Text style={[styles.sectionLabel, styles.sheetLabel, { color: theme.textTertiary }]}>{t('profile.section.dailyRecap')}</Text>
+        <View style={[styles.group, styles.sheetGroup, styles.sheetGroupTight, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
           <View style={styles.row}>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.rowLabel, { color: theme.text }]}>{t('profile.morningAgenda')}</Text>
+              <Text style={[styles.rowLabel, styles.stackedLabel, { color: theme.text }]}>{t('profile.morningAgenda')}</Text>
               <Text style={{ color: theme.textTertiary, fontSize: Typography.rowValue, marginTop: 1 }}>
                 {t('profile.morningAgendaSub')}
               </Text>
@@ -438,50 +430,37 @@ export default function ProfileScreen() {
             />
           </View>
           {settings.recapEnabled && (
-            <View style={[styles.row, styles.rowBorder, styles.hourRow, { borderColor: theme.divider }]}>
-              {RECAP_HOURS.map((hour) => {
-                const active = settings.recapHour === hour;
-                return (
-                  <Pressable
-                    key={hour}
-                    onPress={() => updateSettings({ recapHour: hour })}
-                    style={[styles.hourChip, { borderColor: active ? theme.accent : theme.divider, backgroundColor: active ? theme.accentSoft : 'transparent' }]}>
-                    <Text style={{ color: active ? theme.accentStrong : theme.textSecondary, fontSize: Typography.rowValue, fontWeight: '700' }}>
-                      {hourLabel(hour)}
-                    </Text>
-                  </Pressable>
-                );
-              })}
+            <View style={[styles.row, styles.rowBorder, { borderColor: theme.divider }]}>
+              <Text style={[styles.rowLabel, { color: theme.text }]}>{t('profile.recapTime')}</Text>
+              <DateTimePicker
+                value={recapDate}
+                mode="time"
+                display="compact"
+                locale={pickerLocale}
+                themeVariant={scheme}
+                accentColor={theme.accent}
+                onChange={(_, d) => d && updateSettings({ recapHour: d.getHours(), recapMinute: d.getMinutes() })}
+              />
             </View>
           )}
         </View>
-        <View style={[styles.previewCard, { backgroundColor: theme.accentSoft }]}>
+        <View style={[styles.previewCard, styles.sheetGroup, { backgroundColor: theme.accentSoft }]}>
           <Tickle size={40} mood={settings.recapEnabled ? 'idle' : 'off'} />
           <Text style={[styles.previewText, { color: theme.text }]}>
             {settings.recapEnabled
-              ? t('profile.agendaOn', { time: recapHourLabel })
+              ? t('profile.agendaOn', { time: recapTimeLabel })
               : t('profile.agendaOff')}
           </Text>
         </View>
-        <Text style={[styles.sectionLabel, { color: theme.textTertiary, paddingHorizontal: 4 }]}>{t('profile.section.alertStyle')}</Text>
-        <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
-          {(
-            [
-              { key: 'banners' as AlertStyle, label: t('profile.banners'), sub: t('profile.bannersSub') },
-              { key: 'persistent' as AlertStyle, label: t('profile.persistent'), sub: t('profile.persistentSub') },
-            ] as const
-          ).map((opt, i) => (
-            <Pressable
-              key={opt.key}
-              onPress={() => updateSettings({ alertStyle: opt.key })}
-              style={[styles.row, i > 0 && styles.rowBorder, { borderColor: theme.divider }]}>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.rowLabel, { color: theme.text }]}>{opt.label}</Text>
-                <Text style={{ color: theme.textTertiary, fontSize: Typography.rowValue, marginTop: 1 }}>{opt.sub}</Text>
-              </View>
-              {settings.alertStyle === opt.key && <CheckIcon size={16} color={theme.accent} strokeWidth={3} />}
-            </Pressable>
-          ))}
+        {/* Banner vs. persistent, lock screen and grouping are only settable by the user in iOS Settings. */}
+        <View style={[styles.group, styles.sheetGroup, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
+          <Pressable onPress={() => Linking.openSettings()} accessibilityRole="link" style={styles.row}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.rowLabel, styles.stackedLabel, { color: theme.text }]}>{t('profile.iosNotifSettings')}</Text>
+              <Text style={{ color: theme.textTertiary, fontSize: Typography.rowValue, marginTop: 1 }}>{t('profile.iosNotifSettingsSub')}</Text>
+            </View>
+            <ChevronRightIcon size={16} color={theme.textTertiary} />
+          </Pressable>
         </View>
       </BottomSheet>
 
@@ -561,8 +540,13 @@ const styles = StyleSheet.create({
   logOutBtn: { padding: 14, borderRadius: Radii.button, borderWidth: 1, alignItems: 'center', marginHorizontal: 20, marginTop: 10 },
   footnote: { fontSize: Typography.rowValue, lineHeight: 17, marginTop: 10 },
   widgetWrap: { alignItems: 'center', marginBottom: 4 },
-  hourRow: { gap: 8, flexWrap: 'wrap' },
-  hourChip: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: Radii.chip, borderWidth: 1 },
+  // rowLabel's flex: 1 is for a row; inside a column it squeezes the title to nothing.
+  stackedLabel: { flex: 0 },
+  // Inside a sheet, which already pads 20 each side: boxes go full width, labels line up with row text,
+  // 24 between sections and 8 between a box and what belongs to it.
+  sheetGroup: { marginHorizontal: 0, marginBottom: 24 },
+  sheetGroupTight: { marginBottom: 8 },
+  sheetLabel: { paddingHorizontal: 14, marginTop: 0, marginBottom: 8 },
   previewCard: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: Radii.card, padding: 13, marginBottom: Spacing.cardGap },
   previewText: { flex: 1, fontSize: Typography.rowValue, lineHeight: 17, fontWeight: '500' },
 });

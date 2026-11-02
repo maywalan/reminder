@@ -36,6 +36,7 @@ const SEED_SETTINGS: Settings = {
   fontScale: 1,
   recapEnabled: true,
   recapHour: 8,
+  recapMinute: 0,
 };
 
 interface PlannerState {

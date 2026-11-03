@@ -260,7 +260,7 @@ struct TodaySmallWidgetView: View {
   let entry: CalEntry
 
   var body: some View {
-    let plans = entry.data.plans(on: entry.todayISO)
+    let plans = entry.data.plansAheadFirst(on: entry.todayISO, now: entry.date)
     let shown = plans.count > 3 ? Array(plans.prefix(2)) : plans
 
     VStack(alignment: .leading, spacing: 4) {
@@ -309,19 +309,46 @@ private struct Next3Chip: View {
     let color = Color(hex: plan.color)
     HStack(spacing: 0) {
       color.frame(width: 2.5)
-      Text(plan.title)
-        .font(.anuphan(size: 8.5, weight: .semibold))
-        .strikethrough(plan.done)
-        .foregroundStyle(.white)
-        .lineLimit(2)
-        .lineSpacing(-1)
-        .padding(.horizontal, 3.5)
+      title.padding(.horizontal, 3.5)
       Spacer(minLength: 0)
     }
     .frame(height: 30)
     .background(color.opacity(CalStyle.chipAlpha))
     .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
     .opacity(plan.done ? 0.5 : 1)
+  }
+
+  private func label(lines: Int) -> some View {
+    Text(plan.title)
+      .font(.anuphan(size: 8.5, weight: .semibold))
+      .strikethrough(plan.done)
+      .foregroundStyle(.white)
+      .lineLimit(lines)
+      .lineSpacing(-1)
+  }
+
+  /// The column is narrow, and SwiftUI splits a word that's wider than the line mid-word
+  /// ("Songkr / an trip"). Wrap onto two lines only when the longest Latin word fits on one;
+  /// otherwise use one line ending in "…". Thai has no spaces and already breaks between words.
+  @ViewBuilder private var title: some View {
+    let longest = plan.title.split(whereSeparator: \.isWhitespace)
+      .filter { !$0.unicodeScalars.contains { (0x0E00...0x0E7F).contains($0.value) } }
+      .max { $0.count < $1.count }
+    if #available(iOS 16.0, *), let longest {
+      ViewThatFits(in: .horizontal) {
+        // Ideal width = the longest word's, so this option is picked only when that word fits.
+        Text("\(longest)\n ")
+          .font(.anuphan(size: 8.5, weight: .semibold))
+          .lineLimit(2)
+          .lineSpacing(-1)
+          .hidden()
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .overlay(alignment: .leading) { label(lines: 2) }
+        label(lines: 1)
+      }
+    } else {
+      label(lines: 2)
+    }
   }
 }
 
@@ -332,7 +359,7 @@ struct Next3SmallWidgetView: View {
     HStack(alignment: .top, spacing: 4) {
       ForEach(0..<3, id: \.self) { i in
         let day = CalDay.add(i, to: CalDay.startOfDay(entry.date))
-        let plans = entry.data.plans(on: CalDay.iso(day))
+        let plans = i == 0 ? entry.data.plansAheadFirst(on: CalDay.iso(day), now: entry.date) : entry.data.plans(on: CalDay.iso(day))
         VStack(spacing: 3) {
           VStack(spacing: 0) {
             Text(i == 0 ? CalText.today : CalText.weekdayShort(day))
@@ -442,8 +469,11 @@ struct LockWidgetView: View {
   }
 
   private var countRing: some View {
-    let total = todays.count
+    // Only what's still ahead today — a plan that already started (or was missed) isn't "to do"
+    // any more, which also keeps this in step with the rectangular "rest of today is free".
+    let ahead = todays.filter { entry.data.isAhead($0, now: entry.date) }.count
     let done = todays.filter(\.done).count
+    let total = done + ahead
     return ZStack {
       Circle().stroke(Color.white.opacity(0.25), lineWidth: 5)
       Circle()
@@ -451,7 +481,7 @@ struct LockWidgetView: View {
         .stroke(Color.white, style: StrokeStyle(lineWidth: 5, lineCap: .round))
         .rotationEffect(.degrees(-90))
       VStack(spacing: -2) {
-        Text("\(total - done)")
+        Text("\(ahead)")
           .font(.anuphan(size: 20, weight: .bold))
         Text(CalText.toDo)
           .font(.anuphan(size: 9, weight: .semibold))

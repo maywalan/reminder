@@ -5,7 +5,10 @@ import SwiftUI
 import WidgetKit
 import CoreText
 
-private let now = Calendar.current.date(bySettingHour: 13, minute: 30, second: 0, of: .now)!
+/// `-real YES` (REAL=1 ./run.sh): draw the simulator's actual App Group data at the current time
+/// instead of the built-in sample plans.
+private let useReal = UserDefaults.standard.bool(forKey: "real")
+private let now = useReal ? Date.now : Calendar.current.date(bySettingHour: 13, minute: 30, second: 0, of: .now)!
 
 private var sample: CalData {
   func day(_ o: Int) -> String { CalDay.iso(CalDay.add(o, to: now)) }
@@ -20,9 +23,11 @@ private var sample: CalData {
     p("9", "Weekly sync", -10, "10:00", "#7B61FF"), p("10", "Mei's birthday", 4, "09:00", "#E0616F", allDay: true),
     p("11", "Stats quiz", 4, "13:00", "#A455D6"), p("12", "Pick up parcel", 6, "17:00", "#17A8A0"),
     p("13", "Date night", 8, "19:00", "#E0616F"), p("14", "Laundry", 8, "10:00", "#F0A32E"), p("15", "Call mom", 8, "20:00", "#35B978"),
+    // Already past at 13:30, so the small widgets should list it after what's still ahead.
+    p("16", "Morning run", 0, "07:00", "#35B978"),
   ], holidays: [day(-13): "Holiday", day(3): "Holiday"])
 }
-private let entry = CalEntry(date: now, data: sample)
+private let entry = CalEntry(date: now, data: useReal ? CalData.load() : sample)
 private let emptyEntry = CalEntry(date: now, data: CalData())
 
 private struct HomeFrame<V: View>: View {
@@ -76,7 +81,7 @@ struct HarnessView: View {
             Color.clear.frame(width: 158, height: 158)
           }
         default:
-          Text("1:30").font(.system(size: 96, weight: .bold)).foregroundStyle(.white.opacity(0.9))
+          Text(now.formatted(.dateTime.hour(.defaultDigits(amPM: .omitted)).minute())).font(.system(size: 96, weight: .bold)).foregroundStyle(.white.opacity(0.9))
           LockWidgetView(entry: entry, familyOverride: .accessoryInline).foregroundStyle(.white).frame(height: 20)
           HStack(spacing: 14) {
             LockPlate(w: 160, h: 72, circle: false) { LockWidgetView(entry: entry, familyOverride: .accessoryRectangular) }

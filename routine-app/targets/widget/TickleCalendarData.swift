@@ -43,6 +43,18 @@ struct CalData: Codable {
   }
 
   /// Timed, not-done plans that start at or after `date`, soonest first — what "Next" reads.
+  /// Not done and not started yet as of `now`. All-day plans count as ahead for the whole day.
+  func isAhead(_ plan: CalPlan, now: Date) -> Bool {
+    !plan.done && (plan.start.map { $0 >= now } ?? true)
+  }
+
+  /// A day's plans with the ones still ahead first, then those already done or past — so late in
+  /// the day the small widgets show what's coming instead of this morning's plans.
+  func plansAheadFirst(on iso: String, now: Date) -> [CalPlan] {
+    let all = plans(on: iso)
+    return all.filter { isAhead($0, now: now) } + all.filter { !isAhead($0, now: now) }
+  }
+
   func upcoming(after date: Date) -> [CalPlan] {
     plans.filter { !$0.done && ($0.start.map { $0 >= date } ?? false) }
       .sorted { $0.start! < $1.start! }

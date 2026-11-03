@@ -53,8 +53,12 @@ export default {
   'notif.inHr': { en: 'Starting in {n} hr', th: 'เริ่มในอีก {n} ชม.' },
   'notif.inDays': { en: 'Starting in {count} days', th: 'เริ่มในอีก {count} วัน' },
   'notif.inDays_one': { en: 'Starting in 1 day', th: 'เริ่มในอีก 1 วัน' },
+  'notif.inWeeks': { en: 'Starting in {count} weeks', th: 'เริ่มในอีก {count} สัปดาห์' },
+  'notif.inWeeks_one': { en: 'Starting in 1 week', th: 'เริ่มในอีก 1 สัปดาห์' },
+  'notif.allDayToday': { en: 'Today, all day', th: 'วันนี้ ทั้งวัน' },
+  'notif.allDayTomorrow': { en: 'Tomorrow, all day', th: 'พรุ่งนี้ ทั้งวัน' },
   'notif.nothingToday': { en: 'Nothing on your plan today.', th: 'วันนี้ไม่มีแผนอะไร' },
-  'notif.more': { en: ', +{n} more', th: ' และอีก {n} อย่าง' },
+  'notif.more': { en: ' +{n} more', th: ' และอีก {n} อย่าง' },
   'notif.todayAgenda': { en: "Today's Agenda", th: 'แผนวันนี้' },
   'notif.tomorrowAgenda': { en: "Tomorrow's Agenda", th: 'แผนพรุ่งนี้' },
 

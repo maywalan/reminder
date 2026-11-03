@@ -34,7 +34,7 @@ import { Toast } from '@/components/toast';
 import { UpgradeBanner } from '@/components/upgrade-banner';
 import { WidgetPreview } from '@/components/widget-preview';
 import { PRIVACY_URL, termsUrl } from '@/constants/legal';
-import { Radii, RowMinHeight, Spacing, Typography } from '@/constants/theme';
+import { Radii, RowMinHeight, Spacing, SwatchColors, Typography } from '@/constants/theme';
 import { useEffectiveScheme, useTheme } from '@/hooks/use-theme';
 import { useToast } from '@/hooks/use-toast';
 import { refreshSubscriptionState } from '@/lib/iap';
@@ -46,6 +46,7 @@ import { lang, t } from '@/i18n';
 import { fmtTime, uses12hTime } from '@/i18n/format';
 import type { StringKey } from '@/i18n/strings';
 import type { Language, ThemeMode } from '@/store/types';
+import { toISO } from '@/utils/dates';
 import { profileInitials } from '@/utils/profile';
 import { SUBSCRIPTION_STATES, subscriptionStateLabel } from '@/utils/subscription';
 
@@ -69,6 +70,7 @@ export default function ProfileScreen() {
   const settings = usePlannerStore((s) => s.settings);
   const updateSettings = usePlannerStore((s) => s.updateSettings);
   const resetData = usePlannerStore((s) => s.resetData);
+  const addPlans = usePlannerStore((s) => s.addPlans);
   const mockSubscriptionState = usePlannerStore((s) => s.mockSubscriptionState);
   const subscriptionTestOverride = usePlannerStore((s) => s.subscriptionTestOverride);
   const setSubscriptionTestOverride = usePlannerStore((s) => s.setSubscriptionTestOverride);
@@ -105,6 +107,33 @@ export default function ProfileScreen() {
   function handleReplayOnboarding() {
     useOnboardingStore.setState({ hasCompletedOnboarding: false, hasChosenGuest: false });
     router.replace('/onboarding-1');
+  }
+
+  /**
+   * Dev only: plans that use real New Plan alert options, plus the daily recap moved to the next
+   * minute. The two soon ones fire within ~7 minutes; the later ones only check scheduling.
+   */
+  function handleTestReminders() {
+    const at = (min: number) => {
+      const d = new Date(Date.now() + min * 60_000);
+      return { date: toISO(d), time: `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}` };
+    };
+    const inDays = (n: number, time: string) => {
+      const d = new Date();
+      d.setDate(d.getDate() + n);
+      return { date: toISO(d), time };
+    };
+    const base = { live: false, groupId: null, repeatType: 'none' };
+    const th = settings.language === 'th';
+    addPlans([
+      { ...base, ...at(6), name: th ? 'ประชุมทีมเช้า' : 'Team standup', alerts: ['0', '5'], color: SwatchColors[0], icon: 'people' },
+      { ...base, ...at(7), name: th ? 'โทรหาแม่' : 'Call Mom', alerts: ['0'], color: SwatchColors[4] },
+      { ...base, ...inDays(8, '10:00'), name: th ? 'หาหมอฟัน' : 'Dentist', alerts: ['15', '120', '1440', '10080'], color: SwatchColors[6] },
+      { ...base, ...inDays(2, '00:00'), allDay: true, name: th ? 'เที่ยวเชียงใหม่' : 'Songkran trip', alerts: ['5', '15', '1440'], color: SwatchColors[2] },
+    ]);
+    const recap = new Date(Date.now() + 60_000);
+    updateSettings({ recapEnabled: true, recapHour: recap.getHours(), recapMinute: recap.getMinutes() });
+    showToast('Test reminders added: recap in ~1 min, plans in 1, 6 and 7 min');
   }
 
   function handleClearData() {
@@ -294,6 +323,13 @@ export default function ProfileScreen() {
                   <SparkleIcon size={16} color={theme.accent} strokeWidth={1.8} />
                 </View>
                 <Text style={[styles.rowLabel, { color: theme.text }]}>Replay Onboarding</Text>
+                <ChevronRightIcon size={16} color={theme.textFaint} strokeWidth={2} />
+              </Pressable>
+              <Pressable onPress={handleTestReminders} style={[styles.row, styles.rowBorder, { borderColor: theme.divider }]}>
+                <View style={[styles.rowIcon, { backgroundColor: theme.accentSoft }]}>
+                  <BellIcon size={16} color={theme.accent} strokeWidth={2} />
+                </View>
+                <Text style={[styles.rowLabel, { color: theme.text }]}>Add Test Reminders</Text>
                 <ChevronRightIcon size={16} color={theme.textFaint} strokeWidth={2} />
               </Pressable>
               {/* Testing only: forces an entitlement state over what StoreKit reports. Remove before

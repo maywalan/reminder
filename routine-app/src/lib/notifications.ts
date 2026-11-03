@@ -4,7 +4,7 @@ import { t } from '@/i18n';
 import type { Plan, Settings } from '@/store/types';
 import { usePlannerStore } from '@/store/use-planner-store';
 import { planDateTime } from '@/utils/countdown';
-import { toISO } from '@/utils/dates';
+import { fromISO, toISO } from '@/utils/dates';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -26,6 +26,12 @@ const RECAP_IDENTIFIER = 'daily-recap';
  */
 const PLAN_ALERT_BUDGET = 60;
 
+/** All-day plans have no real start time, so their alerts fire at this hour (like iOS Calendar). */
+const ALL_DAY_ALERT_HOUR = 9;
+
+/** Roughly one Lock Screen line of body text; a second line gets clipped when iOS stacks notifications. */
+const RECAP_LINE_BUDGET = 36;
+
 export async function requestNotificationPermissions(): Promise<boolean> {
   const { status: existing } = await Notifications.getPermissionsAsync();
   if (existing === 'granted') return true;
@@ -43,11 +49,31 @@ export async function getNotificationPermissionStatus() {
   return Notifications.getPermissionsAsync();
 }
 
-function alertBody(offsetMinutes: number): string {
+function alertBody(plan: Plan, offsetMinutes: number): string {
+  if (plan.allDay) {
+    const days = Math.floor(offsetMinutes / 1440);
+    if (days === 0) return t('notif.allDayToday');
+    if (days === 1) return t('notif.allDayTomorrow');
+    return t('notif.inDays', { count: days });
+  }
   if (offsetMinutes === 0) return t('notif.startingNow');
   if (offsetMinutes < 60) return t('notif.inMin', { n: offsetMinutes });
   if (offsetMinutes < 1440) return t('notif.inHr', { n: Math.round(offsetMinutes / 60) });
+  if (offsetMinutes % 10080 === 0) return t('notif.inWeeks', { count: offsetMinutes / 10080 });
   return t('notif.inDays', { count: Math.round(offsetMinutes / 1440) });
+}
+
+/**
+ * When a plan's alert fires. A timed plan counts back from its start; an all-day plan's stored
+ * time is a leftover placeholder, so its alerts land at ALL_DAY_ALERT_HOUR on the day itself
+ * (any offset under a day) or that many whole days before.
+ */
+function alertTriggerDate(plan: Plan, offsetMinutes: number): Date {
+  if (!plan.allDay) return new Date(planDateTime(plan).getTime() - offsetMinutes * 60_000);
+  const d = fromISO(plan.date);
+  d.setDate(d.getDate() - Math.floor(offsetMinutes / 1440));
+  d.setHours(ALL_DAY_ALERT_HOUR, 0, 0, 0);
+  return d;
 }
 
 interface AlertJob {
@@ -67,13 +93,15 @@ function buildAlertJobs(plans: Plan[]): AlertJob[] {
   const now = Date.now();
   for (const plan of plans) {
     if (plan.completed) continue;
+    // Two all-day alerts under a day ("5 min" + "15 min") land on the same 9:00 — send one.
+    const seen = new Set<number>();
     for (const offset of plan.alerts) {
       const minutes = Number(offset);
-      if (!Number.isFinite(minutes)) continue;
-      const planTime = planDateTime(plan).getTime();
-      if (!Number.isFinite(planTime)) continue;
-      const triggerDate = new Date(planTime - minutes * 60_000);
-      if (triggerDate.getTime() <= now) continue;
+      if (!Number.isFinite(minutes) || minutes < 0) continue;
+      const triggerDate = alertTriggerDate(plan, minutes);
+      const at = triggerDate.getTime();
+      if (!Number.isFinite(at) || at <= now || seen.has(at)) continue;
+      seen.add(at);
       jobs.push({ plan, offsetMinutes: minutes, triggerDate });
     }
   }
@@ -99,7 +127,7 @@ export async function rescheduleAllPlanAlerts(plans: Plan[], sound = true) {
     jobs.map((job) =>
       Notifications.scheduleNotificationAsync({
         identifier: `${PLAN_ALERT_PREFIX}${job.plan.id}:${job.offsetMinutes}`,
-        content: { title: job.plan.name, body: alertBody(job.offsetMinutes), sound },
+        content: { title: job.plan.name, body: alertBody(job.plan, job.offsetMinutes), sound },
         trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: job.triggerDate },
       })
     )
@@ -113,12 +141,37 @@ export async function cancelAllPlanAlerts() {
   );
 }
 
+/** Thai vowel and tone marks sit above or below a letter and take no width of their own. */
+const THAI_MARKS = /[\u0E31\u0E34-\u0E3A\u0E47-\u0E4E]/g;
+const visualLength = (text: string) => text.replace(THAI_MARKS, '').length;
+
 function recapBody(dayPlans: Plan[]): string {
   if (dayPlans.length === 0) return t('notif.nothingToday');
-  const sorted = [...dayPlans].sort((a, b) => a.time.localeCompare(b.time));
-  const names = sorted.slice(0, 3).map((p) => p.name);
-  const rest = dayPlans.length - names.length;
-  return `${names.join(', ')}${rest > 0 ? t('notif.more', { n: rest }) : ''}`;
+  const sorted = [...dayPlans].sort((a, b) =>
+    !!a.allDay !== !!b.allDay ? (a.allDay ? -1 : 1) : a.time.localeCompare(b.time)
+  );
+  // Fit as many names as one line holds, counting the "+N more" tail too.
+  const line = (names: string[]) => {
+    const rest = sorted.length - names.length;
+    return `${names.join(', ')}${rest > 0 ? t('notif.more', { n: rest }) : ''}`;
+  };
+  const names: string[] = [];
+  for (const plan of sorted) {
+    if (names.length > 0 && visualLength(line([...names, plan.name])) > RECAP_LINE_BUDGET) break;
+    names.push(plan.name);
+  }
+  // A single long first name still gets cut to the budget rather than wrapping.
+  const tail = line(names).slice(names.join(', ').length);
+  const room = RECAP_LINE_BUDGET - visualLength(tail);
+  const head = names.join(', ');
+  if (visualLength(head) <= room) return `${head}${tail}`;
+  // Cut by visible width, never between a Thai letter and its mark.
+  let cut = '';
+  for (const ch of head) {
+    if (visualLength(cut + ch) > Math.max(room - 1, 8)) break;
+    cut += ch;
+  }
+  return `${cut.trimEnd()}…${tail}`;
 }
 
 /**

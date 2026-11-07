@@ -46,7 +46,7 @@ Tickle is a personal planner and reminder app. It shows what's coming up and how
 
 ## Evidence on Hand
 
-- Privacy policy: https://maywalan.github.io/reminder/privacy.html. Terms: `../docs/terms.html`.
+- Privacy policy: https://tickle-app.vercel.app/privacy.html. Terms: `../docs/terms.html`.
 - No testimonials, reviews, user counts, press or App Store ratings exist yet. Future work must not invent them.
 
 ## Product Principles

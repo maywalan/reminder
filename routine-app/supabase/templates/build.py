@@ -12,7 +12,7 @@ Supabase fills the {{ ... }} placeholders (Go templates) when it sends.
 from pathlib import Path
 
 HERE = Path(__file__).parent
-ICON = "https://maywalan.github.io/reminder/email/tickle-icon.png"
+ICON = "https://tickle-app.vercel.app/email/tickle-icon.png"
 
 # Tickle light theme (src/constants/theme.ts)
 PAGE = "#F7FAFF"

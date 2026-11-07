@@ -4,6 +4,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { create } from 'zustand';
 
 import { supabase } from '@/lib/supabase';
+import { SITE } from '@/constants/legal';
 import { lang, t } from '@/i18n';
 import { performInitialSync } from '@/lib/sync';
 import { usePlannerStore } from '@/store/use-planner-store';
@@ -25,11 +26,11 @@ function syncEmailLanguage(user: User) {
 
 
 /**
- * Email links land on small Tickle pages (docs/auth on GitHub Pages) that work on any device: a
+ * Email links land on small Tickle pages (docs/auth, hosted on Vercel) that work on any device: a
  * desktop browser can't open tickle:// links. The reset page hands the session on to
  * tickle://auth/reset on iPhone. `lang` picks the page's language.
  */
-const AUTH_PAGES = 'https://maywalan.github.io/reminder/auth';
+const AUTH_PAGES = `${SITE}/auth`;
 
 /** Where the password-reset email link sends the user back into the app (see app/auth/reset.tsx). */
 export const PASSWORD_RESET_PATH = 'auth/reset';

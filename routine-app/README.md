@@ -13,7 +13,7 @@ redirect — see the "Known issues" section below) and **Apple Sign-In isn't bui
 on enrolling in the Apple Developer Program).
 
 A hosted privacy policy lives at `docs/privacy.html` in the repo root (served via GitHub Pages at
-https://maywalan.github.io/reminder/privacy.html) and is linked from Profile → Data Privacy in-app.
+https://tickle-app.vercel.app/privacy.html) and is linked from Profile → Data Privacy in-app.
 
 ## Run it
 

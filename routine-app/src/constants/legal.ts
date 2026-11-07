@@ -1,6 +1,7 @@
 import { lang } from '@/i18n';
 
-const SITE = 'https://maywalan.github.io/reminder';
+/** Public pages (docs/), hosted on Vercel. GitHub Pages still mirrors them as a fallback. */
+export const SITE = 'https://tickle-app.vercel.app';
 
 export const PRIVACY_URL = `${SITE}/privacy.html`;
 

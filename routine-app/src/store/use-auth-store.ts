@@ -23,12 +23,6 @@ function syncEmailLanguage(user: User) {
   supabase.auth.updateUser({ data: { language: current } }).catch(() => {});
 }
 
-// Changing the app language while signed in updates it too.
-usePlannerStore.subscribe((state, prev) => {
-  if (state.settings.language === prev.settings.language) return;
-  const user = useAuthStore.getState().user;
-  if (user) syncEmailLanguage(user);
-});
 
 /**
  * Email links land on small Tickle pages (docs/auth on GitHub Pages) that work on any device: a
@@ -100,6 +94,15 @@ export const useAuthStore = create<AuthState>()((set) => ({
   initializing: true,
 
   initialize: () => {
+    // Changing the app language while signed in updates the email language too. Subscribed here,
+    // not at module load: use-planner-store and this file import each other (via lib/sync), so
+    // usePlannerStore is still undefined while this module first runs.
+    usePlannerStore.subscribe((state, prev) => {
+      if (state.settings.language === prev.settings.language) return;
+      const user = useAuthStore.getState().user;
+      if (user) syncEmailLanguage(user);
+    });
+
     supabase.auth.onAuthStateChange((event, session) => {
       set({ session, user: session?.user ?? null, initializing: false });
 

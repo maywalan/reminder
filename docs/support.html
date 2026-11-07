@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Support · Tickle</title>
+<meta name="description" content="Help and contact for Tickle, the planner and reminder app." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;600;700&display=swap" rel="stylesheet" />
+<style>
+  /* Same tokens as auth/auth.css (Tickle palette) */
+  :root {
+    --page: #F7FAFF;
+    --card: #FFFFFF;
+    --ink: #10203A;
+    --ink-60: #5A6576;
+    --border: #E6ECF5;
+    --accent: #1B76E8;
+    --tint: #EEF4FE;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --page: #0A1220;
+      --card: #141D30;
+      --ink: #F2F5FA;
+      --ink-60: #A3ACBA;
+      --border: #233049;
+      --accent: #4C9AFB;
+      --tint: #1A2740;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--page);
+    color: var(--ink);
+    font-family: Anuphan, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.6;
+    padding: 32px 16px 64px;
+  }
+  .doc {
+    max-width: 680px;
+    margin: 0 auto;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 36px 28px 32px;
+  }
+  .icon { display: block; border-radius: 13px; margin-bottom: 24px; }
+  h1 { font-size: 28px; line-height: 1.3; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 6px; }
+  .updated { color: var(--ink-60); font-size: 14px; margin: 0 0 32px; }
+  h2 { font-size: 18px; line-height: 1.4; font-weight: 700; margin: 36px 0 10px; }
+  p, ul { color: var(--ink-60); font-size: 15px; margin: 0 0 14px; }
+  ul { padding-left: 20px; }
+  li { margin-bottom: 8px; }
+  strong { color: var(--ink); font-weight: 600; }
+  a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  a:hover { text-decoration: underline; }
+  .note { background: var(--tint); border-radius: 12px; padding: 14px 16px; margin: 0 0 14px; }
+  .note p { margin: 0; }
+  footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--ink-60); font-size: 13px; }
+  @media (max-width: 480px) { body { padding: 16px 12px 40px; } .doc { padding: 28px 20px 24px; } h1 { font-size: 24px; } }
+  .note ul { margin: 0; }
+  .note li:last-child { margin-bottom: 0; }
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 24px; }
+  .top .icon { margin-bottom: 0; }
+  .lang { display: inline-flex; background: var(--tint); border-radius: 22px; padding: 3px; }
+  .lang button {
+    border: 0; background: transparent; color: var(--ink-60);
+    font: inherit; font-size: 14px; font-weight: 600;
+    min-width: 52px; min-height: 36px; padding: 0 14px; border-radius: 18px; cursor: pointer;
+  }
+  .lang button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+  .lang button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  html[lang="th"] body { line-height: 1.75; }
+  [data-lang] { display: none; }
+  html[lang="en"] [data-lang="en"], html[lang="th"] [data-lang="th"] { display: block; }
+  details { border-top: 1px solid var(--border); padding: 4px 0; }
+  details:last-of-type { border-bottom: 1px solid var(--border); }
+  summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 48px; font-size: 16px; font-weight: 600; color: var(--ink); }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "+"; flex: 0 0 auto; width: 28px; height: 28px; border-radius: 14px; background: var(--tint); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 600; transition: transform .2s ease-out; }
+  details[open] summary::after { transform: rotate(45deg); }
+  details > :not(summary) { margin-top: 2px; }
+  details p:last-child, details ol:last-child, details ul:last-child { margin-bottom: 14px; }
+  summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+  .contact { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; background: var(--tint); border-radius: 14px; padding: 18px 20px; margin: 0 0 12px; }
+  .contact p { margin: 0; color: var(--ink); font-weight: 600; }
+  .btn { display: inline-flex; align-items: center; min-height: 44px; padding: 0 20px; border-radius: 22px; background: var(--accent); color: #fff; font-weight: 700; font-size: 15px; text-decoration: none; }
+  .btn:hover { text-decoration: none; opacity: .92; }
+  .small { font-size: 14px; }
+  @media (prefers-reduced-motion: reduce) { summary::after { transition: none; } }
+</style>
+</head>
+<body>
+  <main class="doc">
+    <div class="top">
+      <img class="icon" src="email/tickle-icon.png" width="56" height="56" alt="Tickle" />
+      <div class="lang" role="group" aria-label="Language">
+        <button type="button" data-set="en" aria-pressed="true">EN</button>
+        <button type="button" data-set="th" aria-pressed="false">ไทย</button>
+      </div>
+    </div>
+
+    <!-- ============================== ENGLISH ============================== -->
+    <article data-lang="en">
+      <h1>Support</h1>
+      <p class="updated">Help with Tickle, the planner that tells you what's next.</p>
+
+      <div class="contact">
+        <p>Questions, a problem, or an idea? We'd love to hear from you.</p>
+        <a class="btn" href="mailto:tickle.daily.app@gmail.com?subject=Tickle%20support">Email us</a>
+      </div>
+      <p class="small">tickle.daily.app@gmail.com. It helps to include your iPhone model, iOS version, and a short description of what happened.</p>
+
+      <h2>Common questions</h2>
+      <details><summary>Do I need an account?</summary>
+        <p>No. Without an account, your plans are saved on this iPhone only. Sign in to sync your plans to your account, so they're backed up and you can use them on another device.</p>
+      </details>
+      <details><summary>I forgot my password</summary>
+        <ol><li>On the Sign In screen, tap <strong>Forgot password?</strong> and enter your email.</li><li>Open the email <strong>on the iPhone that has Tickle</strong> and tap the link, then <strong>Open Tickle</strong>.</li><li>Choose a new password.</li></ol><p>The link works once and expires after 1 hour. Can't find the email? Check your spam or junk folder.</p>
+      </details>
+      <details><summary>I didn't get the confirmation email</summary>
+        <p>Wait a few minutes and check your spam or junk folder. If it still hasn't arrived, try signing up again later, or email us and we'll help.</p>
+      </details>
+      <details><summary>My reminders don't show up</summary>
+        <ul><li>In Tickle, go to <strong>Profile → Notifications</strong> and make sure it's on.</li><li>On your iPhone, open <strong>Settings → Apps → Tickle → Notifications</strong> and turn on Allow Notifications.</li><li>Check that a Focus mode (like Do Not Disturb or Sleep) isn't hiding them.</li><li>Make sure the plan has at least one alert.</li></ul>
+      </details>
+      <details><summary>How do I add widgets?</summary>
+        <p><strong>Home Screen:</strong> touch and hold an empty spot, tap <strong>Edit → Add Widget</strong>, search for Tickle, and pick Today, Calendar or Next 3 days.</p><p><strong>Lock Screen:</strong> touch and hold the Lock Screen, tap <strong>Customize → Lock Screen</strong>, then tap the widget area and add Tickle.</p><p>Widgets are free and never expire. You'll find these steps in the app too, under <strong>Profile → Home Screen Widgets</strong>.</p>
+      </details>
+      <details><summary>How do Live Activities work?</summary>
+        <p>Turn on the <strong>Live</strong> switch on a plan to see a countdown on your Lock Screen and in the Dynamic Island. If it doesn't appear, check <strong>Profile → Live Activities</strong> in Tickle and <strong>Settings → Apps → Tickle → Live Activities</strong> on your iPhone.</p>
+      </details>
+      <details><summary>How do I cancel my subscription?</summary>
+        <p>Open <strong>Settings</strong> on your iPhone, tap your name, then <strong>Subscriptions → Tickle</strong>, or go to <strong>Profile → Manage Subscription</strong> in Tickle. Cancel at least 24 hours before it renews. You keep Premium until the end of the period you've paid for.</p>
+      </details>
+      <details><summary>I switched phones. How do I get Premium back?</summary>
+        <p>Sign in to the App Store with the same Apple ID you used to subscribe, then go to <strong>Profile → Manage Subscription → Restore purchases</strong>, or tap <strong>Restore</strong> on the Premium screen.</p>
+      </details>
+      <details><summary>Can I get a refund?</summary>
+        <p>Purchases are made through Apple, so Apple handles refunds. You can request one at <a href="https://reportaproblem.apple.com">reportaproblem.apple.com</a>.</p>
+      </details>
+      <details><summary>How do I change the language?</summary>
+        <p>Go to <strong>Profile → Language</strong> and choose English or ไทย.</p>
+      </details>
+      <details><summary>How do I delete my data or my account?</summary>
+        <ul><li><strong>Profile → Data Privacy → Clear All Data</strong> deletes your plans and groups.</li><li><strong>Profile → Data Privacy → Delete Account</strong> permanently deletes your account and everything synced to it.</li></ul><p>You can also email us and we'll delete your account for you. See our <a href="privacy.html">Privacy Policy</a> for details.</p>
+      </details>
+
+      <h2>More</h2>
+      <p><a href="privacy.html">Privacy Policy</a> · <a href="terms.html?lang=en">Terms of Use</a></p>
+    </article>
+
+    <!-- ============================== THAI ============================== -->
+    <article data-lang="th">
+      <h1>ช่วยเหลือ</h1>
+      <p class="updated">วิธีใช้และติดต่อทีม Tickle</p>
+
+      <div class="contact">
+        <p>มีคำถาม เจอปัญหา หรืออยากเสนอไอเดีย ทักมาได้เลย</p>
+        <a class="btn" href="mailto:tickle.daily.app@gmail.com?subject=Tickle%20support">อีเมลหาเรา</a>
+      </div>
+      <p class="small">tickle.daily.app@gmail.com ถ้าบอกรุ่น iPhone เวอร์ชัน iOS และเล่าสั้นๆ ว่าเกิดอะไรขึ้น<br>จะช่วยให้เราแก้ได้เร็วขึ้น</p>
+
+      <h2>คำถามที่พบบ่อย</h2>
+      <details><summary>ต้องมีบัญชีไหม</summary>
+        <p>ไม่จำเป็น ถ้าไม่มีบัญชี แผนจะถูกเก็บไว้ใน iPhone เครื่องนี้เท่านั้น ถ้าเข้าสู่ระบบ แผนจะซิงก์เข้าบัญชี มีสำรองไว้ และใช้ต่อบนเครื่องอื่นได้</p>
+      </details>
+      <details><summary>ลืมรหัสผ่าน</summary>
+        <ol><li>ที่หน้าเข้าสู่ระบบ กด <strong>ลืมรหัสผ่าน?</strong> แล้วใส่อีเมล</li><li>เปิดอีเมล<strong>บน iPhone ที่มี Tickle</strong> กดลิงก์ แล้วกด <strong>เปิด Tickle</strong></li><li>ตั้งรหัสผ่านใหม่</li></ol><p>ลิงก์ใช้ได้ครั้งเดียวและหมดอายุใน 1 ชั่วโมง ถ้าไม่เจออีเมล ลองดูในโฟลเดอร์สแปมหรือจดหมายขยะ</p>
+      </details>
+      <details><summary>ไม่ได้รับอีเมลยืนยัน</summary>
+        <p>รอสักครู่แล้วลองดูในโฟลเดอร์สแปมหรือจดหมายขยะ ถ้ายังไม่มา ลองสมัครใหม่อีกครั้งภายหลัง หรืออีเมลหาเรา เราจะช่วยดูให้</p>
+      </details>
+      <details><summary>ไม่มีการแจ้งเตือนเด้งขึ้นมา</summary>
+        <ul><li>ใน Tickle ไปที่ <strong>โปรไฟล์ → การแจ้งเตือน</strong> แล้วดูว่าเปิดอยู่</li><li>ใน iPhone เปิด <strong>การตั้งค่า → แอป → Tickle → การแจ้งเตือน</strong> แล้วเปิด อนุญาตการแจ้งเตือน</li><li>ดูว่าไม่ได้เปิดโหมดโฟกัส (เช่น ห้ามรบกวน หรือ นอนหลับ) ที่ซ่อนการแจ้งเตือนไว้</li><li>ดูว่าแผนนั้นตั้งเวลาเตือนไว้อย่างน้อยหนึ่งครั้ง</li></ul>
+      </details>
+      <details><summary>เพิ่มวิดเจ็ตยังไง</summary>
+        <p><strong>หน้าโฮม:</strong> แตะค้างที่พื้นที่ว่าง กด <strong>แก้ไข → เพิ่มวิดเจ็ต</strong> ค้นหา Tickle แล้วเลือก วันนี้ ปฏิทิน หรือ 3 วันถัดไป</p><p><strong>หน้าจอล็อก:</strong> แตะค้างที่หน้าจอล็อก กด <strong>กำหนดเอง → หน้าจอล็อก</strong> แล้วแตะช่องวิดเจ็ตเพื่อเพิ่ม Tickle</p><p>วิดเจ็ตใช้ฟรีและไม่มีวันหมดอายุ ดูวิธีเดียวกันนี้ในแอปได้ที่ <strong>โปรไฟล์ → วิดเจ็ตหน้าโฮม</strong></p>
+      </details>
+      <details><summary>Live Activities ใช้ยังไง</summary>
+        <p>เปิดสวิตช์ <strong>Live</strong> ในแผน เพื่อดูเวลานับถอยหลังบนหน้าจอล็อกและ Dynamic Island ถ้าไม่ขึ้น ให้ดูที่ <strong>โปรไฟล์ → Live Activities</strong> ใน Tickle และ <strong>การตั้งค่า → แอป → Tickle → Live Activities</strong> ใน iPhone</p>
+      </details>
+      <details><summary>ยกเลิกการสมัครสมาชิกยังไง</summary>
+        <p>เปิด <strong>การตั้งค่า</strong> ใน iPhone แตะชื่อของคุณ แล้วไปที่ <strong>การสมัครรับ → Tickle</strong> หรือไปที่ <strong>โปรไฟล์ → จัดการการสมัครสมาชิก</strong> ใน Tickle ยกเลิกก่อนต่ออายุอย่างน้อย 24 ชั่วโมง และยังใช้ Premium ได้จนจบรอบที่จ่ายไว้</p>
+      </details>
+      <details><summary>เปลี่ยนเครื่องแล้ว จะได้ Premium คืนยังไง</summary>
+        <p>เข้าสู่ระบบ App Store ด้วย Apple ID เดียวกับที่ใช้สมัคร แล้วไปที่ <strong>โปรไฟล์ → จัดการการสมัครสมาชิก → กู้คืนการซื้อ</strong> หรือกด <strong>กู้คืน</strong> ในหน้า Premium</p>
+      </details>
+      <details><summary>ขอเงินคืนได้ไหม</summary>
+        <p>การซื้อทำผ่าน Apple การคืนเงินจึงเป็นของ Apple ขอคืนเงินได้ที่ <a href="https://reportaproblem.apple.com">reportaproblem.apple.com</a></p>
+      </details>
+      <details><summary>เปลี่ยนภาษายังไง</summary>
+        <p>ไปที่ <strong>โปรไฟล์ → ภาษา</strong> แล้วเลือก ไทย หรือ English</p>
+      </details>
+      <details><summary>ลบข้อมูลหรือลบบัญชียังไง</summary>
+        <ul><li><strong>โปรไฟล์ → ความเป็นส่วนตัวของข้อมูล → ล้างข้อมูลทั้งหมด</strong> จะลบแผนและกลุ่มทั้งหมด</li><li><strong>โปรไฟล์ → ความเป็นส่วนตัวของข้อมูล → ลบบัญชี</strong> จะลบบัญชีและข้อมูลที่ซิงก์ไว้ทั้งหมดอย่างถาวร</li></ul><p>หรืออีเมลหาเรา เราจะลบบัญชีให้ ดูรายละเอียดเพิ่มเติมได้ใน<a href="privacy.html">นโยบายความเป็นส่วนตัว</a></p>
+      </details>
+
+      <h2>เพิ่มเติม</h2>
+      <p><a href="privacy.html">นโยบายความเป็นส่วนตัว</a> · <a href="terms.html?lang=th">ข้อกำหนดการใช้งาน</a></p>
+    </article>
+
+    <footer>Tickle — a personal planning app.</footer>
+  </main>
+<script>
+  // ?lang=th / ?lang=en wins; otherwise follow the browser.
+  (function () {
+    var q = new URLSearchParams(location.search).get('lang');
+    var nav = (navigator.language || 'en').toLowerCase();
+    var lang = q === 'th' || q === 'en' ? q : (nav.indexOf('th') === 0 ? 'th' : 'en');
+    function set(l) {
+      document.documentElement.lang = l;
+      document.title = l === 'th' ? 'ช่วยเหลือ · Tickle' : 'Support · Tickle';
+      document.querySelectorAll('.lang button').forEach(function (b) {
+        b.setAttribute('aria-pressed', String(b.dataset.set === l));
+      });
+    }
+    document.querySelectorAll('.lang button').forEach(function (b) {
+      b.addEventListener('click', function () { set(b.dataset.set); });
+    });
+    set(lang);
+  })();
+</script>
+</body>
+</html>

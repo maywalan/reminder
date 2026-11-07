@@ -13,8 +13,8 @@ export default {
   'profile.clearAll': { en: 'Clear All Data', th: 'ล้างข้อมูลทั้งหมด' },
   'profile.cleared': { en: 'All data cleared', th: 'ล้างข้อมูลแล้ว' },
   'profile.tapToEdit': { en: 'Tap photo or name to edit', th: 'แตะรูปหรือชื่อเพื่อแก้ไข' },
-  'profile.logIn': { en: 'Log In', th: 'เข้าสู่ระบบ' },
-  'profile.logOut': { en: 'Log Out', th: 'ออกจากระบบ' },
+  'profile.logIn': { en: 'Sign In', th: 'เข้าสู่ระบบ' },
+  'profile.logOut': { en: 'Sign Out', th: 'ออกจากระบบ' },
   'profile.signedOut': { en: 'Signed out', th: 'ออกจากระบบแล้ว' },
 
   'profile.section.notifications': { en: 'NOTIFICATIONS', th: 'การแจ้งเตือน' },
@@ -55,6 +55,15 @@ export default {
     en: 'You’re browsing as a guest — your plans are stored only on this device and nothing is uploaded.',
     th: 'คุณกำลังใช้งานแบบผู้เยี่ยมชม แผนทั้งหมดเก็บไว้ในเครื่องนี้ และไม่มีอะไรถูกอัปโหลด',
   },
+  'profile.deleteAccount': { en: 'Delete Account', th: 'ลบบัญชี' },
+  'profile.deleteAccountTitle': { en: 'Delete Your Account?', th: 'ลบบัญชีของคุณไหม?' },
+  'profile.deleteAccountBody': {
+    en: 'Your account and every plan, group and setting synced to it will be deleted for good. This can’t be undone.\n\nPremium is billed by Apple. Deleting your account doesn’t cancel it. Cancel in Settings › Apple Account › Subscriptions.',
+    th: 'บัญชีและแผน กลุ่ม การตั้งค่าทั้งหมดที่ซิงก์ไว้จะถูกลบถาวร และกู้คืนไม่ได้\n\nPremium เรียกเก็บเงินผ่าน Apple การลบบัญชีจะไม่ยกเลิกการสมัคร ยกเลิกได้ที่ การตั้งค่า › บัญชี Apple › การสมัครรับ',
+  },
+  'profile.deleteAccountConfirm': { en: 'Delete Account', th: 'ลบบัญชี' },
+  'profile.accountDeleted': { en: 'Account deleted', th: 'ลบบัญชีแล้ว' },
+  'profile.deleteAccountFailed': { en: 'Couldn’t delete your account. Check your connection and try again.', th: 'ลบบัญชีไม่สำเร็จ ลองเช็กอินเทอร์เน็ตแล้วลองใหม่อีกครั้ง' },
   'profile.privacyPolicy': { en: 'Read the full privacy policy', th: 'อ่านนโยบายความเป็นส่วนตัวฉบับเต็ม' },
 
   'profile.widgetsHelp': {

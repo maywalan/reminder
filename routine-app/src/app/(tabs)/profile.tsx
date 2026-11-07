@@ -3,7 +3,7 @@ import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { useScrollToTop } from '@react-navigation/native';
 import { useRef, useState } from 'react';
-import { Alert, Linking, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ScrollEdgeFades } from '@/components/scroll-edge-fades';
@@ -36,6 +36,7 @@ import { WidgetPreview } from '@/components/widget-preview';
 import { PRIVACY_URL, termsUrl } from '@/constants/legal';
 import { Radii, RowMinHeight, Spacing, SwatchColors, Typography } from '@/constants/theme';
 import { useEffectiveScheme, useTheme } from '@/hooks/use-theme';
+import { useNotificationPermission } from '@/hooks/use-notification-permission';
 import { useToast } from '@/hooks/use-toast';
 import { refreshSubscriptionState } from '@/lib/iap';
 import { getNotificationPermissionStatus, requestNotificationPermissions } from '@/lib/notifications';
@@ -77,11 +78,16 @@ export default function ProfileScreen() {
   const setMockSubscriptionState = usePlannerStore((s) => s.setMockSubscriptionState);
   const authUser = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
+  const deleteAccount = useAuthStore((s) => s.deleteAccount);
   const { toastMessage, showToast } = useToast();
 
-  // The switch only ever reflects our own `notificationsEnabled` setting, not the OS grant — so
-  // turning it on must check (and if needed request, or send the user to Settings for) the real
-  // permission, or the switch would show "on" while nothing ever actually fires.
+  // The switch shows ON only when our setting is on AND iOS has granted permission. The setting
+  // defaults to true, so showing it alone read "on" while iOS was never asked and nothing fired.
+  const { granted: osGranted, refresh: refreshPermission } = useNotificationPermission();
+  const notificationsOn = settings.notificationsEnabled && osGranted === true;
+
+  // Turning it on checks the real permission: asks iOS if it never has, or sends the user to
+  // Settings after a denial (iOS won't show its popup twice).
   async function handleNotificationsToggle(value: boolean) {
     if (!value) {
       updateSettings({ notificationsEnabled: false });
@@ -90,13 +96,17 @@ export default function ProfileScreen() {
     const { status, canAskAgain } = await getNotificationPermissionStatus();
     if (status === 'granted') {
       updateSettings({ notificationsEnabled: true });
+      refreshPermission();
       return;
     }
     if (canAskAgain) {
       const granted = await requestNotificationPermissions();
       updateSettings({ notificationsEnabled: granted });
+      refreshPermission();
       return;
     }
+    // Keep the setting on, so the switch turns on by itself once they allow it in Settings.
+    updateSettings({ notificationsEnabled: true });
     Alert.alert(t('profile.notifOffTitle'), t('profile.notifOffBody'), [
       { text: t('common.cancel'), style: 'cancel' },
       { text: t('profile.openSettings'), onPress: () => Linking.openSettings() },
@@ -150,6 +160,30 @@ export default function ProfileScreen() {
     ]);
   }
 
+  const [deletingAccount, setDeletingAccount] = useState(false);
+
+  // App Store Guideline 5.1.1(v): accounts made in the app must be deletable in the app.
+  function handleDeleteAccount() {
+    Alert.alert(t('profile.deleteAccountTitle'), t('profile.deleteAccountBody'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('profile.deleteAccountConfirm'),
+        style: 'destructive',
+        onPress: async () => {
+          setDeletingAccount(true);
+          const { error } = await deleteAccount();
+          setDeletingAccount(false);
+          if (error) {
+            showToast(error);
+            return;
+          }
+          setPrivacyOpen(false);
+          showToast(t('profile.accountDeleted'));
+        },
+      },
+    ]);
+  }
+
   const [appearanceOpen, setAppearanceOpen] = useState(false);
   const [languageOpen, setLanguageOpen] = useState(false);
   const [notifOptionsOpen, setNotifOptionsOpen] = useState(false);
@@ -196,7 +230,7 @@ export default function ProfileScreen() {
               <Text style={[styles.accountText, { color: theme.textSecondary }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
                 {t('profile.guestShort')}
               </Text>
-              <Pressable onPress={() => router.push('/login')} hitSlop={10} accessibilityRole="button">
+              <Pressable onPress={() => router.push({ pathname: '/login', params: { from: 'profile' } })} hitSlop={10} accessibilityRole="button">
                 <Text style={[styles.accountLink, { color: theme.accentStrong }]}>{t('profile.logIn')}</Text>
               </Pressable>
             </View>
@@ -213,7 +247,7 @@ export default function ProfileScreen() {
             </View>
             <Text style={[styles.rowLabel, { color: theme.text }]}>{t('profile.notifications')}</Text>
             <Switch
-              value={settings.notificationsEnabled}
+              value={notificationsOn}
               onValueChange={handleNotificationsToggle}
               trackColor={{ true: theme.success, false: theme.switchOff }}
             />
@@ -521,6 +555,19 @@ export default function ProfileScreen() {
           <TrashIcon size={16} color={theme.danger} strokeWidth={1.8} />
           <Text style={{ color: theme.danger, fontSize: Typography.rowLabel, fontWeight: '700' }}>{t('profile.clearAll')}</Text>
         </Pressable>
+        {authUser && (
+          <Pressable
+            onPress={handleDeleteAccount}
+            disabled={deletingAccount}
+            hitSlop={4}
+            style={[styles.deleteAccountBtn, deletingAccount && { opacity: 0.5 }]}>
+            {deletingAccount ? (
+              <ActivityIndicator size="small" color={theme.danger} />
+            ) : (
+              <Text style={{ color: theme.danger, fontSize: Typography.rowLabel, fontWeight: '600' }}>{t('profile.deleteAccount')}</Text>
+            )}
+          </Pressable>
+        )}
       </BottomSheet>
 
       <BottomSheet
@@ -573,6 +620,7 @@ const styles = StyleSheet.create({
   rowValue: { fontSize: Typography.rowValue, marginRight: 4 },
   privacyText: { fontSize: Typography.rowValue, lineHeight: 20, marginTop: 12 },
   clearDataBtn: { flexDirection: 'row', gap: 8, padding: 14, borderRadius: Radii.button, borderWidth: 1, alignItems: 'center', justifyContent: 'center', marginTop: 16 },
+  deleteAccountBtn: { minHeight: RowMinHeight, alignItems: 'center', justifyContent: 'center', marginTop: 6 },
   logOutBtn: { padding: 14, borderRadius: Radii.button, borderWidth: 1, alignItems: 'center', marginHorizontal: 20, marginTop: 10 },
   footnote: { fontSize: Typography.rowValue, lineHeight: 17, marginTop: 10 },
   widgetWrap: { alignItems: 'center', marginBottom: 4 },

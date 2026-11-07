@@ -30,6 +30,13 @@ usePlannerStore.subscribe((state, prev) => {
   if (user) syncEmailLanguage(user);
 });
 
+/**
+ * Email links land on small Tickle pages (docs/auth on GitHub Pages) that work on any device: a
+ * desktop browser can't open tickle:// links. The reset page hands the session on to
+ * tickle://auth/reset on iPhone. `lang` picks the page's language.
+ */
+const AUTH_PAGES = 'https://maywalan.github.io/reminder/auth';
+
 /** Where the password-reset email link sends the user back into the app (see app/auth/reset.tsx). */
 export const PASSWORD_RESET_PATH = 'auth/reset';
 
@@ -116,7 +123,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: name, language: lang() }, emailRedirectTo: Linking.createURL('auth/callback') },
+      options: { data: { full_name: name, language: lang() }, emailRedirectTo: `${AUTH_PAGES}/confirmed.html?lang=${lang()}` },
     });
     if (error) {
       const emailTaken = error.code === 'user_already_exists' || error.code === 'email_exists';
@@ -178,7 +185,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
 
   sendPasswordReset: async (email) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: Linking.createURL(PASSWORD_RESET_PATH),
+      redirectTo: `${AUTH_PAGES}/reset.html?lang=${lang()}`,
     });
     return { error: error ? authErrorMessage(error) : null };
   },

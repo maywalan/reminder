@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<title>Reset password · Tickle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="auth.css">
+</head>
+<body>
+<main class="card" aria-live="polite">
+  <img class="icon" src="../email/tickle-icon.png" width="56" height="56" alt="Tickle">
+  <div id="state-ok">
+    <h1 data-en="Set your new password in Tickle" data-th="ตั้งรหัสผ่านใหม่ใน Tickle"></h1>
+    <p class="iphone-only" data-en="Tap the button to open Tickle and choose a new password."
+       data-th="กดปุ่มด้านล่างเพื่อเปิด Tickle แล้วตั้งรหัสผ่านใหม่"></p>
+    <a id="open" class="button iphone-only" href="tickle://login" data-en="Open Tickle" data-th="เปิด Tickle"></a>
+    <p class="desktop-only" data-en="Open the reset email on the iPhone that has Tickle and tap the link there. The link works once and expires in 1 hour."
+       data-th="เปิดอีเมลตั้งรหัสผ่านบน iPhone ที่มี Tickle แล้วกดลิงก์จากเครื่องนั้น ลิงก์ใช้ได้ครั้งเดียว และหมดอายุใน 1 ชั่วโมง"></p>
+  </div>
+  <div id="state-error" hidden>
+    <h1 data-en="This link has expired" data-th="ลิงก์นี้หมดอายุแล้ว"></h1>
+    <p data-en="Reset links work once and expire after 1 hour. In Tickle, tap “Forgot password?” to get a new one."
+       data-th="ลิงก์ตั้งรหัสผ่านใช้ได้ครั้งเดียว และหมดอายุใน 1 ชั่วโมง ขอลิงก์ใหม่ได้ที่ “ลืมรหัสผ่าน?” ใน Tickle"></p>
+    <a class="button" href="tickle://login" data-en="Open Tickle" data-th="เปิด Tickle"></a>
+  </div>
+</main>
+<script src="auth.js"></script>
+<script>
+  // Supabase sends the one-time recovery session in the URL fragment. Hand it to the app's reset
+  // screen (tickle://auth/reset), then clear it from this page's URL and history.
+  var raw = location.hash.slice(1);
+  var p = TickleAuth.fragment();
+  history.replaceState(null, '', location.pathname + location.search);
+  if (p.error || p.error_code || !p.access_token) {
+    TickleAuth.show('state-error');
+  } else {
+    document.getElementById('open').href = 'tickle://auth/reset#' + raw;
+  }
+</script>
+</body>
+</html>

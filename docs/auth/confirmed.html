@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Email confirmed · Tickle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="auth.css">
+</head>
+<body>
+<main class="card" aria-live="polite">
+  <img class="icon" src="../email/tickle-icon.png" width="56" height="56" alt="Tickle">
+  <div id="state-ok">
+    <h1 data-en="Email confirmed" data-th="ยืนยันอีเมลแล้ว"></h1>
+    <p data-en="You’re all set. Open Tickle and sign in with your email and password. Your plans will sync across your devices."
+       data-th="เรียบร้อยแล้ว เปิด Tickle แล้วเข้าสู่ระบบด้วยอีเมลและรหัสผ่านของคุณ แผนจะซิงก์ทุกเครื่อง"></p>
+    <a class="button" href="tickle://login" data-en="Open Tickle" data-th="เปิด Tickle"></a>
+    <p class="hint desktop-only" data-en="On a computer? Open Tickle on your iPhone and sign in there."
+       data-th="เปิดจากคอมพิวเตอร์อยู่ใช่ไหม เปิด Tickle บน iPhone แล้วเข้าสู่ระบบได้เลย"></p>
+  </div>
+  <div id="state-error" hidden>
+    <h1 data-en="This link has expired" data-th="ลิงก์นี้หมดอายุแล้ว"></h1>
+    <p data-en="It may have been used already. If you confirmed before, just sign in. If not, sign up again in Tickle to get a new link."
+       data-th="ลิงก์อาจถูกใช้ไปแล้ว ถ้าเคยยืนยันแล้ว เข้าสู่ระบบได้เลย ถ้ายัง ให้สมัครใหม่ใน Tickle เพื่อรับลิงก์ใหม่"></p>
+    <a class="button" href="tickle://login" data-en="Open Tickle" data-th="เปิด Tickle"></a>
+  </div>
+</main>
+<script src="auth.js"></script>
+<script>
+  // Supabase puts a session (or an error) in the URL fragment. This page doesn't use the session:
+  // the user signs in inside the app. Clear it so tokens don't sit in history.
+  var p = TickleAuth.fragment();
+  history.replaceState(null, '', location.pathname + location.search);
+  if (p.error || p.error_code) TickleAuth.show('state-error');
+</script>
+</body>
+</html>

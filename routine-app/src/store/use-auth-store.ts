@@ -37,8 +37,10 @@ export function authErrorMessage(error: AuthError | Error | null | undefined): s
     case 'validation_failed':
       return t('login.invalidEmail');
     case 'over_request_rate_limit':
-    case 'over_email_send_rate_limit':
       return t('auth.tooMany');
+    // The app-wide hourly email cap, not something this user did.
+    case 'over_email_send_rate_limit':
+      return t('auth.emailBusy');
     case 'otp_expired':
     case 'flow_state_expired':
       return t('auth.linkExpired');

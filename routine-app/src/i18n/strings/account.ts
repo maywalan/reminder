@@ -72,6 +72,7 @@ export default {
   'auth.emailNotConfirmed': { en: 'Confirm your email first. The link is in your inbox.', th: 'ยืนยันอีเมลก่อนนะ ลิงก์อยู่ในกล่องจดหมาย' },
   'auth.weakPassword': { en: 'That password is too easy to guess. Use at least 6 characters.', th: 'รหัสผ่านเดาง่ายเกินไป ใช้อย่างน้อย 6 ตัวอักษร' },
   'auth.tooMany': { en: 'Too many tries. Wait a minute, then try again.', th: 'ลองหลายครั้งเกินไป รอสักครู่แล้วลองใหม่' },
+  'auth.emailBusy': { en: 'We couldn’t send the email right now. Try again in a few minutes.', th: 'ส่งอีเมลไม่ได้ตอนนี้ ลองใหม่อีกครั้งในอีกสักครู่' },
   'auth.network': { en: 'Can’t connect. Check your internet, then try again.', th: 'เชื่อมต่อไม่ได้ ลองเช็กอินเทอร์เน็ตแล้วลองใหม่' },
   'auth.linkExpired': { en: 'This link has expired. Go back and request a new one.', th: 'ลิงก์นี้หมดอายุแล้ว กลับไปขอลิงก์ใหม่ได้เลย' },
 

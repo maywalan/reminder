@@ -3,82 +3,71 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Privacy Policy — Tickle</title>
+<title>Privacy Policy · Tickle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;600;700&display=swap" rel="stylesheet" />
 <style>
+  /* Same tokens as auth/auth.css (Tickle palette) */
   :root {
-    --bg: #ffffff;
-    --text: #14141a;
-    --text-secondary: #55555f;
-    --accent: #5B5FEF;
-    --border: #e8e8ee;
-    --surface: #f7f7fb;
+    --page: #F7FAFF;
+    --card: #FFFFFF;
+    --ink: #10203A;
+    --ink-60: #5A6576;
+    --border: #E6ECF5;
+    --accent: #1B76E8;
+    --tint: #EEF4FE;
+    color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #0e0e12;
-      --text: #f2f2f5;
-      --text-secondary: #b0b0ba;
-      --accent: #8b8eff;
-      --border: #2a2a33;
-      --surface: #17171d;
+    :root:not([data-theme="light"]) {
+      --page: #0A1220;
+      --card: #141D30;
+      --ink: #F2F5FA;
+      --ink-60: #A3ACBA;
+      --border: #233049;
+      --accent: #4C9AFB;
+      --tint: #1A2740;
+      color-scheme: dark;
     }
   }
   * { box-sizing: border-box; }
+  html, body { margin: 0; }
   body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--page);
+    color: var(--ink);
+    font-family: Anuphan, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
     line-height: 1.6;
+    padding: 32px 16px 64px;
   }
-  .wrap { max-width: 680px; margin: 0 auto; padding: 56px 24px 96px; }
-  .eyebrow {
-    display: inline-block;
-    background: var(--surface);
+  .doc {
+    max-width: 680px;
+    margin: 0 auto;
+    background: var(--card);
     border: 1px solid var(--border);
-    color: var(--accent);
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    padding: 5px 12px;
-    border-radius: 20px;
-    margin-bottom: 18px;
+    border-radius: 16px;
+    padding: 36px 28px 32px;
   }
-  h1 { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; margin: 0 0 6px; }
-  .updated { color: var(--text-secondary); font-size: 14px; margin: 0 0 40px; }
-  h2 {
-    font-size: 18px;
-    font-weight: 800;
-    margin: 40px 0 12px;
-    padding-top: 4px;
-  }
-  p { color: var(--text-secondary); font-size: 15.5px; margin: 0 0 14px; }
-  ul { margin: 0 0 14px; padding-left: 20px; color: var(--text-secondary); font-size: 15.5px; }
-  li { margin-bottom: 6px; }
-  strong { color: var(--text); font-weight: 700; }
-  a { color: var(--accent); text-decoration: none; }
+  .icon { display: block; border-radius: 13px; margin-bottom: 24px; }
+  h1 { font-size: 28px; line-height: 1.3; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 6px; }
+  .updated { color: var(--ink-60); font-size: 14px; margin: 0 0 32px; }
+  h2 { font-size: 18px; line-height: 1.4; font-weight: 700; margin: 36px 0 10px; }
+  p, ul { color: var(--ink-60); font-size: 15px; margin: 0 0 14px; }
+  ul { padding-left: 20px; }
+  li { margin-bottom: 8px; }
+  strong { color: var(--ink); font-weight: 600; }
+  a { color: var(--accent); text-decoration: none; font-weight: 600; }
   a:hover { text-decoration: underline; }
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 16px 18px;
-    margin: 0 0 14px;
-  }
-  .card p:last-child { margin-bottom: 0; }
-  footer {
-    margin-top: 56px;
-    padding-top: 24px;
-    border-top: 1px solid var(--border);
-    color: var(--text-secondary);
-    font-size: 13px;
-  }
+  .note { background: var(--tint); border-radius: 12px; padding: 14px 16px; margin: 0 0 14px; }
+  .note p { margin: 0; }
+  footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--ink-60); font-size: 13px; }
+  @media (max-width: 480px) { body { padding: 16px 12px 40px; } .doc { padding: 28px 20px 24px; } h1 { font-size: 24px; } }
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <span class="eyebrow">Tickle</span>
+  <main class="doc">
+    <img class="icon" src="email/tickle-icon.png" width="56" height="56" alt="Tickle" />
     <h1>Privacy Policy</h1>
     <p class="updated">Effective August 27, 2026</p>
 
@@ -97,7 +86,7 @@
       <li><strong>Plan &amp; routine data</strong> — the plans, groups, and schedules you create: titles, dates, times, locations, notes, colors, and completion status. This syncs to your account so it's available if you sign in on another device.</li>
       <li><strong>Photos</strong> — if you attach a photo to a plan, the photo itself stays on your device. Only a local file reference is saved with your account data, not the image, so photos currently don't carry over to a different device.</li>
     </ul>
-    <div class="card">
+    <div class="note">
       <p>
         We don't use analytics, advertising, or crash-reporting SDKs, and we don't collect any data beyond
         what's listed above.
@@ -122,8 +111,9 @@
       which removes that data from both your device and your account.
     </p>
     <p>
-      To delete your account entirely (including your email and login), contact us at the address below and
-      we'll process the deletion. In-app account deletion is planned for a future update.
+      To delete your account entirely, go to <strong>Profile → Data Privacy → Delete Account</strong>. This
+      permanently removes your account, email, login, and all synced data. You can also email us at the
+      address below and we'll delete it for you.
     </p>
 
     <h2>Children's privacy</h2>
@@ -138,6 +128,6 @@
     </p>
 
     <footer>Tickle — a personal planning app.</footer>
-  </div>
+  </main>
 </body>
 </html>

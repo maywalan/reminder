@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { XIcon } from '@/components/icon';
 import { Text, TextInput } from '@/components/text';
 import { Tickle } from '@/components/tickle';
 import { Fonts, Typography } from '@/constants/theme';
@@ -62,12 +63,31 @@ export default function ResetPasswordScreen() {
     setPhase('done');
   }
 
+  // Opened from a link, so there's usually nothing to go back to: leave to Home. If the link already
+  // signed the user in, closing keeps them signed in with their old password.
+  function close() {
+    if (router.canGoBack()) router.back();
+    else router.replace('/');
+  }
+
   const title = phase === 'done' ? t('reset.saved') : t('reset.title');
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={[styles.screen, { backgroundColor: theme.surface, paddingTop: insets.top + 22, paddingBottom: insets.bottom + 16 }]}>
-        <Tickle size={52} mood="idle" animated />
+      <View style={[styles.screen, { backgroundColor: theme.surface, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16 }]}>
+        <View style={styles.topRow}>
+          <Tickle size={52} mood="idle" animated />
+          {phase !== 'saving' && (
+            <Pressable
+              onPress={close}
+              hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel={t('common.close')}
+              style={({ pressed }) => [styles.closeButton, { backgroundColor: theme.bg, opacity: pressed ? 0.6 : 1 }]}>
+              <XIcon size={16} color={theme.textSecondary} strokeWidth={2.4} />
+            </Pressable>
+          )}
+        </View>
         <Text style={[styles.title, { color: theme.text }]} accessibilityRole="header">
           {title}
         </Text>
@@ -146,6 +166,8 @@ export default function ResetPasswordScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, paddingHorizontal: 24, alignItems: 'stretch' },
+  topRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginTop: 10 },
+  closeButton: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   title: { fontSize: Typography.screenTitle, fontWeight: '700', fontFamily: Fonts[700], letterSpacing: -0.3, marginTop: 18 },
   subtitle: { fontSize: Typography.body, fontWeight: '500', fontFamily: Fonts[500], lineHeight: 19, marginTop: 8, marginBottom: 22 },
   field: { height: 52, borderRadius: 16, borderWidth: 1, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16 },

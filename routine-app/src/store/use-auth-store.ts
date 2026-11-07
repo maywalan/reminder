@@ -4,13 +4,31 @@ import * as WebBrowser from 'expo-web-browser';
 import { create } from 'zustand';
 
 import { supabase } from '@/lib/supabase';
-import { t } from '@/i18n';
+import { lang, t } from '@/i18n';
 import { performInitialSync } from '@/lib/sync';
 import { usePlannerStore } from '@/store/use-planner-store';
 
 WebBrowser.maybeCompleteAuthSession();
 
 export type OAuthProvider = 'google' | 'apple';
+
+/**
+ * Supabase's auth emails (supabase/templates) pick English or Thai from `user_metadata.language`.
+ * Keeps it equal to the app language, so a reset email arrives in the language the user reads.
+ */
+function syncEmailLanguage(user: User) {
+  // Read the setting, not lang(): lang() only updates on the next render.
+  const current = usePlannerStore.getState().settings.language === 'th' ? 'th' : 'en';
+  if (user.user_metadata?.language === current) return;
+  supabase.auth.updateUser({ data: { language: current } }).catch(() => {});
+}
+
+// Changing the app language while signed in updates it too.
+usePlannerStore.subscribe((state, prev) => {
+  if (state.settings.language === prev.settings.language) return;
+  const user = useAuthStore.getState().user;
+  if (user) syncEmailLanguage(user);
+});
 
 /** Where the password-reset email link sends the user back into the app (see app/auth/reset.tsx). */
 export const PASSWORD_RESET_PATH = 'auth/reset';
@@ -80,6 +98,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
 
       if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
         performInitialSync(session.user.id);
+        syncEmailLanguage(session.user);
       } else if (event === 'SIGNED_OUT') {
         // Local plans/groups belong to whichever account was last active — clear them so the
         // next sign-in (a different account, or guest mode) doesn't inherit stale data.
@@ -97,7 +116,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: name }, emailRedirectTo: Linking.createURL('auth/callback') },
+      options: { data: { full_name: name, language: lang() }, emailRedirectTo: Linking.createURL('auth/callback') },
     });
     if (error) {
       const emailTaken = error.code === 'user_already_exists' || error.code === 'email_exists';

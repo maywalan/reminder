@@ -23,7 +23,8 @@
         "com.apple.security.application-groups": [
           "group.com.maywalan.tickle"
         ]
-      }
+      },
+      "appleTeamId": "UGG5ZR65UP"
     },
     "android": {
       "package": "com.maywalan.tickle",

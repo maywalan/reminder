@@ -122,6 +122,26 @@ function rowToProfile(row: Record<string, any>): Profile {
   return { name: row.name, avatarColor: row.avatar_color };
 }
 
+/** Names that are app defaults, not the person's: the guest default and the old demo name. */
+const PLACEHOLDER_NAMES = new Set(['', 'guest', 'alex kim']);
+
+function isRealName(name: string | null | undefined): name is string {
+  return !!name && !PLACEHOLDER_NAMES.has(name.trim().toLowerCase());
+}
+
+/**
+ * The signed-in person's name: the account's saved profile name, else the name from sign-up or
+ * Google (full name, or first + last), else the part of the email before the @.
+ */
+function accountName(savedName: string | null | undefined): string {
+  if (isRealName(savedName)) return savedName.trim();
+  const user = useAuthStore.getState().user;
+  const meta = (user?.user_metadata ?? {}) as Record<string, string | undefined>;
+  const fromMeta = meta.full_name || meta.name || [meta.given_name, meta.family_name].filter(Boolean).join(' ');
+  if (isRealName(fromMeta)) return fromMeta.trim();
+  return user?.email?.split('@')[0] ?? 'Guest';
+}
+
 function warn(label: string, error: unknown) {
   if (error) console.warn(`[sync] ${label} failed`, error);
 }
@@ -175,15 +195,26 @@ export async function performInitialSync(userId: string) {
       const { error } = await supabase.from('groups').upsert(local.groups.map((g) => groupToRow(g, userId)));
       warn('push local groups', error);
     }
-    const { error: profileErr } = await supabase.from('profiles').update(profileToRow(local.profile)).eq('id', userId);
+    // New account: keep this phone's avatar colour, but never upload the guest name over the
+    // account's own (from sign-up or Google).
+    const profile = { ...local.profile, name: accountName(profileRes.data?.name) };
+    usePlannerStore.setState({ profile });
+    const { error: profileErr } = await supabase.from('profiles').update(profileToRow(profile)).eq('id', userId);
     warn('push local profile', profileErr);
     const { error: settingsErr } = await supabase.from('settings').update(settingsToRow(local.settings)).eq('user_id', userId);
     warn('push local settings', settingsErr);
   } else {
+    // Repair an account whose saved name is a placeholder (an older build uploaded the guest name).
+    if (profileRes.data && !isRealName(profileRes.data.name)) {
+      const { error } = await supabase.from('profiles').update({ name: accountName(null) }).eq('id', userId);
+      warn('repair profile name', error);
+    }
     usePlannerStore.setState({
       plans: cloudPlans,
       groups: cloudGroups,
-      ...(profileRes.data ? { profile: rowToProfile(profileRes.data) } : {}),
+      ...(profileRes.data
+        ? { profile: { ...rowToProfile(profileRes.data), name: accountName(profileRes.data.name) } }
+        : {}),
       ...(settingsRes.data ? { settings: rowToSettings(settingsRes.data) } : {}),
     });
   }

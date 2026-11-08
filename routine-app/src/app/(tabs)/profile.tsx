@@ -48,6 +48,7 @@ import { fmtTime, uses12hTime } from '@/i18n/format';
 import type { StringKey } from '@/i18n/strings';
 import type { Language, ThemeMode } from '@/store/types';
 import { toISO } from '@/utils/dates';
+import { useTestToolsAllowed } from '@/utils/testers';
 import { profileInitials } from '@/utils/profile';
 import { SUBSCRIPTION_STATES, subscriptionStateLabel } from '@/utils/subscription';
 
@@ -77,6 +78,7 @@ export default function ProfileScreen() {
   const setSubscriptionTestOverride = usePlannerStore((s) => s.setSubscriptionTestOverride);
   const setMockSubscriptionState = usePlannerStore((s) => s.setMockSubscriptionState);
   const authUser = useAuthStore((s) => s.user);
+  const showTestTools = useTestToolsAllowed();
   const signOut = useAuthStore((s) => s.signOut);
   const deleteAccount = useAuthStore((s) => s.deleteAccount);
   const { toastMessage, showToast } = useToast();
@@ -113,14 +115,14 @@ export default function ProfileScreen() {
     ]);
   }
 
-  // TODO remove before shipping — lets Launch-flow work get replayed without reinstalling.
+  // Testing tool (dev builds and tester accounts): replays the launch flow without reinstalling.
   function handleReplayOnboarding() {
     useOnboardingStore.setState({ hasCompletedOnboarding: false, hasChosenGuest: false });
     router.replace('/onboarding-1');
   }
 
   /**
-   * Dev only: plans that use real New Plan alert options, plus the daily recap moved to the next
+   * Testing tool: plans that use real New Plan alert options, plus the daily recap moved to the next
    * minute. The two soon ones fire within ~7 minutes; the later ones only check scheduling.
    */
   function handleTestReminders() {
@@ -347,8 +349,9 @@ export default function ProfileScreen() {
           </Pressable>
         </View>
 
-        {/* Development builds only (critique, 2026-11-01): Subscription State overrides what StoreKit reports. */}
-        {__DEV__ && (
+        {/* Dev builds and tester accounts only (utils/testers): never shown to regular users.
+            Subscription State overrides what StoreKit reports on this device only. */}
+        {showTestTools && (
           <>
             <Text style={[styles.sectionLabel, { color: theme.textTertiary }]}>TESTING</Text>
             <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
@@ -366,8 +369,7 @@ export default function ProfileScreen() {
                 <Text style={[styles.rowLabel, { color: theme.text }]}>Add Test Reminders</Text>
                 <ChevronRightIcon size={16} color={theme.textFaint} strokeWidth={2} />
               </Pressable>
-              {/* Testing only: forces an entitlement state over what StoreKit reports. Remove before
-                  the App Store build. */}
+              {/* Forces an entitlement state over what StoreKit reports, on this device only. */}
               <Pressable onPress={() => setSubscriptionStateOpen(true)} style={[styles.row, styles.rowBorder, { borderColor: theme.divider }]}>
                 <View style={[styles.rowIcon, { backgroundColor: theme.accentSoft }]}>
                   <SparkleIcon size={16} color={theme.accent} strokeWidth={1.8} />

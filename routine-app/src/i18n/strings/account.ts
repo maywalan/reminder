@@ -7,7 +7,7 @@ export default {
   'onb1.title': { en: 'Everything you owe\ntoday, in one list', th: 'ทุกอย่างที่ต้องทำวันนี้\nรวมไว้ในที่เดียว' },
   'onb1.body': { en: 'Daily, weekly or monthly — add it once and it comes back on its own.', th: 'รายวัน รายสัปดาห์ หรือรายเดือน เพิ่มครั้งเดียว แล้วมันจะวนกลับมาเอง' },
   'onb2.title': { en: 'Set it once,\nit keeps coming back', th: 'ตั้งครั้งเดียว\nวนกลับมาเตือนเรื่อยๆ' },
-  'onb2.body': { en: 'Weekdays at 9, rent on the 1st, gym every other day. Change it any time.', th: 'วันธรรมดา 9 โมง ค่าเช่าทุกวันที่ 1 เข้ายิมวันเว้นวัน เปลี่ยนได้ตลอด' },
+  'onb2.body': { en: 'Weekdays at 9, rent on the 1st, gym every other day. Change it any time.', th: 'วันธรรมดา 9 โมง ค่าเช่าทุกวันที่ 1\nเข้ายิมวันเว้นวัน เปลี่ยนได้ตลอด' },
   'onb2.daily': { en: 'Daily', th: 'รายวัน' },
   'onb2.weekly': { en: 'Weekly', th: 'รายสัปดาห์' },
   'onb2.monthly': { en: 'Monthly', th: 'รายเดือน' },

@@ -11,7 +11,9 @@ import {
 import { useEffect, useState } from 'react';
 
 import type { SubscriptionState } from '@/store/types';
+import { useAuthStore } from '@/store/use-auth-store';
 import { usePlannerStore } from '@/store/use-planner-store';
+import { testToolsAllowed } from '@/utils/testers';
 
 /** Matches the products defined in ios-storekit/Tickle.storekit for local Simulator testing. */
 export const PREMIUM_SKUS = {
@@ -66,10 +68,17 @@ function expireIfLapsed() {
  * Re-reads the user's entitlement from StoreKit into the planner store. Opens its own connection
  * (the paywall's `useIAP` ends the shared one when it closes). If StoreKit can't be reached the
  * last known state is kept rather than downgrading a paying user, until its expiry date. Skipped
- * while a testing override from Profile is on (dev builds only; release always asks StoreKit).
+ * while a testing override from Profile is on, which only dev builds and tester accounts can use
+ * (see utils/testers). Anyone else with an override left over (a tester who signed out) goes back
+ * to what StoreKit says.
  */
 export async function refreshSubscriptionState(): Promise<void> {
-  if (__DEV__ && usePlannerStore.getState().subscriptionTestOverride) return;
+  const overriding = usePlannerStore.getState().subscriptionTestOverride;
+  if (overriding && testToolsAllowed()) return;
+  // Until the saved session has loaded we can't tell whether this is a tester: leave it alone.
+  // useSubscriptionSync runs again when the user arrives.
+  if (overriding && useAuthStore.getState().initializing) return;
+  if (overriding) usePlannerStore.getState().setSubscriptionTestOverride(false);
   try {
     if (!(await initConnection())) return expireIfLapsed();
     const [active, purchases] = await Promise.all([
@@ -77,7 +86,7 @@ export async function refreshSubscriptionState(): Promise<void> {
       getAvailablePurchases({ onlyIncludeActiveItemsIOS: true }),
     ]);
     const store = usePlannerStore.getState();
-    if (__DEV__ && store.subscriptionTestOverride) return;
+    if (store.subscriptionTestOverride && testToolsAllowed()) return;
     store.setMockSubscriptionState(deriveSubscriptionState(active ?? [], purchases ?? []));
     const sub = currentPremiumSub(active ?? []);
     store.setSubscriptionDetails(

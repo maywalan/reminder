@@ -23,7 +23,9 @@ function nextOrderForDate(plans: Plan[], date: string): number | undefined {
   return dayOrders.length === 0 ? undefined : Math.max(...dayOrders) + 1;
 }
 
-const SEED_PROFILE: Profile = { name: 'Alex Kim', avatarColor: '#5B5FEF' };
+/** Guest default (was the demo name 'Alex Kim' until 2026-11-08). Signing in replaces it. */
+export const GUEST_NAME = 'Guest';
+const SEED_PROFILE: Profile = { name: GUEST_NAME, avatarColor: '#5B5FEF' };
 
 const SEED_SETTINGS: Settings = {
   notificationsEnabled: true,
@@ -373,12 +375,15 @@ export const usePlannerStore = create<PlannerState>()(
         upgradeBannerDismissedAt: state.upgradeBannerDismissedAt,
         homeGestureHintSeen: state.homeGestureHintSeen,
       }),
-      version: 3,
+      version: 4,
       migrate: (persisted) => {
         const state = persisted as {
           plans?: (Plan & { alert?: string; photoUri?: string })[];
           settings?: Partial<Settings>;
+          profile?: Profile;
         };
+        // v4: the old demo default name becomes Guest; a name the user typed is kept.
+        if (state?.profile?.name === 'Alex Kim') state.profile = { ...state.profile, name: GUEST_NAME };
         if (state?.plans) {
           state.plans = state.plans.map((p) => ({
             ...p,

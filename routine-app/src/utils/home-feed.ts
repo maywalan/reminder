@@ -20,6 +20,9 @@ import { t } from '@/i18n';
 
 /** How long a point reminder stays live ("due now") past its time before it counts as missed. */
 export const POINT_DUE_MS = 15 * 60_000;
+
+/** An upcoming plan's Live Activity appears at most this long before it starts (2026-11-08). */
+export const LIVE_ACTIVITY_LEAD_MS = 6 * 60 * 60_000;
 /** How long a time range stays live (overtime) past its end before it counts as missed. */
 export const RANGE_GRACE_MS = 60 * 60_000;
 
@@ -175,7 +178,7 @@ export function findLiveActivityPlan(plans: Plan[], nowMs: number): { plan: Plan
 
   const upcoming = candidates
     .map((p) => ({ p, untilMs: planDateTime(p).getTime() - nowMs }))
-    .filter(({ p, untilMs }) => untilMs > 0 || (!p.endTime && untilMs > -POINT_DUE_MS))
+    .filter(({ p, untilMs }) => (untilMs > 0 && untilMs <= LIVE_ACTIVITY_LEAD_MS) || (!p.endTime && untilMs <= 0 && untilMs > -POINT_DUE_MS))
     .sort((a, b) => a.untilMs - b.untilMs)[0]?.p;
   return upcoming ? { plan: upcoming, phase: 'upcoming' } : null;
 }

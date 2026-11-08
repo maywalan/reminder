@@ -835,6 +835,9 @@ export default function AddPlanScreen() {
               <Text style={{ color: theme.textSecondary, fontSize: Typography.body, marginTop: 2 }}>
                 {t('plan.liveActivitySub')}
               </Text>
+              <Text style={{ color: theme.textTertiary, fontSize: Typography.caption, marginTop: 4 }}>
+                {t('plan.liveActivityNote')}
+              </Text>
             </View>
             <Switch value={live} onValueChange={setLive} trackColor={{ true: theme.success }} />
           </View>

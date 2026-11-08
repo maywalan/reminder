@@ -24,6 +24,7 @@ export default {
   'plan.none': { en: 'None', th: 'ไม่มี' },
   'plan.repeatEditNote': { en: 'Repeat can only be set when creating a new plan. This edits just this occurrence.', th: 'ตั้งการทำซ้ำได้ตอนสร้างแผนใหม่เท่านั้น การแก้ไขนี้มีผลกับครั้งนี้ครั้งเดียว' },
   'plan.liveActivity': { en: 'Live Activity', th: 'Live Activity' },
+  'plan.liveActivityNote': { en: 'Shows from 6 hours before it starts. Open Tickle once in that time to start it.', th: 'แสดงตั้งแต่ 6 ชั่วโมงก่อนเริ่ม เปิด Tickle สักครั้งในช่วงนั้นเพื่อให้ขึ้น' },
   'plan.liveActivitySub': { en: 'Counts down on your Lock Screen and Dynamic Island until it starts.', th: 'นับถอยหลังบนหน้าจอล็อกและ Dynamic Island จนกว่าจะเริ่ม' },
   'plan.colors': { en: 'COLORS', th: 'สี' },
   'plan.photos': { en: 'PHOTOS', th: 'รูปภาพ' },

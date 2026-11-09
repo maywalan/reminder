@@ -4,3 +4,11 @@
 
 # Local-only: test credentials, simulator backups, guidebook source. Never commit.
 sim-backups/
+
+# Local design hand-offs and the guidebook. Never commit.
+18-Oct-UI.zip
+Tickle-Icon/
+design_handoff_tickle_app_icon/
+design_handoff_tickle_draft2/
+icon-tickle/
+*[Gg]uidebook*

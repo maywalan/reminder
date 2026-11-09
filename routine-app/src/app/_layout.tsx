@@ -12,6 +12,7 @@ import { Colors, setFontScale } from '@/constants/theme';
 import { useEffectiveScheme } from '@/hooks/use-theme';
 import { useLiveActivitySync } from '@/hooks/use-live-activity-sync';
 import { useNotificationsSync } from '@/hooks/use-notifications-sync';
+import { useOtaUpdates } from '@/hooks/use-ota-updates';
 import { useSubscriptionSync } from '@/hooks/use-subscription-sync';
 import { useWidgetSync } from '@/hooks/use-widget-sync';
 import { setLanguage } from '@/i18n';
@@ -100,6 +101,7 @@ export default function RootLayout() {
   useWidgetSync();
   useLiveActivitySync();
   useSubscriptionSync();
+  useOtaUpdates();
 
   const ready = fontsLoaded && !authInitializing && plannerHydrated && onboardingHydrated && minDurationElapsed;
 

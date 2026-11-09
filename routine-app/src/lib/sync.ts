@@ -157,6 +157,17 @@ function warn(label: string, error: unknown) {
  * no merge UI, no conflict resolution.
  */
 export async function performInitialSync(userId: string) {
+  // Wait for this phone's saved data to load first, or loading it afterwards would overwrite
+  // the account's name/plans set below.
+  if (!usePlannerStore.persist.hasHydrated()) {
+    await new Promise<void>((resolve) => {
+      const unsub = usePlannerStore.persist.onFinishHydration(() => {
+        unsub();
+        resolve();
+      });
+    });
+  }
+
   let [plansRes, groupsRes, profileRes, settingsRes] = await Promise.all([
     supabase.from('plans').select('*').eq('user_id', userId),
     supabase.from('groups').select('*').eq('user_id', userId),

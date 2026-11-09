@@ -57,8 +57,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Tickle to access your photos to attach one to a plan.",
-          "cameraPermission": false,
+          "photosPermission": "Allow Tickle to access your photos to attach one to a plan or use as your profile photo.",
+          "cameraPermission": "Allow Tickle to use the camera to take your profile photo.",
           "microphonePermission": false
         }
       ],

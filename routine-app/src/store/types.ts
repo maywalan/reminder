@@ -37,6 +37,8 @@ export interface Plan {
 export interface Profile {
   name: string;
   avatarColor: string;
+  /** File name of a profile photo in Documents/avatar (utils/avatar-photo). This phone only; not synced. */
+  photo?: string;
 }
 
 export type ThemeMode = 'system' | 'light' | 'dark';

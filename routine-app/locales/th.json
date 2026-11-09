@@ -1,6 +1,7 @@
 {
   "ios": {
     "CFBundleDisplayName": "Tickle",
-    "NSPhotoLibraryUsageDescription": "อนุญาตให้ Tickle เข้าถึงรูปภาพ เพื่อแนบรูปไว้กับแผนของคุณ"
+    "NSPhotoLibraryUsageDescription": "อนุญาตให้ Tickle เข้าถึงรูปภาพ เพื่อแนบรูปไว้กับแผน หรือใช้เป็นรูปโปรไฟล์",
+    "NSCameraUsageDescription": "อนุญาตให้ Tickle ใช้กล้อง เพื่อถ่ายรูปโปรไฟล์ของคุณ"
   }
 }

@@ -8,6 +8,7 @@ import { SITE } from '@/constants/legal';
 import { lang, t } from '@/i18n';
 import { performInitialSync } from '@/lib/sync';
 import { GUEST_NAME, usePlannerStore } from '@/store/use-planner-store';
+import { cleanAvatarPhotos } from '@/utils/avatar-photo';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -114,7 +115,8 @@ export const useAuthStore = create<AuthState>()((set) => ({
         // Local plans/groups belong to whichever account was last active — clear them so the
         // next sign-in (a different account, or guest mode) doesn't inherit stale data.
         usePlannerStore.getState().resetData();
-        usePlannerStore.setState((s) => ({ profile: { ...s.profile, name: GUEST_NAME } }));
+        usePlannerStore.setState((s) => ({ profile: { ...s.profile, name: GUEST_NAME, photo: undefined } }));
+        cleanAvatarPhotos();
       }
     });
   },

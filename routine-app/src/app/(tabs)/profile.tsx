@@ -31,6 +31,7 @@ import {
 import { useHomeTokens } from '@/components/home/tokens';
 import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
+import { ProfileAvatar } from '@/components/profile-avatar';
 import { UpgradeBanner } from '@/components/upgrade-banner';
 import { WidgetPreview } from '@/components/widget-preview';
 import { PRIVACY_URL, termsUrl } from '@/constants/legal';
@@ -49,7 +50,6 @@ import type { StringKey } from '@/i18n/strings';
 import type { Language, ThemeMode } from '@/store/types';
 import { toISO } from '@/utils/dates';
 import { useTestToolsAllowed } from '@/utils/testers';
-import { profileInitials } from '@/utils/profile';
 import { SUBSCRIPTION_STATES, subscriptionStateLabel } from '@/utils/subscription';
 
 const THEME_LABEL: Record<ThemeMode, StringKey> = { light: 'theme.light', dark: 'theme.dark', system: 'theme.system' };
@@ -204,8 +204,12 @@ export default function ProfileScreen() {
     <View style={[styles.screen, { backgroundColor: page }]}>
       <ScrollView ref={scrollRef} contentContainerStyle={{ paddingTop: insets.top + 22, paddingBottom: 130 }}>
         <View style={styles.profileHeader}>
-          <Pressable onPress={() => router.push('/edit-profile')} style={[styles.avatar, { backgroundColor: profile.avatarColor }]}>
-            <Text style={styles.avatarInitials}>{profileInitials(profile.name)}</Text>
+          <Pressable
+            onPress={() => router.push('/edit-profile')}
+            accessibilityRole="button"
+            accessibilityLabel={t('profile.photoChange')}
+            style={({ pressed }) => [styles.avatar, pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }]}>
+            <ProfileAvatar name={profile.name} avatarColor={profile.avatarColor} photo={profile.photo} size={74} />
             <View style={[styles.avatarEdit, { backgroundColor: theme.surface, borderColor: theme.surface }]}>
               <CameraIcon size={13} color={theme.accent} strokeWidth={2} />
             </View>
@@ -602,8 +606,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   profileHeader: { alignItems: 'center', paddingHorizontal: 20, marginBottom: 18 },
-  avatar: { width: 74, height: 74, borderRadius: 37, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-  avatarInitials: { color: '#fff', fontSize: 27, fontWeight: '800' },
+  avatar: { width: 74, height: 74, marginBottom: 12 },
   avatarEdit: { position: 'absolute', right: -2, bottom: -2, width: 27, height: 27, borderRadius: 13.5, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   name: { fontSize: Typography.screenTitle, fontWeight: '800', letterSpacing: -0.2 },

@@ -226,7 +226,7 @@ export async function performInitialSync(userId: string) {
       plans: cloudPlans,
       groups: cloudGroups,
       ...(profileRes.data
-        ? { profile: { ...rowToProfile(profileRes.data), name: accountName(profileRes.data.name) } }
+        ? { profile: { ...rowToProfile(profileRes.data), name: accountName(profileRes.data.name), photo: local.profile.photo } }
         : {}),
       ...(settingsRes.data ? { settings: rowToSettings(settingsRes.data) } : {}),
     });

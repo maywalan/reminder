@@ -1,6 +1,7 @@
 {
   "ios": {
     "CFBundleDisplayName": "Tickle",
-    "NSPhotoLibraryUsageDescription": "Allow Tickle to access your photos to attach one to a plan."
+    "NSPhotoLibraryUsageDescription": "Allow Tickle to access your photos to attach one to a plan or use as your profile photo.",
+    "NSCameraUsageDescription": "Allow Tickle to use the camera to take your profile photo."
   }
 }

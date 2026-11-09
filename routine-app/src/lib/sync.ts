@@ -201,7 +201,7 @@ export async function performInitialSync(userId: string) {
 
   if (cloudPlans.length === 0 && cloudGroups.length === 0) {
     if (local.plans.length > 0) {
-      const { error } = await supabase.from('plans').upsert(local.plans.map((p) => planToRow(p, userId)));
+      const { error } = await upsertPlanRows(local.plans.map((p) => planToRow(p, userId)));
       warn('push local plans', error);
     }
     if (local.groups.length > 0) {
@@ -237,22 +237,45 @@ export async function performInitialSync(userId: string) {
 // per-mutation write-through — called after each local store change while signed in
 // ---------------------------------------------------------------------------
 
+/** Columns added after launch. If the server doesn't have one yet, saving retries without it. */
+const OPTIONAL_PLAN_COLUMNS = ['live_lead_minutes'] as const;
+let missingPlanColumns = new Set<string>();
+
+function isMissingColumn(error: { code?: string; message?: string } | null, column: string) {
+  // PGRST204: column not in PostgREST's schema cache; 42703: undefined column.
+  return !!error && (error.code === 'PGRST204' || error.code === '42703') && !!error.message?.includes(column);
+}
+
+/**
+ * Upserts plan rows. A save never fails just because the database is behind the app: a column
+ * the server doesn't know yet is dropped and the save retried (that setting then stays on this
+ * phone only, until the column exists).
+ */
+async function upsertPlanRows(rows: Record<string, unknown>[]) {
+  const strip = (r: Record<string, unknown>) => {
+    const copy = { ...r };
+    for (const c of missingPlanColumns) delete copy[c];
+    return copy;
+  };
+  let { error } = await supabase.from('plans').upsert(rows.map(strip));
+  const missing = OPTIONAL_PLAN_COLUMNS.find((c) => !missingPlanColumns.has(c) && isMissingColumn(error, c));
+  if (missing) {
+    missingPlanColumns = new Set([...missingPlanColumns, missing]);
+    ({ error } = await supabase.from('plans').upsert(rows.map(strip)));
+  }
+  return { error };
+}
+
 export function syncUpsertPlan(plan: Plan) {
   const userId = currentUserId();
   if (!userId) return;
-  supabase
-    .from('plans')
-    .upsert(planToRow(plan, userId))
-    .then(({ error }) => warn('upsert plan', error));
+  upsertPlanRows([planToRow(plan, userId)]).then(({ error }) => warn('upsert plan', error));
 }
 
 export function syncUpsertPlans(plans: Plan[]) {
   const userId = currentUserId();
   if (!userId || plans.length === 0) return;
-  supabase
-    .from('plans')
-    .upsert(plans.map((p) => planToRow(p, userId)))
-    .then(({ error }) => warn('upsert plans', error));
+  upsertPlanRows(plans.map((p) => planToRow(p, userId))).then(({ error }) => warn('upsert plans', error));
 }
 
 export function syncDeletePlan(id: string) {

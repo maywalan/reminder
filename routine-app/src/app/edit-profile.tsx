@@ -146,11 +146,16 @@ export default function EditProfileScreen() {
           <Text style={[styles.label, { color: theme.textTertiary, paddingHorizontal: 14, paddingTop: 12 }]}>{t('profile.color')}</Text>
           <View style={styles.swatchRow}>
             {SwatchColors.map((c) => {
-              const selected = c === avatarColor;
+              // With a photo no colour is in use, so none shows as picked.
+              const selected = !photo && c === avatarColor;
               return (
                 <Pressable
                   key={c}
-                  onPress={() => setAvatarColor(c)}
+                  // Picking a colour means "use initials": it drops the photo (only on Save; Cancel keeps it).
+                  onPress={() => {
+                    setAvatarColor(c);
+                    setPhoto(undefined);
+                  }}
                   style={[styles.swatchRing, { borderColor: selected ? theme.text : 'transparent' }]}>
                   <View style={[styles.swatchGap, { backgroundColor: theme.surface }]}>
                     <View style={[styles.swatch, { backgroundColor: c }]}>{selected && <CheckIcon size={14} color="#fff" strokeWidth={3} />}</View>

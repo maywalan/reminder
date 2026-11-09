@@ -102,7 +102,8 @@ const styles = StyleSheet.create({
   miniDow: { flexDirection: 'row', marginBottom: 2 },
   miniDowText: { flex: 1, textAlign: 'center', fontSize: 12, fontWeight: '700' },
   miniDays: { flexDirection: 'row', flexWrap: 'wrap' },
-  miniDayCell: { width: `${100 / 7}%`, alignItems: 'center', justifyContent: 'center', paddingVertical: 1, minHeight: 18 },
+  // 14.28% not 100/7: exact sevenths can round past the row width and wrap the 7th day.
+  miniDayCell: { width: '14.28%', alignItems: 'center', justifyContent: 'center', paddingVertical: 1, minHeight: 18 },
   // Sized for the 12pt day number, so today's filled circle clears two-digit dates.
   miniDayNum: { minWidth: 18, height: 18, alignItems: 'center', justifyContent: 'center' },
   miniDayText: { fontSize: 12 },

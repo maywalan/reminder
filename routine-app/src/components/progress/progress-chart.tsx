@@ -194,6 +194,7 @@ const styles = StyleSheet.create({
   heatDow: { flexDirection: 'row', marginTop: 12, marginBottom: 6 },
   heatDowText: { flex: 1, textAlign: 'center', fontSize: Typography.label, fontWeight: '700' },
   heatGrid: { flexDirection: 'row', flexWrap: 'wrap' },
-  heatCellWrap: { width: `${100 / 7}%`, aspectRatio: 1, padding: 2.5 },
+  // 14.28% not 100/7: exact sevenths can round past the row width and wrap the 7th day.
+  heatCellWrap: { width: '14.28%', aspectRatio: 1, padding: 2.5 },
   heatCell: { flex: 1, borderRadius: 8 },
 });

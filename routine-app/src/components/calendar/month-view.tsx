@@ -71,62 +71,69 @@ export function MonthView({ year, month, todayISO, selectedDate, plans, colorFor
       </View>
 
       <View style={styles.grid}>
-        {cells.map((cell, i) => {
-          if (cell.muted || !cell.date) {
-            return (
-              <View key={i} style={styles.cell}>
-                <View style={styles.dayNumRow}>
-                  <View style={styles.dayNumWrap}>
-                    <Text style={[styles.dayNum, { color: theme.textTertiary }]}>{cell.day}</Text>
+        {/* One row per week with 7 flex columns. Percentage widths + flexWrap pushed Saturday onto
+            the next line on 390pt iPhones (pixel rounding made 7 × 14.29% exceed the row). */}
+        {Array.from({ length: Math.ceil(cells.length / 7) }, (_, w) => (
+          <View key={w} style={styles.week}>
+            {cells.slice(w * 7, w * 7 + 7).map((cell, d) => {
+              const i = w * 7 + d;
+              if (cell.muted || !cell.date) {
+                return (
+                  <View key={i} style={styles.cell}>
+                    <View style={styles.dayNumRow}>
+                      <View style={styles.dayNumWrap}>
+                        <Text style={[styles.dayNum, { color: theme.textTertiary }]}>{cell.day}</Text>
+                      </View>
+                    </View>
                   </View>
-                </View>
-              </View>
-            );
-          }
-          const isToday = cell.date === todayISO;
-          const isSelected = cell.date === selectedDate;
-          const dayPlans = plans.filter((p) => p.date === cell.date).sort((a, b) => a.time.localeCompare(b.time));
-          // Counts are for work still ahead; a past day's unfinished plans are missed, marked in rose
-          // like Home, so history doesn't shout "7 to do" (critique, 2026-10-29).
-          const isPast = cell.date < todayISO;
-          const ahead = isPast ? [] : dayPlans.filter((p) => !p.completed && !(isToday && isMissedToday(p, nowMs)));
-          const hasMissed = dayPlans.some((p) => !p.completed && (isPast || (isToday && isMissedToday(p, nowMs))));
-          const holidayName = holidayByDate[cell.date];
+                );
+              }
+              const isToday = cell.date === todayISO;
+              const isSelected = cell.date === selectedDate;
+              const dayPlans = plans.filter((p) => p.date === cell.date).sort((a, b) => a.time.localeCompare(b.time));
+              // Counts are for work still ahead; a past day's unfinished plans are missed, marked in rose
+              // like Home, so history doesn't shout "7 to do" (critique, 2026-10-29).
+              const isPast = cell.date < todayISO;
+              const ahead = isPast ? [] : dayPlans.filter((p) => !p.completed && !(isToday && isMissedToday(p, nowMs)));
+              const hasMissed = dayPlans.some((p) => !p.completed && (isPast || (isToday && isMissedToday(p, nowMs))));
+              const holidayName = holidayByDate[cell.date];
 
-          return (
-            <Pressable
-              key={i}
-              onPress={() => onSelectDate(cell.date!)}
-              style={styles.cell}>
-              <View style={styles.dayNumRow}>
-                <View
-                  style={[
-                    styles.dayNumWrap,
-                    isSelected && { backgroundColor: theme.accent },
-                    isToday && !isSelected && { borderWidth: 1.6, borderColor: theme.accent },
-                  ]}>
-                  <Text style={[styles.dayNum, { color: isSelected ? '#fff' : isToday ? theme.accent : theme.text }]}>{cell.day}</Text>
-                </View>
-                {holidayName && <View style={styles.holidayDot} />}
-                {ahead.length > 0 ? (
-                  <View style={[styles.pendingBadge, { backgroundColor: theme.accent }]}>
-                    <Text maxFontSizeMultiplier={1.3} style={styles.pendingBadgeText}>
-                      {ahead.length}
-                    </Text>
+              return (
+                <Pressable
+                  key={i}
+                  onPress={() => onSelectDate(cell.date!)}
+                  style={styles.cell}>
+                  <View style={styles.dayNumRow}>
+                    <View
+                      style={[
+                        styles.dayNumWrap,
+                        isSelected && { backgroundColor: theme.accent },
+                        isToday && !isSelected && { borderWidth: 1.6, borderColor: theme.accent },
+                      ]}>
+                      <Text style={[styles.dayNum, { color: isSelected ? '#fff' : isToday ? theme.accent : theme.text }]}>{cell.day}</Text>
+                    </View>
+                    {holidayName && <View style={styles.holidayDot} />}
+                    {ahead.length > 0 ? (
+                      <View style={[styles.pendingBadge, { backgroundColor: theme.accent }]}>
+                        <Text maxFontSizeMultiplier={1.3} style={styles.pendingBadgeText}>
+                          {ahead.length}
+                        </Text>
+                      </View>
+                    ) : (
+                      hasMissed && <View style={[styles.missedDot, { backgroundColor: theme.danger }]} />
+                    )}
                   </View>
-                ) : (
-                  hasMissed && <View style={[styles.missedDot, { backgroundColor: theme.danger }]} />
-                )}
-              </View>
 
-              <View style={styles.dots}>
-                {dayPlans.slice(0, DOT_LIMIT).map((p) => (
-                  <View key={p.id} style={[styles.dot, { backgroundColor: p.completed ? theme.dividerStrong : colorForPlan(p) }]} />
-                ))}
-              </View>
-            </Pressable>
-          );
-        })}
+                  <View style={styles.dots}>
+                    {dayPlans.slice(0, DOT_LIMIT).map((p) => (
+                      <View key={p.id} style={[styles.dot, { backgroundColor: p.completed ? theme.dividerStrong : colorForPlan(p) }]} />
+                    ))}
+                  </View>
+                </Pressable>
+              );
+            })}
+          </View>
+        ))}
       </View>
     </View>
   );
@@ -142,8 +149,9 @@ const styles = StyleSheet.create({
   arrowBtn: { width: 30, height: 30, borderRadius: 15, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   dowRow: { flexDirection: 'row', paddingHorizontal: 10, marginBottom: 4 },
   dow: { flex: 1, textAlign: 'center', fontSize: Typography.label, fontWeight: '700', textTransform: 'uppercase' },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 6 },
-  cell: { width: `${100 / 7}%`, minHeight: 50, alignItems: 'stretch', justifyContent: 'flex-start', paddingHorizontal: 3, paddingTop: 4, gap: 2 },
+  grid: { paddingHorizontal: 6 },
+  week: { flexDirection: 'row' },
+  cell: { flex: 1, minWidth: 0, minHeight: 50, alignItems: 'stretch', justifyContent: 'flex-start', paddingHorizontal: 3, paddingTop: 4, gap: 2 },
   dayNumRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   dayNumWrap: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   dayNum: { fontSize: Typography.body, fontWeight: '600' },

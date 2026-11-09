@@ -18,6 +18,8 @@ export interface Plan {
   location?: string;
   photoUris?: string[]; // up to 3
   live: boolean;
+  /** Minutes before the start that the Live Activity countdown appears; unset = LIVE_LEAD_DEFAULT_MIN. */
+  liveLeadMinutes?: number;
   completed: boolean;
   /** When it was last checked off (epoch ms) — Home's Earlier list shows "done 06:34". */
   completedAt?: number;

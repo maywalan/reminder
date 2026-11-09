@@ -4,6 +4,8 @@ export interface LiveActivityPayload {
   planId: string;
   title: string;
   groupName?: string;
+  /** PlanIconId from src/utils/plan-icons.ts. */
+  iconId?: string;
   baseHex: string;
   textHex: string;
   tintHex: string;

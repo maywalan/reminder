@@ -5,6 +5,7 @@ import { planPalette } from '@/components/home/tokens';
 import { usePlannerStore } from '@/store/use-planner-store';
 import { planDateTime, planEndDateTime } from '@/utils/countdown';
 import { addMinutesToTime, findLiveActivityPlan } from '@/utils/home-feed';
+import { resolvePlanIcon } from '@/utils/plan-icons';
 import { syncLiveActivity, takePendingLiveActivityActions } from '../../modules/tickle-live-activity';
 
 /** Re-check this often while the app is open — catches a task entering its 1-hour window or starting. */
@@ -36,6 +37,7 @@ function sync() {
     planId: plan.id,
     title: plan.name,
     groupName: groups.find((g) => g.id === plan.groupId)?.name,
+    iconId: resolvePlanIcon(plan) ?? undefined,
     baseHex: palette.base,
     textHex: palette.text,
     tintHex: palette.cardTint,

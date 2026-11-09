@@ -128,6 +128,34 @@ private struct Meta: View {
   }
 }
 
+/// The plan's icon in a tinted rounded tile, like Home's timeline cards.
+@available(iOS 16.2, *)
+private struct PlanIconTile: View {
+  let context: ActivityViewContext<TickleActivityAttributes>
+  let size: CGFloat
+  var onDark = false
+
+  var body: some View {
+    let a = context.attributes
+    let color = Color(hex: a.baseHex)
+    ZStack {
+      RoundedRectangle(cornerRadius: size * 0.3, style: .continuous)
+        .fill(color.opacity(onDark ? 0.22 : 0.14))
+      if let id = a.iconId, UIImage(named: "planicon-\(id)") != nil {
+        Image("planicon-\(id)")
+          .renderingMode(.template)
+          .resizable()
+          .scaledToFit()
+          .foregroundColor(onDark ? color : Color(hex: a.textHex))
+          .frame(width: size * 0.56, height: size * 0.56)
+      } else {
+        Circle().fill(color).frame(width: size * 0.3, height: size * 0.3)
+      }
+    }
+    .frame(width: size, height: size)
+  }
+}
+
 @available(iOS 16.2, *)
 private struct Actions: View {
   let context: ActivityViewContext<TickleActivityAttributes>
@@ -167,12 +195,15 @@ struct TickleLiveActivity: Widget {
     ActivityConfiguration(for: TickleActivityAttributes.self) { context in
       // Lock Screen / banner
       VStack(alignment: .leading, spacing: 10) {
-        HStack(alignment: .firstTextBaseline, spacing: 12) {
+        HStack(alignment: .center, spacing: 12) {
+          PlanIconTile(context: context, size: 42)
           VStack(alignment: .leading, spacing: 2) {
+            // Larger plan name (2026-11-09); shrinks a little before truncating.
             Text(context.attributes.title)
-              .font(.anuphan(size: 15, weight: .semibold))
+              .font(.anuphan(size: 19, weight: .bold))
               .foregroundColor(ink)
               .lineLimit(1)
+              .minimumScaleFactor(0.8)
             Meta(context: context)
           }
           Spacer(minLength: 8)
@@ -189,9 +220,9 @@ struct TickleLiveActivity: Widget {
       DynamicIsland {
         DynamicIslandExpandedRegion(.leading) {
           HStack(spacing: 8) {
-            Circle().fill(Color(hex: context.attributes.baseHex)).frame(width: 9, height: 9)
+            PlanIconTile(context: context, size: 28, onDark: true)
             Text(context.attributes.title)
-              .font(.anuphan(size: 15, weight: .semibold))
+              .font(.anuphan(size: 17, weight: .semibold))
               .foregroundColor(.white)
               .lineLimit(1)
           }

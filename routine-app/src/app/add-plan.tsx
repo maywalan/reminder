@@ -23,6 +23,7 @@ import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
 import { DefaultTaskColor, Fonts, Radii, scaledFont, SwatchColorNames, SwatchColors, Typography } from '@/constants/theme';
 import { findPastPlans } from '@/utils/countdown';
+import { LIVE_LEAD_DEFAULT_MIN, LIVE_LEAD_OPTIONS } from '@/utils/home-feed';
 import { countActivePlans, FREE_ACTIVE_PLAN_LIMIT, isPremium } from '@/utils/premium';
 import { usePlaceSearch } from '@/hooks/use-place-search';
 import { useEffectiveScheme, useTheme } from '@/hooks/use-theme';
@@ -63,6 +64,19 @@ const ALERT_OPTIONS: { value: string; labelKey: StringKey }[] = [
   { value: '2880', labelKey: 'alert.day2' },
   { value: '10080', labelKey: 'alert.week1' },
 ];
+
+const LIVE_LEAD_LABELS: Record<(typeof LIVE_LEAD_OPTIONS)[number], StringKey> = {
+  15: 'alert.min15',
+  30: 'alert.min30',
+  60: 'alert.hr1',
+  120: 'alert.hr2',
+  180: 'alert.hr3',
+  360: 'alert.hr6',
+};
+
+function liveLeadLabel(minutes: number) {
+  return t(LIVE_LEAD_LABELS[minutes as keyof typeof LIVE_LEAD_LABELS] ?? 'alert.hr1');
+}
 
 function alertLabel(value: string) {
   return t(ALERT_OPTIONS.find((o) => o.value === value)?.labelKey ?? 'plan.none');
@@ -254,6 +268,8 @@ export default function AddPlanScreen() {
     sortAlertsByEarliness(editing?.alerts?.length ? editing.alerts : ['5'])
   );
   const [alertSlot, setAlertSlot] = useState<1 | 2 | 3 | null>(null);
+  const [liveLead, setLiveLead] = useState<number>(editing?.liveLeadMinutes ?? LIVE_LEAD_DEFAULT_MIN);
+  const [liveLeadOpen, setLiveLeadOpen] = useState(false);
   const [repeatType, setRepeatType] = useState<RepeatType>('none');
   const [repeatOpen, setRepeatOpen] = useState(false);
   const [repeatUntil, setRepeatUntil] = useState<Date | null>(null);
@@ -359,6 +375,7 @@ export default function AddPlanScreen() {
       color,
       groupId,
       live,
+      liveLeadMinutes: liveLead,
       alerts,
       icon,
       notes: notes.trim() || undefined,
@@ -835,12 +852,23 @@ export default function AddPlanScreen() {
               <Text style={{ color: theme.textSecondary, fontSize: Typography.body, marginTop: 2 }}>
                 {t('plan.liveActivitySub')}
               </Text>
-              <Text style={{ color: theme.textTertiary, fontSize: Typography.caption, marginTop: 4 }}>
-                {t('plan.liveActivityNote')}
-              </Text>
             </View>
             <Switch value={live} onValueChange={setLive} trackColor={{ true: theme.success }} />
           </View>
+          {live && (
+            <>
+              <Pressable
+                onPress={() => setLiveLeadOpen(true)}
+                style={[styles.fieldRow, styles.fieldBorder, { borderColor: theme.divider }]}>
+                <Text style={[styles.rowTitle, { color: theme.text }]}>{t('plan.liveLead')}</Text>
+                <Text style={[styles.rowValue, { color: theme.textSecondary }]}>{liveLeadLabel(liveLead)}</Text>
+                <ChevronRightIcon size={16} color={theme.textTertiary} strokeWidth={2} />
+              </Pressable>
+              <Text style={{ color: theme.textTertiary, fontSize: Typography.caption, paddingHorizontal: 14, paddingBottom: 12 }}>
+                {t('plan.liveActivityNote')}
+              </Text>
+            </>
+          )}
         </View>
 
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
@@ -974,6 +1002,23 @@ export default function AddPlanScreen() {
         recent={recentIcons(usage)}
         onPick={(id) => setIcon(id)}
       />
+
+      <BottomSheet visible={liveLeadOpen} onClose={() => setLiveLeadOpen(false)} title={t('plan.liveLead')}>
+        <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider, marginTop: 10, marginBottom: 20 }]}>
+          {LIVE_LEAD_OPTIONS.map((minutes, i) => (
+            <Pressable
+              key={minutes}
+              onPress={() => {
+                setLiveLead(minutes);
+                setLiveLeadOpen(false);
+              }}
+              style={[styles.sheetRow, i > 0 && styles.fieldBorder, { borderColor: theme.divider }]}>
+              <Text style={[styles.sheetRowLabel, { color: theme.text }]}>{liveLeadLabel(minutes)}</Text>
+              {liveLead === minutes && <CheckIcon size={16} color={theme.accent} strokeWidth={3} />}
+            </Pressable>
+          ))}
+        </View>
+      </BottomSheet>
 
       <BottomSheet
         visible={alertSlot !== null}

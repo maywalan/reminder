@@ -27,6 +27,7 @@ public struct TickleLiveActivityPayload {
   var planId: String
   var title: String
   var groupName: String?
+  var iconId: String?
   var baseHex: String
   var textHex: String
   var tintHex: String
@@ -61,7 +62,7 @@ public final class TickleLiveActivityController {
     }
 
     let attributes = TickleActivityAttributes(
-      planId: p.planId, title: p.title, groupName: p.groupName, baseHex: p.baseHex, textHex: p.textHex,
+      planId: p.planId, title: p.title, groupName: p.groupName, iconId: p.iconId, baseHex: p.baseHex, textHex: p.textHex,
       tintHex: p.tintHex, trackHex: p.trackHex, pillBorderHex: p.pillBorderHex, pillTextHex: p.pillTextHex)
     let state = TickleActivityAttributes.ContentState(phase: p.phase, start: p.start, end: p.end, updatedAt: Date())
 

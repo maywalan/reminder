@@ -5,6 +5,7 @@ struct LiveActivityPayloadRecord: Record {
   @Field var planId: String = ""
   @Field var title: String = ""
   @Field var groupName: String?
+  @Field var iconId: String?
   @Field var baseHex: String = "#1B76E8"
   @Field var textHex: String = "#0F5FC4"
   @Field var tintHex: String = "#F4F8FE"
@@ -30,7 +31,7 @@ public class TickleLiveActivityModule: Module {
       guard #available(iOS 16.2, *) else { return }
       let payload = record.map {
         TickleLiveActivityPayload(
-          planId: $0.planId, title: $0.title, groupName: $0.groupName, baseHex: $0.baseHex, textHex: $0.textHex,
+          planId: $0.planId, title: $0.title, groupName: $0.groupName, iconId: $0.iconId, baseHex: $0.baseHex, textHex: $0.textHex,
           tintHex: $0.tintHex, trackHex: $0.trackHex, pillBorderHex: $0.pillBorderHex, pillTextHex: $0.pillTextHex,
           phase: $0.phase, start: Date(timeIntervalSince1970: $0.startMs / 1000),
           end: $0.endMs.map { Date(timeIntervalSince1970: $0 / 1000) })

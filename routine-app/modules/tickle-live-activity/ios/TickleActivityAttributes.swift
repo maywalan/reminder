@@ -18,6 +18,8 @@ public struct TickleActivityAttributes: ActivityAttributes, Hashable {
   public var planId: String
   public var title: String
   public var groupName: String?
+  /// A plan icon id (src/utils/plan-icons.ts); the widget draws asset "planicon-<id>". nil = no icon.
+  public var iconId: String?
   /// Plan colours, precomputed in JS (src/components/home/tokens.ts planPalette) so the Live
   /// Activity uses exactly the Home screen's colours.
   public var baseHex: String

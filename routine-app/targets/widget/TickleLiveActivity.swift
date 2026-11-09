@@ -4,8 +4,8 @@ import SwiftUI
 import WidgetKit
 
 // The Tickle Live Activity — mirrors Home's live card (design_handoff_tickle_home_7, "Live
-// Activity"): title, plan + time meta, a countdown, a progress bar in the plan colour, and Done /
-// +10 min (iOS 17+).
+// Activity"): title, plan + time meta, a countdown, a progress bar in the plan colour, and Done
+// (iOS 17+).
 //
 // The app can only update this while it's running, so every phase change that has to happen with
 // the app closed rides on `staleDate` (set in TickleLiveActivityController): iOS re-renders the
@@ -166,14 +166,8 @@ private struct Actions: View {
       let a = context.attributes
       HStack(spacing: 14) {
         Spacer(minLength: 0)
-        if context.state.end != nil {
-          Button(intent: ExtendTickleTaskIntent(planId: a.planId)) {
-            Text(TickleL10n.plus10)
-              .font(.anuphan(size: 13, weight: .semibold))
-              .foregroundColor(onDark ? .white.opacity(0.7) : ink.opacity(0.5))
-          }
-          .buttonStyle(.plain)
-        }
+        // "+10 min" was here; removed 2026-11-09 (user's call, same as Home on 10-22).
+        // ExtendTickleTaskIntent and the app's 'extend' handling stay so taps from older builds still work.
         Button(intent: CompleteTickleTaskIntent(planId: a.planId)) {
           Text(TickleL10n.done)
             .font(.anuphan(size: 13, weight: .semibold))

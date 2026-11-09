@@ -9,6 +9,8 @@ import { useTheme } from '@/hooks/use-theme';
 interface BottomSheetProps {
   visible: boolean;
   onClose: () => void;
+  /** Called once the sheet has fully gone, e.g. to present a system picker iOS won't show over a closing modal. */
+  onClosed?: () => void;
   title: string;
   left?: ReactNode;
   right?: ReactNode;
@@ -21,7 +23,7 @@ interface BottomSheetProps {
  * relying on RN Modal's built-in "slide" animation, which moves the opaque backdrop + sheet as
  * one rigid block) so it reads like a native iOS sheet presentation.
  */
-export function BottomSheet({ visible, onClose, title, left, right, children }: BottomSheetProps) {
+export function BottomSheet({ visible, onClose, onClosed, title, left, right, children }: BottomSheetProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const [mounted, setMounted] = useState(visible);
@@ -43,6 +45,19 @@ export function BottomSheet({ visible, onClose, title, left, right, children }: 
       });
     }
   }, [visible, progress]);
+
+  // Fire after the Modal has actually been removed (one frame after unmounting it).
+  const onClosedRef = useRef(onClosed);
+  onClosedRef.current = onClosed;
+  const wasMounted = useRef(mounted);
+  useEffect(() => {
+    if (wasMounted.current && !mounted) {
+      const id = setTimeout(() => onClosedRef.current?.(), 60);
+      wasMounted.current = mounted;
+      return () => clearTimeout(id);
+    }
+    wasMounted.current = mounted;
+  }, [mounted]);
 
   if (!mounted) return null;
 

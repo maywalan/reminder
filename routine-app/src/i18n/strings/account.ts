@@ -97,6 +97,7 @@ export default {
   'profile.photoTake': { en: 'Take Photo', th: 'ถ่ายรูป' },
   'profile.photoLibrary': { en: 'Choose from Library', th: 'เลือกจากคลังรูปภาพ' },
   'profile.photoRemove': { en: 'Remove Photo', th: 'ลบรูป' },
+  'profile.cameraUnavailable': { en: 'The camera isn’t available right now.', th: 'ใช้กล้องไม่ได้ในตอนนี้' },
   'profile.cameraOffTitle': { en: 'Camera access is off', th: 'ยังไม่ได้อนุญาตให้ใช้กล้อง' },
   'profile.cameraOffBody': { en: 'Turn on Camera for Tickle in Settings to take a profile photo.', th: 'เปิดสิทธิ์กล้องให้ Tickle ในการตั้งค่า เพื่อถ่ายรูปโปรไฟล์' },
 } satisfies Record<string, Entry>;

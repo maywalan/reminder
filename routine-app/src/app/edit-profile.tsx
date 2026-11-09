@@ -1,6 +1,6 @@
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -25,6 +25,8 @@ export default function EditProfileScreen() {
   const [avatarColor, setAvatarColor] = useState(profile.avatarColor);
   const [photo, setPhoto] = useState(profile.photo);
   const [photoSheet, setPhotoSheet] = useState(false);
+  // What to open once the sheet has gone: iOS won't present the camera/library over a closing modal.
+  const pendingPicker = useRef<'camera' | 'library' | null>(null);
   const [error, setError] = useState(false);
 
   const pickerOptions: ImagePicker.ImagePickerOptions = {
@@ -45,8 +47,19 @@ export default function EditProfileScreen() {
     }
   }
 
-  async function takePhoto() {
+  function openAfterSheet(kind: 'camera' | 'library') {
+    pendingPicker.current = kind;
     setPhotoSheet(false);
+  }
+
+  function onSheetClosed() {
+    const kind = pendingPicker.current;
+    pendingPicker.current = null;
+    if (kind === 'camera') takePhoto();
+    if (kind === 'library') chooseFromLibrary();
+  }
+
+  async function takePhoto() {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
     if (!perm.granted) {
       Alert.alert(t('profile.cameraOffTitle'), t('profile.cameraOffBody'), [
@@ -55,13 +68,21 @@ export default function EditProfileScreen() {
       ]);
       return;
     }
-    applyPicked(await ImagePicker.launchCameraAsync({ ...pickerOptions, cameraType: ImagePicker.CameraType.front }));
+    try {
+      applyPicked(await ImagePicker.launchCameraAsync({ ...pickerOptions, cameraType: ImagePicker.CameraType.front }));
+    } catch {
+      // No camera (simulator, some iPads) or it's in use elsewhere.
+      Alert.alert(t('profile.cameraUnavailable'));
+    }
   }
 
   async function chooseFromLibrary() {
-    setPhotoSheet(false);
     // No permission prompt: the system photo picker runs out of process (see add-plan).
-    applyPicked(await ImagePicker.launchImageLibraryAsync(pickerOptions));
+    try {
+      applyPicked(await ImagePicker.launchImageLibraryAsync(pickerOptions));
+    } catch {
+      // Picker failed to open: nothing changes.
+    }
   }
 
   function handleSave() {
@@ -141,12 +162,12 @@ export default function EditProfileScreen() {
         </View>
       </ScrollView>
 
-      <BottomSheet visible={photoSheet} onClose={() => setPhotoSheet(false)} title={t('profile.photo')}>
+      <BottomSheet visible={photoSheet} onClose={() => setPhotoSheet(false)} onClosed={onSheetClosed} title={t('profile.photo')}>
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.cardBorder, marginTop: 10, marginBottom: 20 }]}>
-          <Pressable onPress={takePhoto} style={styles.sheetRow}>
+          <Pressable onPress={() => openAfterSheet('camera')} style={styles.sheetRow}>
             <Text style={[styles.sheetLabel, { color: theme.text }]}>{t('profile.photoTake')}</Text>
           </Pressable>
-          <Pressable onPress={chooseFromLibrary} style={[styles.sheetRow, styles.sheetBorder, { borderColor: theme.divider }]}>
+          <Pressable onPress={() => openAfterSheet('library')} style={[styles.sheetRow, styles.sheetBorder, { borderColor: theme.divider }]}>
             <Text style={[styles.sheetLabel, { color: theme.text }]}>{t('profile.photoLibrary')}</Text>
           </Pressable>
           {photo && (

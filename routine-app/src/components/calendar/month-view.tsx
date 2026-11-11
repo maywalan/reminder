@@ -107,14 +107,14 @@ export function MonthView({ year, month, todayISO, selectedDate, plans, colorFor
                     <View
                       style={[
                         styles.dayNumWrap,
-                        isSelected && { backgroundColor: theme.accent },
+                        isSelected && { backgroundColor: theme.accentFill },
                         isToday && !isSelected && { borderWidth: 1.6, borderColor: theme.accent },
                       ]}>
                       <Text style={[styles.dayNum, { color: isSelected ? theme.onAccent : isToday ? theme.accent : theme.text }]}>{cell.day}</Text>
                     </View>
                     {holidayName && <View style={styles.holidayDot} />}
                     {ahead.length > 0 ? (
-                      <View style={[styles.pendingBadge, { backgroundColor: theme.accent }]}>
+                      <View style={[styles.pendingBadge, { backgroundColor: theme.accentFill }]}>
                         <Text maxFontSizeMultiplier={1.3} style={[styles.pendingBadgeText, { color: theme.onAccent }]}>
                           {ahead.length}
                         </Text>

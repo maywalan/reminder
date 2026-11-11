@@ -227,7 +227,7 @@ function TimelineRow({
   }
 
   const checkOn = h.selectMode ? selected : done;
-  const checkFill = h.selectMode ? k.azure : k.green;
+  const checkFill = h.selectMode ? k.azureFill : k.green;
   const showCheck = h.selectMode || canCheck;
 
   const body = (
@@ -410,7 +410,7 @@ export function DayTimeline({ feed, nowMs, emptyText, countdownPlanId, onReorder
     <View>
       <View style={styles.head}>
         {/* Day label in an azure pill, sized like the Upcoming / Earlier headings (user, 2026-10-23). */}
-        <View style={[styles.titlePill, { backgroundColor: k.azure }]}>
+        <View style={[styles.titlePill, { backgroundColor: k.azureFill }]}>
           <Text numberOfLines={1} style={[t.blockTitle, { color: k.onAzure }]}>
             {title}
             {dateLine && <Text style={[t.blockTitleDate, styles.pillDate]}>{` · ${dateLine}`}</Text>}

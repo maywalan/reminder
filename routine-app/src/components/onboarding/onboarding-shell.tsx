@@ -66,7 +66,7 @@ export function OnboardingShell({ step, illustration, title, body, primaryLabel,
           ))}
         </View>
 
-        <Pressable onPress={onPrimary} disabled={primaryBusy} style={[styles.primaryButton, { backgroundColor: theme.accent, opacity: primaryBusy ? 0.7 : 1 }]}>
+        <Pressable onPress={onPrimary} disabled={primaryBusy} style={[styles.primaryButton, { backgroundColor: theme.accentFill, opacity: primaryBusy ? 0.7 : 1 }]}>
           {primaryBusy ? <ActivityIndicator color={theme.onAccent} /> : <Text style={[styles.primaryButtonText, { color: theme.onAccent }]}>{primaryLabel}</Text>}
         </Pressable>
 

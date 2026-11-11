@@ -57,8 +57,8 @@ export function TodoItem({
   const metaColor = missed ? theme.danger : theme.textSecondary;
   const when = plan.allDay ? t('common.allDay') : plan.endTime ? fmtTimeRange(plan.time, plan.endTime) : fmtTime(plan.time);
 
-  const checkBg = selectMode ? (selected ? theme.accent : theme.surface) : plan.completed ? theme.accent : theme.surface;
-  const checkBorder = selectMode ? (selected ? theme.accent : theme.textFaint) : plan.completed ? theme.accent : theme.textFaint;
+  const checkBg = selectMode ? (selected ? theme.accentFill : theme.surface) : plan.completed ? theme.accentFill : theme.surface;
+  const checkBorder = selectMode ? (selected ? theme.accentFill : theme.textFaint) : plan.completed ? theme.accentFill : theme.textFaint;
 
   // Completing a task washes the row in its color from the left edge, then fades that wash away
   // to reveal the (now-completed) row underneath — only on the incomplete -> complete transition.

@@ -666,7 +666,7 @@ export default function AddPlanScreen() {
                     }}
                     accessibilityRole="radio"
                     accessibilityState={{ selected: on }}
-                    style={[styles.segment, { backgroundColor: on ? theme.accent : theme.surface2, borderColor: theme.divider }]}>
+                    style={[styles.segment, { backgroundColor: on ? theme.accentFill : theme.surface2, borderColor: theme.divider }]}>
                     <Text numberOfLines={1} maxFontSizeMultiplier={1.3} style={{ color: on ? theme.onAccent : theme.text, fontSize: Typography.body, fontWeight: '700' }}>
                       {o.label}
                     </Text>

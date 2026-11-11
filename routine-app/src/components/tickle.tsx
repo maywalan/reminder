@@ -1,6 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { Animated, View } from 'react-native';
 
+import { useTheme } from '@/hooks/use-theme';
 import { useBlink, useBreathe, useDrift, useFloat, useHop, usePulse, useSink, useSquash, useTap } from '@/utils/motion';
 
 export type TickleMood = 'idle' | 'live' | 'due' | 'off';
@@ -107,7 +108,9 @@ export function Tickle({ size, mood = 'idle', animated = false, bubbleMotion, bo
 
   const blink = useBlink(animated);
 
-  const bubbleColor = BUBBLE_COLOR[mood];
+  // Idle follows the Theme colour; the other moods are status colours and stay fixed.
+  const theme = useTheme();
+  const bubbleColor = mood === 'idle' ? theme.accent : BUBBLE_COLOR[mood];
   const bubbleSize = size * G.bubbleSize;
 
   if (size < 34) {

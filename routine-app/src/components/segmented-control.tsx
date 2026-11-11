@@ -22,7 +22,7 @@ export function SegmentedControl<T extends string>({ options, value, onChange, s
           <Pressable
             key={opt.value}
             onPress={() => onChange(opt.value)}
-            style={[styles.btn, active && { backgroundColor: theme.accent }]}>
+            style={[styles.btn, active && { backgroundColor: theme.accentFill }]}>
             <Text style={[styles.label, { color: active ? theme.onAccent : theme.textSecondary }]}>{opt.label}</Text>
           </Pressable>
         );

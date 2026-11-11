@@ -269,7 +269,7 @@ export default function LoginScreen() {
                   <View
                     style={[
                       styles.ageBox,
-                      { borderColor: ageOk ? theme.accent : theme.dividerStrong, backgroundColor: ageOk ? theme.accent : theme.surface },
+                      { borderColor: ageOk ? theme.accentFill : theme.dividerStrong, backgroundColor: ageOk ? theme.accentFill : theme.surface },
                     ]}>
                     {ageOk && <CheckIcon size={13} color={theme.onAccent} strokeWidth={3} />}
                   </View>
@@ -306,8 +306,8 @@ export default function LoginScreen() {
             <Pressable
               onPress={() => switchMode('signIn')}
               accessibilityRole="button"
-              style={({ pressed }) => [styles.primaryButton, { backgroundColor: theme.accent, opacity: pressed ? 0.85 : 1 }]}>
-              <Text style={styles.primaryButtonText}>{t('login.backToSignInButton')}</Text>
+              style={({ pressed }) => [styles.primaryButton, { backgroundColor: theme.accentFill, opacity: pressed ? 0.85 : 1 }]}>
+              <Text style={[styles.primaryButtonText, { color: theme.onAccent }]}>{t('login.backToSignInButton')}</Text>
             </Pressable>
           ) : (
             <Pressable
@@ -317,7 +317,7 @@ export default function LoginScreen() {
               accessibilityState={{ busy: busy === 'email' }}
               style={({ pressed }) => [
                 styles.primaryButton,
-                { backgroundColor: theme.accent, opacity: busy && busy !== 'email' ? 0.5 : pressed ? 0.85 : 1 },
+                { backgroundColor: theme.accentFill, opacity: busy && busy !== 'email' ? 0.5 : pressed ? 0.85 : 1 },
               ]}>
               {busy === 'email' ? <ActivityIndicator color={theme.onAccent} /> : <Text style={[styles.primaryButtonText, { color: theme.onAccent }]}>{submitLabel}</Text>}
             </Pressable>

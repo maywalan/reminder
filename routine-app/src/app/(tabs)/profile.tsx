@@ -488,7 +488,8 @@ export default function ProfileScreen() {
       {/* Free colour theme (2026-11-11). Applies live so the screen behind previews it; the sheet stays open. */}
       <BottomSheet
         visible={accentOpen}
-        onClose={cancelAccent}
+        // What you see is what you keep: tapping outside saves; only Cancel reverts.
+        onClose={saveAccent}
         title={t('profile.accent')}
         left={
           <Pressable onPress={cancelAccent} hitSlop={8}>
@@ -500,14 +501,33 @@ export default function ProfileScreen() {
             <Text style={{ color: theme.accentStrong, fontSize: Typography.rowLabel, fontWeight: '700' }}>{t('common.save')}</Text>
           </Pressable>
         }>
-        <View style={[styles.group, styles.accentGrid, { backgroundColor: theme.surface, borderColor: theme.cardBorder, marginTop: 10 }]}>
+        {/* Preview of the pick on the real pieces it recolours (the app behind is mostly covered). */}
+        <View
+          style={[styles.group, styles.accentPreview, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}
+          accessible={false}
+          importantForAccessibility="no-hide-descendants">
+          <View style={[styles.previewDay, { backgroundColor: theme.accentFill }]}>
+            <Text style={[styles.previewDayText, { color: theme.onAccent }]}>{new Date().getDate()}</Text>
+          </View>
+          <View style={[styles.previewPill, { backgroundColor: theme.accentFill }]}>
+            <Text style={[styles.previewPillText, { color: theme.onAccent }]}>{t('home.today')}</Text>
+          </View>
+          <Text style={[styles.previewLink, { color: theme.accentStrong }]}>{t('home.seeAll')}</Text>
+          <View style={[styles.previewSoft, { backgroundColor: theme.accentSoft }]}>
+            <PaletteIcon size={16} color={theme.accent} />
+          </View>
+        </View>
+        <View style={[styles.group, styles.accentGrid, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
           {ACCENT_IDS.map((id) => {
             const selected = id === accentId;
             const swatch = AccentThemes[id][scheme].accent;
             return (
               <BouncyPressable
                 key={id}
-                onPress={() => updateSettings({ accentTheme: id })}
+                onPress={() => {
+                  Haptics.selectionAsync().catch(() => {});
+                  updateSettings({ accentTheme: id });
+                }}
                 accessibilityRole="radio"
                 accessibilityState={{ selected }}
                 accessibilityLabel={t(`accent.${id}`)}
@@ -723,6 +743,13 @@ const styles = StyleSheet.create({
   accentRing: { width: 52, height: 52, borderRadius: 26, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
   accentSwatch: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   accentName: { fontSize: Typography.label, fontWeight: '600' },
+  accentPreview: { marginTop: 10, marginBottom: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-evenly', paddingVertical: 12 },
+  previewDay: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
+  previewDayText: { fontSize: Typography.rowValue, fontWeight: '700' },
+  previewPill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 },
+  previewPillText: { fontSize: Typography.label, fontWeight: '700' },
+  previewLink: { fontSize: Typography.rowValue, fontWeight: '700' },
+  previewSoft: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   customAccent: { marginTop: 12, paddingHorizontal: 14, paddingTop: 12, paddingBottom: 6 },
   customHead: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   customRing: { width: 40, height: 40, borderRadius: 20 },

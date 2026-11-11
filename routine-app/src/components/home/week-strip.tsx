@@ -160,7 +160,7 @@ export function WeekStrip({ weekStart, weekOffset, selectedISO, todayISO, marked
                   {weekdayLetter(d.getDay())}
                 </Text>
                 <View style={styles.numWrap}>
-                  {sel && <View style={[styles.circle, { backgroundColor: k.azure }]} />}
+                  {sel && <View style={[styles.circle, { backgroundColor: k.azureFill }]} />}
                   {today && !sel && <View style={[styles.circle, styles.todayRing, { borderColor: k.azure }]} />}
                   <Text style={[t.dayNum, { color: numFg }]}>{d.getDate()}</Text>
                 </View>

@@ -175,6 +175,74 @@ export const AccentThemes: Record<AccentId, { light: AccentTokens; dark: AccentT
 export const ACCENT_IDS = Object.keys(AccentThemes) as AccentId[];
 export const DEFAULT_ACCENT: AccentId = 'blue';
 
+/* ---------- Custom accent from a hue (2026-11-11, Theme colour slider) ----------
+ * The user only picks a hue; brightness is chosen here by WCAG contrast so every hue stays as
+ * readable as the presets: light = white text on the accent >= 4.5:1, dark = the accent as text on
+ * the dark card >= 4.7:1 (then white on it is as high as that allows). */
+
+function hslToHex(h: number, s: number, l: number): string {
+  const k = (n: number) => (n + h / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const f = (n: number) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  const hex = (x: number) => Math.round(x * 255).toString(16).padStart(2, '0');
+  return `#${hex(f(0))}${hex(f(8))}${hex(f(4))}`.toUpperCase();
+}
+
+function luminance(hex: string): number {
+  const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+  const [r, g, b] = c.map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function contrast(a: string, b: string): number {
+  const [x, y] = [luminance(a), luminance(b)].sort((m, n) => n - m);
+  return (x + 0.05) / (y + 0.05);
+}
+
+/** Lightest (light mode) or darkest (dark mode) lightness, in 0.005 steps, that still meets `ok`. */
+function pickLightness(h: number, s: number, ok: (hex: string) => boolean, fromLight: boolean): number {
+  for (let i = 0; i <= 200; i++) {
+    const l = fromLight ? 0.6 - i * 0.003 : 0.35 + i * 0.003;
+    if (ok(hslToHex(h, s, l))) return l;
+  }
+  return fromLight ? 0.3 : 0.75;
+}
+
+const rgbOf = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(',');
+
+export function hueAccent(hue: number): { light: AccentTokens; dark: AccentTokens } {
+  const h = ((Math.round(hue) % 360) + 360) % 360;
+  const s = 0.72;
+  const lightL = pickLightness(h, s, (c) => contrast('#FFFFFF', c) >= 4.5, true);
+  const strongL = pickLightness(h, s, (c) => contrast('#FFFFFF', c) >= 6.2, true);
+  const darkL = pickLightness(h, s, (c) => contrast(Colors.dark.surface, c) >= 4.7, false);
+  const darkAccent = hslToHex(h, s, darkL);
+  return {
+    light: {
+      accent: hslToHex(h, s, lightL),
+      accentStrong: hslToHex(h, s, strongL),
+      accentSoft: hslToHex(h, 0.8, 0.955),
+      accentLight: hslToHex(h, s, Math.min(lightL + 0.14, 0.7)),
+      accentBorder: hslToHex(h, 0.6, 0.915),
+    },
+    dark: {
+      accent: darkAccent,
+      accentStrong: hslToHex(h, 0.85, Math.min(darkL + 0.17, 0.85)),
+      accentSoft: `rgba(${rgbOf(darkAccent)},0.18)`,
+      accentLight: hslToHex(h, 0.85, Math.min(darkL + 0.2, 0.88)),
+      accentBorder: `rgba(${rgbOf(darkAccent)},0.28)`,
+    },
+  };
+}
+
+/** A saved accent: a preset id, or `hue:<0-359>` for a custom slider colour. */
+export type AccentKey = AccentId | `hue:${number}`;
+
+export function accentTokens(key: AccentKey, scheme: 'light' | 'dark'): AccentTokens {
+  if (key.startsWith('hue:')) return hueAccent(Number(key.slice(4)))[scheme];
+  return AccentThemes[key as AccentId][scheme];
+}
+
 export type PremiumPalette = (typeof PremiumColors)['light'] | (typeof PremiumColors)['dark'];
 
 /** A full palette (either mode, any accent). Values widened to string so accents can be swapped in. */

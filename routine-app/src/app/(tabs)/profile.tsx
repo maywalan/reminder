@@ -2,7 +2,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { useScrollToTop } from '@react-navigation/native';
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -36,8 +36,9 @@ import { ProfileAvatar } from '@/components/profile-avatar';
 import { UpgradeBanner } from '@/components/upgrade-banner';
 import { WidgetPreview } from '@/components/widget-preview';
 import { PRIVACY_URL, termsUrl } from '@/constants/legal';
-import { ACCENT_IDS, AccentThemes, Radii, RowMinHeight, Spacing, SwatchColors, Typography } from '@/constants/theme';
+import { ACCENT_IDS, AccentThemes, hueAccent, Radii, type AccentId, RowMinHeight, Spacing, SwatchColors, Typography } from '@/constants/theme';
 import { BouncyPressable } from '@/components/bouncy-pressable';
+import { HueSlider } from '@/components/hue-slider';
 import { useAccentId, useEffectiveScheme, useTheme } from '@/hooks/use-theme';
 import { useNotificationPermission } from '@/hooks/use-notification-permission';
 import { useToast } from '@/hooks/use-toast';
@@ -191,6 +192,10 @@ export default function ProfileScreen() {
   const [appearanceOpen, setAppearanceOpen] = useState(false);
   const [accentOpen, setAccentOpen] = useState(false);
   const accentId = useAccentId();
+  const isCustomAccent = accentId.startsWith('hue:');
+  // Slider position: follows drags instantly; the app recolours when the finger lifts.
+  const [customHue, setCustomHue] = useState(() => settings.accentHue ?? 210);
+  const commitCustomHue = useCallback((hue: number) => updateSettings({ accentTheme: 'custom', accentHue: hue }), [updateSettings]);
   const [languageOpen, setLanguageOpen] = useState(false);
   const [notifOptionsOpen, setNotifOptionsOpen] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
@@ -297,7 +302,7 @@ export default function ProfileScreen() {
             </View>
             <Text style={[styles.rowLabel, { color: theme.text }]}>{t('profile.accent')}</Text>
             <View style={[styles.accentDot, { backgroundColor: theme.accent }]} />
-            <Text style={[styles.rowValue, { color: theme.textTertiary }]}>{t(`accent.${accentId}`)}</Text>
+            <Text style={[styles.rowValue, { color: theme.textTertiary }]}>{t(isCustomAccent ? 'accent.custom' : `accent.${accentId as AccentId}`)}</Text>
           </Pressable>
           <Pressable onPress={() => setLanguageOpen(true)} style={[styles.row, styles.rowBorder, { borderColor: theme.divider }]}>
             <View style={[styles.rowIcon, { backgroundColor: theme.accentSoft }]}>
@@ -490,6 +495,25 @@ export default function ProfileScreen() {
             );
           })}
         </View>
+        <View style={[styles.group, styles.customAccent, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
+          <BouncyPressable
+            onPress={() => commitCustomHue(customHue)}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: isCustomAccent }}
+            accessibilityLabel={t('accent.custom')}
+            style={styles.customHead}>
+            <View style={[styles.accentRing, styles.customRing, { borderColor: isCustomAccent ? hueAccent(customHue)[scheme].accent : 'transparent' }]}>
+              <View style={[styles.accentSwatch, styles.customSwatch, { backgroundColor: hueAccent(customHue)[scheme].accent }]}>
+                {isCustomAccent && <CheckIcon size={14} color="#fff" strokeWidth={3} />}
+              </View>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.rowLabel, { color: theme.text }]}>{t('accent.custom')}</Text>
+              <Text style={[styles.accentName, { color: theme.textTertiary, fontWeight: '500' }]}>{t('accent.customHint')}</Text>
+            </View>
+          </BouncyPressable>
+          <HueSlider hue={customHue} scheme={scheme} onChange={setCustomHue} onCommit={commitCustomHue} accessibilityLabel={t('accent.custom')} />
+        </View>
         <Text style={[styles.accentNote, { color: theme.textTertiary }]}>{t('profile.accentNote')}</Text>
       </BottomSheet>
 
@@ -670,6 +694,10 @@ const styles = StyleSheet.create({
   accentRing: { width: 52, height: 52, borderRadius: 26, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
   accentSwatch: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   accentName: { fontSize: Typography.label, fontWeight: '600' },
+  customAccent: { marginTop: 12, paddingHorizontal: 14, paddingTop: 12, paddingBottom: 6 },
+  customHead: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  customRing: { width: 40, height: 40, borderRadius: 20 },
+  customSwatch: { width: 30, height: 30, borderRadius: 15 },
   accentNote: { fontSize: Typography.label, textAlign: 'center', marginTop: 12 },
   privacyText: { fontSize: Typography.rowValue, lineHeight: 20, marginTop: 12 },
   clearDataBtn: { flexDirection: 'row', gap: 8, padding: 14, borderRadius: Radii.button, borderWidth: 1, alignItems: 'center', justifyContent: 'center', marginTop: 16 },

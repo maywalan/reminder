@@ -228,8 +228,10 @@ export async function performInitialSync(userId: string) {
       ...(profileRes.data
         ? { profile: { ...rowToProfile(profileRes.data), name: accountName(profileRes.data.name), photo: local.profile.photo } }
         : {}),
-      // accentTheme is local-only (not a column), so keep this phone's choice over the account's row.
-      ...(settingsRes.data ? { settings: { ...rowToSettings(settingsRes.data), accentTheme: local.settings.accentTheme } } : {}),
+      // accentTheme/accentHue are local-only (not columns), so keep this phone's choice over the account's row.
+      ...(settingsRes.data
+        ? { settings: { ...rowToSettings(settingsRes.data), accentTheme: local.settings.accentTheme, accentHue: local.settings.accentHue } }
+        : {}),
     });
   }
 }

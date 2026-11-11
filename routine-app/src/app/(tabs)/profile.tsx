@@ -1,5 +1,6 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Constants from 'expo-constants';
+import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useScrollToTop } from '@react-navigation/native';
 import { useCallback, useRef, useState } from 'react';
@@ -196,6 +197,21 @@ export default function ProfileScreen() {
   // Slider position: follows drags instantly; the app recolours when the finger lifts.
   const [customHue, setCustomHue] = useState(() => settings.accentHue ?? 210);
   const commitCustomHue = useCallback((hue: number) => updateSettings({ accentTheme: 'custom', accentHue: hue }), [updateSettings]);
+  // Picks preview live across the app; Cancel (or swiping the sheet away) puts back what was there.
+  const accentBefore = useRef<Pick<typeof settings, 'accentTheme' | 'accentHue'>>({});
+  const openAccent = () => {
+    accentBefore.current = { accentTheme: settings.accentTheme, accentHue: settings.accentHue };
+    setCustomHue(settings.accentHue ?? 210);
+    setAccentOpen(true);
+  };
+  const cancelAccent = () => {
+    updateSettings(accentBefore.current);
+    setAccentOpen(false);
+  };
+  const saveAccent = () => {
+    Haptics.selectionAsync().catch(() => {});
+    setAccentOpen(false);
+  };
   const [languageOpen, setLanguageOpen] = useState(false);
   const [notifOptionsOpen, setNotifOptionsOpen] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
@@ -296,7 +312,7 @@ export default function ProfileScreen() {
             <Text style={[styles.rowLabel, { color: theme.text }]}>{t('profile.appearance')}</Text>
             <Text style={[styles.rowValue, { color: theme.textTertiary }]}>{t(THEME_LABEL[settings.themeMode])}</Text>
           </Pressable>
-          <Pressable onPress={() => setAccentOpen(true)} style={[styles.row, styles.rowBorder, { borderColor: theme.divider }]}>
+          <Pressable onPress={openAccent} style={[styles.row, styles.rowBorder, { borderColor: theme.divider }]}>
             <View style={[styles.rowIcon, { backgroundColor: theme.accentSoft }]}>
               <PaletteIcon size={16} color={theme.accent} />
             </View>
@@ -470,7 +486,20 @@ export default function ProfileScreen() {
       </BottomSheet>
 
       {/* Free colour theme (2026-11-11). Applies live so the screen behind previews it; the sheet stays open. */}
-      <BottomSheet visible={accentOpen} onClose={() => setAccentOpen(false)} title={t('profile.accent')}>
+      <BottomSheet
+        visible={accentOpen}
+        onClose={cancelAccent}
+        title={t('profile.accent')}
+        left={
+          <Pressable onPress={cancelAccent} hitSlop={8}>
+            <Text style={{ color: theme.textSecondary, fontSize: Typography.rowLabel, fontWeight: '600' }}>{t('common.cancel')}</Text>
+          </Pressable>
+        }
+        right={
+          <Pressable onPress={saveAccent} hitSlop={8}>
+            <Text style={{ color: theme.accentStrong, fontSize: Typography.rowLabel, fontWeight: '700' }}>{t('common.save')}</Text>
+          </Pressable>
+        }>
         <View style={[styles.group, styles.accentGrid, { backgroundColor: theme.surface, borderColor: theme.cardBorder, marginTop: 10 }]}>
           {ACCENT_IDS.map((id) => {
             const selected = id === accentId;
@@ -485,7 +514,7 @@ export default function ProfileScreen() {
                 style={styles.accentCell}>
                 <View style={[styles.accentRing, { borderColor: selected ? swatch : 'transparent' }]}>
                   <View style={[styles.accentSwatch, { backgroundColor: swatch }]}>
-                    {selected && <CheckIcon size={16} color="#fff" strokeWidth={3} />}
+                    {selected && <CheckIcon size={16} color={AccentThemes[id][scheme].onAccent ?? '#fff'} strokeWidth={3} />}
                   </View>
                 </View>
                 <Text numberOfLines={1} style={[styles.accentName, { color: selected ? theme.text : theme.textSecondary }]}>
@@ -690,7 +719,7 @@ const styles = StyleSheet.create({
   rowValue: { fontSize: Typography.rowValue, marginRight: 4 },
   accentDot: { width: 10, height: 10, borderRadius: 5 },
   accentGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingVertical: 14, paddingHorizontal: 6, rowGap: 14 },
-  accentCell: { width: '25%', alignItems: 'center', gap: 6 },
+  accentCell: { width: '33.33%', alignItems: 'center', gap: 6 },
   accentRing: { width: 52, height: 52, borderRadius: 26, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
   accentSwatch: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   accentName: { fontSize: Typography.label, fontWeight: '600' },

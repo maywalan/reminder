@@ -12,7 +12,7 @@ import { Text } from '@/components/text';
 import { t } from '@/i18n';
 import { CalendarIcon, ChartIcon, HomeIcon, PersonIcon, PlusIcon } from '@/components/icon';
 import { Fonts, Radii, Typography } from '@/constants/theme';
-import { themeColors, useAccentId, useTheme } from '@/hooks/use-theme';
+import { themeColors, useAccentId, useEffectiveScheme, useTheme } from '@/hooks/use-theme';
 import { usePlannerStore } from '@/store/use-planner-store';
 import { confirmSelectedDelete } from '@/utils/repeat-scope';
 
@@ -258,7 +258,11 @@ export function AddPlanFab({ barHeight }: { barHeight: number }) {
   const router = useRouter();
   const selectMode = usePlannerStore((s) => s.selectMode);
   // The light palette of the user's colour theme in both modes: dark mode's paler shades washed out the white plus.
-  const fab = themeColors('light', useAccentId());
+  // Always the light-mode gradient (it reads on both backgrounds), except Mono, which must flip to
+  // white in dark mode or a black button would vanish on the dark bar.
+  const accentId = useAccentId();
+  const scheme = useEffectiveScheme();
+  const fab = themeColors(accentId === 'mono' ? scheme : 'light', accentId);
   if (!barHeight || selectMode) return null;
   return (
     <BouncyPressable
@@ -271,7 +275,7 @@ export function AddPlanFab({ barHeight }: { barHeight: number }) {
       accessibilityLabel={t('tab.newPlan')}
       style={[styles.fabWrap, { bottom: barHeight + FAB_GAP }]}>
       <LinearGradient colors={[fab.accent, fab.accentLight]} start={{ x: 0.2, y: 0 }} end={{ x: 0.8, y: 1 }} style={[styles.fab, { shadowColor: fab.accent }]}>
-        <PlusIcon size={28} color="#fff" strokeWidth={2.5} />
+        <PlusIcon size={28} color={fab.onAccent} strokeWidth={2.5} />
       </LinearGradient>
     </BouncyPressable>
   );

@@ -33,6 +33,7 @@ export default {
   'profile.notifOptions': { en: 'Notification Options', th: 'ตัวเลือกการแจ้งเตือน' },
   'profile.accent': { en: 'Theme colour', th: 'สีธีม' },
   'profile.accentNote': { en: 'Widgets and Live Activities stay blue.', th: 'วิดเจ็ตและ Live Activity ยังเป็นสีฟ้าเหมือนเดิม' },
+  'accent.mono': { en: 'Mono', th: 'ขาวดำ' },
   'accent.custom': { en: 'Custom', th: 'กำหนดเอง' },
   'accent.customHint': { en: 'Drag to pick any colour', th: 'เลื่อนเพื่อเลือกสีที่ชอบ' },
   'accent.blue': { en: 'Blue', th: 'ฟ้า' },

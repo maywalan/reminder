@@ -38,6 +38,7 @@ export function useHomeTokens() {
       ink45: dark ? 'rgba(242,245,250,0.45)' : 'rgba(16,32,58,0.45)',
       ink60: dark ? 'rgba(242,245,250,0.6)' : 'rgba(16,32,58,0.6)',
       azure: theme.accent,
+      onAzure: theme.onAccent,
       azureDark: theme.accentStrong,
       azureTint: theme.accentSoft,
       green: dark ? '#3FCB86' : '#35B978',

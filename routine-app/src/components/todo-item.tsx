@@ -113,7 +113,7 @@ export function TodoItem({
         onPress={selectMode ? onToggleSelect : handleToggleComplete}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         style={[styles.check, { backgroundColor: checkBg, borderColor: checkBorder }]}>
-        {!selectMode && plan.completed && <CheckIcon size={13} color="#fff" strokeWidth={3} />}
+        {!selectMode && plan.completed && <CheckIcon size={13} color={theme.onAccent} strokeWidth={3} />}
       </BorderlessButton>
 
       {icon && (

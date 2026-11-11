@@ -27,6 +27,8 @@ export const Colors = {
     accentSoft: '#EAF2FE', // "azure-50" — icon tiles, selected chip fill, active tab pill
     accentLight: '#5AA0F5', // "azure-400" — FAB gradient end only
     accentBorder: '#E0EBFB', // blue-tinted card border — New Plan's Live Activity card only
+    /** Text/icons drawn ON an accent fill (buttons, today circle). White except Mono in dark mode. */
+    onAccent: '#FFFFFF',
     success: '#35B978',
     successLive: '#4FC98A', // live dot / running-session pulse
     successSoft: '#ECF7F1',
@@ -59,6 +61,7 @@ export const Colors = {
     accentSoft: 'rgba(27,118,232,0.18)',
     accentLight: '#8FC1FE',
     accentBorder: 'rgba(76,154,251,0.28)',
+    onAccent: '#FFFFFF',
     success: '#3FCB86',
     successLive: '#4FC98A',
     successSoft: 'rgba(63,203,134,0.14)',
@@ -147,8 +150,16 @@ export const PremiumColors = {
  * at >= 5.9:1, and dark `accent` keeps white text at >= blue's 2.87:1 while standing >= 4.6:1 off
  * the dark surface. Backgrounds, plan colours, widgets and the Live Activity don't follow it.
  */
-export type AccentId = 'blue' | 'indigo' | 'purple' | 'pink' | 'coral' | 'orange' | 'green' | 'teal';
-type AccentTokens = { accent: string; accentStrong: string; accentSoft: string; accentLight: string; accentBorder: string };
+export type AccentId = 'blue' | 'indigo' | 'purple' | 'pink' | 'coral' | 'orange' | 'green' | 'teal' | 'mono';
+type AccentTokens = {
+  accent: string;
+  accentStrong: string;
+  accentSoft: string;
+  accentLight: string;
+  accentBorder: string;
+  /** Only Mono sets it (dark text on its white fill in dark mode); everything else keeps white. */
+  onAccent?: string;
+};
 
 const accentSet = (
   light: [accent: string, strong: string, soft: string, lightEnd: string, border: string],
@@ -171,6 +182,19 @@ export const AccentThemes: Record<AccentId, { light: AccentTokens; dark: AccentT
   orange: accentSet(['#C25A08', '#9C4705', '#FDF1E6', '#E58A3A', '#F8E4D2'], ['#D9781F', '#F8C08A', '#FAC99A', '217,120,31']),
   green: accentSet(['#1E8A50', '#17703F', '#E9F6EF', '#45B97A', '#D7EEE1'], ['#2E9E62', '#7FDBAA', '#8EE0B5', '46,158,98']),
   teal: accentSet(['#0E8585', '#0B6A6A', '#E6F5F5', '#3DB3B3', '#D3ECEC'], ['#1C9A9A', '#7AD7D7', '#8ADCDC', '28,154,154']),
+  // Monochrome (2026-11-11): black fills with white text in light mode, white fills with ink text in
+  // dark mode. The one accent whose on-accent colour flips, hence the onAccent token.
+  mono: {
+    light: { accent: '#161B26', accentStrong: '#0B0E14', accentSoft: '#EDEFF3', accentLight: '#4A5262', accentBorder: '#E1E4EA', onAccent: '#FFFFFF' },
+    dark: {
+      accent: '#F2F5FA',
+      accentStrong: '#FFFFFF',
+      accentSoft: 'rgba(242,245,250,0.12)',
+      accentLight: '#C5CBD6',
+      accentBorder: 'rgba(242,245,250,0.22)',
+      onAccent: '#0A1220',
+    },
+  },
 };
 export const ACCENT_IDS = Object.keys(AccentThemes) as AccentId[];
 export const DEFAULT_ACCENT: AccentId = 'blue';

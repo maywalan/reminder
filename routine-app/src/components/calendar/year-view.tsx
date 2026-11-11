@@ -75,7 +75,7 @@ export function YearView({ year, todayISO, plans, onShiftYear, onPressMonth, onC
                     <View key={i} style={styles.miniDayCell}>
                       {!cell.muted && (
                         <View style={[styles.miniDayNum, isToday && { backgroundColor: theme.accent, borderRadius: 9 }]}>
-                          <Text style={[styles.miniDayText, { color: isToday ? '#fff' : theme.textSecondary }]}>{cell.day}</Text>
+                          <Text style={[styles.miniDayText, { color: isToday ? theme.onAccent : theme.textSecondary }]}>{cell.day}</Text>
                         </View>
                       )}
                       {hasPlan && !isToday && <View style={[styles.miniDot, { backgroundColor: theme.accent }]} />}

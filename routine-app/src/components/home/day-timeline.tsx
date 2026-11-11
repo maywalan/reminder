@@ -294,7 +294,7 @@ function TimelineRow({
               style={[styles.check, { backgroundColor: checkOn ? checkFill : k.sheet, borderColor: checkOn ? checkFill : k.checkEdge }]}>
               {checkOn && (
                 <Reanimated.View entering={ZoomIn.springify().damping(12).stiffness(260)}>
-                  <CheckIcon size={13} color="#fff" strokeWidth={3} />
+                  <CheckIcon size={13} color={h.selectMode ? k.onAzure : '#fff'} strokeWidth={3} />
                 </Reanimated.View>
               )}
             </BorderlessButton>
@@ -411,7 +411,7 @@ export function DayTimeline({ feed, nowMs, emptyText, countdownPlanId, onReorder
       <View style={styles.head}>
         {/* Day label in an azure pill, sized like the Upcoming / Earlier headings (user, 2026-10-23). */}
         <View style={[styles.titlePill, { backgroundColor: k.azure }]}>
-          <Text numberOfLines={1} style={[t.blockTitle, { color: '#fff' }]}>
+          <Text numberOfLines={1} style={[t.blockTitle, { color: k.onAzure }]}>
             {title}
             {dateLine && <Text style={[t.blockTitleDate, styles.pillDate]}>{` · ${dateLine}`}</Text>}
           </Text>

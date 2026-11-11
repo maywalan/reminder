@@ -271,7 +271,7 @@ export default function LoginScreen() {
                       styles.ageBox,
                       { borderColor: ageOk ? theme.accent : theme.dividerStrong, backgroundColor: ageOk ? theme.accent : theme.surface },
                     ]}>
-                    {ageOk && <CheckIcon size={13} color="#fff" strokeWidth={3} />}
+                    {ageOk && <CheckIcon size={13} color={theme.onAccent} strokeWidth={3} />}
                   </View>
                   <Text style={[styles.ageLabel, { color: theme.text }]}>{t('login.age13')}</Text>
                 </Pressable>
@@ -319,7 +319,7 @@ export default function LoginScreen() {
                 styles.primaryButton,
                 { backgroundColor: theme.accent, opacity: busy && busy !== 'email' ? 0.5 : pressed ? 0.85 : 1 },
               ]}>
-              {busy === 'email' ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryButtonText}>{submitLabel}</Text>}
+              {busy === 'email' ? <ActivityIndicator color={theme.onAccent} /> : <Text style={[styles.primaryButtonText, { color: theme.onAccent }]}>{submitLabel}</Text>}
             </Pressable>
           )}
 

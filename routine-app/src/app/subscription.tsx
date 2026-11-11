@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/text';
 import { ChevronLeftIcon } from '@/components/icon';
-import { Colors, Typography, type PremiumPalette } from '@/constants/theme';
+import { Colors, Typography, type PremiumPalette, type ThemeColors } from '@/constants/theme';
 import { usePremiumColors, useTheme } from '@/hooks/use-theme';
 import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
@@ -239,7 +239,7 @@ export default function SubscriptionScreen() {
   );
 }
 
-type Theme = (typeof Colors)[keyof typeof Colors];
+type Theme = ThemeColors;
 
 function makeStyles(c: Theme, p: PremiumPalette) {
   return StyleSheet.create({

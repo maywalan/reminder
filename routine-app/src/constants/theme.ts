@@ -140,9 +140,45 @@ export const PremiumColors = {
   },
 } as const;
 
+/**
+ * Free colour themes (tester feedback, 2026-11-11): the user picks one accent in Profile > Settings
+ * and it replaces the five accent tokens below in both modes. Hand-picked per mode, not derived:
+ * light `accent` carries white button text at >= blue's 4.37:1, `accentStrong` is text on white
+ * at >= 5.9:1, and dark `accent` keeps white text at >= blue's 2.87:1 while standing >= 4.6:1 off
+ * the dark surface. Backgrounds, plan colours, widgets and the Live Activity don't follow it.
+ */
+export type AccentId = 'blue' | 'indigo' | 'purple' | 'pink' | 'coral' | 'orange' | 'green' | 'teal';
+type AccentTokens = { accent: string; accentStrong: string; accentSoft: string; accentLight: string; accentBorder: string };
+
+const accentSet = (
+  light: [accent: string, strong: string, soft: string, lightEnd: string, border: string],
+  dark: [accent: string, strong: string, lightEnd: string, rgb: string]
+): { light: AccentTokens; dark: AccentTokens } => ({
+  light: { accent: light[0], accentStrong: light[1], accentSoft: light[2], accentLight: light[3], accentBorder: light[4] },
+  dark: { accent: dark[0], accentStrong: dark[1], accentSoft: `rgba(${dark[3]},0.18)`, accentLight: dark[2], accentBorder: `rgba(${dark[3]},0.28)` },
+});
+
+export const AccentThemes: Record<AccentId, { light: AccentTokens; dark: AccentTokens }> = {
+  // Blue is the original palette above, kept identical (dark soft/border are tinted from azure-500).
+  blue: {
+    light: { accent: '#1B76E8', accentStrong: '#0F5FC4', accentSoft: '#EAF2FE', accentLight: '#5AA0F5', accentBorder: '#E0EBFB' },
+    dark: { accent: '#4C9AFB', accentStrong: '#7FB4FC', accentSoft: 'rgba(27,118,232,0.18)', accentLight: '#8FC1FE', accentBorder: 'rgba(76,154,251,0.28)' },
+  },
+  indigo: accentSet(['#4F5BD5', '#3B45B0', '#EEEFFC', '#7C86E6', '#E3E5FA'], ['#7480EE', '#A7AEF7', '#B7BDFA', '116,128,238']),
+  purple: accentSet(['#7B4FE0', '#6238C4', '#F2EDFD', '#9F7DF0', '#E8E0FB'], ['#9B7AF6', '#C4B0FC', '#CDBDFD', '155,122,246']),
+  pink: accentSet(['#D13F7A', '#AE2A60', '#FCEDF3', '#E9739F', '#F8DEE9'], ['#E6609A', '#F6A5C4', '#F8B5CE', '230,96,154']),
+  coral: accentSet(['#D24B42', '#B03C34', '#FCEEED', '#EC7F77', '#F8E0DE'], ['#E5675E', '#F7ACA6', '#F9BAB5', '229,103,94']),
+  orange: accentSet(['#C25A08', '#9C4705', '#FDF1E6', '#E58A3A', '#F8E4D2'], ['#D9781F', '#F8C08A', '#FAC99A', '217,120,31']),
+  green: accentSet(['#1E8A50', '#17703F', '#E9F6EF', '#45B97A', '#D7EEE1'], ['#2E9E62', '#7FDBAA', '#8EE0B5', '46,158,98']),
+  teal: accentSet(['#0E8585', '#0B6A6A', '#E6F5F5', '#3DB3B3', '#D3ECEC'], ['#1C9A9A', '#7AD7D7', '#8ADCDC', '28,154,154']),
+};
+export const ACCENT_IDS = Object.keys(AccentThemes) as AccentId[];
+export const DEFAULT_ACCENT: AccentId = 'blue';
+
 export type PremiumPalette = (typeof PremiumColors)['light'] | (typeof PremiumColors)['dark'];
 
-export type ThemeColors = typeof Colors.light;
+/** A full palette (either mode, any accent). Values widened to string so accents can be swapped in. */
+export type ThemeColors = { readonly [K in keyof typeof Colors.light]: string };
 export type ThemeColorKey = keyof ThemeColors;
 
 export const Radii = {

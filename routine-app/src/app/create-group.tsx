@@ -134,7 +134,7 @@ export default function CreateGroupScreen() {
           </View>
         </View>
 
-        <Pressable onPress={handleCreate} disabled={!canCreate} style={[styles.saveBtn, !canCreate && { opacity: 0.4 }]}>
+        <Pressable onPress={handleCreate} disabled={!canCreate} style={[styles.saveBtn, { backgroundColor: theme.accent }, !canCreate && { opacity: 0.4 }]}>
           <Text style={{ color: '#fff', fontSize: Typography.heading, fontWeight: '700' }}>
             {query ? t('group.createNamed', { name: name.trim() }) : t('group.createGroup')}
           </Text>

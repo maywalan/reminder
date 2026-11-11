@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/text';
 import { CheckIcon, XIcon } from '@/components/icon';
-import { Colors, Typography, type PremiumPalette } from '@/constants/theme';
+import { Colors, Typography, type PremiumPalette, type ThemeColors } from '@/constants/theme';
 import { usePremiumColors, useTheme } from '@/hooks/use-theme';
 import { PRIVACY_URL, termsUrl } from '@/constants/legal';
 import { t } from '@/i18n';
@@ -325,7 +325,7 @@ const staticStyles = StyleSheet.create({
   featureText: { flex: 1, fontWeight: '500', fontSize: Typography.rowValue, lineHeight: 17 },
 });
 
-type Theme = (typeof Colors)[keyof typeof Colors];
+type Theme = ThemeColors;
 
 function makeStyles(c: Theme, p: PremiumPalette) {
   return StyleSheet.create({

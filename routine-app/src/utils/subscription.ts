@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 
-import { Colors, type PremiumPalette } from '@/constants/theme';
+import { Colors, type PremiumPalette, type ThemeColors } from '@/constants/theme';
 import { formatPrice, PREMIUM_SKUS, type Billing, type PremiumPrices } from '@/lib/iap';
 import type { SubscriptionDetails, SubscriptionState } from '@/store/types';
 import { FREE_ACTIVE_PLAN_LIMIT } from '@/utils/premium';
@@ -63,7 +63,7 @@ export interface SubscriptionInputs {
   /** Storefront prices from `usePremiumPrices`. */
   prices: PremiumPrices;
   /** Current Appearance's theme + Premium palette (`useTheme` / `usePremiumColors`). */
-  colors: { theme: (typeof Colors)[keyof typeof Colors]; premium: PremiumPalette };
+  colors: { theme: ThemeColors; premium: PremiumPalette };
   now?: number;
 }
 

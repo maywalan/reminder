@@ -844,7 +844,7 @@ export default function AddPlanScreen() {
           />
         )}
 
-        <View style={[styles.group, styles.liveActivityGroup, { backgroundColor: theme.surface, borderColor: theme.accentBorder }]}>
+        <View style={[styles.group, styles.liveActivityGroup, { backgroundColor: theme.surface, borderColor: theme.accentBorder, shadowColor: theme.accent }]}>
           <View style={[styles.fieldRow, styles.liveActivityRow]}>
             <Tickle size={46} mood="live" bubbleMotion="hop" animated />
             <View style={{ flex: 1 }}>

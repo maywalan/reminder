@@ -11,8 +11,8 @@ import { BouncyPressable } from '@/components/bouncy-pressable';
 import { Text } from '@/components/text';
 import { t } from '@/i18n';
 import { CalendarIcon, ChartIcon, HomeIcon, PersonIcon, PlusIcon } from '@/components/icon';
-import { Colors, Fonts, Radii, Typography } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { Fonts, Radii, Typography } from '@/constants/theme';
+import { themeColors, useAccentId, useTheme } from '@/hooks/use-theme';
 import { usePlannerStore } from '@/store/use-planner-store';
 import { confirmSelectedDelete } from '@/utils/repeat-scope';
 
@@ -257,6 +257,8 @@ const FAB_GAP = 14;
 export function AddPlanFab({ barHeight }: { barHeight: number }) {
   const router = useRouter();
   const selectMode = usePlannerStore((s) => s.selectMode);
+  // The light palette of the user's colour theme in both modes: dark mode's paler shades washed out the white plus.
+  const fab = themeColors('light', useAccentId());
   if (!barHeight || selectMode) return null;
   return (
     <BouncyPressable
@@ -268,8 +270,7 @@ export function AddPlanFab({ barHeight }: { barHeight: number }) {
       accessibilityRole="button"
       accessibilityLabel={t('tab.newPlan')}
       style={[styles.fabWrap, { bottom: barHeight + FAB_GAP }]}>
-      {/* The light theme's azure in both modes: dark mode's paler blues washed out the white plus. */}
-      <LinearGradient colors={[Colors.light.accent, Colors.light.accentLight]} start={{ x: 0.2, y: 0 }} end={{ x: 0.8, y: 1 }} style={styles.fab}>
+      <LinearGradient colors={[fab.accent, fab.accentLight]} start={{ x: 0.2, y: 0 }} end={{ x: 0.8, y: 1 }} style={[styles.fab, { shadowColor: fab.accent }]}>
         <PlusIcon size={28} color="#fff" strokeWidth={2.5} />
       </LinearGradient>
     </BouncyPressable>

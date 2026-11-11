@@ -15,6 +15,7 @@ import {
   CheckIcon,
   ChevronRightIcon,
   CircleHalfIcon,
+  PaletteIcon,
   DeviceIcon,
   DocumentIcon,
   GlobeIcon,
@@ -35,8 +36,9 @@ import { ProfileAvatar } from '@/components/profile-avatar';
 import { UpgradeBanner } from '@/components/upgrade-banner';
 import { WidgetPreview } from '@/components/widget-preview';
 import { PRIVACY_URL, termsUrl } from '@/constants/legal';
-import { Radii, RowMinHeight, Spacing, SwatchColors, Typography } from '@/constants/theme';
-import { useEffectiveScheme, useTheme } from '@/hooks/use-theme';
+import { ACCENT_IDS, AccentThemes, Radii, RowMinHeight, Spacing, SwatchColors, Typography } from '@/constants/theme';
+import { BouncyPressable } from '@/components/bouncy-pressable';
+import { useAccentId, useEffectiveScheme, useTheme } from '@/hooks/use-theme';
 import { useNotificationPermission } from '@/hooks/use-notification-permission';
 import { useToast } from '@/hooks/use-toast';
 import { refreshSubscriptionState } from '@/lib/iap';
@@ -187,6 +189,8 @@ export default function ProfileScreen() {
   }
 
   const [appearanceOpen, setAppearanceOpen] = useState(false);
+  const [accentOpen, setAccentOpen] = useState(false);
+  const accentId = useAccentId();
   const [languageOpen, setLanguageOpen] = useState(false);
   const [notifOptionsOpen, setNotifOptionsOpen] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
@@ -286,6 +290,14 @@ export default function ProfileScreen() {
             </View>
             <Text style={[styles.rowLabel, { color: theme.text }]}>{t('profile.appearance')}</Text>
             <Text style={[styles.rowValue, { color: theme.textTertiary }]}>{t(THEME_LABEL[settings.themeMode])}</Text>
+          </Pressable>
+          <Pressable onPress={() => setAccentOpen(true)} style={[styles.row, styles.rowBorder, { borderColor: theme.divider }]}>
+            <View style={[styles.rowIcon, { backgroundColor: theme.accentSoft }]}>
+              <PaletteIcon size={16} color={theme.accent} />
+            </View>
+            <Text style={[styles.rowLabel, { color: theme.text }]}>{t('profile.accent')}</Text>
+            <View style={[styles.accentDot, { backgroundColor: theme.accent }]} />
+            <Text style={[styles.rowValue, { color: theme.textTertiary }]}>{t(`accent.${accentId}`)}</Text>
           </Pressable>
           <Pressable onPress={() => setLanguageOpen(true)} style={[styles.row, styles.rowBorder, { borderColor: theme.divider }]}>
             <View style={[styles.rowIcon, { backgroundColor: theme.accentSoft }]}>
@@ -450,6 +462,35 @@ export default function ProfileScreen() {
             </Pressable>
           ))}
         </View>
+      </BottomSheet>
+
+      {/* Free colour theme (2026-11-11). Applies live so the screen behind previews it; the sheet stays open. */}
+      <BottomSheet visible={accentOpen} onClose={() => setAccentOpen(false)} title={t('profile.accent')}>
+        <View style={[styles.group, styles.accentGrid, { backgroundColor: theme.surface, borderColor: theme.cardBorder, marginTop: 10 }]}>
+          {ACCENT_IDS.map((id) => {
+            const selected = id === accentId;
+            const swatch = AccentThemes[id][scheme].accent;
+            return (
+              <BouncyPressable
+                key={id}
+                onPress={() => updateSettings({ accentTheme: id })}
+                accessibilityRole="radio"
+                accessibilityState={{ selected }}
+                accessibilityLabel={t(`accent.${id}`)}
+                style={styles.accentCell}>
+                <View style={[styles.accentRing, { borderColor: selected ? swatch : 'transparent' }]}>
+                  <View style={[styles.accentSwatch, { backgroundColor: swatch }]}>
+                    {selected && <CheckIcon size={16} color="#fff" strokeWidth={3} />}
+                  </View>
+                </View>
+                <Text numberOfLines={1} style={[styles.accentName, { color: selected ? theme.text : theme.textSecondary }]}>
+                  {t(`accent.${id}`)}
+                </Text>
+              </BouncyPressable>
+            );
+          })}
+        </View>
+        <Text style={[styles.accentNote, { color: theme.textTertiary }]}>{t('profile.accentNote')}</Text>
       </BottomSheet>
 
       <BottomSheet visible={languageOpen} onClose={() => setLanguageOpen(false)} title={t('profile.language')}>
@@ -623,6 +664,13 @@ const styles = StyleSheet.create({
   rowLabel: { fontSize: Typography.rowLabel, fontWeight: '600', flex: 1 },
   languageFlag: { fontSize: 20 },
   rowValue: { fontSize: Typography.rowValue, marginRight: 4 },
+  accentDot: { width: 10, height: 10, borderRadius: 5 },
+  accentGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingVertical: 14, paddingHorizontal: 6, rowGap: 14 },
+  accentCell: { width: '25%', alignItems: 'center', gap: 6 },
+  accentRing: { width: 52, height: 52, borderRadius: 26, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
+  accentSwatch: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  accentName: { fontSize: Typography.label, fontWeight: '600' },
+  accentNote: { fontSize: Typography.label, textAlign: 'center', marginTop: 12 },
   privacyText: { fontSize: Typography.rowValue, lineHeight: 20, marginTop: 12 },
   clearDataBtn: { flexDirection: 'row', gap: 8, padding: 14, borderRadius: Radii.button, borderWidth: 1, alignItems: 'center', justifyContent: 'center', marginTop: 16 },
   deleteAccountBtn: { minHeight: RowMinHeight, alignItems: 'center', justifyContent: 'center', marginTop: 6 },

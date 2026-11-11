@@ -70,4 +70,6 @@ export interface Settings {
   recapHour: number; // 0-23, local time
   /** 0-59, local time. Optional because saves from before 2026-11-02 lack it; read with `?? 0`. */
   recapMinute?: number;
+  /** Free colour theme (2026-11-11). Optional: older saves lack it; read with `?? DEFAULT_ACCENT`. Local only, not synced. */
+  accentTheme?: import('@/constants/theme').AccentId;
 }

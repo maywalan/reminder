@@ -33,6 +33,7 @@ export default {
   'profile.notifOptions': { en: 'Notification Options', th: 'ตัวเลือกการแจ้งเตือน' },
   'profile.accent': { en: 'Theme colour', th: 'สีธีม' },
   'profile.accentNote': { en: 'Widgets, Live Activities and Premium keep Tickle blue.', th: 'วิดเจ็ต Live Activity และ Premium ยังเป็นสีฟ้าของ Tickle' },
+  'accent.reset': { en: 'Reset to default', th: 'คืนค่าเริ่มต้น' },
   'accent.mono': { en: 'Mono', th: 'ขาวดำ' },
   'accent.custom': { en: 'Custom', th: 'กำหนดเอง' },
   'accent.customHint': { en: 'Drag for more colours', th: 'เลื่อนเพื่อดูสีเพิ่ม' },

@@ -37,7 +37,7 @@ import { ProfileAvatar } from '@/components/profile-avatar';
 import { UpgradeBanner } from '@/components/upgrade-banner';
 import { WidgetPreview } from '@/components/widget-preview';
 import { PRIVACY_URL, termsUrl } from '@/constants/legal';
-import { ACCENT_IDS, AccentThemes, hueAccent, Radii, type AccentId, RowMinHeight, Spacing, SwatchColors, Typography } from '@/constants/theme';
+import { ACCENT_IDS, AccentThemes, DEFAULT_ACCENT, hueAccent, Radii, type AccentId, RowMinHeight, Spacing, SwatchColors, Typography } from '@/constants/theme';
 import { BouncyPressable } from '@/components/bouncy-pressable';
 import { HueSlider } from '@/components/hue-slider';
 import { useAccentId, useEffectiveScheme, useTheme } from '@/hooks/use-theme';
@@ -563,6 +563,22 @@ export default function ProfileScreen() {
           </BouncyPressable>
           <HueSlider hue={customHue} scheme={scheme} onChange={setCustomHue} onCommit={commitCustomHue} accessibilityLabel={t('accent.custom')} />
         </View>
+        {/* Back to Tickle blue and a fresh slider. Like a swatch tap it previews; Save/Cancel still apply. */}
+        <Pressable
+          onPress={() => {
+            Haptics.selectionAsync().catch(() => {});
+            updateSettings({ accentTheme: undefined, accentHue: undefined });
+            setCustomHue(210);
+          }}
+          disabled={accentId === DEFAULT_ACCENT}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: accentId === DEFAULT_ACCENT }}
+          hitSlop={8}
+          style={({ pressed }) => [styles.accentReset, { opacity: accentId === DEFAULT_ACCENT ? 0.4 : pressed ? 0.6 : 1 }]}>
+          <Text style={[styles.accentResetText, { color: accentId === DEFAULT_ACCENT ? theme.textTertiary : theme.accentStrong }]}>
+            {t('accent.reset')}
+          </Text>
+        </Pressable>
         <Text style={[styles.accentNote, { color: theme.textTertiary }]}>{t('profile.accentNote')}</Text>
       </BottomSheet>
 
@@ -743,6 +759,8 @@ const styles = StyleSheet.create({
   accentRing: { width: 52, height: 52, borderRadius: 26, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
   accentSwatch: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   accentName: { fontSize: Typography.label, fontWeight: '600' },
+  accentReset: { alignSelf: 'center', marginTop: 14, minHeight: 44, justifyContent: 'center', paddingHorizontal: 12 },
+  accentResetText: { fontSize: Typography.rowValue, fontWeight: '700' },
   accentPreview: { marginTop: 10, marginBottom: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-evenly', paddingVertical: 12 },
   previewDay: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
   previewDayText: { fontSize: Typography.rowValue, fontWeight: '700' },
@@ -754,7 +772,7 @@ const styles = StyleSheet.create({
   customHead: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   customRing: { width: 40, height: 40, borderRadius: 20 },
   customSwatch: { width: 30, height: 30, borderRadius: 15 },
-  accentNote: { fontSize: Typography.label, textAlign: 'center', marginTop: 12 },
+  accentNote: { fontSize: Typography.label, textAlign: 'center', marginTop: 2 },
   privacyText: { fontSize: Typography.rowValue, lineHeight: 20, marginTop: 12 },
   clearDataBtn: { flexDirection: 'row', gap: 8, padding: 14, borderRadius: Radii.button, borderWidth: 1, alignItems: 'center', justifyContent: 'center', marginTop: 16 },
   deleteAccountBtn: { minHeight: RowMinHeight, alignItems: 'center', justifyContent: 'center', marginTop: 6 },

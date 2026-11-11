@@ -1,16 +1,18 @@
 import * as Notifications from 'expo-notifications';
 
+import { alarmSoundFile, DEFAULT_ALARM_SOUND } from '@/constants/alarm-sounds';
 import { t } from '@/i18n';
 import type { Plan, Settings } from '@/store/types';
 import { usePlannerStore } from '@/store/use-planner-store';
-import { planDateTime } from '@/utils/countdown';
+import { planDateTime, planEndDateTime } from '@/utils/countdown';
 import { fromISO, toISO } from '@/utils/dates';
 
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
+  handleNotification: async (n) => ({
     shouldShowBanner: true,
     shouldShowList: true,
-    shouldPlaySound: usePlannerStore.getState().settings.soundEnabled,
+    // An alarm the user turned on for this plan always rings, even with app sounds off.
+    shouldPlaySound: n.request.content.data?.alarm === true || usePlannerStore.getState().settings.soundEnabled,
     // Tickle never sets a badge count, so leave the icon alone.
     shouldSetBadge: false,
   }),
@@ -80,6 +82,8 @@ interface AlertJob {
   plan: Plan;
   offsetMinutes: number;
   triggerDate: Date;
+  /** Set for alarm-style rings (2026-11-11): at the start, or at the end of a time range. */
+  alarm?: 'start' | 'end';
 }
 
 /**
@@ -98,11 +102,21 @@ function buildAlertJobs(plans: Plan[]): AlertJob[] {
     for (const offset of plan.alerts) {
       const minutes = Number(offset);
       if (!Number.isFinite(minutes) || minutes < 0) continue;
+      // The alarm already rings at the start; a plain "Starting now" on top would double up.
+      if (minutes === 0 && plan.alarm && !plan.allDay) continue;
       const triggerDate = alertTriggerDate(plan, minutes);
       const at = triggerDate.getTime();
       if (!Number.isFinite(at) || at <= now || seen.has(at)) continue;
       seen.add(at);
       jobs.push({ plan, offsetMinutes: minutes, triggerDate });
+    }
+    // Alarms are for timed plans only; an all-day plan has no moment to ring at.
+    if (plan.alarm && !plan.allDay) {
+      const ends: [Date | null, 'start' | 'end'][] = [[planDateTime(plan), 'start'], [planEndDateTime(plan), 'end']];
+      for (const [date, alarm] of ends) {
+        const at = date?.getTime();
+        if (date && at !== undefined && Number.isFinite(at) && at > now) jobs.push({ plan, offsetMinutes: 0, triggerDate: date, alarm });
+      }
     }
   }
   jobs.sort((a, b) => a.triggerDate.getTime() - b.triggerDate.getTime());
@@ -126,8 +140,18 @@ export async function rescheduleAllPlanAlerts(plans: Plan[], sound = true) {
   await Promise.all(
     jobs.map((job) =>
       Notifications.scheduleNotificationAsync({
-        identifier: `${PLAN_ALERT_PREFIX}${job.plan.id}:${job.offsetMinutes}`,
-        content: { title: job.plan.name, body: alertBody(job.plan, job.offsetMinutes), sound },
+        identifier: `${PLAN_ALERT_PREFIX}${job.plan.id}:${job.alarm ? `alarm-${job.alarm}` : job.offsetMinutes}`,
+        content: job.alarm
+          ? {
+              title: job.plan.name,
+              body: t(job.alarm === 'start' ? 'notif.alarmStart' : 'notif.alarmEnd'),
+              // Bundled sound (app.json expo-notifications `sounds`); rings even with app sounds off.
+              sound: alarmSoundFile(job.plan.alarmSound ?? DEFAULT_ALARM_SOUND),
+              // Breaks through Focus/notification summary where the user allows it.
+              interruptionLevel: 'timeSensitive',
+              data: { alarm: true, planId: job.plan.id },
+            }
+          : { title: job.plan.name, body: alertBody(job.plan, job.offsetMinutes), sound },
         trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: job.triggerDate },
       })
     )

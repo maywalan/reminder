@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/use-auth-store';
 import { usePlannerStore } from '@/store/use-planner-store';
 import type { FontScale } from '@/constants/theme';
+import { isAlarmSound } from '@/constants/alarm-sounds';
 import type { AlertStyle, Group, Language, Plan, Profile, Settings, ThemeMode } from '@/store/types';
 
 /**
@@ -36,6 +37,8 @@ function planToRow(plan: Plan, userId: string) {
     photo_uris: plan.photoUris ?? [],
     live: plan.live,
     live_lead_minutes: plan.liveLeadMinutes ?? null,
+    alarm: plan.alarm ?? null,
+    alarm_sound: plan.alarmSound ?? null,
     completed: plan.completed,
     completed_at: plan.completedAt ? new Date(plan.completedAt).toISOString() : null,
     icon: plan.icon ?? null,
@@ -62,6 +65,8 @@ function rowToPlan(row: Record<string, any>): Plan {
     photoUris: row.photo_uris ?? undefined,
     live: row.live,
     liveLeadMinutes: row.live_lead_minutes ?? undefined,
+    alarm: row.alarm ?? undefined,
+    alarmSound: isAlarmSound(row.alarm_sound) ? row.alarm_sound : undefined,
     completed: row.completed,
     completedAt: row.completed_at ? Date.parse(row.completed_at) : undefined,
     icon: row.icon ?? undefined,
@@ -239,7 +244,7 @@ export async function performInitialSync(userId: string) {
 // ---------------------------------------------------------------------------
 
 /** Columns added after launch. If the server doesn't have one yet, saving retries without it. */
-const OPTIONAL_PLAN_COLUMNS = ['live_lead_minutes'] as const;
+const OPTIONAL_PLAN_COLUMNS = ['live_lead_minutes', 'alarm', 'alarm_sound'] as const;
 let missingPlanColumns = new Set<string>();
 
 function isMissingColumn(error: { code?: string; message?: string } | null, column: string) {
@@ -259,8 +264,11 @@ async function upsertPlanRows(rows: Record<string, unknown>[]) {
     return copy;
   };
   let { error } = await supabase.from('plans').upsert(rows.map(strip));
-  const missing = OPTIONAL_PLAN_COLUMNS.find((c) => !missingPlanColumns.has(c) && isMissingColumn(error, c));
-  if (missing) {
+  // PostgREST names one missing column per error, so drop them one at a time until the save goes
+  // through: with several new columns unmigrated, a single retry would still fail (2026-11-11).
+  for (let i = 0; i < OPTIONAL_PLAN_COLUMNS.length; i++) {
+    const missing = OPTIONAL_PLAN_COLUMNS.find((c) => !missingPlanColumns.has(c) && isMissingColumn(error, c));
+    if (!missing) break;
     missingPlanColumns = new Set([...missingPlanColumns, missing]);
     ({ error } = await supabase.from('plans').upsert(rows.map(strip)));
   }

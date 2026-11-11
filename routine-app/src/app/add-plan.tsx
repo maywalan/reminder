@@ -18,6 +18,8 @@ import { Text, TextInput } from '@/components/text';
 import { BottomSheet } from '@/components/bottom-sheet';
 import { PhotoViewer } from '@/components/photo-viewer';
 import { CameraIcon, CheckIcon, ChevronRightIcon, LockIcon, PlanIcon, PlusIcon, XIcon } from '@/components/icon';
+import { AlarmSoundSheet } from '@/components/alarm-sound-sheet';
+import { ALARM_SOUND_LABEL, DEFAULT_ALARM_SOUND, type AlarmSoundId } from '@/constants/alarm-sounds';
 import { IconGrid, IconPickerSheet } from '@/components/icon-picker';
 import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
@@ -270,6 +272,9 @@ export default function AddPlanScreen() {
   const [alertSlot, setAlertSlot] = useState<1 | 2 | 3 | null>(null);
   const [liveLead, setLiveLead] = useState<number>(editing?.liveLeadMinutes ?? LIVE_LEAD_DEFAULT_MIN);
   const [liveLeadOpen, setLiveLeadOpen] = useState(false);
+  const [alarm, setAlarm] = useState(editing?.alarm ?? false);
+  const [alarmSound, setAlarmSound] = useState<AlarmSoundId>(editing?.alarmSound ?? DEFAULT_ALARM_SOUND);
+  const [alarmSoundOpen, setAlarmSoundOpen] = useState(false);
   const [repeatType, setRepeatType] = useState<RepeatType>('none');
   const [repeatOpen, setRepeatOpen] = useState(false);
   const [repeatUntil, setRepeatUntil] = useState<Date | null>(null);
@@ -376,6 +381,9 @@ export default function AddPlanScreen() {
       groupId,
       live,
       liveLeadMinutes: liveLead,
+      // All-day plans have no moment to ring at, so the alarm only sticks to timed plans.
+      alarm: alarm && !allDay ? true : undefined,
+      alarmSound: alarm && !allDay ? alarmSound : undefined,
       alerts,
       icon,
       notes: notes.trim() || undefined,
@@ -808,6 +816,27 @@ export default function AddPlanScreen() {
           )}
 
           {[0, 1, 2].map((i) => alertRow(i))}
+
+          {!allDay && (
+            <View style={[styles.fieldRow, styles.fieldBorder, { borderColor: theme.divider }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.rowTitle, { color: theme.text }]}>{t('plan.alarm')}</Text>
+                <Text style={{ color: theme.textTertiary, fontSize: Typography.caption, marginTop: 2 }}>
+                  {t(timeMode === 'range' ? 'plan.alarmSubRange' : 'plan.alarmSub')}
+                </Text>
+              </View>
+              <Switch value={alarm} onValueChange={setAlarm} trackColor={{ true: theme.success }} accessibilityLabel={t('plan.alarm')} />
+            </View>
+          )}
+          {!allDay && alarm && (
+            <Pressable
+              onPress={() => setAlarmSoundOpen(true)}
+              style={[styles.fieldRow, styles.fieldBorder, { borderColor: theme.divider }]}>
+              <Text style={[styles.rowTitle, { color: theme.text }]}>{t('plan.alarmSound')}</Text>
+              <Text style={[styles.rowValue, { color: theme.textSecondary }]}>{t(ALARM_SOUND_LABEL[alarmSound])}</Text>
+              <ChevronRightIcon size={16} color={theme.textTertiary} strokeWidth={2} />
+            </Pressable>
+          )}
         </View>
 
         <IconCard
@@ -1002,6 +1031,8 @@ export default function AddPlanScreen() {
         recent={recentIcons(usage)}
         onPick={(id) => setIcon(id)}
       />
+
+      <AlarmSoundSheet visible={alarmSoundOpen} value={alarmSound} onChange={setAlarmSound} onClose={() => setAlarmSoundOpen(false)} />
 
       <BottomSheet visible={liveLeadOpen} onClose={() => setLiveLeadOpen(false)} title={t('plan.liveLead')}>
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider, marginTop: 10, marginBottom: 20 }]}>

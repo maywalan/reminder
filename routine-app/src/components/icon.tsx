@@ -194,6 +194,22 @@ export function PencilIcon({ size = 24, color, strokeWidth = 2 }: IconProps) {
   );
 }
 
+export function PlayIcon({ size = 24, color }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M8 5.5v13a1 1 0 001.52.85l10.4-6.5a1 1 0 000-1.7L9.52 4.65A1 1 0 008 5.5z" fill={color} />
+    </Svg>
+  );
+}
+
+export function StopIcon({ size = 24, color }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M7 6h10a1 1 0 011 1v10a1 1 0 01-1 1H7a1 1 0 01-1-1V7a1 1 0 011-1z" fill={color} />
+    </Svg>
+  );
+}
+
 export function BellIcon({ size = 24, color, strokeWidth = 1.8 }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">

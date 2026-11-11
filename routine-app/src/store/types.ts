@@ -20,6 +20,10 @@ export interface Plan {
   live: boolean;
   /** Minutes before the start that the Live Activity countdown appears; unset = LIVE_LEAD_DEFAULT_MIN. */
   liveLeadMinutes?: number;
+  /** Rings like an alarm at the start (and at the end of a time range). Unset = off. 2026-11-11. */
+  alarm?: boolean;
+  /** Which bundled sound the alarm plays; unset = DEFAULT_ALARM_SOUND. */
+  alarmSound?: import('@/constants/alarm-sounds').AlarmSoundId;
   completed: boolean;
   /** When it was last checked off (epoch ms) — Home's Earlier list shows "done 06:34". */
   completedAt?: number;

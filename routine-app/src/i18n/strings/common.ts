@@ -49,6 +49,8 @@ export default {
   'splash.tagline': { en: 'a friendly nudge, on time', th: 'สะกิดเตือนเบาๆ ตรงเวลา' },
 
   'notif.startingNow': { en: 'Starting now', th: 'เริ่มแล้วตอนนี้' },
+  'notif.alarmStart': { en: 'Time to start', th: 'ถึงเวลาเริ่มแล้ว' },
+  'notif.alarmEnd': { en: "Time's up", th: 'หมดเวลาแล้ว' },
   'notif.inMin': { en: 'Starting in {n} min', th: 'เริ่มในอีก {n} นาที' },
   'notif.inHr': { en: 'Starting in {n} hr', th: 'เริ่มในอีก {n} ชม.' },
   'notif.inDays': { en: 'Starting in {count} days', th: 'เริ่มในอีก {count} วัน' },

@@ -22,7 +22,8 @@
       "entitlements": {
         "com.apple.security.application-groups": [
           "group.com.maywalan.tickle"
-        ]
+        ],
+        "com.apple.developer.usernotifications.time-sensitive": true
       },
       "appleTeamId": "UGG5ZR65UP"
     },
@@ -67,13 +68,22 @@
         "expo-notifications",
         {
           "icon": "./assets/images/notification-icon.png",
-          "color": "#1B76E8"
+          "color": "#1B76E8",
+          "sounds": [
+            "./assets/sounds/tickle_chime.caf",
+            "./assets/sounds/tickle_classic.caf",
+            "./assets/sounds/tickle_beep.caf",
+            "./assets/sounds/tickle_marimba.caf",
+            "./assets/sounds/tickle_rise.caf",
+            "./assets/sounds/tickle_pulse.caf"
+          ]
         }
       ],
       "expo-localization",
       "@bacons/apple-targets",
       "expo-iap",
-      "./plugins/withStoreKitConfig"
+      "./plugins/withStoreKitConfig",
+      ["expo-audio", { "microphonePermission": false, "recordAudioAndroid": false }]
     ],
     "experiments": {
       "typedRoutes": true,

@@ -22,8 +22,7 @@
       "entitlements": {
         "com.apple.security.application-groups": [
           "group.com.maywalan.tickle"
-        ],
-        "com.apple.developer.usernotifications.time-sensitive": true
+        ]
       },
       "appleTeamId": "UGG5ZR65UP"
     },

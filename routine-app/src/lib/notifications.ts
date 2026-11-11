@@ -151,8 +151,8 @@ export async function rescheduleAllPlanAlerts(plans: Plan[], sound = true) {
               body: t(job.alarm === 'start' ? 'notif.alarmStart' : 'notif.alarmEnd'),
               // Bundled sound (app.json expo-notifications `sounds`); rings even with app sounds off.
               sound: alarmSoundFile(job.plan.alarmSound ?? DEFAULT_ALARM_SOUND),
-              // Breaks through Focus/notification summary where the user allows it.
-              interruptionLevel: 'timeSensitive',
+              // No interruptionLevel 'timeSensitive' yet: it needs the Time Sensitive capability on the
+              // App ID, which build 6 failed without (2026-11-11). Add back with the AlarmKit work.
               data: { alarm: true, planId: job.plan.id },
             }
           : { title: job.plan.name, body: alertBody(job.plan, job.offsetMinutes), sound },

@@ -68,8 +68,8 @@ export function AlarmSoundSheet({ visible, value, onChange, onClose }: Props) {
                 i > 0 && styles.rowBorder,
                 { borderColor: theme.divider, opacity: pressed ? 0.6 : 1 },
               ]}>
-              <View style={[styles.play, { backgroundColor: isPlaying ? theme.accent : theme.accentSoft }]}>
-                {isPlaying ? <StopIcon size={12} color="#fff" /> : <PlayIcon size={12} color={theme.accent} />}
+              <View style={[styles.play, { backgroundColor: isPlaying ? theme.accentFill : theme.accentSoft }]}>
+                {isPlaying ? <StopIcon size={12} color={theme.onAccent} /> : <PlayIcon size={12} color={theme.accent} />}
               </View>
               <Text style={[styles.label, { color: theme.text }]}>{t(ALARM_SOUND_LABEL[id])}</Text>
               {selected && <CheckIcon size={16} color={theme.accent} strokeWidth={3} />}

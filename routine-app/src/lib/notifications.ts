@@ -112,7 +112,11 @@ function buildAlertJobs(plans: Plan[]): AlertJob[] {
     }
     // Alarms are for timed plans only; an all-day plan has no moment to ring at.
     if (plan.alarm && !plan.allDay) {
-      const ends: [Date | null, 'start' | 'end'][] = [[planDateTime(plan), 'start'], [planEndDateTime(plan), 'end']];
+      const start = planDateTime(plan);
+      const end = planEndDateTime(plan);
+      // A range whose end isn't after its start (e.g. 14:00–14:00) would ring twice at once: start only.
+      const hasEnd = !!end && end.getTime() > start.getTime();
+      const ends: [Date | null, 'start' | 'end'][] = [[start, 'start'], [hasEnd ? end : null, 'end']];
       for (const [date, alarm] of ends) {
         const at = date?.getTime();
         if (date && at !== undefined && Number.isFinite(at) && at > now) jobs.push({ plan, offsetMinutes: 0, triggerDate: date, alarm });

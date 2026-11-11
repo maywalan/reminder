@@ -760,7 +760,9 @@ const styles = StyleSheet.create({
   accentSwatch: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   accentName: { fontSize: Typography.label, fontWeight: '600' },
   // Visually tight under the card; hitSlop (not height) keeps the 44pt tap target.
-  accentReset: { alignSelf: 'center', marginTop: 12, paddingVertical: 4, paddingHorizontal: 12 },
+  // Centred between the Custom card and the note: the card's own marginBottom (cardGap) above,
+  // the same cardGap below.
+  accentReset: { alignSelf: 'center', paddingVertical: 4, paddingHorizontal: 12 },
   accentResetText: { fontSize: Typography.rowValue, fontWeight: '700' },
   accentPreview: { marginTop: 10, marginBottom: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-evenly', paddingVertical: 12 },
   previewDay: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
@@ -773,7 +775,7 @@ const styles = StyleSheet.create({
   customHead: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   customRing: { width: 40, height: 40, borderRadius: 20 },
   customSwatch: { width: 30, height: 30, borderRadius: 15 },
-  accentNote: { fontSize: Typography.label, textAlign: 'center', marginTop: 8 },
+  accentNote: { fontSize: Typography.label, textAlign: 'center', marginTop: Spacing.cardGap },
   privacyText: { fontSize: Typography.rowValue, lineHeight: 20, marginTop: 12 },
   clearDataBtn: { flexDirection: 'row', gap: 8, padding: 14, borderRadius: Radii.button, borderWidth: 1, alignItems: 'center', justifyContent: 'center', marginTop: 16 },
   deleteAccountBtn: { minHeight: RowMinHeight, alignItems: 'center', justifyContent: 'center', marginTop: 6 },

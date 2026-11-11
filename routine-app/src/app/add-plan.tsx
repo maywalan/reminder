@@ -293,6 +293,9 @@ export default function AddPlanScreen() {
   // iOS date rows show the app's own date label and open the picker in a sheet: the compact picker
   // printed the phone calendar's "10/29/2569 BE" in English (critique, 2026-10-29).
   const [dateSheet, setDateSheet] = useState<'date' | 'repeatUntil' | null>(null);
+  // Times work the same way (2026-11-11): the native compact time button reserved width for AM/PM and
+  // centred "00:00" inside it, so it never lined up under its label. Own chip + spinner sheet instead.
+  const [timeSheet, setTimeSheet] = useState<'single' | 'start' | 'end' | null>(null);
 
   const { suggestions: placeSuggestions, loading: placesLoading } = usePlaceSearch(location);
   const filteredTimeZones = useMemo(() => {
@@ -710,17 +713,7 @@ export default function AddPlanScreen() {
               <View style={[styles.timeRangeCol, styles.timeRangeColBorder, { borderColor: theme.divider }]}>
                 <Text style={[styles.label, { color: theme.textTertiary }]}>{t('plan.time')}</Text>
                 {Platform.OS === 'ios' ? (
-                  <View style={styles.iosPickerRow}>
-                    <DateTimePicker
-                      value={dateTime}
-                      mode="time"
-                      display="compact"
-                    locale={pickerLocale}
-                      themeVariant={scheme}
-                      accentColor={theme.accent}
-                      onChange={onChangeTime}
-                    />
-                  </View>
+                  <DateChip label={timeLabel} onPress={() => setTimeSheet('single')} />
                 ) : (
                   <Pressable onPress={() => setShowTimePicker(true)}>
                     <Text style={[styles.input, { color: theme.text, borderColor: 'transparent' }]}>{timeLabel}</Text>
@@ -744,17 +737,7 @@ export default function AddPlanScreen() {
                 <View style={styles.timeRangeCol}>
                   <Text style={[styles.label, { color: theme.textTertiary }]}>{t('plan.startTime')}</Text>
                   {Platform.OS === 'ios' ? (
-                    <View style={styles.iosPickerRow}>
-                      <DateTimePicker
-                        value={dateTime}
-                        mode="time"
-                        display="compact"
-                    locale={pickerLocale}
-                        themeVariant={scheme}
-                        accentColor={theme.accent}
-                        onChange={onChangeTime}
-                      />
-                    </View>
+                    <DateChip label={timeLabel} onPress={() => setTimeSheet('start')} />
                   ) : (
                     <Pressable onPress={() => setShowTimePicker(true)}>
                       <Text style={[styles.input, { color: theme.text, borderColor: 'transparent' }]}>{timeLabel}</Text>
@@ -764,17 +747,7 @@ export default function AddPlanScreen() {
                 <View style={[styles.timeRangeCol, styles.timeRangeColBorder, { borderColor: theme.divider }]}>
                   <Text style={[styles.label, { color: theme.textTertiary }]}>{t('plan.endTime')}</Text>
                   {Platform.OS === 'ios' ? (
-                    <View style={styles.iosPickerRow}>
-                      <DateTimePicker
-                        value={endDateTime}
-                        mode="time"
-                        display="compact"
-                    locale={pickerLocale}
-                        themeVariant={scheme}
-                        accentColor={theme.accent}
-                        onChange={onChangeEndTime}
-                      />
-                    </View>
+                    <DateChip label={endTimeLabel} onPress={() => setTimeSheet('end')} />
                   ) : (
                     <Pressable onPress={() => setShowEndTimePicker(true)}>
                       <Text style={[styles.input, { color: theme.text, borderColor: 'transparent' }]}>{endTimeLabel}</Text>
@@ -1019,6 +992,30 @@ export default function AddPlanScreen() {
         )}
       </BottomSheet>
 
+      <BottomSheet
+        visible={timeSheet !== null}
+        onClose={() => setTimeSheet(null)}
+        title={t(timeSheet === 'start' ? 'plan.startTimeTitle' : timeSheet === 'end' ? 'plan.endTimeTitle' : 'plan.timeTitle')}
+        right={
+          <Pressable onPress={() => setTimeSheet(null)} hitSlop={8}>
+            <Text style={{ color: theme.accentStrong, fontSize: Typography.heading, fontWeight: '700' }}>{t('common.done')}</Text>
+          </Pressable>
+        }>
+        {timeSheet !== null && (
+          <View style={styles.dateSheetBody}>
+            <DateTimePicker
+              value={timeSheet === 'end' ? endDateTime : dateTime}
+              mode="time"
+              display="spinner"
+              locale={pickerLocale}
+              themeVariant={scheme}
+              textColor={theme.text}
+              onChange={timeSheet === 'end' ? onChangeEndTime : onChangeTime}
+            />
+          </View>
+        )}
+      </BottomSheet>
+
       <PhotoViewer uris={photoUris} index={previewIndex} onClose={() => setPreviewIndex(null)} />
 
       <IconPickerSheet
@@ -1258,7 +1255,6 @@ const styles = StyleSheet.create({
   weekdayChip: { width: 34, height: 34, borderRadius: 17, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   searchInput: { borderWidth: 1, borderRadius: Radii.sm, paddingHorizontal: 12, paddingVertical: 9, marginTop: 6, marginBottom: 10 },
   timeZoneList: { maxHeight: 380 },
-  iosPickerRow: { alignItems: 'flex-start' },
   swatchRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, padding: 14 },
   swatch: { width: 30, height: 30, borderRadius: 15, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   deleteBtn: { padding: 14, borderRadius: Radii.md, alignItems: 'center' },

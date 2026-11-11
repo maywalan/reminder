@@ -573,7 +573,7 @@ export default function ProfileScreen() {
           disabled={accentId === DEFAULT_ACCENT}
           accessibilityRole="button"
           accessibilityState={{ disabled: accentId === DEFAULT_ACCENT }}
-          hitSlop={8}
+          hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
           style={({ pressed }) => [styles.accentReset, { opacity: accentId === DEFAULT_ACCENT ? 0.4 : pressed ? 0.6 : 1 }]}>
           <Text style={[styles.accentResetText, { color: accentId === DEFAULT_ACCENT ? theme.textTertiary : theme.accentStrong }]}>
             {t('accent.reset')}
@@ -759,7 +759,8 @@ const styles = StyleSheet.create({
   accentRing: { width: 52, height: 52, borderRadius: 26, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
   accentSwatch: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   accentName: { fontSize: Typography.label, fontWeight: '600' },
-  accentReset: { alignSelf: 'center', marginTop: 14, minHeight: 44, justifyContent: 'center', paddingHorizontal: 12 },
+  // Visually tight under the card; hitSlop (not height) keeps the 44pt tap target.
+  accentReset: { alignSelf: 'center', marginTop: 12, paddingVertical: 4, paddingHorizontal: 12 },
   accentResetText: { fontSize: Typography.rowValue, fontWeight: '700' },
   accentPreview: { marginTop: 10, marginBottom: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-evenly', paddingVertical: 12 },
   previewDay: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
@@ -772,7 +773,7 @@ const styles = StyleSheet.create({
   customHead: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   customRing: { width: 40, height: 40, borderRadius: 20 },
   customSwatch: { width: 30, height: 30, borderRadius: 15 },
-  accentNote: { fontSize: Typography.label, textAlign: 'center', marginTop: 2 },
+  accentNote: { fontSize: Typography.label, textAlign: 'center', marginTop: 8 },
   privacyText: { fontSize: Typography.rowValue, lineHeight: 20, marginTop: 12 },
   clearDataBtn: { flexDirection: 'row', gap: 8, padding: 14, borderRadius: Radii.button, borderWidth: 1, alignItems: 'center', justifyContent: 'center', marginTop: 16 },
   deleteAccountBtn: { minHeight: RowMinHeight, alignItems: 'center', justifyContent: 'center', marginTop: 6 },

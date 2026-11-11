@@ -13,7 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text, TextInput } from '@/components/text';
-import { AppleLogoIcon, GoogleLogoIcon, XIcon } from '@/components/icon';
+import { AppleLogoIcon, CheckIcon, GoogleLogoIcon, XIcon } from '@/components/icon';
 import { Tickle } from '@/components/tickle';
 import { Toast } from '@/components/toast';
 import { lang, t } from '@/i18n';
@@ -51,6 +51,8 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  // Sign-up's required "I'm 13 or older" tick (tester feedback, 2026-11-11). Privacy page: not for under-13s.
+  const [ageOk, setAgeOk] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Sign-up hit an email that already has an account: the error offers a one-tap switch to Sign In.
   const [emailTaken, setEmailTaken] = useState(false);
@@ -90,6 +92,7 @@ export default function LoginScreen() {
     }
     if (!EMAIL_PATTERN.test(trimmedEmail)) return setError(t('login.invalidEmail'));
     if (mode === 'signUp' && password.length < MIN_PASSWORD_LENGTH) return setError(t('login.passwordShort'));
+    if (mode === 'signUp' && !ageOk) return setError(t('login.age13Required'));
 
     setError(null);
     setEmailTaken(false);
@@ -116,6 +119,9 @@ export default function LoginScreen() {
   }
 
   async function handleGoogle() {
+    // Google can create an account too: on Create Account it needs the same tick; on Sign In the
+    // notice under the button covers a first-time Google user.
+    if (mode === 'signUp' && !ageOk) return setError(t('login.age13Required'));
     setError(null);
     setBusy('google');
     const { error: authError } = await signInWithOAuth('google');
@@ -250,6 +256,26 @@ export default function LoginScreen() {
                 </View>
               )}
               {mode === 'signUp' && <Text style={[styles.hint, { color: theme.textTertiary }]}>{t('login.passwordHint')}</Text>}
+              {mode === 'signUp' && (
+                <Pressable
+                  onPress={() => {
+                    setAgeOk((v) => !v);
+                    setError(null);
+                  }}
+                  hitSlop={6}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: ageOk }}
+                  style={({ pressed }) => [styles.ageRow, { opacity: pressed ? 0.7 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] }]}>
+                  <View
+                    style={[
+                      styles.ageBox,
+                      { borderColor: ageOk ? theme.accent : theme.dividerStrong, backgroundColor: ageOk ? theme.accent : theme.surface },
+                    ]}>
+                    {ageOk && <CheckIcon size={13} color="#fff" strokeWidth={3} />}
+                  </View>
+                  <Text style={[styles.ageLabel, { color: theme.text }]}>{t('login.age13')}</Text>
+                </Pressable>
+              )}
             </View>
           )}
 
@@ -345,6 +371,8 @@ export default function LoginScreen() {
                 )}
               </Pressable>
 
+              {mode === 'signIn' && <Text style={[styles.ageNotice, { color: theme.textTertiary }]}>{t('login.age13Notice')}</Text>}
+
               {SHOW_APPLE_SIGN_IN && (
                 <Pressable
                   onPress={() => {}}
@@ -384,6 +412,10 @@ const styles = StyleSheet.create({
   input: { fontSize: Typography.heading, fontWeight: '400' },
   toggleText: { fontSize: Typography.body, fontWeight: '600', fontFamily: Fonts[600] },
   hint: { fontSize: Typography.body, marginHorizontal: 4, marginTop: -2 },
+  ageRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 4, marginTop: 4, alignSelf: 'flex-start' },
+  ageBox: { width: 22, height: 22, borderRadius: 7, borderWidth: 1.6, alignItems: 'center', justifyContent: 'center' },
+  ageLabel: { fontSize: Typography.body },
+  ageNotice: { fontSize: Typography.label, textAlign: 'center', marginTop: 10 },
   error: { fontSize: Typography.body, fontWeight: '600', lineHeight: 19, marginTop: 8, marginHorizontal: 2 },
   errorLink: { minHeight: 44, justifyContent: 'center', marginTop: 2 },
   primaryButton: { height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center', marginTop: 16 },

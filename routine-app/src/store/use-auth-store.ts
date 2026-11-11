@@ -130,7 +130,8 @@ export const useAuthStore = create<AuthState>()((set) => ({
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: name, language: lang() }, emailRedirectTo: `${AUTH_PAGES}/confirmed.html?lang=${lang()}` },
+      // age_13_confirmed: the sign-up form's required "I'm 13 or older" tick (2026-11-11).
+      options: { data: { full_name: name, language: lang(), age_13_confirmed: true }, emailRedirectTo: `${AUTH_PAGES}/confirmed.html?lang=${lang()}` },
     });
     if (error) {
       const emailTaken = error.code === 'user_already_exists' || error.code === 'email_exists';

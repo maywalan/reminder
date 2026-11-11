@@ -27,6 +27,11 @@ export const Colors = {
     accentSoft: '#EAF2FE', // "azure-50" — icon tiles, selected chip fill, active tab pill
     accentLight: '#5AA0F5', // "azure-400" — FAB gradient end only
     accentBorder: '#E0EBFB', // blue-tinted card border — New Plan's Live Activity card only
+    /** Text/icons drawn ON an accent fill (buttons, today circle). White except Mono in dark mode. */
+    onAccent: '#FFFFFF',
+    /** Solid fills that carry onAccent text (buttons, selected day, checks): a shade deep enough for
+     *  4.5:1 white text in BOTH modes; `accent` stays the brighter text/icon colour. 2026-11-11. */
+    accentFill: '#1A72E1',
     success: '#35B978',
     successLive: '#4FC98A', // live dot / running-session pulse
     successSoft: '#ECF7F1',
@@ -59,6 +64,8 @@ export const Colors = {
     accentSoft: 'rgba(27,118,232,0.18)',
     accentLight: '#8FC1FE',
     accentBorder: 'rgba(76,154,251,0.28)',
+    onAccent: '#FFFFFF',
+    accentFill: '#1A72E1',
     success: '#3FCB86',
     successLive: '#4FC98A',
     successSoft: 'rgba(63,203,134,0.14)',
@@ -147,8 +154,17 @@ export const PremiumColors = {
  * at >= 5.9:1, and dark `accent` keeps white text at >= blue's 2.87:1 while standing >= 4.6:1 off
  * the dark surface. Backgrounds, plan colours, widgets and the Live Activity don't follow it.
  */
-export type AccentId = 'blue' | 'indigo' | 'purple' | 'pink' | 'coral' | 'orange' | 'green' | 'teal';
-type AccentTokens = { accent: string; accentStrong: string; accentSoft: string; accentLight: string; accentBorder: string };
+export type AccentId = 'blue' | 'indigo' | 'purple' | 'pink' | 'coral' | 'orange' | 'green' | 'teal' | 'mono';
+type AccentTokens = {
+  accent: string;
+  accentStrong: string;
+  accentSoft: string;
+  accentLight: string;
+  accentBorder: string;
+  /** Only Mono sets it (dark text on its white fill in dark mode); everything else keeps white. */
+  onAccent?: string;
+  accentFill?: string;
+};
 
 const accentSet = (
   light: [accent: string, strong: string, soft: string, lightEnd: string, border: string],
@@ -158,22 +174,128 @@ const accentSet = (
   dark: { accent: dark[0], accentStrong: dark[1], accentSoft: `rgba(${dark[3]},0.18)`, accentLight: dark[2], accentBorder: `rgba(${dark[3]},0.28)` },
 });
 
+/** Same fill both modes: each preset's light accent, darkened just enough for 4.5:1 white text. */
+const withFill = (set: { light: AccentTokens; dark: AccentTokens }, fill: string) => ({
+  light: { ...set.light, accentFill: fill },
+  dark: { ...set.dark, accentFill: fill },
+});
+
 export const AccentThemes: Record<AccentId, { light: AccentTokens; dark: AccentTokens }> = {
   // Blue is the original palette above, kept identical (dark soft/border are tinted from azure-500).
   blue: {
-    light: { accent: '#1B76E8', accentStrong: '#0F5FC4', accentSoft: '#EAF2FE', accentLight: '#5AA0F5', accentBorder: '#E0EBFB' },
-    dark: { accent: '#4C9AFB', accentStrong: '#7FB4FC', accentSoft: 'rgba(27,118,232,0.18)', accentLight: '#8FC1FE', accentBorder: 'rgba(76,154,251,0.28)' },
+    light: { accent: '#1B76E8', accentStrong: '#0F5FC4', accentSoft: '#EAF2FE', accentLight: '#5AA0F5', accentBorder: '#E0EBFB', accentFill: '#1A72E1' },
+    dark: {
+      accent: '#4C9AFB',
+      accentStrong: '#7FB4FC',
+      accentSoft: 'rgba(27,118,232,0.18)',
+      accentLight: '#8FC1FE',
+      accentBorder: 'rgba(76,154,251,0.28)',
+      accentFill: '#1A72E1',
+    },
   },
-  indigo: accentSet(['#4F5BD5', '#3B45B0', '#EEEFFC', '#7C86E6', '#E3E5FA'], ['#7480EE', '#A7AEF7', '#B7BDFA', '116,128,238']),
-  purple: accentSet(['#7B4FE0', '#6238C4', '#F2EDFD', '#9F7DF0', '#E8E0FB'], ['#9B7AF6', '#C4B0FC', '#CDBDFD', '155,122,246']),
-  pink: accentSet(['#D13F7A', '#AE2A60', '#FCEDF3', '#E9739F', '#F8DEE9'], ['#E6609A', '#F6A5C4', '#F8B5CE', '230,96,154']),
-  coral: accentSet(['#D24B42', '#B03C34', '#FCEEED', '#EC7F77', '#F8E0DE'], ['#E5675E', '#F7ACA6', '#F9BAB5', '229,103,94']),
-  orange: accentSet(['#C25A08', '#9C4705', '#FDF1E6', '#E58A3A', '#F8E4D2'], ['#D9781F', '#F8C08A', '#FAC99A', '217,120,31']),
-  green: accentSet(['#1E8A50', '#17703F', '#E9F6EF', '#45B97A', '#D7EEE1'], ['#2E9E62', '#7FDBAA', '#8EE0B5', '46,158,98']),
-  teal: accentSet(['#0E8585', '#0B6A6A', '#E6F5F5', '#3DB3B3', '#D3ECEC'], ['#1C9A9A', '#7AD7D7', '#8ADCDC', '28,154,154']),
+  indigo: withFill(accentSet(['#4F5BD5', '#3B45B0', '#EEEFFC', '#7C86E6', '#E3E5FA'], ['#7480EE', '#A7AEF7', '#B7BDFA', '116,128,238']), '#4F5BD5'),
+  purple: withFill(accentSet(['#7B4FE0', '#6238C4', '#F2EDFD', '#9F7DF0', '#E8E0FB'], ['#9B7AF6', '#C4B0FC', '#CDBDFD', '155,122,246']), '#7B4FE0'),
+  pink: withFill(accentSet(['#D13F7A', '#AE2A60', '#FCEDF3', '#E9739F', '#F8DEE9'], ['#E6609A', '#F6A5C4', '#F8B5CE', '230,96,154']), '#CD3E78'),
+  coral: withFill(accentSet(['#D24B42', '#B03C34', '#FCEEED', '#EC7F77', '#F8E0DE'], ['#E5675E', '#F7ACA6', '#F9BAB5', '229,103,94']), '#CA483F'),
+  orange: withFill(accentSet(['#C25A08', '#9C4705', '#FDF1E6', '#E58A3A', '#F8E4D2'], ['#D9781F', '#F8C08A', '#FAC99A', '217,120,31']), '#BC5708'),
+  green: withFill(accentSet(['#1E8A50', '#17703F', '#E9F6EF', '#45B97A', '#D7EEE1'], ['#2E9E62', '#7FDBAA', '#8EE0B5', '46,158,98']), '#1D844D'),
+  teal: withFill(accentSet(['#0E8585', '#0B6A6A', '#E6F5F5', '#3DB3B3', '#D3ECEC'], ['#1C9A9A', '#7AD7D7', '#8ADCDC', '28,154,154']), '#0E8282'),
+  // Monochrome (2026-11-11): black fills with white text in light mode, white fills with ink text in
+  // dark mode. The one accent whose on-accent colour flips, hence the onAccent token.
+  mono: {
+    // accentStrong (links) is muted so "Edit"/"See all" still read as tappable, not as headings.
+    light: {
+      accent: '#161B26',
+      accentStrong: '#4A5262',
+      accentSoft: '#EDEFF3',
+      accentLight: '#4A5262',
+      accentBorder: '#E1E4EA',
+      onAccent: '#FFFFFF',
+      accentFill: '#161B26',
+    },
+    dark: {
+      accent: '#F2F5FA',
+      accentStrong: '#B4BBC8',
+      accentSoft: 'rgba(242,245,250,0.12)',
+      accentLight: '#C5CBD6',
+      accentBorder: 'rgba(242,245,250,0.22)',
+      onAccent: '#0A1220',
+      accentFill: '#F2F5FA',
+    },
+  },
 };
 export const ACCENT_IDS = Object.keys(AccentThemes) as AccentId[];
 export const DEFAULT_ACCENT: AccentId = 'blue';
+
+/* ---------- Custom accent from a hue (2026-11-11, Theme colour slider) ----------
+ * The user only picks a hue; brightness is chosen here by WCAG contrast so every hue stays as
+ * readable as the presets: light = white text on the accent >= 4.5:1, dark = the accent as text on
+ * the dark card >= 4.7:1 (then white on it is as high as that allows). */
+
+function hslToHex(h: number, s: number, l: number): string {
+  const k = (n: number) => (n + h / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const f = (n: number) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  const hex = (x: number) => Math.round(x * 255).toString(16).padStart(2, '0');
+  return `#${hex(f(0))}${hex(f(8))}${hex(f(4))}`.toUpperCase();
+}
+
+function luminance(hex: string): number {
+  const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+  const [r, g, b] = c.map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function contrast(a: string, b: string): number {
+  const [x, y] = [luminance(a), luminance(b)].sort((m, n) => n - m);
+  return (x + 0.05) / (y + 0.05);
+}
+
+/** Lightest (light mode) or darkest (dark mode) lightness, in 0.005 steps, that still meets `ok`. */
+function pickLightness(h: number, s: number, ok: (hex: string) => boolean, fromLight: boolean): number {
+  for (let i = 0; i <= 200; i++) {
+    const l = fromLight ? 0.6 - i * 0.003 : 0.35 + i * 0.003;
+    if (ok(hslToHex(h, s, l))) return l;
+  }
+  return fromLight ? 0.3 : 0.75;
+}
+
+const rgbOf = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(',');
+
+export function hueAccent(hue: number): { light: AccentTokens; dark: AccentTokens } {
+  const h = ((Math.round(hue) % 360) + 360) % 360;
+  const s = 0.72;
+  const lightL = pickLightness(h, s, (c) => contrast('#FFFFFF', c) >= 4.5, true);
+  const strongL = pickLightness(h, s, (c) => contrast('#FFFFFF', c) >= 6.2, true);
+  const darkL = pickLightness(h, s, (c) => contrast(Colors.dark.surface, c) >= 4.7, false);
+  const darkAccent = hslToHex(h, s, darkL);
+  return {
+    light: {
+      accent: hslToHex(h, s, lightL),
+      accentStrong: hslToHex(h, s, strongL),
+      accentSoft: hslToHex(h, 0.8, 0.955),
+      accentLight: hslToHex(h, s, Math.min(lightL + 0.14, 0.7)),
+      accentBorder: hslToHex(h, 0.6, 0.915),
+      accentFill: hslToHex(h, s, lightL),
+    },
+    dark: {
+      accent: darkAccent,
+      accentStrong: hslToHex(h, 0.85, Math.min(darkL + 0.17, 0.85)),
+      accentSoft: `rgba(${rgbOf(darkAccent)},0.18)`,
+      accentLight: hslToHex(h, 0.85, Math.min(darkL + 0.2, 0.88)),
+      accentBorder: `rgba(${rgbOf(darkAccent)},0.28)`,
+      accentFill: hslToHex(h, s, lightL),
+    },
+  };
+}
+
+/** A saved accent: a preset id, or `hue:<0-359>` for a custom slider colour. */
+export type AccentKey = AccentId | `hue:${number}`;
+
+export function accentTokens(key: AccentKey, scheme: 'light' | 'dark'): AccentTokens {
+  if (key.startsWith('hue:')) return hueAccent(Number(key.slice(4)))[scheme];
+  return AccentThemes[key as AccentId][scheme];
+}
 
 export type PremiumPalette = (typeof PremiumColors)['light'] | (typeof PremiumColors)['dark'];
 

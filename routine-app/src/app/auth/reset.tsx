@@ -137,8 +137,8 @@ export default function ResetPasswordScreen() {
             onPress={handleSave}
             disabled={phase === 'saving'}
             accessibilityRole="button"
-            style={({ pressed }) => [styles.primaryButton, { backgroundColor: theme.accent, opacity: pressed ? 0.85 : 1 }]}>
-            {phase === 'saving' ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryButtonText}>{t('reset.save')}</Text>}
+            style={({ pressed }) => [styles.primaryButton, { backgroundColor: theme.accentFill, opacity: pressed ? 0.85 : 1 }]}>
+            {phase === 'saving' ? <ActivityIndicator color={theme.onAccent} /> : <Text style={[styles.primaryButtonText, { color: theme.onAccent }]}>{t('reset.save')}</Text>}
           </Pressable>
         )}
 
@@ -146,8 +146,8 @@ export default function ResetPasswordScreen() {
           <Pressable
             onPress={() => router.replace('/')}
             accessibilityRole="button"
-            style={({ pressed }) => [styles.primaryButton, { backgroundColor: theme.accent, opacity: pressed ? 0.85 : 1 }]}>
-            <Text style={styles.primaryButtonText}>{t('reset.continue')}</Text>
+            style={({ pressed }) => [styles.primaryButton, { backgroundColor: theme.accentFill, opacity: pressed ? 0.85 : 1 }]}>
+            <Text style={[styles.primaryButtonText, { color: theme.onAccent }]}>{t('reset.continue')}</Text>
           </Pressable>
         )}
 
@@ -155,8 +155,8 @@ export default function ResetPasswordScreen() {
           <Pressable
             onPress={() => router.replace('/login')}
             accessibilityRole="button"
-            style={({ pressed }) => [styles.primaryButton, { backgroundColor: theme.accent, opacity: pressed ? 0.85 : 1 }]}>
-            <Text style={styles.primaryButtonText}>{t('login.backToSignInButton')}</Text>
+            style={({ pressed }) => [styles.primaryButton, { backgroundColor: theme.accentFill, opacity: pressed ? 0.85 : 1 }]}>
+            <Text style={[styles.primaryButtonText, { color: theme.onAccent }]}>{t('login.backToSignInButton')}</Text>
           </Pressable>
         )}
       </View>

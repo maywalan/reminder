@@ -144,7 +144,7 @@ export function WeekStrip({ weekStart, weekOffset, selectedISO, todayISO, marked
             // Only today is azure, ringed when another day is picked; weekends read lighter so they
             // can't be mistaken for it (critique, 2026-10-28 — replaces azure weekends from 2026-10-25).
             const weekend = d.getDay() === 0 || d.getDay() === 6;
-            const numFg = sel ? '#fff' : today ? k.azure : weekend ? k.ink50 : k.ink;
+            const numFg = sel ? k.onAzure : today ? k.azure : weekend ? k.ink50 : k.ink;
             return (
               <BouncyPressable
                 key={iso}
@@ -160,7 +160,7 @@ export function WeekStrip({ weekStart, weekOffset, selectedISO, todayISO, marked
                   {weekdayLetter(d.getDay())}
                 </Text>
                 <View style={styles.numWrap}>
-                  {sel && <View style={[styles.circle, { backgroundColor: k.azure }]} />}
+                  {sel && <View style={[styles.circle, { backgroundColor: k.azureFill }]} />}
                   {today && !sel && <View style={[styles.circle, styles.todayRing, { borderColor: k.azure }]} />}
                   <Text style={[t.dayNum, { color: numFg }]}>{d.getDate()}</Text>
                 </View>

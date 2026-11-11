@@ -1,8 +1,9 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Constants from 'expo-constants';
+import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useScrollToTop } from '@react-navigation/native';
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -36,8 +37,9 @@ import { ProfileAvatar } from '@/components/profile-avatar';
 import { UpgradeBanner } from '@/components/upgrade-banner';
 import { WidgetPreview } from '@/components/widget-preview';
 import { PRIVACY_URL, termsUrl } from '@/constants/legal';
-import { ACCENT_IDS, AccentThemes, Radii, RowMinHeight, Spacing, SwatchColors, Typography } from '@/constants/theme';
+import { ACCENT_IDS, AccentThemes, DEFAULT_ACCENT, hueAccent, Radii, type AccentId, RowMinHeight, Spacing, SwatchColors, Typography } from '@/constants/theme';
 import { BouncyPressable } from '@/components/bouncy-pressable';
+import { HueSlider } from '@/components/hue-slider';
 import { useAccentId, useEffectiveScheme, useTheme } from '@/hooks/use-theme';
 import { useNotificationPermission } from '@/hooks/use-notification-permission';
 import { useToast } from '@/hooks/use-toast';
@@ -191,6 +193,25 @@ export default function ProfileScreen() {
   const [appearanceOpen, setAppearanceOpen] = useState(false);
   const [accentOpen, setAccentOpen] = useState(false);
   const accentId = useAccentId();
+  const isCustomAccent = accentId.startsWith('hue:');
+  // Slider position: follows drags instantly; the app recolours when the finger lifts.
+  const [customHue, setCustomHue] = useState(() => settings.accentHue ?? 210);
+  const commitCustomHue = useCallback((hue: number) => updateSettings({ accentTheme: 'custom', accentHue: hue }), [updateSettings]);
+  // Picks preview live across the app; Cancel (or swiping the sheet away) puts back what was there.
+  const accentBefore = useRef<Pick<typeof settings, 'accentTheme' | 'accentHue'>>({});
+  const openAccent = () => {
+    accentBefore.current = { accentTheme: settings.accentTheme, accentHue: settings.accentHue };
+    setCustomHue(settings.accentHue ?? 210);
+    setAccentOpen(true);
+  };
+  const cancelAccent = () => {
+    updateSettings(accentBefore.current);
+    setAccentOpen(false);
+  };
+  const saveAccent = () => {
+    Haptics.selectionAsync().catch(() => {});
+    setAccentOpen(false);
+  };
   const [languageOpen, setLanguageOpen] = useState(false);
   const [notifOptionsOpen, setNotifOptionsOpen] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
@@ -291,13 +312,13 @@ export default function ProfileScreen() {
             <Text style={[styles.rowLabel, { color: theme.text }]}>{t('profile.appearance')}</Text>
             <Text style={[styles.rowValue, { color: theme.textTertiary }]}>{t(THEME_LABEL[settings.themeMode])}</Text>
           </Pressable>
-          <Pressable onPress={() => setAccentOpen(true)} style={[styles.row, styles.rowBorder, { borderColor: theme.divider }]}>
+          <Pressable onPress={openAccent} style={[styles.row, styles.rowBorder, { borderColor: theme.divider }]}>
             <View style={[styles.rowIcon, { backgroundColor: theme.accentSoft }]}>
               <PaletteIcon size={16} color={theme.accent} />
             </View>
             <Text style={[styles.rowLabel, { color: theme.text }]}>{t('profile.accent')}</Text>
             <View style={[styles.accentDot, { backgroundColor: theme.accent }]} />
-            <Text style={[styles.rowValue, { color: theme.textTertiary }]}>{t(`accent.${accentId}`)}</Text>
+            <Text style={[styles.rowValue, { color: theme.textTertiary }]}>{t(isCustomAccent ? 'accent.custom' : `accent.${accentId as AccentId}`)}</Text>
           </Pressable>
           <Pressable onPress={() => setLanguageOpen(true)} style={[styles.row, styles.rowBorder, { borderColor: theme.divider }]}>
             <View style={[styles.rowIcon, { backgroundColor: theme.accentSoft }]}>
@@ -465,22 +486,55 @@ export default function ProfileScreen() {
       </BottomSheet>
 
       {/* Free colour theme (2026-11-11). Applies live so the screen behind previews it; the sheet stays open. */}
-      <BottomSheet visible={accentOpen} onClose={() => setAccentOpen(false)} title={t('profile.accent')}>
-        <View style={[styles.group, styles.accentGrid, { backgroundColor: theme.surface, borderColor: theme.cardBorder, marginTop: 10 }]}>
+      <BottomSheet
+        visible={accentOpen}
+        // What you see is what you keep: tapping outside saves; only Cancel reverts.
+        onClose={saveAccent}
+        title={t('profile.accent')}
+        left={
+          <Pressable onPress={cancelAccent} hitSlop={8}>
+            <Text style={{ color: theme.textSecondary, fontSize: Typography.rowLabel, fontWeight: '600' }}>{t('common.cancel')}</Text>
+          </Pressable>
+        }
+        right={
+          <Pressable onPress={saveAccent} hitSlop={8}>
+            <Text style={{ color: theme.accentStrong, fontSize: Typography.rowLabel, fontWeight: '700' }}>{t('common.save')}</Text>
+          </Pressable>
+        }>
+        {/* Preview of the pick on the real pieces it recolours (the app behind is mostly covered). */}
+        <View
+          style={[styles.group, styles.accentPreview, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}
+          accessible={false}
+          importantForAccessibility="no-hide-descendants">
+          <View style={[styles.previewDay, { backgroundColor: theme.accentFill }]}>
+            <Text style={[styles.previewDayText, { color: theme.onAccent }]}>{new Date().getDate()}</Text>
+          </View>
+          <View style={[styles.previewPill, { backgroundColor: theme.accentFill }]}>
+            <Text style={[styles.previewPillText, { color: theme.onAccent }]}>{t('home.today')}</Text>
+          </View>
+          <Text style={[styles.previewLink, { color: theme.accentStrong }]}>{t('home.seeAll')}</Text>
+          <View style={[styles.previewSoft, { backgroundColor: theme.accentSoft }]}>
+            <PaletteIcon size={16} color={theme.accent} />
+          </View>
+        </View>
+        <View style={[styles.group, styles.accentGrid, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
           {ACCENT_IDS.map((id) => {
             const selected = id === accentId;
             const swatch = AccentThemes[id][scheme].accent;
             return (
               <BouncyPressable
                 key={id}
-                onPress={() => updateSettings({ accentTheme: id })}
+                onPress={() => {
+                  Haptics.selectionAsync().catch(() => {});
+                  updateSettings({ accentTheme: id });
+                }}
                 accessibilityRole="radio"
                 accessibilityState={{ selected }}
                 accessibilityLabel={t(`accent.${id}`)}
                 style={styles.accentCell}>
                 <View style={[styles.accentRing, { borderColor: selected ? swatch : 'transparent' }]}>
                   <View style={[styles.accentSwatch, { backgroundColor: swatch }]}>
-                    {selected && <CheckIcon size={16} color="#fff" strokeWidth={3} />}
+                    {selected && <CheckIcon size={16} color={AccentThemes[id][scheme].onAccent ?? '#fff'} strokeWidth={3} />}
                   </View>
                 </View>
                 <Text numberOfLines={1} style={[styles.accentName, { color: selected ? theme.text : theme.textSecondary }]}>
@@ -490,6 +544,41 @@ export default function ProfileScreen() {
             );
           })}
         </View>
+        <View style={[styles.group, styles.customAccent, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
+          <BouncyPressable
+            onPress={() => commitCustomHue(customHue)}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: isCustomAccent }}
+            accessibilityLabel={t('accent.custom')}
+            style={styles.customHead}>
+            <View style={[styles.accentRing, styles.customRing, { borderColor: isCustomAccent ? hueAccent(customHue)[scheme].accent : 'transparent' }]}>
+              <View style={[styles.accentSwatch, styles.customSwatch, { backgroundColor: hueAccent(customHue)[scheme].accent }]}>
+                {isCustomAccent && <CheckIcon size={14} color="#fff" strokeWidth={3} />}
+              </View>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.rowLabel, { color: theme.text }]}>{t('accent.custom')}</Text>
+              <Text style={[styles.accentName, { color: theme.textTertiary, fontWeight: '500' }]}>{t('accent.customHint')}</Text>
+            </View>
+          </BouncyPressable>
+          <HueSlider hue={customHue} scheme={scheme} onChange={setCustomHue} onCommit={commitCustomHue} accessibilityLabel={t('accent.custom')} />
+        </View>
+        {/* Back to Tickle blue and a fresh slider. Like a swatch tap it previews; Save/Cancel still apply. */}
+        <Pressable
+          onPress={() => {
+            Haptics.selectionAsync().catch(() => {});
+            updateSettings({ accentTheme: undefined, accentHue: undefined });
+            setCustomHue(210);
+          }}
+          disabled={accentId === DEFAULT_ACCENT}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: accentId === DEFAULT_ACCENT }}
+          hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
+          style={({ pressed }) => [styles.accentReset, { opacity: accentId === DEFAULT_ACCENT ? 0.4 : pressed ? 0.6 : 1 }]}>
+          <Text style={[styles.accentResetText, { color: accentId === DEFAULT_ACCENT ? theme.textTertiary : theme.accentStrong }]}>
+            {t('accent.reset')}
+          </Text>
+        </Pressable>
         <Text style={[styles.accentNote, { color: theme.textTertiary }]}>{t('profile.accentNote')}</Text>
       </BottomSheet>
 
@@ -666,11 +755,27 @@ const styles = StyleSheet.create({
   rowValue: { fontSize: Typography.rowValue, marginRight: 4 },
   accentDot: { width: 10, height: 10, borderRadius: 5 },
   accentGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingVertical: 14, paddingHorizontal: 6, rowGap: 14 },
-  accentCell: { width: '25%', alignItems: 'center', gap: 6 },
+  accentCell: { width: '33.33%', alignItems: 'center', gap: 6 },
   accentRing: { width: 52, height: 52, borderRadius: 26, borderWidth: 2.5, alignItems: 'center', justifyContent: 'center' },
   accentSwatch: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   accentName: { fontSize: Typography.label, fontWeight: '600' },
-  accentNote: { fontSize: Typography.label, textAlign: 'center', marginTop: 12 },
+  // Visually tight under the card; hitSlop (not height) keeps the 44pt tap target.
+  // Centred between the Custom card and the note: the card's own marginBottom (cardGap) above,
+  // the same cardGap below.
+  accentReset: { alignSelf: 'center', paddingVertical: 4, paddingHorizontal: 12 },
+  accentResetText: { fontSize: Typography.rowValue, fontWeight: '700' },
+  accentPreview: { marginTop: 10, marginBottom: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-evenly', paddingVertical: 12 },
+  previewDay: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
+  previewDayText: { fontSize: Typography.rowValue, fontWeight: '700' },
+  previewPill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 },
+  previewPillText: { fontSize: Typography.label, fontWeight: '700' },
+  previewLink: { fontSize: Typography.rowValue, fontWeight: '700' },
+  previewSoft: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  customAccent: { marginTop: 12, paddingHorizontal: 14, paddingTop: 12, paddingBottom: 6 },
+  customHead: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  customRing: { width: 40, height: 40, borderRadius: 20 },
+  customSwatch: { width: 30, height: 30, borderRadius: 15 },
+  accentNote: { fontSize: Typography.label, textAlign: 'center', marginTop: Spacing.cardGap },
   privacyText: { fontSize: Typography.rowValue, lineHeight: 20, marginTop: 12 },
   clearDataBtn: { flexDirection: 'row', gap: 8, padding: 14, borderRadius: Radii.button, borderWidth: 1, alignItems: 'center', justifyContent: 'center', marginTop: 16 },
   deleteAccountBtn: { minHeight: RowMinHeight, alignItems: 'center', justifyContent: 'center', marginTop: 6 },

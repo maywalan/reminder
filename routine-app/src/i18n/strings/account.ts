@@ -33,11 +33,14 @@ export default {
   'login.showPassword': { en: 'Show password', th: 'แสดงรหัสผ่าน' },
   'login.hidePassword': { en: 'Hide password', th: 'ซ่อนรหัสผ่าน' },
   'login.age13': {
-    en: 'By checking this box, you confirm you have reached the age of 13 years old (or the age of legal majority where you live)',
-    th: 'เมื่อติ๊กช่องนี้ ถือว่าคุณยืนยันว่ามีอายุครบ 13 ปีแล้ว (หรือบรรลุนิติภาวะตามกฎหมายของประเทศที่คุณอยู่)',
+    en: "I confirm I'm at least 13 years old, or the minimum age required where I live.",
+    th: 'ฉันยืนยันว่ามีอายุอย่างน้อย 13 ปี หรือถึงเกณฑ์อายุขั้นต่ำที่กฎหมายในประเทศของฉันกำหนด',
   },
-  'login.age13Required': { en: "Please confirm you're 13 or older.", th: 'กรุณายืนยันว่าคุณอายุ 13 ปีขึ้นไป' },
-  'login.age13Notice': { en: "By continuing, you confirm you're 13 or older.", th: 'เมื่อดำเนินการต่อ ถือว่าคุณยืนยันว่าอายุ 13 ปีขึ้นไป' },
+  'login.age13Required': { en: 'Please confirm your age to create an account.', th: 'กรุณายืนยันอายุก่อนสร้างบัญชี' },
+  'login.age13Notice': {
+    en: "By continuing, you confirm you're at least 13 years old, or the minimum age required where you live.",
+    th: 'เมื่อดำเนินการต่อ ถือว่าคุณยืนยันว่ามีอายุอย่างน้อย 13 ปี หรือถึงเกณฑ์อายุขั้นต่ำที่กฎหมายในประเทศของคุณกำหนด',
+  },
   'login.passwordHint': { en: 'At least 6 characters.', th: 'อย่างน้อย 6 ตัวอักษร' },
   'login.signIn': { en: 'Sign In', th: 'เข้าสู่ระบบ' },
   'login.createAccount': { en: 'Create Account', th: 'สร้างบัญชี' },

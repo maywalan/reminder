@@ -32,7 +32,10 @@ export default {
   'login.hide': { en: 'Hide', th: 'ซ่อน' },
   'login.showPassword': { en: 'Show password', th: 'แสดงรหัสผ่าน' },
   'login.hidePassword': { en: 'Hide password', th: 'ซ่อนรหัสผ่าน' },
-  'login.age13': { en: "I'm 13 or older", th: 'ฉันอายุ 13 ปีขึ้นไป' },
+  'login.age13': {
+    en: 'By checking this box, you confirm you have reached the age of 13 years old (or the age of legal majority where you live)',
+    th: 'เมื่อติ๊กช่องนี้ ถือว่าคุณยืนยันว่ามีอายุครบ 13 ปีแล้ว (หรือบรรลุนิติภาวะตามกฎหมายของประเทศที่คุณอยู่)',
+  },
   'login.age13Required': { en: "Please confirm you're 13 or older.", th: 'กรุณายืนยันว่าคุณอายุ 13 ปีขึ้นไป' },
   'login.age13Notice': { en: "By continuing, you confirm you're 13 or older.", th: 'เมื่อดำเนินการต่อ ถือว่าคุณยืนยันว่าอายุ 13 ปีขึ้นไป' },
   'login.passwordHint': { en: 'At least 6 characters.', th: 'อย่างน้อย 6 ตัวอักษร' },

@@ -412,9 +412,10 @@ const styles = StyleSheet.create({
   input: { fontSize: Typography.heading, fontWeight: '400' },
   toggleText: { fontSize: Typography.body, fontWeight: '600', fontFamily: Fonts[600] },
   hint: { fontSize: Typography.body, marginHorizontal: 4, marginTop: -2 },
-  ageRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 4, marginTop: 4, alignSelf: 'flex-start' },
-  ageBox: { width: 22, height: 22, borderRadius: 7, borderWidth: 1.6, alignItems: 'center', justifyContent: 'center' },
-  ageLabel: { fontSize: Typography.body },
+  // Box sits on the first line; the long consent text wraps beside it (wording from the user, 2026-11-12).
+  ageRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginHorizontal: 4, marginTop: 4 },
+  ageBox: { width: 22, height: 22, borderRadius: 7, borderWidth: 1.6, alignItems: 'center', justifyContent: 'center', marginTop: 1 },
+  ageLabel: { flex: 1, fontSize: Typography.body, lineHeight: Typography.body * 1.45 },
   ageNotice: { fontSize: Typography.label, textAlign: 'center', marginTop: 10 },
   error: { fontSize: Typography.body, fontWeight: '600', lineHeight: 19, marginTop: 8, marginHorizontal: 2 },
   errorLink: { minHeight: 44, justifyContent: 'center', marginTop: 2 },

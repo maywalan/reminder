@@ -21,8 +21,8 @@ import {
   type AlarmData,
 } from '@/lib/notifications';
 
-/** In-app rings stop on their own after this, like the 20 s notification sound does. */
-const MAX_RING_MS = 60_000;
+/** In-app rings stop on their own after this, matching the 8 s notification sounds (user, 2026-11-12). */
+const MAX_RING_MS = 8_000;
 /** Ignore notification taps older than this (e.g. a response iOS kept from yesterday). */
 const MAX_RESPONSE_AGE_MS = 30 * 60_000;
 
@@ -104,7 +104,7 @@ export function AlarmRinger() {
       .then(() => {
         if (cancelled) return;
         player.replace(ALARM_SOUND_ASSET[ring.data.sound]);
-        player.loop = true;
+        player.loop = false;
         player.seekTo(0);
         player.play();
       });

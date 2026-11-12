@@ -2,7 +2,7 @@ import type { StringKey } from '@/i18n/strings';
 
 /**
  * Tickle's own alarm sounds (2026-11-11). Apps can't use the iPhone's built-in ringtones, so these
- * ship in the app: synthesised locally (no downloads, no licences), 20 s IMA4 CAF each, under
+ * ship in the app: synthesised locally (no downloads, no licences), 8 s IMA4 CAF each (shortened from 20 s, user 2026-11-12), under
  * iOS's 30 s notification-sound limit. Bundled for notifications via the expo-notifications
  * plugin's `sounds` list in app.json — a new sound needs a native build, not a quick update.
  */

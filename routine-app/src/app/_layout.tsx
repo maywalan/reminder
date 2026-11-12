@@ -12,6 +12,7 @@ import { Colors, setFontScale } from '@/constants/theme';
 import { useEffectiveScheme } from '@/hooks/use-theme';
 import { useLiveActivitySync } from '@/hooks/use-live-activity-sync';
 import { useNotificationsSync } from '@/hooks/use-notifications-sync';
+import { AlarmRinger } from '@/components/alarm-ringer';
 import { useOtaUpdates } from '@/hooks/use-ota-updates';
 import { useSubscriptionSync } from '@/hooks/use-subscription-sync';
 import { useWidgetSync } from '@/hooks/use-widget-sync';
@@ -142,6 +143,7 @@ export default function RootLayout() {
           <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />
           <Stack.Screen name="subscription" options={{ animation: 'slide_from_right' }} />
         </Stack>
+        <AlarmRinger />
       </ThemeProvider>
     </GestureHandlerRootView>
   );

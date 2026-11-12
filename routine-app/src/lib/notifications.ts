@@ -1,6 +1,8 @@
 import * as Notifications from 'expo-notifications';
 
-import { alarmSoundFile, DEFAULT_ALARM_SOUND } from '@/constants/alarm-sounds';
+import { AppState } from 'react-native';
+
+import { alarmSoundFile, DEFAULT_ALARM_SOUND, isAlarmSound, type AlarmSoundId } from '@/constants/alarm-sounds';
 import { t } from '@/i18n';
 import type { Plan, Settings } from '@/store/types';
 import { usePlannerStore } from '@/store/use-planner-store';
@@ -8,15 +10,78 @@ import { planDateTime, planEndDateTime } from '@/utils/countdown';
 import { fromISO, toISO } from '@/utils/dates';
 
 Notifications.setNotificationHandler({
-  handleNotification: async (n) => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    // An alarm the user turned on for this plan always rings, even with app sounds off.
-    shouldPlaySound: n.request.content.data?.alarm === true || usePlannerStore.getState().settings.soundEnabled,
+  handleNotification: async (n) => {
+    const alarm = n.request.content.data?.alarm === true;
+    // With Tickle open, an alarm shows the in-app ringing screen (AlarmRinger) instead of a banner
+    // whose sound only stops when swiped away (tester feedback, 2026-11-12).
+    const inApp = alarm && AppState.currentState === 'active';
+    return {
+      shouldShowBanner: !inApp,
+      shouldShowList: true,
+      // An alarm the user turned on for this plan always rings, even with app sounds off.
+      shouldPlaySound: !inApp && (alarm || usePlannerStore.getState().settings.soundEnabled),
     // Tickle never sets a badge count, so leave the icon alone.
     shouldSetBadge: false,
-  }),
+    };
+  },
 });
+
+/** Notification category for alarms: Stop / Snooze buttons (press and hold the notification). */
+export const ALARM_CATEGORY = 'tickle-alarm';
+export const ALARM_ACTION_STOP = 'alarm-stop';
+export const ALARM_ACTION_SNOOZE = 'alarm-snooze';
+export const ALARM_SNOOZE_MINUTES = 5;
+const SNOOZE_PREFIX = 'alarm-snooze:';
+
+/** Data carried by every alarm notification, enough to rebuild it for a snooze. */
+export interface AlarmData {
+  alarm: true;
+  planId: string;
+  kind: 'start' | 'end';
+  sound: AlarmSoundId;
+}
+
+export function alarmDataOf(data: Record<string, unknown> | null | undefined): AlarmData | null {
+  if (!data || data.alarm !== true || typeof data.planId !== 'string') return null;
+  return {
+    alarm: true,
+    planId: data.planId,
+    kind: data.kind === 'end' ? 'end' : 'start',
+    sound: typeof data.sound === 'string' && isAlarmSound(data.sound) ? data.sound : DEFAULT_ALARM_SOUND,
+  };
+}
+
+/** Registers the alarm buttons in the current language. Safe to call repeatedly. */
+export async function registerAlarmCategory() {
+  await Notifications.setNotificationCategoryAsync(ALARM_CATEGORY, [
+    // Stop needs no app code: dismissing the notification is what silences it.
+    { identifier: ALARM_ACTION_STOP, buttonTitle: t('alarm.stop'), options: { opensAppToForeground: false } },
+    // Snooze opens Tickle so it can schedule the next ring reliably (background wake-ups aren't guaranteed).
+    { identifier: ALARM_ACTION_SNOOZE, buttonTitle: t('alarm.snoozeFor', { n: ALARM_SNOOZE_MINUTES }), options: { opensAppToForeground: true } },
+  ]).catch(() => {});
+}
+
+function alarmContent(title: string, data: AlarmData): Notifications.NotificationContentInput {
+  return {
+    title,
+    body: t(data.kind === 'start' ? 'notif.alarmStart' : 'notif.alarmEnd'),
+    // Bundled sound (app.json expo-notifications `sounds`); rings even with app sounds off.
+    sound: alarmSoundFile(data.sound),
+    // No interruptionLevel 'timeSensitive' yet: it needs the Time Sensitive capability on the
+    // App ID, which build 6 failed without (2026-11-11). Add back with the AlarmKit work.
+    categoryIdentifier: ALARM_CATEGORY,
+    data: { ...data },
+  };
+}
+
+/** Rings again in ALARM_SNOOZE_MINUTES. Kept outside the plan-alert prefix so a reschedule doesn't wipe it. */
+export async function snoozeAlarm(title: string, data: AlarmData) {
+  await Notifications.scheduleNotificationAsync({
+    identifier: `${SNOOZE_PREFIX}${data.planId}:${data.kind}`,
+    content: alarmContent(title, data),
+    trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: ALARM_SNOOZE_MINUTES * 60 },
+  });
+}
 
 const PLAN_ALERT_PREFIX = 'plan-alert:';
 const RECAP_IDENTIFIER = 'daily-recap';
@@ -146,15 +211,7 @@ export async function rescheduleAllPlanAlerts(plans: Plan[], sound = true) {
       Notifications.scheduleNotificationAsync({
         identifier: `${PLAN_ALERT_PREFIX}${job.plan.id}:${job.alarm ? `alarm-${job.alarm}` : job.offsetMinutes}`,
         content: job.alarm
-          ? {
-              title: job.plan.name,
-              body: t(job.alarm === 'start' ? 'notif.alarmStart' : 'notif.alarmEnd'),
-              // Bundled sound (app.json expo-notifications `sounds`); rings even with app sounds off.
-              sound: alarmSoundFile(job.plan.alarmSound ?? DEFAULT_ALARM_SOUND),
-              // No interruptionLevel 'timeSensitive' yet: it needs the Time Sensitive capability on the
-              // App ID, which build 6 failed without (2026-11-11). Add back with the AlarmKit work.
-              data: { alarm: true, planId: job.plan.id },
-            }
+          ? alarmContent(job.plan.name, { alarm: true, planId: job.plan.id, kind: job.alarm, sound: job.plan.alarmSound ?? DEFAULT_ALARM_SOUND })
           : { title: job.plan.name, body: alertBody(job.plan, job.offsetMinutes), sound },
         trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: job.triggerDate },
       })

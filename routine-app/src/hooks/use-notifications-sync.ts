@@ -5,6 +5,7 @@ import {
   cancelAllPlanAlerts,
   cancelDailyRecap,
   getNotificationPermissionStatus,
+  registerAlarmCategory,
   refreshDailyRecap,
   rescheduleAllPlanAlerts,
 } from '@/lib/notifications';
@@ -22,6 +23,8 @@ export function useNotificationsSync() {
   useEffect(() => {
     async function sync() {
       const { settings, plans } = usePlannerStore.getState();
+      // Stop / Snooze buttons on alarm notifications, re-registered so they follow the language.
+      await registerAlarmCategory();
       if (!settings.notificationsEnabled) {
         await cancelAllPlanAlerts();
         await cancelDailyRecap();

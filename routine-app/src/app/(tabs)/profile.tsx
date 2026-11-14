@@ -81,6 +81,7 @@ export default function ProfileScreen() {
   const subscriptionTestOverride = usePlannerStore((s) => s.subscriptionTestOverride);
   const setSubscriptionTestOverride = usePlannerStore((s) => s.setSubscriptionTestOverride);
   const setMockSubscriptionState = usePlannerStore((s) => s.setMockSubscriptionState);
+  const setSubscriptionDetails = usePlannerStore((s) => s.setSubscriptionDetails);
   const authUser = useAuthStore((s) => s.user);
   const showTestTools = useTestToolsAllowed();
   const signOut = useAuthStore((s) => s.signOut);
@@ -454,6 +455,8 @@ export default function ProfileScreen() {
               key={s}
               onPress={() => {
                 setSubscriptionTestOverride(true);
+                // "Ending" needs an end date for its reminder: pretend it runs out in 3 days.
+                if (s === 'ending') setSubscriptionDetails({ productId: 'test', periodStart: Date.now(), expiresAt: Date.now() + 3 * 86_400_000 });
                 setMockSubscriptionState(s);
                 setSubscriptionStateOpen(false);
               }}

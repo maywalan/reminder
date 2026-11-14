@@ -2,6 +2,7 @@ import { Tabs } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
+import { PremiumNotice } from '@/components/premium-notice';
 import { AddPlanFab, TabBar } from '@/components/tab-bar';
 import { t } from '@/i18n';
 
@@ -25,6 +26,7 @@ export default function TabsLayout() {
         <Tabs.Screen name="profile" options={{ title: t('tab.profile') }} />
       </Tabs>
       {FAB_ROUTES.has(route) && <AddPlanFab barHeight={barHeight} />}
+      <PremiumNotice />
     </View>
   );
 }

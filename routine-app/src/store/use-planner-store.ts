@@ -70,6 +70,12 @@ interface PlannerState {
   /** Set from Profile > Testing > Subscription State: StoreKit refreshes leave the state alone. */
   subscriptionTestOverride: boolean;
   setSubscriptionTestOverride: (on: boolean) => void;
+  /** Premium just went back to Free: show the one-time "Premium has ended" note (2026-11-14). */
+  premiumEndedPending: boolean;
+  dismissPremiumEnded: () => void;
+  /** Last "Premium ends in N days" reminder shown, as `${expiresAt}:${bucket}` (buckets 7, 3, 1 days). */
+  premiumEndingNoticeKey: string | null;
+  setPremiumEndingNoticeKey: (key: string) => void;
   /** When Profile's upgrade banner was last dismissed (epoch ms) — it stays hidden for 7 days. */
   upgradeBannerDismissedAt: number | null;
   dismissUpgradeBanner: () => void;
@@ -136,13 +142,23 @@ export const usePlannerStore = create<PlannerState>()(
       subscriptionDetails: null,
       subscriptionTestOverride: false,
       upgradeBannerDismissedAt: null,
+      premiumEndedPending: false,
+      premiumEndingNoticeKey: null,
       homeGestureHintSeen: false,
 
       ensureFirstUsedAt: () => {
         if (!get().firstUsedAt) set({ firstUsedAt: toISO(new Date()) });
       },
 
-      setMockSubscriptionState: (state) => set({ mockSubscriptionState: state }),
+      // Premium → Free (expired, or a cancelled plan running out) queues the one-time note; becoming
+      // Premium again clears it. Hydration doesn't go through here, so app launches never trigger it.
+      setMockSubscriptionState: (state) =>
+        set((s) => ({
+          mockSubscriptionState: state,
+          premiumEndedPending: state !== 'free' ? false : s.mockSubscriptionState !== 'free' ? true : s.premiumEndedPending,
+        })),
+      dismissPremiumEnded: () => set({ premiumEndedPending: false }),
+      setPremiumEndingNoticeKey: (key) => set({ premiumEndingNoticeKey: key }),
 
       setSubscriptionDetails: (details) => set({ subscriptionDetails: details }),
 
@@ -373,6 +389,8 @@ export const usePlannerStore = create<PlannerState>()(
         subscriptionDetails: state.subscriptionDetails,
         subscriptionTestOverride: state.subscriptionTestOverride,
         upgradeBannerDismissedAt: state.upgradeBannerDismissedAt,
+        premiumEndedPending: state.premiumEndedPending,
+        premiumEndingNoticeKey: state.premiumEndingNoticeKey,
         homeGestureHintSeen: state.homeGestureHintSeen,
       }),
       version: 4,

@@ -12,3 +12,6 @@ design_handoff_tickle_app_icon/
 design_handoff_tickle_draft2/
 icon-tickle/
 *[Gg]uidebook*
+
+# Private marketing context for Claude (kept local, not public)
+MARKETING_CONTEXT.md

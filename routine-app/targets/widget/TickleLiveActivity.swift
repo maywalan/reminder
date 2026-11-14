@@ -12,8 +12,32 @@ import WidgetKit
 // activity with `context.isStale == true` once it passes. Upcoming → stale means the task has
 // started; live → stale means it has run past its end.
 
-private let ink = Color(hex: "#10203A")
 private let overtimeRed = Color(hex: "#C24A57")
+
+/// Light/dark colours (2026-11-14 redesign, user's mock-up). The Lock Screen follows the phone's
+/// appearance; the Dynamic Island is always black, so it always uses the dark set.
+private struct LAPalette {
+  let text: Color
+  let muted: Color
+  let countdown: Color
+  let bar: Color
+  let track: Color
+  let background: Color
+  let pillBg: Color
+  let pillBorder: Color
+
+  static func of(_ scheme: ColorScheme) -> LAPalette {
+    scheme == .dark
+      ? LAPalette(
+        text: .white, muted: Color.white.opacity(0.6), countdown: Color(hex: "#6FD08C"), bar: Color(hex: "#6FD08C"),
+        track: Color.white.opacity(0.16), background: Color(hex: "#1C1D22"), pillBg: Color.white.opacity(0.12),
+        pillBorder: Color.white.opacity(0.22))
+      : LAPalette(
+        text: Color(hex: "#10203A"), muted: Color(hex: "#10203A").opacity(0.55), countdown: Color(hex: "#2F7A4E"),
+        bar: Color(hex: "#3F9A63"), track: Color(hex: "#10203A").opacity(0.1), background: Color(hex: "#F4F2F8"),
+        pillBg: .white, pillBorder: Color(hex: "#10203A").opacity(0.14))
+  }
+}
 
 private enum Mode {
   case upcoming, live, overtime, due
@@ -39,11 +63,11 @@ private func hhmm(_ date: Date) -> String {
 private struct Countdown: View {
   let context: ActivityViewContext<TickleActivityAttributes>
   let size: CGFloat
-  var onDark = false
+  let palette: LAPalette
 
   var body: some View {
     let state = context.state
-    let color = onDark ? Color(hex: context.attributes.baseHex) : Color(hex: context.attributes.textHex)
+    let color = palette.countdown
     Group {
       switch mode(context) {
       case .upcoming:
@@ -62,29 +86,32 @@ private struct Countdown: View {
         Text(TickleL10n.now).foregroundColor(color)
       }
     }
-    .font(.anuphan(size: size, weight: .semibold).monospacedDigit())
+    .font(.anuphan(size: size, weight: .bold).monospacedDigit())
     .multilineTextAlignment(.trailing)
+    .lineLimit(1)
+    .minimumScaleFactor(0.7)
   }
 }
 
 @available(iOS 16.2, *)
 private struct ProgressBar: View {
   let context: ActivityViewContext<TickleActivityAttributes>
+  let palette: LAPalette
 
   var body: some View {
-    let a = context.attributes
     let state = context.state
     switch mode(context) {
     case .live:
       if let end = state.end, state.start < end {
         ProgressView(timerInterval: state.start...end, countsDown: false, label: { EmptyView() }, currentValueLabel: { EmptyView() })
           .progressViewStyle(.linear)
-          .tint(Color(hex: a.baseHex))
+          .tint(palette.bar)
       } else {
         bar(fill: 1)
       }
     case .upcoming:
-      bar(fill: 0)
+      // A short stub so the bar reads as "not started yet" rather than empty.
+      bar(fill: 0.05)
     case .overtime, .due:
       bar(fill: 1)
     }
@@ -93,18 +120,19 @@ private struct ProgressBar: View {
   private func bar(fill: CGFloat) -> some View {
     GeometryReader { geo in
       ZStack(alignment: .leading) {
-        Capsule().fill(Color(hex: context.attributes.trackHex))
-        Capsule().fill(Color(hex: context.attributes.baseHex)).frame(width: geo.size.width * fill)
+        Capsule().fill(palette.track)
+        Capsule().fill(palette.bar).frame(width: max(8, geo.size.width * fill))
       }
     }
-    .frame(height: 4)
+    .frame(height: 6)
   }
 }
 
 @available(iOS 16.2, *)
 private struct Meta: View {
   let context: ActivityViewContext<TickleActivityAttributes>
-  var onDark = false
+  let palette: LAPalette
+  var size: CGFloat = 14
 
   var body: some View {
     let a = context.attributes
@@ -116,40 +144,39 @@ private struct Meta: View {
       case .due: return TickleL10n.reminder(hhmm(state.start))
       }
     }()
-    let muted = onDark ? Color.white.opacity(0.6) : ink.opacity(0.5)
-    return (
-      (a.groupName.map { Text($0).fontWeight(.semibold).foregroundColor(onDark ? Color(hex: a.baseHex) : Color(hex: a.textHex)) + Text(" · ") }
-        ?? Text(""))
-        + Text(detail)
-    )
-    .font(.anuphan(size: 12))
-    .foregroundColor(muted)
-    .lineLimit(1)
+    let line = a.groupName.map { "\($0) · \(detail)" } ?? detail
+    return Text(line.prefix(1).uppercased() + line.dropFirst())
+      .font(.anuphan(size: size, weight: .medium))
+      .foregroundColor(palette.muted)
+      .lineLimit(1)
   }
 }
 
-/// The plan's icon in a tinted rounded tile, like Home's timeline cards.
+/// The plan's icon in white on a solid plan-colour tile (rounded square on the Lock Screen, circle
+/// in the Dynamic Island), as in the 2026-11-14 mock-up.
 @available(iOS 16.2, *)
 private struct PlanIconTile: View {
   let context: ActivityViewContext<TickleActivityAttributes>
   let size: CGFloat
-  var onDark = false
+  var circle = false
 
   var body: some View {
     let a = context.attributes
-    let color = Color(hex: a.baseHex)
     ZStack {
-      RoundedRectangle(cornerRadius: size * 0.3, style: .continuous)
-        .fill(color.opacity(onDark ? 0.22 : 0.14))
+      if circle {
+        Circle().fill(Color(hex: a.baseHex))
+      } else {
+        RoundedRectangle(cornerRadius: size * 0.28, style: .continuous).fill(Color(hex: a.baseHex))
+      }
       if let id = a.iconId, UIImage(named: "planicon-\(id)") != nil {
         Image("planicon-\(id)")
           .renderingMode(.template)
           .resizable()
           .scaledToFit()
-          .foregroundColor(onDark ? color : Color(hex: a.textHex))
-          .frame(width: size * 0.56, height: size * 0.56)
+          .foregroundColor(.white)
+          .frame(width: size * 0.52, height: size * 0.52)
       } else {
-        Circle().fill(color).frame(width: size * 0.3, height: size * 0.3)
+        Circle().fill(Color.white).frame(width: size * 0.28, height: size * 0.28)
       }
     }
     .frame(width: size, height: size)
@@ -159,7 +186,7 @@ private struct PlanIconTile: View {
 @available(iOS 16.2, *)
 private struct Actions: View {
   let context: ActivityViewContext<TickleActivityAttributes>
-  var onDark = false
+  let palette: LAPalette
 
   var body: some View {
     if #available(iOS 17.0, *) {
@@ -171,11 +198,11 @@ private struct Actions: View {
         Button(intent: CompleteTickleTaskIntent(planId: a.planId)) {
           Text(TickleL10n.done)
             .font(.anuphan(size: 13, weight: .semibold))
-            .foregroundColor(onDark ? .white : Color(hex: a.pillTextHex))
+            .foregroundColor(palette.text)
             .padding(.horizontal, 14)
             .frame(height: 28)
-            .background(Capsule().fill(onDark ? Color.white.opacity(0.14) : .white))
-            .overlay(Capsule().stroke(onDark ? Color.white.opacity(0.25) : Color(hex: a.pillBorderHex), lineWidth: 1))
+            .background(Capsule().fill(palette.pillBg))
+            .overlay(Capsule().stroke(palette.pillBorder, lineWidth: 1))
         }
         .buttonStyle(.plain)
       }
@@ -183,65 +210,82 @@ private struct Actions: View {
   }
 }
 
+/// The plan row shared by the Lock Screen and the expanded Dynamic Island: icon, bold name with
+/// the time line under it, and a large countdown on the right.
+@available(iOS 16.2, *)
+private struct PlanRow: View {
+  let context: ActivityViewContext<TickleActivityAttributes>
+  let palette: LAPalette
+  let iconSize: CGFloat
+  let circleIcon: Bool
+
+  var body: some View {
+    HStack(alignment: .center, spacing: 14) {
+      PlanIconTile(context: context, size: iconSize, circle: circleIcon)
+      VStack(alignment: .leading, spacing: 1) {
+        Text(context.attributes.title)
+          .font(.anuphan(size: 20, weight: .bold))
+          .foregroundColor(palette.text)
+          .lineLimit(1)
+          .minimumScaleFactor(0.8)
+        Meta(context: context, palette: palette)
+      }
+      .layoutPriority(1)
+      Spacer(minLength: 6)
+      Countdown(context: context, size: 36, palette: palette)
+        .frame(maxWidth: 120, alignment: .trailing)
+    }
+  }
+}
+
+/// Lock Screen / banner. Reads the phone's appearance so it switches with light and dark mode.
+@available(iOS 16.2, *)
+private struct LockScreenView: View {
+  let context: ActivityViewContext<TickleActivityAttributes>
+  @Environment(\.colorScheme) private var scheme
+
+  var body: some View {
+    let palette = LAPalette.of(scheme)
+    VStack(alignment: .leading, spacing: 14) {
+      PlanRow(context: context, palette: palette, iconSize: 48, circleIcon: false)
+      ProgressBar(context: context, palette: palette)
+      Actions(context: context, palette: palette)
+    }
+    .padding(.horizontal, 18)
+    .padding(.vertical, 16)
+    .activityBackgroundTint(palette.background)
+    .activitySystemActionForegroundColor(palette.text)
+  }
+}
+
 @available(iOS 16.2, *)
 struct TickleLiveActivity: Widget {
   var body: some WidgetConfiguration {
     ActivityConfiguration(for: TickleActivityAttributes.self) { context in
-      // Lock Screen / banner
-      VStack(alignment: .leading, spacing: 10) {
-        HStack(alignment: .center, spacing: 12) {
-          PlanIconTile(context: context, size: 42)
-          VStack(alignment: .leading, spacing: 2) {
-            // Larger plan name (2026-11-09); shrinks a little before truncating.
-            Text(context.attributes.title)
-              .font(.anuphan(size: 19, weight: .bold))
-              .foregroundColor(ink)
-              .lineLimit(1)
-              .minimumScaleFactor(0.8)
-            Meta(context: context)
-          }
-          Spacer(minLength: 8)
-          Countdown(context: context, size: 24)
-        }
-        ProgressBar(context: context)
-        Actions(context: context)
-      }
-      .padding(16)
-      .activityBackgroundTint(Color(hex: context.attributes.tintHex))
-      .activitySystemActionForegroundColor(ink)
-      .widgetURL(URL(string: "tickle://"))
+      LockScreenView(context: context)
+        .widgetURL(URL(string: "tickle://"))
     } dynamicIsland: { context in
-      DynamicIsland {
-        DynamicIslandExpandedRegion(.leading) {
-          HStack(spacing: 8) {
-            PlanIconTile(context: context, size: 28, onDark: true)
-            Text(context.attributes.title)
-              .font(.anuphan(size: 17, weight: .semibold))
-              .foregroundColor(.white)
-              .lineLimit(1)
-          }
-          .padding(.leading, 4)
-        }
-        DynamicIslandExpandedRegion(.trailing) {
-          Countdown(context: context, size: 20, onDark: true).padding(.trailing, 4)
-        }
+      let palette = LAPalette.of(.dark)
+      return DynamicIsland {
         DynamicIslandExpandedRegion(.bottom) {
-          VStack(alignment: .leading, spacing: 8) {
-            Meta(context: context, onDark: true)
-            ProgressBar(context: context)
-            Actions(context: context, onDark: true)
+          // One full-width row under the camera, like the mock-up, instead of splitting the
+          // name and countdown into the narrow leading/trailing regions.
+          VStack(alignment: .leading, spacing: 12) {
+            PlanRow(context: context, palette: palette, iconSize: 48, circleIcon: true)
+            ProgressBar(context: context, palette: palette)
+            Actions(context: context, palette: palette)
           }
-          .padding(.horizontal, 4)
+          .padding(.horizontal, 6)
+          .padding(.bottom, 4)
         }
       } compactLeading: {
-        // Empty on purpose (user's call, 2026-10-10): the countdown sat in the top bar all day.
-        // iOS requires these regions, but with nothing in them the island keeps its resting
-        // size — the activity lives on the Lock Screen, and long-press still opens the expanded view.
-        EmptyView()
+        // Compact island: plan icon + countdown (2026-11-14 mock-up; it was empty from 2026-10-10).
+        PlanIconTile(context: context, size: 24, circle: true)
       } compactTrailing: {
-        EmptyView()
+        Countdown(context: context, size: 15, palette: palette)
+          .frame(maxWidth: 52, alignment: .trailing)
       } minimal: {
-        EmptyView()
+        PlanIconTile(context: context, size: 24, circle: true)
       }
       .widgetURL(URL(string: "tickle://"))
       .keylineTint(Color(hex: context.attributes.baseHex))

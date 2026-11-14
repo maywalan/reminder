@@ -114,5 +114,7 @@ export default {
   'banner.sub': { en: 'Unlimited plans, month & year recaps', th: 'แผนไม่จำกัด สรุปรายเดือนและรายปี' },
   'banner.subTrial': { en: '7-day free trial · unlimited plans', th: 'ทดลองฟรี 7 วัน · แผนไม่จำกัด' },
   'banner.try': { en: 'Try free', th: 'ลองฟรี' },
+  'banner.endsSub': { en: 'Ends {date} · your plans stay safe', th: 'หมด {date} · แผนของคุณยังอยู่ครบ' },
+  'banner.renew': { en: 'Renew', th: 'ต่ออายุ' },
   'banner.used': { en: '{used} of {limit} free plans used', th: 'ใช้แผนฟรีไปแล้ว {used} จาก {limit}' },
 } satisfies Record<string, Entry>;

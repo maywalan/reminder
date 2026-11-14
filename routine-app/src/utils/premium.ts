@@ -3,6 +3,19 @@ import { toISO } from '@/utils/dates';
 import { isMissedToday } from '@/utils/home-feed';
 import type { Period } from '@/utils/progress';
 
+const DAY_MS = 86_400_000;
+
+/** Whole calendar days from `now` to `ms` (0 = today, 1 = tomorrow). */
+export function calendarDaysUntil(ms: number, now = new Date()): number {
+  const a = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const e = new Date(ms);
+  const b = new Date(e.getFullYear(), e.getMonth(), e.getDate()).getTime();
+  return Math.round((b - a) / DAY_MS);
+}
+
+/** A cancelled Premium shows "ends soon" reminders in its last week (2026-11-14). */
+export const PREMIUM_ENDING_WINDOW_DAYS = 7;
+
 /** Free tier's cap on active plans (3 since 2026-11-03; was 5). */
 export const FREE_ACTIVE_PLAN_LIMIT = 3;
 

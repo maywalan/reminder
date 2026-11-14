@@ -16,11 +16,12 @@ import { BouncyPressable } from '@/components/bouncy-pressable';
 import { XIcon } from '@/components/icon';
 import { Text } from '@/components/text';
 import { t } from '@/i18n';
+import { fmtDate } from '@/i18n/format';
 import { Tickle } from '@/components/tickle';
 import { Colors, PremiumColors, Typography } from '@/constants/theme';
 import { usePremiumColors } from '@/hooks/use-theme';
 import { usePlannerStore } from '@/store/use-planner-store';
-import { countActivePlans, FREE_ACTIVE_PLAN_LIMIT } from '@/utils/premium';
+import { calendarDaysUntil, countActivePlans, FREE_ACTIVE_PLAN_LIMIT, PREMIUM_ENDING_WINDOW_DAYS } from '@/utils/premium';
 
 /** design canvas "Tickle upgrade banner" — the paywall's Premium-card ink, same on light and dark. */
 // The banner is the ink Premium card, dark in both modes (see `PremiumColors`); only its
@@ -37,6 +38,9 @@ const NEAR_LIMIT_AT = FREE_ACTIVE_PLAN_LIMIT - 1;
 const ENTER_SPRING = { damping: 14, stiffness: 170 };
 
 /**
+ * Also (2026-11-14): a cancelled Premium in its last 7 days shows "Premium ends in N days" here with
+ * Renew (→ Subscription) and no ✕, until it runs out.
+ *
  * Profile's paywall entry point for Free users: one slim ink row (critique, 2026-11-01: the full card
  * pushed every setting below the fold). Variant "pitch" by default; "near limit" (a plan meter,
  * one segment per free plan) from one plan below the limit. The ✕ hides it for 7 days, unless they reach the
@@ -47,6 +51,7 @@ export function UpgradeBanner() {
   const reduceMotion = useReducedMotion();
   const premium = usePremiumColors();
   const subscriptionState = usePlannerStore((s) => s.mockSubscriptionState);
+  const expiresAt = usePlannerStore((s) => s.subscriptionDetails?.expiresAt ?? null);
   const plans = usePlannerStore((s) => s.plans);
   const dismissedAt = usePlannerStore((s) => s.upgradeBannerDismissedAt);
   const dismissUpgradeBanner = usePlannerStore((s) => s.dismissUpgradeBanner);
@@ -54,7 +59,11 @@ export function UpgradeBanner() {
   const activeCount = useMemo(() => countActivePlans(plans), [plans]);
   const nearLimit = activeCount >= NEAR_LIMIT_AT;
   const dismissed = dismissedAt !== null && Date.now() - dismissedAt < DISMISS_FOR_MS;
-  const visible = subscriptionState === 'free' && (!dismissed || nearLimit);
+  // Cancelled Premium in its last week: an "ends in N days" version with Renew and no ✕, until it runs out.
+  const endingDays =
+    subscriptionState === 'ending' && expiresAt != null && expiresAt > Date.now() ? calendarDaysUntil(expiresAt) : null;
+  const ending = endingDays !== null && endingDays <= PREMIUM_ENDING_WINDOW_DAYS;
+  const visible = ending || (subscriptionState === 'free' && (!dismissed || nearLimit));
 
   // Dismiss: fade + collapse the measured height so the rows below slide up, then persist it.
   const [height, setHeight] = useState<number | null>(null);
@@ -78,8 +87,19 @@ export function UpgradeBanner() {
 
   if (!visible) return null;
 
-  const openPaywall = () => router.push('/paywall');
+  const openPaywall = () => router.push(ending ? '/subscription' : '/paywall');
   const used = Math.min(activeCount, FREE_ACTIVE_PLAN_LIMIT);
+  const title = !ending
+    ? t('banner.title')
+    : endingDays! <= 0
+      ? t('premiumNotice.endingToday')
+      : t('premiumNotice.endingTitle', { count: endingDays! });
+  const sub = ending
+    ? t('banner.endsSub', { date: fmtDate(new Date(expiresAt!), { weekday: 'short' }) })
+    : nearLimit
+      ? t('banner.used', { used, limit: FREE_ACTIVE_PLAN_LIMIT })
+      : t('banner.subTrial');
+  const showMeter = nearLimit && !ending;
 
   return (
     <Reanimated.View
@@ -91,19 +111,19 @@ export function UpgradeBanner() {
           onPress={openPaywall}
           pressedScale={0.96}
           accessibilityRole="button"
-          accessibilityLabel={nearLimit ? `${t('banner.title')}. ${t('banner.used', { used, limit: FREE_ACTIVE_PLAN_LIMIT })}` : t('banner.title')}
-          style={[styles.card, { backgroundColor: premium.card }]}>
+          accessibilityLabel={ending || nearLimit ? `${title}. ${sub}` : title}
+          style={[styles.card, ending && styles.cardNoClose, { backgroundColor: premium.card }]}>
           <View style={styles.mascotTile}>
             <Tickle size={34} mood="idle" animated />
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={styles.title} numberOfLines={1}>
-              {t('banner.title')}
+              {title}
             </Text>
             <Text style={styles.sub} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
-              {nearLimit ? t('banner.used', { used, limit: FREE_ACTIVE_PLAN_LIMIT }) : t('banner.subTrial')}
+              {sub}
             </Text>
-            {nearLimit && (
+            {showMeter && (
               <View style={styles.meter}>
                 {Array.from({ length: FREE_ACTIVE_PLAN_LIMIT }, (_, i) => (
                   <MeterSegment key={i} filled={i < used} index={i} reduceMotion={reduceMotion} />
@@ -113,14 +133,16 @@ export function UpgradeBanner() {
           </View>
           <View style={styles.cta}>
             <Text style={styles.ctaText} numberOfLines={1}>
-              {t('banner.try')}
+              {t(ending ? 'banner.renew' : 'banner.try')}
             </Text>
           </View>
         </BouncyPressable>
 
-        <Pressable onPress={handleDismiss} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('common.dismiss')} style={styles.close}>
-          <XIcon size={12} color={MUTED_ON_INK} strokeWidth={2.6} />
-        </Pressable>
+        {!ending && (
+          <Pressable onPress={handleDismiss} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('common.dismiss')} style={styles.close}>
+            <XIcon size={12} color={MUTED_ON_INK} strokeWidth={2.6} />
+          </Pressable>
+        )}
       </View>
     </Reanimated.View>
   );
@@ -158,6 +180,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 10 },
     elevation: 6,
   },
+  // The ending version has no ✕, so the Renew pill sits at the usual edge.
+  cardNoClose: { paddingRight: 12 },
   // 34pt is the smallest Tickle that draws its body (smaller shows only the bubble).
   mascotTile: {
     width: 40,

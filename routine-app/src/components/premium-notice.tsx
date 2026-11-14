@@ -10,20 +10,11 @@ import { useTheme } from '@/hooks/use-theme';
 import { t } from '@/i18n';
 import { fmtDate } from '@/i18n/format';
 import { usePlannerStore } from '@/store/use-planner-store';
-import { FREE_ACTIVE_PLAN_LIMIT } from '@/utils/premium';
+import { calendarDaysUntil, FREE_ACTIVE_PLAN_LIMIT, PREMIUM_ENDING_WINDOW_DAYS } from '@/utils/premium';
 
-const DAY_MS = 86_400_000;
 /** Stand-in for the date inside the translated sentence, so it can be styled on its own. */
 const DATE_MARK = '\u0001';
 const TAB_PATHS = new Set(['/', '/calendar', '/progress', '/profile']);
-
-/** Whole calendar days from today to `ms` (0 = today). */
-function calendarDaysUntil(ms: number, now: Date) {
-  const a = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const e = new Date(ms);
-  const b = new Date(e.getFullYear(), e.getMonth(), e.getDate()).getTime();
-  return Math.round((b - a) / DAY_MS);
-}
 
 type Notice = { kind: 'ended' } | { kind: 'ending'; key: string; days: number; expiresAt: number };
 
@@ -61,7 +52,7 @@ export function PremiumNotice() {
     const days = calendarDaysUntil(expiresAt, now);
     const bucket = days <= 1 ? 1 : days <= 3 ? 3 : 7;
     const key = `${expiresAt}:${bucket}`;
-    if (days <= 7 && key !== seenKey) due = { kind: 'ending', key, days, expiresAt };
+    if (days <= PREMIUM_ENDING_WINDOW_DAYS && key !== seenKey) due = { kind: 'ending', key, days, expiresAt };
   }
   const onTabs = TAB_PATHS.has(pathname);
 

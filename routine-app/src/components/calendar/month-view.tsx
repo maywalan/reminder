@@ -1,6 +1,8 @@
 import * as Haptics from 'expo-haptics';
+import { useRef } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Reanimated, { interpolate, runOnJS, useAnimatedStyle, useReducedMotion, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 
 import { Text } from '@/components/text';
 import { ChevronLeftIcon, ChevronRightIcon } from '@/components/icon';
@@ -41,18 +43,70 @@ export function MonthView({ year, month, todayISO, selectedDate, plans, colorFor
   const isCurrentMonth = year === today.getFullYear() && month === today.getMonth();
   const nowMs = Date.now();
 
-  // Swipe left/right on the grid for next/previous month (tester feedback, 2026-11-14). Same feel as
-  // Home's week strip: no slide, the new month just swaps in; vertical drags still scroll the page.
-  const swipe = Gesture.Pan()
-    .runOnJS(true)
-    .activeOffsetX([-24, 24])
-    .failOffsetY([-14, 14])
-    .onEnd((e) => {
-      const delta = e.translationX < -50 || e.velocityX < -600 ? 1 : e.translationX > 50 || e.velocityX > 600 ? -1 : 0;
-      if (!delta) return;
-      Haptics.selectionAsync().catch(() => {});
-      onShiftMonth(delta);
+  // Drag the grid left/right to change month (tester feedback, 2026-11-14: a swipe that only
+  // swapped months felt static). The grid follows the finger; past the threshold it slides out and
+  // the new month springs in from the other side, otherwise it springs back. Arrows and Today use
+  // the same slide. Vertical drags still scroll the page.
+  const reduceMotion = useReducedMotion();
+  const width = useSharedValue(0);
+  const dx = useSharedValue(0);
+
+  // What to do once the old month has slid out; kept on the JS side (worklets can't carry closures).
+  const pending = useRef<() => void>(() => {});
+  const applyPending = () => {
+    Haptics.selectionAsync().catch(() => {});
+    pending.current();
+  };
+
+  const slide = (delta: 1 | -1, change: () => void) => {
+    pending.current = change;
+    if (reduceMotion || width.value === 0) {
+      applyPending();
+      return;
+    }
+    dx.value = withTiming(-delta * width.value, { duration: 150 }, (done) => {
+      if (!done) return;
+      runOnJS(applyPending)();
+      // The new month starts part-way off the opposite edge and springs into place.
+      dx.value = delta * width.value * 0.6;
+      dx.value = withSpring(0, { damping: 18, stiffness: 190, mass: 0.8 });
     });
+  };
+
+  const shift = (delta: 1 | -1) => slide(delta, () => onShiftMonth(delta));
+  const setPendingShift = (delta: number) => {
+    pending.current = () => onShiftMonth(delta);
+  };
+  const goToday = () => {
+    const forward = today.getFullYear() * 12 + today.getMonth() > year * 12 + month;
+    slide(forward ? 1 : -1, onToday);
+  };
+
+  const swipe = Gesture.Pan()
+    .activeOffsetX([-12, 12])
+    .failOffsetY([-14, 14])
+    .onUpdate((e) => {
+      dx.value = e.translationX;
+    })
+    .onEnd((e) => {
+      const delta = e.translationX < -60 || e.velocityX < -600 ? 1 : e.translationX > 60 || e.velocityX > 600 ? -1 : 0;
+      if (delta === 0 || width.value === 0) {
+        dx.value = withSpring(0, { damping: 16, stiffness: 220 });
+        return;
+      }
+      runOnJS(setPendingShift)(delta);
+      dx.value = withTiming(-delta * width.value, { duration: 140 }, (done) => {
+        if (!done) return;
+        runOnJS(applyPending)();
+        dx.value = delta * width.value * 0.6;
+        dx.value = withSpring(0, { damping: 18, stiffness: 190, mass: 0.8 });
+      });
+    });
+
+  const gridStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: dx.value }],
+    opacity: width.value ? interpolate(Math.abs(dx.value), [0, width.value], [1, 0.25]) : 1,
+  }));
 
   return (
     <View style={[styles.surface, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
@@ -62,15 +116,15 @@ export function MonthView({ year, month, todayISO, selectedDate, plans, colorFor
         </Text>
         <View style={styles.navActions}>
           {!isCurrentMonth && (
-            <Pressable onPress={onToday} hitSlop={8}>
+            <Pressable onPress={goToday} hitSlop={8}>
               <Text style={[styles.todayBtn, { color: theme.accentStrong }]}>{t('home.today')}</Text>
             </Pressable>
           )}
           <View style={styles.arrows}>
-            <Pressable onPress={() => onShiftMonth(-1)} hitSlop={ARROW_SLOP} accessibilityRole="button" accessibilityLabel={t('calendar.prevMonth')} style={[styles.arrowBtn, { borderColor: theme.cardBorder }]}>
+            <Pressable onPress={() => shift(-1)} hitSlop={ARROW_SLOP} accessibilityRole="button" accessibilityLabel={t('calendar.prevMonth')} style={[styles.arrowBtn, { borderColor: theme.cardBorder }]}>
               <ChevronLeftIcon size={14} color={theme.text} strokeWidth={2.3} />
             </Pressable>
-            <Pressable onPress={() => onShiftMonth(1)} hitSlop={ARROW_SLOP} accessibilityRole="button" accessibilityLabel={t('calendar.nextMonth')} style={[styles.arrowBtn, { borderColor: theme.cardBorder }]}>
+            <Pressable onPress={() => shift(1)} hitSlop={ARROW_SLOP} accessibilityRole="button" accessibilityLabel={t('calendar.nextMonth')} style={[styles.arrowBtn, { borderColor: theme.cardBorder }]}>
               <ChevronRightIcon size={14} color={theme.text} strokeWidth={2.3} />
             </Pressable>
           </View>
@@ -86,70 +140,72 @@ export function MonthView({ year, month, todayISO, selectedDate, plans, colorFor
       </View>
 
       <GestureDetector gesture={swipe}>
-        <View style={styles.grid}>
-          {/* One row per week with 7 flex columns. Percentage widths + flexWrap pushed Saturday onto
-              the next line on 390pt iPhones (pixel rounding made 7 × 14.29% exceed the row). */}
-          {Array.from({ length: Math.ceil(cells.length / 7) }, (_, w) => (
-            <View key={w} style={styles.week}>
-              {cells.slice(w * 7, w * 7 + 7).map((cell, d) => {
-                const i = w * 7 + d;
-                if (cell.muted || !cell.date) {
+        <View style={styles.gridClip} onLayout={(e) => (width.value = e.nativeEvent.layout.width)}>
+          <Reanimated.View style={[styles.grid, gridStyle]}>
+            {/* One row per week with 7 flex columns. Percentage widths + flexWrap pushed Saturday onto
+                the next line on 390pt iPhones (pixel rounding made 7 × 14.29% exceed the row). */}
+            {Array.from({ length: Math.ceil(cells.length / 7) }, (_, w) => (
+              <View key={w} style={styles.week}>
+                {cells.slice(w * 7, w * 7 + 7).map((cell, d) => {
+                  const i = w * 7 + d;
+                  if (cell.muted || !cell.date) {
+                    return (
+                      <View key={i} style={styles.cell}>
+                        <View style={styles.dayNumRow}>
+                          <View style={styles.dayNumWrap}>
+                            <Text style={[styles.dayNum, { color: theme.textTertiary }]}>{cell.day}</Text>
+                          </View>
+                        </View>
+                      </View>
+                    );
+                  }
+                  const isToday = cell.date === todayISO;
+                  const isSelected = cell.date === selectedDate;
+                  const dayPlans = plans.filter((p) => p.date === cell.date).sort((a, b) => a.time.localeCompare(b.time));
+                  // Counts are for work still ahead; a past day's unfinished plans are missed, marked in rose
+                  // like Home, so history doesn't shout "7 to do" (critique, 2026-10-29).
+                  const isPast = cell.date < todayISO;
+                  const ahead = isPast ? [] : dayPlans.filter((p) => !p.completed && !(isToday && isMissedToday(p, nowMs)));
+                  const hasMissed = dayPlans.some((p) => !p.completed && (isPast || (isToday && isMissedToday(p, nowMs))));
+                  const holidayName = holidayByDate[cell.date];
+
                   return (
-                    <View key={i} style={styles.cell}>
+                    <Pressable
+                      key={i}
+                      onPress={() => onSelectDate(cell.date!)}
+                      style={styles.cell}>
                       <View style={styles.dayNumRow}>
-                        <View style={styles.dayNumWrap}>
-                          <Text style={[styles.dayNum, { color: theme.textTertiary }]}>{cell.day}</Text>
+                        <View
+                          style={[
+                            styles.dayNumWrap,
+                            isSelected && { backgroundColor: theme.accentFill },
+                            isToday && !isSelected && { borderWidth: 1.6, borderColor: theme.accent },
+                          ]}>
+                          <Text style={[styles.dayNum, { color: isSelected ? theme.onAccent : isToday ? theme.accent : theme.text }]}>{cell.day}</Text>
                         </View>
+                        {holidayName && <View style={styles.holidayDot} />}
+                        {ahead.length > 0 ? (
+                          <View style={[styles.pendingBadge, { backgroundColor: theme.accentFill }]}>
+                            <Text maxFontSizeMultiplier={1.3} style={[styles.pendingBadgeText, { color: theme.onAccent }]}>
+                              {ahead.length}
+                            </Text>
+                          </View>
+                        ) : (
+                          hasMissed && <View style={[styles.missedDot, { backgroundColor: theme.danger }]} />
+                        )}
                       </View>
-                    </View>
+
+                      <View style={styles.dots}>
+                        {dayPlans.slice(0, DOT_LIMIT).map((p) => (
+                          <View key={p.id} style={[styles.dot, { backgroundColor: p.completed ? theme.dividerStrong : colorForPlan(p) }]} />
+                        ))}
+                      </View>
+                    </Pressable>
                   );
-                }
-                const isToday = cell.date === todayISO;
-                const isSelected = cell.date === selectedDate;
-                const dayPlans = plans.filter((p) => p.date === cell.date).sort((a, b) => a.time.localeCompare(b.time));
-                // Counts are for work still ahead; a past day's unfinished plans are missed, marked in rose
-                // like Home, so history doesn't shout "7 to do" (critique, 2026-10-29).
-                const isPast = cell.date < todayISO;
-                const ahead = isPast ? [] : dayPlans.filter((p) => !p.completed && !(isToday && isMissedToday(p, nowMs)));
-                const hasMissed = dayPlans.some((p) => !p.completed && (isPast || (isToday && isMissedToday(p, nowMs))));
-                const holidayName = holidayByDate[cell.date];
-
-                return (
-                  <Pressable
-                    key={i}
-                    onPress={() => onSelectDate(cell.date!)}
-                    style={styles.cell}>
-                    <View style={styles.dayNumRow}>
-                      <View
-                        style={[
-                          styles.dayNumWrap,
-                          isSelected && { backgroundColor: theme.accentFill },
-                          isToday && !isSelected && { borderWidth: 1.6, borderColor: theme.accent },
-                        ]}>
-                        <Text style={[styles.dayNum, { color: isSelected ? theme.onAccent : isToday ? theme.accent : theme.text }]}>{cell.day}</Text>
-                      </View>
-                      {holidayName && <View style={styles.holidayDot} />}
-                      {ahead.length > 0 ? (
-                        <View style={[styles.pendingBadge, { backgroundColor: theme.accentFill }]}>
-                          <Text maxFontSizeMultiplier={1.3} style={[styles.pendingBadgeText, { color: theme.onAccent }]}>
-                            {ahead.length}
-                          </Text>
-                        </View>
-                      ) : (
-                        hasMissed && <View style={[styles.missedDot, { backgroundColor: theme.danger }]} />
-                      )}
-                    </View>
-
-                    <View style={styles.dots}>
-                      {dayPlans.slice(0, DOT_LIMIT).map((p) => (
-                        <View key={p.id} style={[styles.dot, { backgroundColor: p.completed ? theme.dividerStrong : colorForPlan(p) }]} />
-                      ))}
-                    </View>
-                  </Pressable>
-                );
-              })}
-            </View>
-          ))}
+                })}
+              </View>
+            ))}
+          </Reanimated.View>
         </View>
       </GestureDetector>
     </View>
@@ -166,6 +222,8 @@ const styles = StyleSheet.create({
   arrowBtn: { width: 30, height: 30, borderRadius: 15, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   dowRow: { flexDirection: 'row', paddingHorizontal: 10, marginBottom: 4 },
   dow: { flex: 1, textAlign: 'center', fontSize: Typography.label, fontWeight: '700', textTransform: 'uppercase' },
+  // Clips the sliding month to the card.
+  gridClip: { overflow: 'hidden' },
   grid: { paddingHorizontal: 6 },
   week: { flexDirection: 'row' },
   cell: { flex: 1, minWidth: 0, minHeight: 50, alignItems: 'stretch', justifyContent: 'flex-start', paddingHorizontal: 3, paddingTop: 4, gap: 2 },

@@ -1,4 +1,6 @@
+import * as Haptics from 'expo-haptics';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 import { Text } from '@/components/text';
 import { ChevronLeftIcon, ChevronRightIcon } from '@/components/icon';
@@ -39,6 +41,19 @@ export function MonthView({ year, month, todayISO, selectedDate, plans, colorFor
   const isCurrentMonth = year === today.getFullYear() && month === today.getMonth();
   const nowMs = Date.now();
 
+  // Swipe left/right on the grid for next/previous month (tester feedback, 2026-11-14). Same feel as
+  // Home's week strip: no slide, the new month just swaps in; vertical drags still scroll the page.
+  const swipe = Gesture.Pan()
+    .runOnJS(true)
+    .activeOffsetX([-24, 24])
+    .failOffsetY([-14, 14])
+    .onEnd((e) => {
+      const delta = e.translationX < -50 || e.velocityX < -600 ? 1 : e.translationX > 50 || e.velocityX > 600 ? -1 : 0;
+      if (!delta) return;
+      Haptics.selectionAsync().catch(() => {});
+      onShiftMonth(delta);
+    });
+
   return (
     <View style={[styles.surface, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
       <View style={styles.nav}>
@@ -70,71 +85,73 @@ export function MonthView({ year, month, todayISO, selectedDate, plans, colorFor
         ))}
       </View>
 
-      <View style={styles.grid}>
-        {/* One row per week with 7 flex columns. Percentage widths + flexWrap pushed Saturday onto
-            the next line on 390pt iPhones (pixel rounding made 7 × 14.29% exceed the row). */}
-        {Array.from({ length: Math.ceil(cells.length / 7) }, (_, w) => (
-          <View key={w} style={styles.week}>
-            {cells.slice(w * 7, w * 7 + 7).map((cell, d) => {
-              const i = w * 7 + d;
-              if (cell.muted || !cell.date) {
+      <GestureDetector gesture={swipe}>
+        <View style={styles.grid}>
+          {/* One row per week with 7 flex columns. Percentage widths + flexWrap pushed Saturday onto
+              the next line on 390pt iPhones (pixel rounding made 7 × 14.29% exceed the row). */}
+          {Array.from({ length: Math.ceil(cells.length / 7) }, (_, w) => (
+            <View key={w} style={styles.week}>
+              {cells.slice(w * 7, w * 7 + 7).map((cell, d) => {
+                const i = w * 7 + d;
+                if (cell.muted || !cell.date) {
+                  return (
+                    <View key={i} style={styles.cell}>
+                      <View style={styles.dayNumRow}>
+                        <View style={styles.dayNumWrap}>
+                          <Text style={[styles.dayNum, { color: theme.textTertiary }]}>{cell.day}</Text>
+                        </View>
+                      </View>
+                    </View>
+                  );
+                }
+                const isToday = cell.date === todayISO;
+                const isSelected = cell.date === selectedDate;
+                const dayPlans = plans.filter((p) => p.date === cell.date).sort((a, b) => a.time.localeCompare(b.time));
+                // Counts are for work still ahead; a past day's unfinished plans are missed, marked in rose
+                // like Home, so history doesn't shout "7 to do" (critique, 2026-10-29).
+                const isPast = cell.date < todayISO;
+                const ahead = isPast ? [] : dayPlans.filter((p) => !p.completed && !(isToday && isMissedToday(p, nowMs)));
+                const hasMissed = dayPlans.some((p) => !p.completed && (isPast || (isToday && isMissedToday(p, nowMs))));
+                const holidayName = holidayByDate[cell.date];
+
                 return (
-                  <View key={i} style={styles.cell}>
+                  <Pressable
+                    key={i}
+                    onPress={() => onSelectDate(cell.date!)}
+                    style={styles.cell}>
                     <View style={styles.dayNumRow}>
-                      <View style={styles.dayNumWrap}>
-                        <Text style={[styles.dayNum, { color: theme.textTertiary }]}>{cell.day}</Text>
+                      <View
+                        style={[
+                          styles.dayNumWrap,
+                          isSelected && { backgroundColor: theme.accentFill },
+                          isToday && !isSelected && { borderWidth: 1.6, borderColor: theme.accent },
+                        ]}>
+                        <Text style={[styles.dayNum, { color: isSelected ? theme.onAccent : isToday ? theme.accent : theme.text }]}>{cell.day}</Text>
                       </View>
+                      {holidayName && <View style={styles.holidayDot} />}
+                      {ahead.length > 0 ? (
+                        <View style={[styles.pendingBadge, { backgroundColor: theme.accentFill }]}>
+                          <Text maxFontSizeMultiplier={1.3} style={[styles.pendingBadgeText, { color: theme.onAccent }]}>
+                            {ahead.length}
+                          </Text>
+                        </View>
+                      ) : (
+                        hasMissed && <View style={[styles.missedDot, { backgroundColor: theme.danger }]} />
+                      )}
                     </View>
-                  </View>
+
+                    <View style={styles.dots}>
+                      {dayPlans.slice(0, DOT_LIMIT).map((p) => (
+                        <View key={p.id} style={[styles.dot, { backgroundColor: p.completed ? theme.dividerStrong : colorForPlan(p) }]} />
+                      ))}
+                    </View>
+                  </Pressable>
                 );
-              }
-              const isToday = cell.date === todayISO;
-              const isSelected = cell.date === selectedDate;
-              const dayPlans = plans.filter((p) => p.date === cell.date).sort((a, b) => a.time.localeCompare(b.time));
-              // Counts are for work still ahead; a past day's unfinished plans are missed, marked in rose
-              // like Home, so history doesn't shout "7 to do" (critique, 2026-10-29).
-              const isPast = cell.date < todayISO;
-              const ahead = isPast ? [] : dayPlans.filter((p) => !p.completed && !(isToday && isMissedToday(p, nowMs)));
-              const hasMissed = dayPlans.some((p) => !p.completed && (isPast || (isToday && isMissedToday(p, nowMs))));
-              const holidayName = holidayByDate[cell.date];
-
-              return (
-                <Pressable
-                  key={i}
-                  onPress={() => onSelectDate(cell.date!)}
-                  style={styles.cell}>
-                  <View style={styles.dayNumRow}>
-                    <View
-                      style={[
-                        styles.dayNumWrap,
-                        isSelected && { backgroundColor: theme.accentFill },
-                        isToday && !isSelected && { borderWidth: 1.6, borderColor: theme.accent },
-                      ]}>
-                      <Text style={[styles.dayNum, { color: isSelected ? theme.onAccent : isToday ? theme.accent : theme.text }]}>{cell.day}</Text>
-                    </View>
-                    {holidayName && <View style={styles.holidayDot} />}
-                    {ahead.length > 0 ? (
-                      <View style={[styles.pendingBadge, { backgroundColor: theme.accentFill }]}>
-                        <Text maxFontSizeMultiplier={1.3} style={[styles.pendingBadgeText, { color: theme.onAccent }]}>
-                          {ahead.length}
-                        </Text>
-                      </View>
-                    ) : (
-                      hasMissed && <View style={[styles.missedDot, { backgroundColor: theme.danger }]} />
-                    )}
-                  </View>
-
-                  <View style={styles.dots}>
-                    {dayPlans.slice(0, DOT_LIMIT).map((p) => (
-                      <View key={p.id} style={[styles.dot, { backgroundColor: p.completed ? theme.dividerStrong : colorForPlan(p) }]} />
-                    ))}
-                  </View>
-                </Pressable>
-              );
-            })}
-          </View>
-        ))}
-      </View>
+              })}
+            </View>
+          ))}
+        </View>
+      </GestureDetector>
     </View>
   );
 }

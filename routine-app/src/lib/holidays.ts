@@ -10,7 +10,8 @@ export interface Holiday {
 
 /** Free, no-key public holiday API (https://date.nager.at) — covers ~100 countries, not every region. */
 const API_BASE = 'https://date.nager.at/api/v3/PublicHolidays';
-const CACHE_PREFIX = 'holiday-cache:';
+// v2 (2026-11-14): regional holidays now filtered out, so older cached lists are ignored.
+const CACHE_PREFIX = 'holiday-cache-v2:';
 
 /**
  * Regions nager.date doesn't cover, read from Google Calendar's public holiday feeds instead (free,
@@ -19,6 +20,28 @@ const CACHE_PREFIX = 'holiday-cache:';
  */
 const GOOGLE_FEEDS: Record<string, { en: string; th: string }> = {
   TH: { en: 'en.th', th: 'th.th' },
+  // Not covered by nager.date (checked 2026-11-14). India, Malaysia and Taiwan use Google's older ids.
+  IN: { en: 'en.indian', th: 'th.indian' },
+  MY: { en: 'en.malaysia', th: 'th.malaysia' },
+  TW: { en: 'en.taiwan', th: 'th.taiwan' },
+  AE: { en: 'en.ae', th: 'th.ae' },
+  SA: { en: 'en.sa', th: 'th.sa' },
+  PK: { en: 'en.pk', th: 'th.pk' },
+  LK: { en: 'en.lk', th: 'th.lk' },
+  MM: { en: 'en.mm', th: 'th.mm' },
+  LA: { en: 'en.la', th: 'th.la' },
+  QA: { en: 'en.qa', th: 'th.qa' },
+  KW: { en: 'en.kw', th: 'th.kw' },
+  OM: { en: 'en.om', th: 'th.om' },
+  JO: { en: 'en.jo', th: 'th.jo' },
+  NP: { en: 'en.np', th: 'th.np' },
+  BN: { en: 'en.bn', th: 'th.bn' },
+  MV: { en: 'en.mv', th: 'th.mv' },
+  BT: { en: 'en.bt', th: 'th.bt' },
+  LB: { en: 'en.lb', th: 'th.lb' },
+  IR: { en: 'en.ir', th: 'th.ir' },
+  AF: { en: 'en.af', th: 'th.af' },
+  TL: { en: 'en.tl', th: 'th.tl' },
 };
 // Feed events are tagged "Public holiday" or "Observance" (Valentine's, Christmas…) — keep only the former.
 const PUBLIC_HOLIDAY_LABELS = ['Public holiday', 'วันหยุดนักขัตฤกษ์'];
@@ -49,8 +72,9 @@ export async function getHolidays(year: number, countryCode: string): Promise<Ho
       await AsyncStorage.setItem(cacheKey, '[]');
       return [];
     }
-    const raw: { date: string; localName: string }[] = await res.json();
-    const holidays: Holiday[] = raw.map((h) => ({ date: h.date, name: h.localName }));
+    const raw: { date: string; localName: string; global?: boolean }[] = await res.json();
+    // Nationwide holidays only: `global: false` ones apply to some states/regions (e.g. a US state's day).
+    const holidays: Holiday[] = raw.filter((h) => h.global !== false).map((h) => ({ date: h.date, name: h.localName }));
     await AsyncStorage.setItem(cacheKey, JSON.stringify(holidays));
     return holidays;
   } catch {
@@ -70,7 +94,10 @@ export function parseHolidayFeed(ics: string): Holiday[] {
     if (line === 'BEGIN:VEVENT') ev = {};
     else if (line === 'END:VEVENT' && ev) {
       const start = ev.DTSTART;
-      const isPublic = PUBLIC_HOLIDAY_LABELS.some((l) => (ev!.DESCRIPTION ?? '').startsWith(l));
+      // Nationwide only: the description's first line is exactly the label. "Public holiday in Sabah…"
+      // (a state or regional day) and observances are left out.
+      const firstLine = (ev.DESCRIPTION ?? '').split('\\n')[0].trim();
+      const isPublic = PUBLIC_HOLIDAY_LABELS.includes(firstLine);
       if (start && ev.SUMMARY && isPublic) {
         const toDate = (v: string) => new Date(+v.slice(0, 4), +v.slice(4, 6) - 1, +v.slice(6, 8));
         const end = ev.DTEND ? toDate(ev.DTEND) : null;

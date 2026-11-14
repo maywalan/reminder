@@ -1,3 +1,4 @@
+import * as Haptics from 'expo-haptics';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -221,6 +222,8 @@ export default function AddPlanScreen() {
   // Each entry also carries the time/color/alerts of its most-recent occurrence (findPastPlans
   // returns most-recent-first, so the first match seen per title wins that role) so picking a
   // suggestion can prefill those fields too, not just the name.
+  const hiddenTitles = usePlannerStore((s) => s.hiddenTitleSuggestions);
+  const hideTitleSuggestion = usePlannerStore((s) => s.hideTitleSuggestion);
   const pastTitleFrequency = useMemo(() => {
     const counts = new Map<string, { label: string; count: number; time: string; color: string; alerts: string[] }>();
     for (const p of findPastPlans(plans, Infinity)) {
@@ -238,8 +241,13 @@ export default function AddPlanScreen() {
   const titleSuggestions = useMemo(() => {
     const query = name.trim().toLowerCase();
     if (!query) return [];
-    return pastTitleFrequency.filter((t) => t.label.toLowerCase() !== query && t.label.toLowerCase().includes(query)).slice(0, 6);
-  }, [pastTitleFrequency, name]);
+    return pastTitleFrequency
+      .filter((t) => {
+        const label = t.label.toLowerCase();
+        return label !== query && label.includes(query) && !hiddenTitles.includes(label);
+      })
+      .slice(0, 6);
+  }, [pastTitleFrequency, name, hiddenTitles]);
   const [dateTime, setDateTime] = useState(() => (editing ? combineDateAndTime(editing.date, editing.time) : defaultStart(prefillDate)));
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
@@ -554,7 +562,8 @@ export default function AddPlanScreen() {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
+      {/* "handled": tapping a suggestion (or its ×) works first time instead of only closing the keyboard. */}
+      <ScrollView contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
           <View style={styles.field}>
             <TextInput
@@ -562,6 +571,8 @@ export default function AddPlanScreen() {
               onChangeText={(text) => {
                 setName(text);
                 setError(false);
+                // The keyboard stays up after picking a suggestion, so typing again brings the list back.
+                setTitleFocused(true);
               }}
               onFocus={() => setTitleFocused(true)}
               onBlur={() => setTimeout(() => setTitleFocused(false), 150)}
@@ -584,9 +595,21 @@ export default function AddPlanScreen() {
                   setTitleFocused(false);
                 }}
                 style={[styles.sheetRow, styles.fieldBorder, { borderColor: theme.divider, backgroundColor: theme.surface2 }]}>
-                <Text style={[styles.sheetRowLabel, { color: theme.text }]} numberOfLines={1}>
+                <Text style={[styles.sheetRowLabel, { color: theme.text, flex: 1 }]} numberOfLines={1}>
                   {s.label}
                 </Text>
+                {/* Remove a past title from these suggestions (tester feedback, 2026-11-14). Plans keep their names. */}
+                <Pressable
+                  onPress={() => {
+                    Haptics.selectionAsync().catch(() => {});
+                    hideTitleSuggestion(s.label);
+                  }}
+                  hitSlop={10}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('plan.removeSuggestion', { title: s.label })}
+                  style={({ pressed }) => [styles.suggestionRemove, { backgroundColor: theme.divider, opacity: pressed ? 0.5 : 1 }]}>
+                  <XIcon size={10} color={theme.textSecondary} strokeWidth={2.6} />
+                </Pressable>
               </Pressable>
             ))}
           <View style={[styles.field, styles.fieldBorder, { borderColor: theme.divider }]}>
@@ -1246,6 +1269,7 @@ const styles = StyleSheet.create({
   pickerValue: { flex: 1 },
   sheetRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 13, paddingHorizontal: 14 },
   sheetRowLabel: { fontSize: Typography.heading, fontWeight: '600' },
+  suggestionRemove: { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', marginLeft: 10 },
   footnote: { fontSize: Typography.body, lineHeight: 17, paddingHorizontal: 4, marginBottom: 14 },
   sectionLabel: { fontSize: Typography.label, fontWeight: '700', letterSpacing: 0.5, marginBottom: 8, marginTop: 4 },
   intervalRow: { flexDirection: 'row', alignItems: 'center', gap: 18, marginTop: 6 },

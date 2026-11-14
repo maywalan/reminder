@@ -24,6 +24,7 @@ export default {
   'plan.none': { en: 'None', th: 'ไม่มี' },
   'plan.repeatEditNote': { en: 'Repeat can only be set when creating a new plan. This edits just this occurrence.', th: 'ตั้งการทำซ้ำได้ตอนสร้างแผนใหม่เท่านั้น การแก้ไขนี้มีผลกับครั้งนี้ครั้งเดียว' },
   'plan.liveActivity': { en: 'Live Activity', th: 'Live Activity' },
+  'plan.removeSuggestion': { en: 'Remove “{title}” from suggestions', th: 'ลบ “{title}” ออกจากคำแนะนำ' },
   'plan.alarm': { en: 'Alarm', th: 'ปลุก' },
   'plan.alarmSub': { en: 'Rings with sound when it starts.', th: 'ส่งเสียงปลุกตอนเริ่ม' },
   'plan.alarmSubRange': { en: 'Rings with sound when it starts and when it ends.', th: 'ส่งเสียงปลุกตอนเริ่มและตอนจบ' },

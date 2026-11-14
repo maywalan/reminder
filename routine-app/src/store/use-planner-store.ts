@@ -80,6 +80,9 @@ interface PlannerState {
   upgradeBannerDismissedAt: number | null;
   dismissUpgradeBanner: () => void;
   /** Home's one-time "swipe to delete · hold and drag to reorder" tip has been closed or acted on (this device only). */
+  /** Past titles the user removed from New Plan's typeahead (lower-cased; this device only, 2026-11-14). */
+  hiddenTitleSuggestions: string[];
+  hideTitleSuggestion: (title: string) => void;
   homeGestureHintSeen: boolean;
   dismissHomeGestureHint: () => void;
   setPendingSaveToast: (message: string | null) => void;
@@ -145,6 +148,7 @@ export const usePlannerStore = create<PlannerState>()(
       premiumEndedPending: false,
       premiumEndingNoticeKey: null,
       homeGestureHintSeen: false,
+      hiddenTitleSuggestions: [],
 
       ensureFirstUsedAt: () => {
         if (!get().firstUsedAt) set({ firstUsedAt: toISO(new Date()) });
@@ -167,6 +171,11 @@ export const usePlannerStore = create<PlannerState>()(
       dismissUpgradeBanner: () => set({ upgradeBannerDismissedAt: Date.now() }),
 
       dismissHomeGestureHint: () => set({ homeGestureHintSeen: true }),
+      hideTitleSuggestion: (title) =>
+        set((s) => {
+          const key = title.trim().toLowerCase();
+          return s.hiddenTitleSuggestions.includes(key) ? {} : { hiddenTitleSuggestions: [...s.hiddenTitleSuggestions, key] };
+        }),
 
       setPendingSaveToast: (message) => set({ pendingSaveToast: message }),
 
@@ -392,6 +401,7 @@ export const usePlannerStore = create<PlannerState>()(
         premiumEndedPending: state.premiumEndedPending,
         premiumEndingNoticeKey: state.premiumEndingNoticeKey,
         homeGestureHintSeen: state.homeGestureHintSeen,
+        hiddenTitleSuggestions: state.hiddenTitleSuggestions,
       }),
       version: 4,
       migrate: (persisted) => {

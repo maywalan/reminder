@@ -13,6 +13,8 @@ import { usePlannerStore } from '@/store/use-planner-store';
 import { FREE_ACTIVE_PLAN_LIMIT } from '@/utils/premium';
 
 const DAY_MS = 86_400_000;
+/** Stand-in for the date inside the translated sentence, so it can be styled on its own. */
+const DATE_MARK = '\u0001';
 const TAB_PATHS = new Set(['/', '/calendar', '/progress', '/profile']);
 
 /** Whole calendar days from today to `ms` (0 = today). */
@@ -103,12 +105,25 @@ export function PremiumNotice() {
       : t('premiumNotice.endingTitle', { count: shown.days });
   const body = ended
     ? t('premiumNotice.endedBody', { limit: FREE_ACTIVE_PLAN_LIMIT })
-    : t('premiumNotice.endingBody', { date: fmtDate(new Date(shown.expiresAt), { month: 'long' }), limit: FREE_ACTIVE_PLAN_LIMIT });
+    : t('premiumNotice.endingBody', { date: DATE_MARK, limit: FREE_ACTIVE_PLAN_LIMIT });
+  // The end date is the one thing to remember here, so it's bold and full-strength (user, 2026-11-14).
+  const [before, after] = body.split(DATE_MARK);
+  const dateText = ended ? '' : fmtDate(new Date(shown.expiresAt), { weekday: 'long', month: 'long' });
 
   return (
     <BottomSheet visible={open} onClose={close} title={title}>
       <View style={styles.body}>
-        <Text style={[styles.text, { color: theme.textSecondary }]}>{body}</Text>
+        <Text style={[styles.text, { color: theme.textSecondary }]}>
+          {ended ? (
+            body
+          ) : (
+            <>
+              {before}
+              <Text style={[styles.date, { color: theme.text }]}>{dateText}</Text>
+              {after}
+            </>
+          )}
+        </Text>
         <Pressable
           onPress={ended ? close : () => go('/subscription')}
           accessibilityRole="button"
@@ -132,6 +147,7 @@ export function PremiumNotice() {
 const styles = StyleSheet.create({
   body: { paddingTop: 6, paddingBottom: 8 },
   text: { fontSize: Typography.heading, lineHeight: Typography.heading * 1.5, textAlign: 'center', marginBottom: 20 },
+  date: { fontWeight: '700' },
   primary: { height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
   primaryText: { fontSize: Typography.heading, fontWeight: '700' },
   secondary: { alignSelf: 'center', paddingVertical: 12, paddingHorizontal: 16, marginTop: 4 },

@@ -1,6 +1,9 @@
 import type { AuthError, Session, User } from '@supabase/supabase-js';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import * as Crypto from 'expo-crypto';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
+import { Platform } from 'react-native';
 import { create } from 'zustand';
 
 import { supabase } from '@/lib/supabase';
@@ -80,6 +83,8 @@ interface AuthState {
   /** `emailTaken` is set when the email already has an account, so the UI can offer Sign In instead. */
   signUpWithEmail: (email: string, password: string, name: string) => Promise<{ error: string | null; emailTaken?: boolean }>;
   signInWithOAuth: (provider: OAuthProvider) => Promise<{ error: string | null }>;
+  /** Native Sign in with Apple (iOS). Cancelling returns no error. */
+  signInWithApple: () => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   /** Emails a link that opens app/auth/reset.tsx. Always resolves without error for unknown emails. */
   sendPasswordReset: (email: string) => Promise<{ error: string | null }>;
@@ -90,7 +95,7 @@ interface AuthState {
   deleteAccount: () => Promise<{ error: string | null }>;
 }
 
-export const useAuthStore = create<AuthState>()((set) => ({
+export const useAuthStore = create<AuthState>()((set, get) => ({
   session: null,
   user: null,
   initializing: true,
@@ -187,6 +192,36 @@ export const useAuthStore = create<AuthState>()((set) => ({
     return { error: sessionError ? authErrorMessage(sessionError) : null };
   },
 
+  signInWithApple: async () => {
+    // Native sheet → Apple identity token → Supabase session (no browser). Apple signs a SHA-256
+    // of the nonce; Supabase checks it against the raw one, so a stolen token can't be replayed.
+    const rawNonce = Crypto.randomUUID();
+    const hashedNonce = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, rawNonce);
+    let credential: AppleAuthentication.AppleAuthenticationCredential;
+    try {
+      credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [AppleAuthentication.AppleAuthenticationScope.FULL_NAME, AppleAuthentication.AppleAuthenticationScope.EMAIL],
+        nonce: hashedNonce,
+      });
+    } catch (e) {
+      if ((e as { code?: string }).code === 'ERR_REQUEST_CANCELED') return { error: null };
+      return { error: t('auth.couldNotStart') };
+    }
+    if (!credential.identityToken) return { error: t('auth.failed') };
+
+    const { error } = await supabase.auth.signInWithIdToken({ provider: 'apple', token: credential.identityToken, nonce: rawNonce });
+    if (error) return { error: authErrorMessage(error) };
+
+    // Apple shares the name only on the very first sign-in, so keep it on the account right away.
+    const fullName = [credential.fullName?.givenName, credential.fullName?.familyName].filter(Boolean).join(' ').trim();
+    if (fullName) {
+      await supabase.auth.updateUser({ data: { full_name: fullName } });
+      const planner = usePlannerStore.getState();
+      if (planner.profile.name === GUEST_NAME) usePlannerStore.setState((s) => ({ profile: { ...s.profile, name: fullName } }));
+    }
+    return { error: null };
+  },
+
   signOut: async () => {
     await supabase.auth.signOut();
   },
@@ -223,7 +258,24 @@ export const useAuthStore = create<AuthState>()((set) => ({
   deleteAccount: async () => {
     // The `delete-account` Edge Function (supabase/functions) deletes the auth user server-side;
     // the app's publishable key can't. Plans, groups and settings cascade with it.
-    const { error } = await supabase.functions.invoke('delete-account', { method: 'POST' });
+    // Apple accounts confirm with Apple once more: the fresh authorization code lets the server
+    // revoke the Apple sign-in link (Apple's rule for deleting Sign in with Apple accounts).
+    // Closing Apple's sheet keeps the account; any other Apple error still deletes it.
+    let appleAuthorizationCode: string | undefined;
+    const meta = get().user?.app_metadata;
+    const providers: string[] = meta?.providers ?? (meta?.provider ? [meta.provider] : []);
+    if (providers.includes('apple') && Platform.OS === 'ios') {
+      try {
+        const credential = await AppleAuthentication.signInAsync({ requestedScopes: [] });
+        appleAuthorizationCode = credential.authorizationCode ?? undefined;
+      } catch (e) {
+        if ((e as { code?: string }).code === 'ERR_REQUEST_CANCELED') return { error: t('profile.deleteAccountKept') };
+      }
+    }
+    const { error } = await supabase.functions.invoke('delete-account', {
+      method: 'POST',
+      body: appleAuthorizationCode ? { appleAuthorizationCode } : {},
+    });
     if (error) return { error: t('profile.deleteAccountFailed') };
     // The account no longer exists, so only clear the local session. SIGNED_OUT then resets the
     // local plan store (see initialize above).

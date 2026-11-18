@@ -17,13 +17,10 @@ import { useToast } from '@/hooks/use-toast';
 import {
   annualSavingsPct,
   formatPrice,
-  PAYWALL_CURRENCIES,
   PREMIUM_SKUS,
-  referencePrices,
   refreshSubscriptionState,
   usePremiumPrices,
   type Billing,
-  type PaywallCurrency,
   type PremiumPrices,
 } from '@/lib/iap';
 import { usePlannerStore } from '@/store/use-planner-store';
@@ -101,13 +98,11 @@ export default function PaywallScreen() {
 
   const [billing, setBilling] = useState<Billing>('annual');
   const storePrices = usePremiumPrices();
-  // USD/THB switch (user's call, 2026-10-13). Starts on the App Store's currency; that one shows
-  // StoreKit's real price, the other shows the fixed handoff price with the "may vary" note.
-  const storeCurrency = PAYWALL_CURRENCIES.find((c) => c === storePrices.currency);
-  const [pickedCurrency, setPickedCurrency] = useState<PaywallCurrency | null>(null);
-  const currency = pickedCurrency ?? storeCurrency ?? 'USD';
-  const prices = currency === storePrices.currency ? storePrices : referencePrices(currency);
-  // Eligibility is per Apple ID, whichever currency is on show.
+  // Only the App Store's own price (2026-11-18): the old USD/THB switch showed a price Apple
+  // wouldn't charge, which App Review rejects (Guideline 3.1.2). Before StoreKit answers, the
+  // fallback price carries the "may vary" note.
+  const prices = storePrices;
+  // Trial eligibility is per Apple ID.
   const trial = storePrices.trialEligible;
   const [cta, setCta] = useState<CtaState>('idle');
   const [trackWidth, setTrackWidth] = useState(0);
@@ -159,12 +154,6 @@ export default function PaywallScreen() {
     setBilling(next);
   }
 
-  function selectCurrency(next: PaywallCurrency) {
-    if (next === currency) return;
-    Haptics.selectionAsync();
-    setPickedCurrency(next);
-  }
-
   async function handlePrimaryPress() {
     if (cta !== 'idle') return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -201,13 +190,6 @@ export default function PaywallScreen() {
     // A modal sheet already starts below the status bar, so no top inset here.
     <View style={[styles.screen, { paddingTop: 24, paddingBottom: insets.bottom + 28 }]}>
       <View style={styles.utilityRow}>
-        <View style={styles.currencyPill}>
-          {PAYWALL_CURRENCIES.map((c) => (
-            <Pressable key={c} onPress={() => selectCurrency(c)} style={[styles.pillBtn, currency === c && styles.pillBtnActive]}>
-              <Text style={[styles.pillLabel, currency === c && styles.pillLabelActive]}>{c}</Text>
-            </Pressable>
-          ))}
-        </View>
         <Pressable onPress={() => router.back()} style={styles.closeBtn} hitSlop={8}>
           <XIcon size={13} color={theme.textSecondary} strokeWidth={2.4} />
         </Pressable>
@@ -330,12 +312,7 @@ type Theme = ThemeColors;
 function makeStyles(c: Theme, p: PremiumPalette) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: c.bg, paddingHorizontal: 16 },
-    utilityRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 },
-    currencyPill: { flexDirection: 'row', gap: 2, padding: 3, backgroundColor: p.track, borderRadius: 12 },
-    pillBtn: { paddingVertical: 4, paddingHorizontal: 9, borderRadius: 9 },
-    pillBtnActive: { backgroundColor: p.thumb, shadowColor: '#10203A', shadowOpacity: 0.1, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
-    pillLabel: { fontSize: Typography.label, fontWeight: '700', letterSpacing: 0.3, color: c.textTertiary },
-    pillLabelActive: { color: c.text },
+    utilityRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', marginBottom: 18 },
     closeBtn: { width: 28, height: 28, borderRadius: 14, backgroundColor: p.softButton, alignItems: 'center', justifyContent: 'center' },
 
     header: { flexDirection: 'row', alignItems: 'center', gap: 11, marginBottom: 20 },

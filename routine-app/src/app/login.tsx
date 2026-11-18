@@ -1,3 +1,4 @@
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -24,7 +25,6 @@ import { useOnboardingStore } from '@/store/use-onboarding-store';
 import { useAuthStore } from '@/store/use-auth-store';
 
 /** Sign in with Apple needs the paid Apple Developer membership. Until it's built, the button stays hidden. */
-const SHOW_APPLE_SIGN_IN = false;
 const MIN_PASSWORD_LENGTH = 6;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -41,6 +41,13 @@ export default function LoginScreen() {
   const signInWithEmail = useAuthStore((s) => s.signInWithEmail);
   const signUpWithEmail = useAuthStore((s) => s.signUpWithEmail);
   const signInWithOAuth = useAuthStore((s) => s.signInWithOAuth);
+  const signInWithApple = useAuthStore((s) => s.signInWithApple);
+  // Sign in with Apple (2026-11-18): App Review needs it next to Google (Guideline 4.8).
+  const [appleAvailable, setAppleAvailable] = useState(false);
+  useEffect(() => {
+    if (Platform.OS !== 'ios') return;
+    AppleAuthentication.isAvailableAsync().then(setAppleAvailable).catch(() => {});
+  }, []);
   const sendPasswordReset = useAuthStore((s) => s.sendPasswordReset);
   const { toastMessage, toastKind } = useToast();
 
@@ -116,6 +123,20 @@ export default function LoginScreen() {
       return;
     }
     goHome();
+  }
+
+  async function handleApple() {
+    // Same age rule as Google: Apple can create an account too.
+    if (mode === 'signUp' && !ageOk) return setError(t('login.age13Required'));
+    setError(null);
+    setBusy('apple');
+    const { error: authError } = await signInWithApple();
+    setBusy(null);
+    if (authError) {
+      setError(authError);
+      return;
+    }
+    if (useAuthStore.getState().user) goHome();
   }
 
   async function handleGoogle() {
@@ -353,6 +374,26 @@ export default function LoginScreen() {
                 <View style={[styles.dividerLine, { backgroundColor: theme.divider }]} />
               </View>
 
+              {appleAvailable && (
+                <Pressable
+                  onPress={handleApple}
+                  disabled={busy !== null}
+                  accessibilityRole="button"
+                  style={({ pressed }) => [
+                    styles.oauthButton,
+                    { backgroundColor: theme.surface, borderColor: theme.cardBorder, opacity: busy && busy !== 'apple' ? 0.5 : pressed ? 0.7 : 1 },
+                  ]}>
+                  {busy === 'apple' ? (
+                    <ActivityIndicator color={theme.text} />
+                  ) : (
+                    <>
+                      <AppleLogoIcon size={18} color={theme.text} />
+                      <Text style={[styles.oauthButtonText, { color: theme.text }]}>{t('login.apple')}</Text>
+                    </>
+                  )}
+                </Pressable>
+              )}
+
               <Pressable
                 onPress={handleGoogle}
                 disabled={busy !== null}
@@ -373,16 +414,6 @@ export default function LoginScreen() {
 
               {mode === 'signIn' && <Text style={[styles.ageNotice, { color: theme.textTertiary }]}>{t('login.age13Notice')}</Text>}
 
-              {SHOW_APPLE_SIGN_IN && (
-                <Pressable
-                  onPress={() => {}}
-                  disabled={busy !== null}
-                  accessibilityRole="button"
-                  style={[styles.oauthButton, { backgroundColor: theme.surface, borderColor: theme.cardBorder }]}>
-                  <AppleLogoIcon size={18} color={theme.text} />
-                  <Text style={[styles.oauthButtonText, { color: theme.text }]}>{t('login.apple')}</Text>
-                </Pressable>
-              )}
 
               {!fromProfile && (
                 <Pressable onPress={handleGuest} hitSlop={6} accessibilityRole="button" style={styles.guestLink}>

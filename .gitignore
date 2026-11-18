@@ -15,3 +15,7 @@ icon-tickle/
 
 # Private marketing context for Claude (kept local, not public)
 MARKETING_CONTEXT.md
+
+# Apple private keys (never commit; public repo)
+*.p8
+sign-in with Apple Cert/

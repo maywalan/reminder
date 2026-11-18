@@ -77,6 +77,7 @@ export default {
   },
   'profile.deleteAccountConfirm': { en: 'Delete Account', th: 'ลบบัญชี' },
   'profile.accountDeleted': { en: 'Account deleted', th: 'ลบบัญชีแล้ว' },
+  'profile.deleteAccountKept': { en: 'Your account wasn’t deleted.', th: 'ยังไม่ได้ลบบัญชี' },
   'profile.deleteAccountFailed': { en: 'Couldn’t delete your account. Check your connection and try again.', th: 'ลบบัญชีไม่สำเร็จ ลองเช็กอินเทอร์เน็ตแล้วลองใหม่อีกครั้ง' },
   'profile.privacyPolicy': { en: 'Read the full privacy policy', th: 'อ่านนโยบายความเป็นส่วนตัวฉบับเต็ม' },
 

@@ -245,7 +245,15 @@ export default function ProfileScreen() {
             accessibilityRole="button"
             accessibilityHint={t('profile.tapToEdit')}
             style={styles.nameRow}>
-            <Text style={[styles.name, { color: theme.text }]}>{profile.name}</Text>
+            {/* Long names shrink to fit one centred line (down to 60%), then end in "…" (tester, 2026-11-19). */}
+            <Text
+              style={[styles.name, { color: theme.text }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.6}
+              ellipsizeMode="tail">
+              {profile.name}
+            </Text>
             <PencilIcon size={14} color={theme.textFaint} strokeWidth={2} />
           </Pressable>
           {/* The account status is one line under the name, not a full-width banner (critique, 2026-11-01). */}
@@ -741,8 +749,8 @@ const styles = StyleSheet.create({
   profileHeader: { alignItems: 'center', paddingHorizontal: 20, marginBottom: 18 },
   avatar: { width: 74, height: 74, marginBottom: 12 },
   avatarEdit: { position: 'absolute', right: -2, bottom: -2, width: 27, height: 27, borderRadius: 13.5, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  name: { fontSize: Typography.screenTitle, fontWeight: '800', letterSpacing: -0.2 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, maxWidth: '100%' },
+  name: { fontSize: Typography.screenTitle, fontWeight: '800', letterSpacing: -0.2, textAlign: 'center', flexShrink: 1 },
   accountLine: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6, maxWidth: '100%' },
   accountText: { fontSize: Typography.rowValue, fontWeight: '500', flexShrink: 1 },
   accountLink: { fontSize: Typography.rowValue, fontWeight: '700', marginLeft: 2 },

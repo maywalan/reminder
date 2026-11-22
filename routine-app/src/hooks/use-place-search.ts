@@ -27,7 +27,7 @@ export function usePlaceSearch(query: string) {
         .finally(() => {
           if (!controller.signal.aborted) setLoading(false);
         });
-    }, 300);
+    }, 1000); // Nominatim allows at most 1 request a second
 
     return () => {
       clearTimeout(timer);

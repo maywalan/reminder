@@ -21,7 +21,7 @@ export async function searchPlaces(query: string, signal?: AbortSignal): Promise
 
   const url = `${ENDPOINT}?format=jsonv2&addressdetails=0&limit=6&q=${encodeURIComponent(query)}`;
   const res = await fetch(url, {
-    headers: { 'User-Agent': 'RoutineApp/1.0 (personal Expo app)', Accept: 'application/json' },
+    headers: { 'User-Agent': 'Tickle/1.0 (iOS planner app; tickle.daily.app@gmail.com)', Accept: 'application/json' },
     signal,
   });
   if (!res.ok) return [];

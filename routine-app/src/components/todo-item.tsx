@@ -10,6 +10,7 @@ import type { Group, Plan } from '@/store/types';
 import { useEffectiveScheme, useTheme } from '@/hooks/use-theme';
 import { usePlannerStore } from '@/store/use-planner-store';
 import { isMissedToday } from '@/utils/home-feed';
+import { useIsPremium } from '@/hooks/use-is-premium';
 import { resolvePlanIcon } from '@/utils/plan-icons';
 import { toISO } from '@/utils/dates';
 import { confirmPlanDelete } from '@/utils/repeat-scope';
@@ -50,7 +51,8 @@ export function TodoItem({
   const theme = useTheme();
   const taskColor = plan.color || group?.color || theme.accent;
   const dark = useEffectiveScheme() === 'dark';
-  const icon = resolvePlanIcon(plan);
+  const premium = useIsPremium();
+  const icon = resolvePlanIcon(plan, premium);
   // Missed by Home's rule (a day already gone, or past its end plus grace today), shown in rose.
   const todayISO = toISO(new Date());
   const missed = !plan.completed && !selectMode && (plan.date < todayISO || (plan.date === todayISO && isMissedToday(plan, Date.now())));

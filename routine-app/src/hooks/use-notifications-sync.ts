@@ -31,7 +31,7 @@ export function useNotificationsSync() {
         return;
       }
       // Never requests here — only reads the existing status. Requesting must stay confined to
-      // explicit user moments (onboarding step 3, the Profile toggle), or it fires at app launch
+      // explicit user moments (onboarding's "Turn on reminders", the Profile toggle), or it fires at app launch
       // for every new install (notificationsEnabled defaults to true) and silently resolves the
       // OS permission before the user ever sees the onboarding "Turn on reminders" step — iOS
       // does not show its native popup a second time after that.

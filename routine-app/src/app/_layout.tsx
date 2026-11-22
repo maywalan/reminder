@@ -90,7 +90,9 @@ export default function RootLayout() {
     migratedExistingInstall.current = true;
     const onboarding = useOnboardingStore.getState();
     const planner = usePlannerStore.getState();
-    const wasExistingInstall = !onboarding.hasCompletedOnboarding && !!planner.firstUsedAt;
+    // Needs saved plans too (2026-11-22): firstUsedAt alone is stamped on a new user's very first
+    // launch, so quitting halfway through onboarding used to skip the rest of it next time.
+    const wasExistingInstall = !onboarding.hasCompletedOnboarding && !!planner.firstUsedAt && planner.plans.length > 0;
     planner.ensureFirstUsedAt();
     if (wasExistingInstall) {
       onboarding.completeOnboarding();
@@ -125,16 +127,14 @@ export default function RootLayout() {
         <StatusBar style={effectiveScheme === 'dark' ? 'light' : 'dark'} />
         <Stack key={`${fontScale}-${language}`} screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.bg } }}>
           <Stack.Protected guard={!hasCompletedOnboarding}>
-            <Stack.Screen name="onboarding-1" />
-            <Stack.Screen name="onboarding-2" />
-            <Stack.Screen name="onboarding-3" />
+            <Stack.Screen name="onboarding" />
           </Stack.Protected>
           <Stack.Protected guard={canEnterApp}>
             <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
           </Stack.Protected>
           {/* Falls back to the app's initial route whenever neither group above is guarded in —
               onboarded, no session, never chose guest. Always reachable directly too (Profile's
-              Log In row, or a push from onboarding step 3). */}
+              Log In row, or onboarding's "I already have an account"). */}
           <Stack.Screen name="login" />
           <Stack.Screen name="add-plan" options={{ presentation: 'modal' }} />
           <Stack.Screen name="create-group" options={{ presentation: 'modal' }} />

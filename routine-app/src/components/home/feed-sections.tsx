@@ -10,6 +10,7 @@ import { useTheme } from '@/hooks/use-theme';
 import type { Group, Plan } from '@/store/types';
 import type { SearchSection } from '@/utils/plan-search';
 import { durationMinutes, formatDuration, type UpcomingDay } from '@/utils/home-feed';
+import { useIsPremium } from '@/hooks/use-is-premium';
 import { resolvePlanIcon } from '@/utils/plan-icons';
 import { fromISO, toISO } from '@/utils/dates';
 import { t as tr } from '@/i18n';
@@ -222,6 +223,7 @@ export function UpcomingBlock({ days, groups, ...s }: SelectProps & { days: Upco
   const k = useHomeTokens();
   const t = useHomeType();
   const [openDays, setOpenDays] = useState<string[]>([]);
+  const premium = useIsPremium();
   const toggleDay = (iso: string) => setOpenDays((v) => (v.includes(iso) ? v.filter((d) => d !== iso) : [...v, iso]));
   const todayISO = toISO(new Date());
   return (
@@ -250,7 +252,7 @@ export function UpcomingBlock({ days, groups, ...s }: SelectProps & { days: Upco
               open={s.selectMode || openDays.includes(d.dateISO)}
               onPress={() => toggleDay(d.dateISO)}>
               {d.plans.map((p, i) => {
-                const icon = resolvePlanIcon(p);
+                const icon = resolvePlanIcon(p, premium);
                 const group = groups.find((g) => g.id === p.groupId);
                 const detail = p.endTime && !p.allDay ? formatDuration(durationMinutes(p)) : p.location;
                 const sub = [group?.name, detail].filter(Boolean).join(' · ');
@@ -316,6 +318,7 @@ export function EarlierBlock({
 }) {
   const k = useHomeTokens();
   const t = useHomeType();
+  const premium = useIsPremium();
   const [openDays, setOpenDays] = useState<string[]>([]);
   if (older.length === 0) return null;
   const toggleDay = (iso: string) => setOpenDays((v) => (v.includes(iso) ? v.filter((d) => d !== iso) : [...v, iso]));
@@ -364,7 +367,7 @@ export function EarlierBlock({
             {/* Rows stay open in Edit mode so they can be selected. */}
               {d.plans.map((p, i) => {
                 const done = p.completed;
-                const icon = resolvePlanIcon(p);
+                const icon = resolvePlanIcon(p, premium);
                 const selected = s.selectMode && s.selectedIds.includes(p.id);
                 const when = p.allDay ? tr('home.allDayLower') : fmtTime(p.time);
                 const meta = done ? tr('home.doneAt', { time: p.completedAt ? hhmm(p.completedAt) : when }) : tr('home.missedAt', { time: when });

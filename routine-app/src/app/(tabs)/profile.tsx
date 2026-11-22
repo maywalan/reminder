@@ -37,7 +37,7 @@ import { ProfileAvatar } from '@/components/profile-avatar';
 import { UpgradeBanner } from '@/components/upgrade-banner';
 import { WidgetPreview } from '@/components/widget-preview';
 import { PRIVACY_URL, termsUrl } from '@/constants/legal';
-import { ACCENT_IDS, AccentThemes, DEFAULT_ACCENT, hueAccent, Radii, type AccentId, RowMinHeight, Spacing, SwatchColors, Typography } from '@/constants/theme';
+import { ACCENT_IDS, AccentThemes, DEFAULT_ACCENT, hueAccent, Radii, type AccentId, RowMinHeight, scaledFont, Spacing, SwatchColors, Typography } from '@/constants/theme';
 import { BouncyPressable } from '@/components/bouncy-pressable';
 import { HueSlider } from '@/components/hue-slider';
 import { useAccentId, useEffectiveScheme, useTheme } from '@/hooks/use-theme';
@@ -123,7 +123,7 @@ export default function ProfileScreen() {
   // Testing tool (dev builds and tester accounts): replays the launch flow without reinstalling.
   function handleReplayOnboarding() {
     useOnboardingStore.setState({ hasCompletedOnboarding: false, hasChosenGuest: false });
-    router.replace('/onboarding-1');
+    router.replace('/onboarding');
   }
 
   /**
@@ -245,12 +245,11 @@ export default function ProfileScreen() {
             accessibilityRole="button"
             accessibilityHint={t('profile.tapToEdit')}
             style={styles.nameRow}>
-            {/* Long names shrink to fit one centred line (down to 60%), then end in "…" (tester, 2026-11-19). */}
+            {/* Long names step down 21 → 18 → 16 pt on one centred line, then end in "…" (tester, 2026-11-19).
+                Not adjustsFontSizeToFit: iOS ignored its minimumFontScale and shrank long names to ~8 pt. */}
             <Text
-              style={[styles.name, { color: theme.text }]}
+              style={[styles.name, { color: theme.text, fontSize: scaledFont(profile.name.length <= 18 ? 21 : profile.name.length <= 26 ? 18 : 16) }]}
               numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.6}
               ellipsizeMode="tail">
               {profile.name}
             </Text>

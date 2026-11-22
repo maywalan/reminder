@@ -29,10 +29,13 @@ export default {
   'paywall.purchaseFailed': { en: 'Purchase failed', th: 'ซื้อไม่สำเร็จ' },
 
   'feature.free.plans': { en: '3 active plans', th: 'แผนที่ใช้งานได้ 3 แผน' },
+  'feature.free.icons': { en: '3 icons', th: 'ไอคอน 3 แบบ' },
   'feature.free.today': { en: 'Today view & streak', th: 'หน้าวันนี้และสถิติต่อเนื่อง' },
   'feature.free.week': { en: 'Weekly recap', th: 'สรุปรายสัปดาห์' },
   'feature.free.widgets': { en: 'Widgets, no expiry', th: 'วิดเจ็ต ใช้ได้ไม่หมดอายุ' },
   'feature.pro.plans': { en: 'Unlimited plans', th: 'แผนไม่จำกัด' },
+  'feature.pro.icons': { en: 'All 24 icons', th: 'ไอคอนครบทั้ง 24 แบบ' },
+  'feature.pro.autoIcon': { en: 'Auto icon from your plan title', th: 'ใส่ไอคอนให้อัตโนมัติจากชื่อแผน' },
   'feature.pro.recaps': { en: 'Month & year recaps', th: 'สรุปรายเดือนและรายปี' },
   'feature.pro.free': { en: 'Everything in Free', th: 'ทุกอย่างในแบบฟรี' },
 
@@ -51,8 +54,8 @@ export default {
   'sub.memberSince': { en: 'Member since', th: 'เป็นสมาชิกตั้งแต่' },
   'sub.freeChangesTitle': { en: 'What changes on Free?', th: 'แบบฟรีมีอะไรเปลี่ยนไปบ้าง?' },
   'sub.freeChangesBody': {
-    en: 'You keep all your data, but can only have 3 active plans, and Stats shows just the weekly recap.',
-    th: 'ข้อมูลทั้งหมดยังอยู่ครบ แต่จะมีแผนที่ใช้งานได้แค่ 3 แผน และดูสรุปได้แค่รายสัปดาห์',
+    en: 'You keep all your data, but can only have 3 active plans and 3 icons, and Stats shows just the weekly recap.',
+    th: 'ข้อมูลทั้งหมดยังอยู่ครบ แต่จะมีแผนที่ใช้งานได้แค่ 3 แผน ใช้ไอคอนได้ 3 แบบ และดูสรุปได้แค่รายสัปดาห์',
   },
   'sub.daysLeft': { en: '{count} days left', th: 'เหลือ {count} วัน' },
   'sub.daysLeft_one': { en: '1 day left', th: 'เหลือ 1 วัน' },

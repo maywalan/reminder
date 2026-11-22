@@ -10,6 +10,7 @@ export default {
   'common.cancel': { en: 'Cancel', th: 'ยกเลิก' },
   'common.delete': { en: 'Delete', th: 'ลบ' },
   'common.done': { en: 'Done', th: 'เสร็จ' },
+  'common.hideKeyboard': { en: 'Hide keyboard', th: 'ซ่อนคีย์บอร์ด' },
   'common.close': { en: 'Close', th: 'ปิด' },
   'common.save': { en: 'Save', th: 'บันทึก' },
   'common.ok': { en: 'OK', th: 'โอเค' },

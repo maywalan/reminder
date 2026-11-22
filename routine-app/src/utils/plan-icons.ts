@@ -124,9 +124,24 @@ export function matchIcons(title: string): IconMatch[] {
   return hits.sort((a, b) => rank(a) - rank(b)).map(({ id, keyword }) => ({ id, keyword }));
 }
 
-/** The icon a plan shows: the one the user picked, else the first one its title suggests (user's call, 2026-10-18), else none. */
-export function resolvePlanIcon(plan: Pick<Plan, 'icon' | 'name'>): PlanIconId | null {
-  return planIconDef(plan.icon)?.id ?? matchIcons(plan.name)[0]?.id ?? null;
+/**
+ * Free keeps three icons (user, 2026-11-23): Run, People and Work. Every other icon, and picking one
+ * automatically from the title, is Premium. Plans keep an icon they were given while on Premium.
+ */
+export const FREE_ICON_IDS: readonly PlanIconId[] = ['run', 'people', 'work'];
+
+export function isIconLocked(id: PlanIconId, premium: boolean): boolean {
+  return !premium && !FREE_ICON_IDS.includes(id);
+}
+
+/** The icon a title suggests: the first match, or on Free the first match that's a free icon. */
+export function autoIconFor(title: string, premium: boolean): PlanIconId | null {
+  return matchIcons(title).find((m) => !isIconLocked(m.id, premium))?.id ?? null;
+}
+
+/** The icon a plan shows: the one the user picked, else the one its title suggests (user's call, 2026-10-18), else none. */
+export function resolvePlanIcon(plan: Pick<Plan, 'icon' | 'name'>, premium: boolean): PlanIconId | null {
+  return planIconDef(plan.icon)?.id ?? autoIconFor(plan.name, premium);
 }
 
 /**
@@ -162,7 +177,7 @@ export function recentIcons(usage: Map<PlanIconId, number>, n = 6): PlanIconId[]
  * Six suggestions for the New plan Icon card: the picked icon, icons the title matches, then the
  * rest of the first match's category, then the user's most-used icons.
  */
-export function suggestIcons(title: string, usage: Map<PlanIconId, number>, picked?: string, n = 6): { keyword: string | null; ids: PlanIconId[] } {
+export function suggestIcons(title: string, usage: Map<PlanIconId, number>, picked?: string, n = 6, premium = true): { keyword: string | null; ids: PlanIconId[] } {
   const matches = matchIcons(title);
   const out: PlanIconId[] = matches.map((m) => m.id);
   const cat = matches.length ? PLAN_ICON_CATEGORIES.find((c) => c.icons.some((i) => i.id === matches[0].id)) : undefined;
@@ -174,5 +189,11 @@ export function suggestIcons(title: string, usage: Map<PlanIconId, number>, pick
   // always visible (one picked from this row stays where it is).
   const pickedId = planIconDef(picked)?.id;
   const ids = pickedId && !out.slice(0, n).includes(pickedId) ? [pickedId, ...out] : out;
+  // On Free the row is only the free icons (plus one already on the plan, kept from Premium), so a
+  // stray tap can't open the paywall (user, 2026-11-23). Locked icons live in the All icons sheet.
+  if (!premium) {
+    const keptPick = pickedId && isIconLocked(pickedId, false) ? [pickedId] : [];
+    return { keyword: null, ids: [...keptPick, ...FREE_ICON_IDS] };
+  }
   return { keyword: matches[0]?.keyword ?? null, ids: ids.slice(0, n) };
 }

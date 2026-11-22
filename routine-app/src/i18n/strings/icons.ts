@@ -10,6 +10,9 @@ export default {
   'plan.iconNoGroup': { en: '{icon} · {color} (no group)', th: '{icon} · สี{color} (ไม่มีกลุ่ม)' },
   'plan.iconNone': { en: 'Pick one for this plan', th: 'เลือกไอคอนให้แผนนี้' },
 
+  'icon.lockedA11y': { en: '{icon}, Premium', th: '{icon} (Premium)' },
+  'icon.moreWithPremium': { en: 'More icons with Premium', th: 'ไอคอนเพิ่มเติมใน Premium' },
+  'icon.premiumNote': { en: 'Free includes Run, People and Work. Premium unlocks all 24 icons.', th: 'แบบฟรีใช้ได้ วิ่ง คน และงาน\nPremium ปลดล็อกไอคอนครบทั้ง 24 แบบ' },
   'icon.sheetTitle': { en: 'Choose icon', th: 'เลือกไอคอน' },
   'icon.search': { en: 'Search icons', th: 'ค้นหาไอคอน' },
   'icon.colourFollows': { en: "Colour follows the plan's group", th: 'สีตามกลุ่มของแผน' },

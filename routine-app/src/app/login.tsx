@@ -68,8 +68,8 @@ export default function LoginScreen() {
   const emailRef = useRef<RNTextInput>(null);
   const passwordRef = useRef<RNTextInput>(null);
 
-  // Reaching the sign-in screen — by any path (onboarding's Skip, finishing step 3, or Profile's
-  // Sign In row) — means onboarding is behind us; never show the carousel again on this device.
+  // Reaching the sign-in screen — by any path (onboarding's "I already have an account", or
+  // Profile's Sign In row) — means onboarding is behind us; never show the carousel again on this device.
   useEffect(() => {
     useOnboardingStore.getState().completeOnboarding();
   }, []);

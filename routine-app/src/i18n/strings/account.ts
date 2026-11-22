@@ -1,24 +1,6 @@
 import type { Entry } from './types';
 
 export default {
-  // Onboarding
-  'onb.next': { en: 'Next', th: 'ถัดไป' },
-  'onb.skip': { en: 'Skip', th: 'ข้าม' },
-  'onb1.title': { en: 'Everything you owe\ntoday, in one list', th: 'ทุกอย่างที่ต้องทำวันนี้\nรวมไว้ในที่เดียว' },
-  'onb1.body': { en: 'Daily, weekly or monthly — add it once and it comes back on its own.', th: 'รายวัน รายสัปดาห์ หรือรายเดือน เพิ่มครั้งเดียว แล้วมันจะวนกลับมาเอง' },
-  'onb2.title': { en: 'Set it once,\nit keeps coming back', th: 'ตั้งครั้งเดียว\nวนกลับมาเตือนเรื่อยๆ' },
-  'onb2.body': { en: 'Weekdays at 9, rent on the 1st, gym every other day. Change it any time.', th: 'วันธรรมดา 9 โมง ค่าเช่าทุกวันที่ 1\nเข้ายิมวันเว้นวัน เปลี่ยนได้ตลอด' },
-  'onb2.daily': { en: 'Daily', th: 'รายวัน' },
-  'onb2.weekly': { en: 'Weekly', th: 'รายสัปดาห์' },
-  'onb2.monthly': { en: 'Monthly', th: 'รายเดือน' },
-  'onb3.title': { en: 'Let me tap you\non the shoulder', th: 'ให้เราช่วย\nสะกิดเตือนนะ' },
-  'onb3.body': { en: "Up to 5 alerts per plan, and you pick how early. Silent otherwise — I don't chase.", th: 'เตือนได้หลายครั้งต่อแผน เลือกได้ว่าจะให้เตือนก่อนแค่ไหน นอกนั้นเงียบ ไม่ตามตื๊อ' },
-  'onb3.allow': { en: 'Turn on reminders', th: 'เปิดการแจ้งเตือน' },
-  'onb3.later': { en: 'Maybe later', th: 'ไว้ทีหลัง' },
-  'onb3.sampleTitle': { en: 'Standup in 10 minutes', th: 'ประชุมเช้าในอีก 10 นาที' },
-  'onb3.sampleTime': { en: '9:30 – 9:45 AM', th: '09:30 – 09:45' },
-  'onb3.now': { en: 'now', th: 'ตอนนี้' },
-
   // Login. One vocabulary: "Sign In" / "Sign Out" (never "log in"). Buttons are Title Case,
   // links inside a sentence are sentence case.
   'login.welcome': { en: 'Sign in to Tickle', th: 'เข้าสู่ระบบ Tickle' },

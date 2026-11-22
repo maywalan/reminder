@@ -18,6 +18,7 @@ import { planDateTime } from '@/utils/countdown';
 import { confirmPlanDelete } from '@/utils/repeat-scope';
 import { fromISO, toISO } from '@/utils/dates';
 import { dueProgress, formatDuration, formatLiveCountdown, formatStartsIn, isMissedToday, liveProgress, type HomeFeed } from '@/utils/home-feed';
+import { useIsPremium } from '@/hooks/use-is-premium';
 import { resolvePlanIcon } from '@/utils/plan-icons';
 
 /**
@@ -157,7 +158,8 @@ function TimelineRow({
   const color = plan.color;
   const done = plan.completed;
   const selected = h.selectedIds.includes(plan.id);
-  const icon = resolvePlanIcon(plan);
+  const premium = useIsPremium();
+  const icon = resolvePlanIcon(plan, premium);
   const p = planPalette(color, k.dark);
   const range = !!plan.endTime && !plan.allDay;
 

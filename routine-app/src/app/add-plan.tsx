@@ -21,8 +21,9 @@ import { PhotoViewer } from '@/components/photo-viewer';
 import { CameraIcon, CheckIcon, ChevronRightIcon, LockIcon, PlanIcon, PlusIcon, XIcon } from '@/components/icon';
 import { AlarmSoundSheet } from '@/components/alarm-sound-sheet';
 import { ALARM_SOUND_LABEL, DEFAULT_ALARM_SOUND, type AlarmSoundId } from '@/constants/alarm-sounds';
-import { IconGrid, IconPickerSheet } from '@/components/icon-picker';
+import { FreeIconsNote, IconGrid, IconPickerSheet } from '@/components/icon-picker';
 import { Tickle } from '@/components/tickle';
+import { KeyboardDoneBar } from '@/components/keyboard-done-bar';
 import { Toast } from '@/components/toast';
 import { DefaultTaskColor, Fonts, Radii, scaledFont, SwatchColorNames, SwatchColors, Typography } from '@/constants/theme';
 import { findPastPlans } from '@/utils/countdown';
@@ -46,7 +47,7 @@ import {
 } from '@/utils/repeat';
 import type { Plan } from '@/store/types';
 import { confirmPlanDelete, confirmPlanSave, seriesEndDate } from '@/utils/repeat-scope';
-import { iconUsage, matchIcons, planIconDef, recentIcons, suggestIcons, type PlanIconId } from '@/utils/plan-icons';
+import { autoIconFor, iconUsage, planIconDef, recentIcons, suggestIcons, type PlanIconId } from '@/utils/plan-icons';
 import { COMMON_TIME_ZONES, deviceTimeZone, listTimeZones, timeZoneCityLabel, timeZoneOffsetLabel } from '@/utils/timezone';
 
 const MAX_PHOTOS = 3;
@@ -109,6 +110,9 @@ function defaultEnd(start: Date) {
   return end.getDate() === start.getDate() ? end : new Date(start.getFullYear(), start.getMonth(), start.getDate(), 23, 59);
 }
 
+/** Shared by New Plan's text fields: the bar above the keyboard with a Done that hides it. */
+const KEYBOARD_BAR = 'add-plan-keyboard';
+
 function combineDateAndTime(dateISO: string, time: string) {
   const d = fromISO(dateISO);
   const [h, m] = time.split(':').map(Number);
@@ -124,6 +128,8 @@ function IconCard({
   suggested,
   onPick,
   onAllIcons,
+  premium,
+  onLocked,
 }: {
   icon: PlanIconId | null;
   color: string;
@@ -131,6 +137,8 @@ function IconCard({
   suggested: { keyword: string | null; ids: PlanIconId[] };
   onPick: (id: PlanIconId) => void;
   onAllIcons: () => void;
+  premium: boolean;
+  onLocked: () => void;
 }) {
   const theme = useTheme();
   const f = (size: number, weight: 500 | 600 | 700) => ({ fontSize: scaledFont(size), fontWeight: String(weight) as '500', fontFamily: Fonts[weight] });
@@ -167,7 +175,8 @@ function IconCard({
       <Text style={[f(12, 600), { letterSpacing: 0.8, color: ink45 }]}>
         {suggested.keyword ? t('plan.iconSuggestedFor', { word: lang() === 'en' ? suggested.keyword.toUpperCase() : suggested.keyword }) : t('plan.iconSuggested')}
       </Text>
-      <IconGrid ids={suggested.ids} selected={icon} color={color} onPick={onPick} />
+      <IconGrid ids={suggested.ids} selected={icon} color={color} onPick={onPick} premium={premium} onLocked={onLocked} />
+      {!premium && <FreeIconsNote />}
     </View>
   );
 }
@@ -264,13 +273,14 @@ export default function AddPlanScreen() {
   // Picked icon; unset means the title's suggestion is used (and shown as selected).
   const [icon, setIcon] = useState<string | undefined>(editing?.icon);
   const [iconSheetOpen, setIconSheetOpen] = useState(false);
-  const autoIcon = matchIcons(name)[0]?.id;
+  // On Free only Run/People/Work are picked from the title (user, 2026-11-23).
+  const autoIcon = autoIconFor(name, premium);
   const shownIcon = planIconDef(icon)?.id ?? autoIcon ?? null;
   // Counts from saved plans only (this plan excluded). A pick counts once the plan is saved — counting it
   // live reordered the Suggested/RECENT rows under the user's finger, so a tapped chip seemed to jump
   // away and couldn't be chosen (bug, 2026-10-19).
   const usage = useMemo(() => iconUsage(plans.filter((p) => p.id !== editing?.id)), [plans, editing?.id]);
-  const suggested = useMemo(() => suggestIcons(name, usage, icon), [name, usage, icon]);
+  const suggested = useMemo(() => suggestIcons(name, usage, icon, 6, premium), [name, usage, icon, premium]);
   // Sorted earliest-first (see sortAlertsByEarliness) so row position always matches how far
   // ahead of the plan each alert fires, regardless of the order they were picked in. A brand-new
   // plan (and any plan saved before it had alerts) defaults to a single 5-minutes-before alert.
@@ -563,7 +573,9 @@ export default function AddPlanScreen() {
       </View>
 
       {/* "handled": tapping a suggestion (or its ×) works first time instead of only closing the keyboard. */}
-      <ScrollView contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
+      {/* Before the form: Title auto-focuses on open, and iOS only attaches a bar that already exists. */}
+      <KeyboardDoneBar id={KEYBOARD_BAR} />
+      <ScrollView contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
         <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.divider }]}>
           <View style={styles.field}>
             <TextInput
@@ -578,6 +590,8 @@ export default function AddPlanScreen() {
               onBlur={() => setTimeout(() => setTitleFocused(false), 150)}
               placeholder={t('plan.title')}
               autoFocus={!editing}
+              returnKeyType="done"
+              inputAccessoryViewID={KEYBOARD_BAR}
               placeholderTextColor={theme.textTertiary}
               style={[styles.input, { color: theme.text, borderColor: error ? theme.danger : 'transparent' }]}
             />
@@ -619,6 +633,8 @@ export default function AddPlanScreen() {
               onFocus={() => setLocationFocused(true)}
               onBlur={() => setTimeout(() => setLocationFocused(false), 150)}
               placeholder={t('plan.location')}
+              returnKeyType="done"
+              inputAccessoryViewID={KEYBOARD_BAR}
               placeholderTextColor={theme.textTertiary}
               style={[styles.input, { color: theme.text, borderColor: 'transparent' }]}
             />
@@ -842,6 +858,11 @@ export default function AddPlanScreen() {
           suggested={suggested}
           onPick={(id) => setIcon(id)}
           onAllIcons={() => setIconSheetOpen(true)}
+          premium={premium}
+          onLocked={() => {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+            router.push('/paywall');
+          }}
         />
 
         {editing && (
@@ -949,6 +970,7 @@ export default function AddPlanScreen() {
               value={notes}
               onChangeText={setNotes}
               placeholder={t('plan.notesPlaceholder')}
+              inputAccessoryViewID={KEYBOARD_BAR}
               placeholderTextColor={theme.textTertiary}
               multiline
               style={[styles.input, styles.notesInput, { color: theme.text, borderColor: 'transparent' }]}
@@ -1050,6 +1072,12 @@ export default function AddPlanScreen() {
         onColor={setColor}
         recent={recentIcons(usage)}
         onPick={(id) => setIcon(id)}
+        premium={premium}
+        onLocked={() => {
+          // The sheet is its own Modal: close it first so the paywall can present on top.
+          setIconSheetOpen(false);
+          setTimeout(() => router.push('/paywall'), 260);
+        }}
       />
 
       <AlarmSoundSheet visible={alarmSoundOpen} value={alarmSound} onChange={setAlarmSound} onClose={() => setAlarmSoundOpen(false)} />

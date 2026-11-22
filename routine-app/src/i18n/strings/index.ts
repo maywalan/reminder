@@ -1,6 +1,7 @@
 import account from './account';
 import common from './common';
 import home from './home';
+import onboarding from './onboarding';
 import icons from './icons';
 import plan from './plan';
 import premium from './premium';
@@ -12,6 +13,7 @@ export const STRINGS = {
   ...common,
   ...account,
   ...home,
+  ...onboarding,
   ...icons,
   ...plan,
   ...progress,

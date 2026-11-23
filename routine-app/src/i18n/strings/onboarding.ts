@@ -37,8 +37,6 @@ const onboarding = {
   'onb.iconSub': { en: 'Pick one for this plan', th: 'เลือกไอคอนให้แผนนี้' },
   'onb.date': { en: 'DATE', th: 'วันที่' },
   'onb.time': { en: 'TIME', th: 'เวลา' },
-  'onb.start_': { en: 'START', th: 'เริ่ม' },
-  'onb.end': { en: 'END', th: 'จบ' },
   'onb.repeatNone': { en: 'Never', th: 'ไม่ทำซ้ำ' },
   'onb.repeatDaily': { en: 'Every day', th: 'ทุกวัน' },
   'onb.repeatWeekdays': { en: 'Weekdays', th: 'วันธรรมดา' },

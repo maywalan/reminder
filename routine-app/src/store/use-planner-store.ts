@@ -7,7 +7,7 @@ import { deviceLanguage } from '@/i18n';
 import type { Group, Plan, Profile, Settings, SubscriptionDetails, SubscriptionState } from './types';
 import { syncClearAll, syncDeletePlan, syncDeletePlans, syncUpdateProfile, syncUpdateSettings, syncUpsertGroup, syncUpsertPlan, syncUpsertPlans } from '@/lib/sync';
 import { findFuturePlans, EARLIER_WINDOW_DAYS, findPastPlans } from '@/utils/countdown';
-import { pad, timeToMinutes, toISO } from '@/utils/dates';
+import { pad, toISO } from '@/utils/dates';
 import { seriesFrom } from '@/utils/repeat-scope';
 
 /**
@@ -234,20 +234,25 @@ export const usePlannerStore = create<PlannerState>()(
         const { plans } = get();
         const plan = plans.find((p) => p.id === id);
         if (!plan) return;
-        const { date: newDate = plan.date, time: newTime = plan.time, ...rest } = patch;
+        const { date: newDate = plan.date, time: newTime = plan.time, endDate: newEndDate, ...rest } = patch;
         const startMs = (date: string, time: string) => new Date(`${date}T${time}:00`).getTime();
         const shiftMs = startMs(newDate, newTime) - startMs(plan.date, plan.time);
-        // The edited plan's length, so every occurrence ends the same time after it starts (capped at 23:59).
-        const length = 'endTime' in patch ? (patch.endTime ? timeToMinutes(patch.endTime) - timeToMinutes(newTime) : null) : undefined;
+        // The edited plan's length in minutes (it may run into later days, 2026-11-24), so every
+        // occurrence ends the same time after it starts. undefined = the patch leaves the end alone.
+        const lengthOf = (date: string, time: string, endDate: string | undefined, endTime: string | undefined) =>
+          endTime ? Math.round((startMs(endDate ?? date, endTime) - startMs(date, time)) / 60_000) : null;
+        const length = 'endTime' in patch ? lengthOf(newDate, newTime, newEndDate, patch.endTime) : undefined;
         const ids = new Set(seriesFrom(plans, plan).map((p) => p.id));
         const updated: Plan[] = [];
         const next = plans.map((p) => {
           if (!ids.has(p.id)) return p;
           const at = new Date(startMs(p.date, p.time) + shiftMs);
           const time = `${pad(at.getHours())}:${pad(at.getMinutes())}`;
-          const endMins = length == null ? null : Math.min(23 * 60 + 59, timeToMinutes(time) + length);
-          const endTime = length === undefined ? p.endTime : endMins === null ? undefined : `${pad(Math.floor(endMins / 60))}:${pad(endMins % 60)}`;
-          const u = { ...p, ...rest, date: toISO(at), time, endTime };
+          const len = length === undefined ? lengthOf(p.date, p.time, p.endDate, p.endTime) : length;
+          const end = len == null ? null : new Date(at.getTime() + len * 60_000);
+          const endTime = end ? `${pad(end.getHours())}:${pad(end.getMinutes())}` : undefined;
+          const endDate = end && toISO(end) !== toISO(at) ? toISO(end) : undefined;
+          const u = { ...p, ...rest, date: toISO(at), time, endTime, endDate };
           updated.push(u);
           return u;
         });

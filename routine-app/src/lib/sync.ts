@@ -29,6 +29,7 @@ function planToRow(plan: Plan, userId: string) {
     date: plan.date,
     time: plan.time,
     end_time: plan.endTime ?? null,
+    end_date: plan.endDate ?? null,
     all_day: plan.allDay ?? false,
     timezone: plan.timezone ?? null,
     alerts: plan.alerts,
@@ -57,6 +58,7 @@ function rowToPlan(row: Record<string, any>): Plan {
     date: row.date,
     time: row.time,
     endTime: row.end_time ?? undefined,
+    endDate: row.end_date ?? undefined,
     allDay: row.all_day ?? undefined,
     timezone: row.timezone ?? undefined,
     alerts: row.alerts ?? [],
@@ -246,7 +248,7 @@ export async function performInitialSync(userId: string) {
 // ---------------------------------------------------------------------------
 
 /** Columns added after launch. If the server doesn't have one yet, saving retries without it. */
-const OPTIONAL_PLAN_COLUMNS = ['live_lead_minutes', 'alarm', 'alarm_sound'] as const;
+const OPTIONAL_PLAN_COLUMNS = ['live_lead_minutes', 'alarm', 'alarm_sound', 'end_date'] as const;
 let missingPlanColumns = new Set<string>();
 
 function isMissingColumn(error: { code?: string; message?: string } | null, column: string) {

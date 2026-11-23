@@ -36,7 +36,7 @@ import { uid, usePlannerStore } from '@/store/use-planner-store';
 import { lang, t } from '@/i18n';
 import { fmtDate, fmtTime, uses12hTime, weekdayLetterList, weekdayLong } from '@/i18n/format';
 import type { StringKey } from '@/i18n/strings';
-import { fromISO, pad, toISO } from '@/utils/dates';
+import { addDaysISO, daysBetween, fromISO, pad, toISO } from '@/utils/dates';
 import {
   type CustomRepeatConfig,
   customRepeatLabel,
@@ -182,6 +182,11 @@ function IconCard({
 }
 
 /** A date shown in the app's own format, styled like iOS's compact picker button. */
+/** The range rows' date: always with the year, like iOS Calendar ("Nov 24, 2026" / "24 พ.ย. 2569"). */
+function rangeDateLabel(d: Date) {
+  return fmtDate(d, { year: true });
+}
+
 function DateChip({ label, onPress }: { label: string; onPress: () => void }) {
   const theme = useTheme();
   const dark = useEffectiveScheme() === 'dark';
@@ -191,7 +196,8 @@ function DateChip({ label, onPress }: { label: string; onPress: () => void }) {
       accessibilityRole="button"
       // iOS's tertiary system fill, so it matches the native time button beside it.
       style={({ pressed }) => [styles.dateChip, { backgroundColor: dark ? 'rgba(118,118,128,0.24)' : 'rgba(118,118,128,0.12)', opacity: pressed ? 0.6 : 1 }]}>
-      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ color: theme.text, fontSize: 17 }}>
+      {/* The app font at row-value size, like "Bangkok" and "5 minutes before" (user, 2026-11-24). */}
+      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ color: theme.text, fontSize: Typography.heading, fontWeight: '500' }}>
         {label}
       </Text>
     </Pressable>
@@ -263,7 +269,7 @@ export default function AddPlanScreen() {
   const [allDay, setAllDay] = useState(editing?.allDay ?? false);
   const [timeMode, setTimeMode] = useState<'specific' | 'range'>(editing?.endTime ? 'range' : 'specific');
   const [endDateTime, setEndDateTime] = useState(() =>
-    editing ? combineDateAndTime(editing.date, editing.endTime ?? editing.time) : defaultEnd(defaultStart(prefillDate))
+    editing ? combineDateAndTime(editing.endDate ?? editing.date, editing.endTime ?? editing.time) : defaultEnd(defaultStart(prefillDate))
   );
   const [showEndTimePicker, setShowEndTimePicker] = useState(false);
   const [color, setColor] = useState(editing?.color ?? DefaultTaskColor);
@@ -310,7 +316,7 @@ export default function AddPlanScreen() {
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
   // iOS date rows show the app's own date label and open the picker in a sheet: the compact picker
   // printed the phone calendar's "10/29/2569 BE" in English (critique, 2026-10-29).
-  const [dateSheet, setDateSheet] = useState<'date' | 'repeatUntil' | null>(null);
+  const [dateSheet, setDateSheet] = useState<'date' | 'endDate' | 'repeatUntil' | null>(null);
   // Times work the same way (2026-11-11): the native compact time button reserved width for AM/PM and
   // centred "00:00" inside it, so it never lined up under its label. Own chip + spinner sheet instead.
   const [timeSheet, setTimeSheet] = useState<'single' | 'start' | 'end' | null>(null);
@@ -349,7 +355,24 @@ export default function AddPlanScreen() {
   function onChangeDate(event: { type: string }, selected?: Date) {
     if (Platform.OS === 'android') setShowDatePicker(false);
     if (!selected || event.type === 'dismissed') return;
+    // A range keeps its length: moving the start day moves the end day with it (2026-11-24).
+    const shift = daysBetween(toISO(dateTime), toISO(selected));
     setDateTime((prev) => {
+      const next = new Date(prev);
+      next.setFullYear(selected.getFullYear(), selected.getMonth(), selected.getDate());
+      return next;
+    });
+    if (shift)
+      setEndDateTime((prev) => {
+        const next = new Date(prev);
+        next.setDate(next.getDate() + shift);
+        return next;
+      });
+  }
+
+  function onChangeEndDate(event: { type: string }, selected?: Date) {
+    if (!selected || event.type === 'dismissed') return;
+    setEndDateTime((prev) => {
       const next = new Date(prev);
       next.setFullYear(selected.getFullYear(), selected.getMonth(), selected.getDate());
       return next;
@@ -394,8 +417,14 @@ export default function AddPlanScreen() {
     }
     const date = toISO(dateTime);
     const time = `${pad(dateTime.getHours())}:${pad(dateTime.getMinutes())}`;
-    const endTime =
-      !allDay && timeMode === 'range' ? `${pad(endDateTime.getHours())}:${pad(endDateTime.getMinutes())}` : undefined;
+    const isRange = !allDay && timeMode === 'range';
+    const endTime = isRange ? `${pad(endDateTime.getHours())}:${pad(endDateTime.getMinutes())}` : undefined;
+    // A range may end on a later day; same-day ranges leave endDate unset (2026-11-24).
+    const endDate = isRange && toISO(endDateTime) > date ? toISO(endDateTime) : undefined;
+    if (isRange && endDateTime.getTime() <= dateTime.getTime()) {
+      showToast(t('plan.endBeforeStart'), 'error');
+      return;
+    }
     const common = {
       name: name.trim(),
       color,
@@ -411,6 +440,7 @@ export default function AddPlanScreen() {
       location: location.trim() || undefined,
       photoUris,
       endTime,
+      endDate,
       allDay,
       timezone,
     };
@@ -438,7 +468,9 @@ export default function AddPlanScreen() {
         repeatType === 'custom' ? customRepeat : undefined
       );
       const repeatId = uid();
-      addPlans(occurrences.map((o) => ({ ...common, date: o.date, time: o.time, repeatType, repeatId })));
+      // Each occurrence ends the same number of days after it starts.
+      const span = endDate ? daysBetween(date, endDate) : 0;
+      addPlans(occurrences.map((o) => ({ ...common, date: o.date, time: o.time, endDate: span ? addDaysISO(o.date, span) : undefined, repeatType, repeatId })));
     } else {
       addPlan({ ...common, date, time, repeatType: 'none' });
     }
@@ -762,38 +794,20 @@ export default function AddPlanScreen() {
             </View>
           ) : (
             <>
-              <View style={[styles.field, styles.fieldBorder, { borderColor: theme.divider }]}>
-                <Text style={[styles.label, { color: theme.textTertiary }]}>{t('plan.date')}</Text>
-                {Platform.OS === 'ios' ? (
-                  <DateChip label={dateLabel} onPress={() => setDateSheet('date')} />
-                ) : (
-                  <Pressable onPress={() => setShowDatePicker(true)}>
-                    <Text style={[styles.input, { color: theme.text, borderColor: 'transparent' }]}>{dateLabel}</Text>
-                  </Pressable>
-                )}
-              </View>
-              <View style={[styles.timeRangeRow, styles.fieldBorder, { borderColor: theme.divider }]}>
-                <View style={styles.timeRangeCol}>
-                  <Text style={[styles.label, { color: theme.textTertiary }]}>{t('plan.startTime')}</Text>
-                  {Platform.OS === 'ios' ? (
-                    <DateChip label={timeLabel} onPress={() => setTimeSheet('start')} />
-                  ) : (
-                    <Pressable onPress={() => setShowTimePicker(true)}>
-                      <Text style={[styles.input, { color: theme.text, borderColor: 'transparent' }]}>{timeLabel}</Text>
-                    </Pressable>
-                  )}
+              {/* Starts / Ends rows like iOS Calendar: label left, date + time chips right (user mock-up, 2026-11-24). */}
+              {(
+                [
+                  { key: 'start', label: t('plan.starts'), date: rangeDateLabel(dateTime), time: timeLabel, onDate: () => setDateSheet('date'), onTime: () => setTimeSheet('start'), androidTime: () => setShowTimePicker(true) },
+                  { key: 'end', label: t('plan.ends'), date: rangeDateLabel(endDateTime), time: endTimeLabel, onDate: () => setDateSheet('endDate'), onTime: () => setTimeSheet('end'), androidTime: () => setShowEndTimePicker(true) },
+                ] as const
+              ).map((r) => (
+                <View key={r.key} style={[styles.fieldRow, styles.fieldBorder, { borderColor: theme.divider, paddingVertical: 9 }]}>
+                  <Text style={[styles.label, { color: theme.textTertiary, flex: 1, marginBottom: 0 }]}>{r.label}</Text>
+                  <DateChip label={r.date} onPress={r.onDate} />
+                  <View style={[styles.chipDivider, { backgroundColor: theme.divider }]} />
+                  {Platform.OS === 'ios' ? <DateChip label={r.time} onPress={r.onTime} /> : <DateChip label={r.time} onPress={r.androidTime} />}
                 </View>
-                <View style={[styles.timeRangeCol, styles.timeRangeColBorder, { borderColor: theme.divider }]}>
-                  <Text style={[styles.label, { color: theme.textTertiary }]}>{t('plan.endTime')}</Text>
-                  {Platform.OS === 'ios' ? (
-                    <DateChip label={endTimeLabel} onPress={() => setTimeSheet('end')} />
-                  ) : (
-                    <Pressable onPress={() => setShowEndTimePicker(true)}>
-                      <Text style={[styles.input, { color: theme.text, borderColor: 'transparent' }]}>{endTimeLabel}</Text>
-                    </Pressable>
-                  )}
-                </View>
-              </View>
+              ))}
             </>
           )}
 
@@ -1016,19 +1030,24 @@ export default function AddPlanScreen() {
 
       <Toast message={toastMessage} kind={toastKind} />
 
-      <BottomSheet visible={dateSheet !== null} onClose={() => setDateSheet(null)} title={t(dateSheet === 'repeatUntil' ? 'plan.repeatUntil' : 'plan.dateTitle')}>
+      <BottomSheet
+        visible={dateSheet !== null}
+        onClose={() => setDateSheet(null)}
+        title={t(dateSheet === 'repeatUntil' ? 'plan.repeatUntil' : dateSheet === 'endDate' ? 'plan.endDateTitle' : 'plan.dateTitle')}>
         {dateSheet !== null && (
           <View style={styles.dateSheetBody}>
             <DateTimePicker
-              value={dateSheet === 'repeatUntil' ? (repeatUntil ?? dateTime) : dateTime}
+              value={dateSheet === 'repeatUntil' ? (repeatUntil ?? dateTime) : dateSheet === 'endDate' ? endDateTime : dateTime}
               mode="date"
               display="inline"
               locale={pickerLocale}
-              minimumDate={dateSheet === 'repeatUntil' ? dateTime : undefined}
+              // The end can be the start day itself, or any later day.
+              minimumDate={dateSheet === 'repeatUntil' || dateSheet === 'endDate' ? new Date(dateTime.getFullYear(), dateTime.getMonth(), dateTime.getDate()) : undefined}
               themeVariant={scheme}
               accentColor={theme.accent}
               onChange={(e, d) => {
                 if (dateSheet === 'repeatUntil') onChangeRepeatUntil(e, d);
+                else if (dateSheet === 'endDate') onChangeEndDate(e, d);
                 else onChangeDate(e, d);
                 setDateSheet(null);
               }}
@@ -1315,6 +1334,7 @@ const styles = StyleSheet.create({
   segment: { flex: 1, paddingVertical: 9, paddingHorizontal: 4, borderRadius: Radii.button, borderWidth: 1, alignItems: 'center' },
   rowTitle: { flex: 1, fontSize: Typography.heading, fontWeight: '600' },
   rowValue: { fontSize: Typography.heading, fontWeight: '500', flexShrink: 1, textAlign: 'right' },
+  chipDivider: { width: 1, alignSelf: 'stretch', marginVertical: -9 },
   dateChip: { alignSelf: 'flex-start', minHeight: 34, justifyContent: 'center', paddingHorizontal: 11, borderRadius: 8 },
   dateSheetBody: { alignItems: 'center', paddingBottom: 12 },
   timeRangeRow: { flexDirection: 'row' },

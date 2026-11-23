@@ -20,18 +20,17 @@ import {
   type WidgetSize,
 } from '@/components/onboarding/onboarding-demos';
 import { KeyboardDoneBar } from '@/components/keyboard-done-bar';
-import { useIsPremium } from '@/hooks/use-is-premium';
 import { Text, TextInput } from '@/components/text';
 import { Tickle } from '@/components/tickle';
-import { Fonts, scaledFont, SwatchColors } from '@/constants/theme';
+import { DefaultTaskColor, Fonts, scaledFont } from '@/constants/theme';
 import { useEffectiveScheme, useTheme } from '@/hooks/use-theme';
 import { lang, t } from '@/i18n';
 import type { StringKey } from '@/i18n/strings';
-import { fmtDate, uses12hTime } from '@/i18n/format';
+import { fmtDate, fmtTime, uses12hTime } from '@/i18n/format';
 import { requestNotificationPermissions } from '@/lib/notifications';
 import { useOnboardingStore } from '@/store/use-onboarding-store';
 import { uid, usePlannerStore } from '@/store/use-planner-store';
-import { toISO } from '@/utils/dates';
+import { addDaysISO, daysBetween, toISO } from '@/utils/dates';
 import { LIVE_LEAD_DEFAULT_MIN } from '@/utils/home-feed';
 import { iconUsage, recentIcons, suggestIcons, type PlanIconId } from '@/utils/plan-icons';
 import { countActivePlans, FREE_ACTIVE_PLAN_LIMIT, isPremium } from '@/utils/premium';
@@ -49,15 +48,11 @@ import { defaultRepeatUntil, generateRepeatOccurrences } from '@/utils/repeat';
 
 type Step = 0 | 1 | 2 | 3 | 4;
 
-/**
- * 07:30 on the next weekday it hasn't passed yet: never a missed first plan, and the default
- * "Weekdays" repeat really starts on the date shown (a Saturday start would quietly skip to Monday).
- */
+/** The next 07:30 that hasn't passed yet, so the first plan is never already missed. */
 function defaultStart() {
   const now = new Date();
   const d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 7, 30);
   if (d.getTime() <= now.getTime() + 5 * 60_000) d.setDate(d.getDate() + 1);
-  while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
   return d;
 }
 
@@ -89,11 +84,13 @@ export default function OnboardingScreen() {
     return {
       name: t('onb.sampleName'),
       icon: 'run',
-      color: SwatchColors[0],
+      // Azure only, the app's default plan colour (user, 2026-11-23); the tour has no colour choice.
+      color: DefaultTaskColor,
       timeMode: 'specific',
       start,
       end: new Date(start.getTime() + 30 * 60_000),
-      repeat: 'weekdays',
+      // Never by default: a repeating first plan filled a trial user's plan count without them noticing (user, 2026-11-23).
+      repeat: 'none',
       live: true,
     };
   });
@@ -130,6 +127,8 @@ export default function OnboardingScreen() {
       alerts: ['5'],
       icon: draft.icon ?? undefined,
       endTime: draft.timeMode === 'range' ? hhmm(draft.end) : undefined,
+      // A range may end on a later day (2026-11-24); same-day leaves it unset.
+      endDate: draft.timeMode === 'range' && toISO(draft.end) > date ? toISO(draft.end) : undefined,
       allDay: draft.timeMode === 'allDay',
     };
     if (draft.repeat === 'none') {
@@ -141,7 +140,8 @@ export default function OnboardingScreen() {
     const until = toISO(defaultRepeatUntil(draft.start, type, custom));
     const repeatId = uid();
     const occ = generateRepeatOccurrences(date, time, type, until, custom);
-    if (occ.length) store.addPlans(occ.map((o) => ({ ...common, date: o.date, time: o.time, repeatType: type, repeatId })));
+    const span = common.endDate ? daysBetween(date, common.endDate) : 0;
+    if (occ.length) store.addPlans(occ.map((o) => ({ ...common, date: o.date, time: o.time, endDate: span ? addDaysISO(o.date, span) : undefined, repeatType: type, repeatId })));
   }
 
   /** Skip (user, 2026-11-23): straight to Home as a guest. A plan they already added (step 3+) is kept. */
@@ -193,6 +193,22 @@ export default function OnboardingScreen() {
 }
 
 // ─── Shared chrome ──────────────────────────────────────────────────────────────────────────
+
+/** The app's own date label in a compact-picker-style button: the system one shows the phone's calendar ("2569 BE"). */
+function DateButton({ label, onPress }: { label: string; onPress: () => void }) {
+  const theme = useTheme();
+  const dark = useEffectiveScheme() === 'dark';
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      style={({ pressed }) => [styles.dateChip, { backgroundColor: dark ? 'rgba(118,118,128,0.24)' : 'rgba(118,118,128,0.12)', opacity: pressed ? 0.6 : 1 }]}>
+      <Text numberOfLines={1} style={[styles.rowValue, { color: theme.text }]}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
 
 function SkipButton({ onPress }: { onPress: () => void }) {
   const theme = useTheme();
@@ -359,14 +375,18 @@ function NewPlan({
   const plans = usePlannerStore((s) => s.plans);
   const usage = useMemo(() => iconUsage(plans), [plans]);
   const router = useRouter();
-  const premium = useIsPremium();
+  // Onboarding is only ever seen by new Free users, so icons always follow the Free rules: the
+  // row shows the 3 free icons, the rest are locked (user, 2026-11-24).
+  const premium = false;
   const suggested = useMemo(() => suggestIcons(draft.name, usage, draft.icon ?? undefined, 6, premium), [draft.name, usage, draft.icon, premium]);
   const openPaywall = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
     router.push('/paywall');
   };
   const [iconSheet, setIconSheet] = useState(false);
-  const [dateSheet, setDateSheet] = useState(false);
+  const [dateSheet, setDateSheet] = useState<'start' | 'end' | null>(null);
+  // Times open a spinner sheet like the real New Plan, so the chip can use the app font (2026-11-24).
+  const [timeSheet, setTimeSheet] = useState<'start' | 'end' | null>(null);
   const [nameError, setNameError] = useState(false);
   const pickerLocale = lang() === 'th' ? 'th-TH' : uses12hTime() ? 'en-US' : 'en-GB';
   const set = (patch: Partial<OnbDraft>) => setDraft((d) => ({ ...d, ...patch }));
@@ -474,39 +494,35 @@ function NewPlan({
               );
             })}
           </View>
-          <View style={[styles.when, { borderColor: theme.divider }]}>
-            <View style={styles.whenCol}>
-              <Text style={[styles.caps, { color: ink45, letterSpacing: track(0.8) }]}>{t('onb.date')}</Text>
-              {/* The app's own date label: the system compact picker shows the phone's calendar (e.g. "2569 BE"). */}
-              <Pressable
-                onPress={() => setDateSheet(true)}
-                accessibilityRole="button"
-                style={({ pressed }) => [styles.dateChip, { backgroundColor: scheme === 'dark' ? 'rgba(118,118,128,0.24)' : 'rgba(118,118,128,0.12)', opacity: pressed ? 0.6 : 1 }]}>
-                <Text numberOfLines={1} style={{ color: theme.text, fontSize: 17 }}>
-                  {fmtDate(draft.start, { weekday: 'short' })}
-                </Text>
-              </Pressable>
+          {draft.timeMode === 'range' ? (
+            // Starts / Ends rows like iOS Calendar, matching the real New Plan (user mock-up, 2026-11-24).
+            <>
+              {(['start', 'end'] as const).map((which) => {
+                const at = which === 'start' ? draft.start : draft.end;
+                return (
+                  <View key={which} style={[styles.rangeRow, { borderColor: theme.divider }]}>
+                    <Text style={[styles.caps, { color: ink45, letterSpacing: track(0.8), flex: 1, marginBottom: 0 }]}>{t(which === 'start' ? 'plan.starts' : 'plan.ends')}</Text>
+                    <DateButton label={fmtDate(at, { year: true })} onPress={() => setDateSheet(which)} />
+                    <View style={[styles.chipDivider, { backgroundColor: theme.divider }]} />
+                    <DateButton label={fmtTime(hhmm(at))} onPress={() => setTimeSheet(which)} />
+                  </View>
+                );
+              })}
+            </>
+          ) : (
+            <View style={[styles.when, { borderColor: theme.divider }]}>
+              <View style={styles.whenCol}>
+                <Text style={[styles.caps, { color: ink45, letterSpacing: track(0.8) }]}>{t('onb.date')}</Text>
+                <DateButton label={fmtDate(draft.start, { weekday: 'short' })} onPress={() => setDateSheet('start')} />
+              </View>
+              {draft.timeMode !== 'allDay' && (
+                <View style={[styles.whenCol, { borderLeftWidth: StyleSheet.hairlineWidth, borderColor: theme.divider, paddingLeft: 14 }]}>
+                  <Text style={[styles.caps, { color: ink45, letterSpacing: track(0.8) }]}>{t('onb.time')}</Text>
+                  <DateButton label={fmtTime(hhmm(draft.start))} onPress={() => setTimeSheet('start')} />
+                </View>
+              )}
             </View>
-            {draft.timeMode !== 'allDay' && (
-              <View style={[styles.whenCol, { borderLeftWidth: StyleSheet.hairlineWidth, borderColor: theme.divider, paddingLeft: 14 }]}>
-                <Text style={[styles.caps, { color: ink45, letterSpacing: track(0.8) }]}>{draft.timeMode === 'range' ? t('onb.start_') : t('onb.time')}</Text>
-                <DateTimePicker value={draft.start} mode="time" display="compact" {...picker} onChange={(_, d) => d && changeStart(d)} />
-              </View>
-            )}
-            {draft.timeMode === 'range' && (
-              <View style={[styles.whenCol, { borderLeftWidth: StyleSheet.hairlineWidth, borderColor: theme.divider, paddingLeft: 14 }]}>
-                <Text style={[styles.caps, { color: ink45, letterSpacing: track(0.8) }]}>{t('onb.end')}</Text>
-                <DateTimePicker
-                  value={draft.end}
-                  mode="time"
-                  display="compact"
-                  minimumDate={draft.start}
-                  {...picker}
-                  onChange={(_, d) => d && set({ end: new Date(draft.start.getFullYear(), draft.start.getMonth(), draft.start.getDate(), d.getHours(), d.getMinutes()) })}
-                />
-              </View>
-            )}
-          </View>
+          )}
           <Pressable onPress={pickRepeat} accessibilityRole="button" style={[styles.repeatRow, { borderColor: theme.divider }]}>
             <Text style={[styles.rowTitle, { color: theme.text }]}>{t('plan.repeat')}</Text>
             <View style={styles.repeatValue}>
@@ -531,18 +547,53 @@ function NewPlan({
         <PrimaryButton label={t('onb.addPlan')} onPress={add} icon={<PlusIcon size={18} color={theme.onAccent} strokeWidth={2.6} />} />
       </Footer>
       <KeyboardDoneBar id="onboarding-keyboard" />
-      <BottomSheet visible={dateSheet} onClose={() => setDateSheet(false)} title={t('plan.dateTitle')}>
+      <BottomSheet
+        visible={timeSheet !== null}
+        onClose={() => setTimeSheet(null)}
+        title={t(timeSheet === 'end' ? 'plan.endTimeTitle' : draft.timeMode === 'range' ? 'plan.startTimeTitle' : 'plan.timeTitle')}
+        right={
+          <Pressable onPress={() => setTimeSheet(null)} hitSlop={8}>
+            <Text style={[styles.rowTitle, { color: theme.accentStrong }]}>{t('common.done')}</Text>
+          </Pressable>
+        }>
+        {timeSheet !== null && (
+          <View style={{ alignItems: 'center', paddingBottom: 8 }}>
+            <DateTimePicker
+              value={timeSheet === 'end' ? draft.end : draft.start}
+              mode="time"
+              display="spinner"
+              {...picker}
+              textColor={theme.text}
+              // Same day: the end can't be before the start.
+              minimumDate={timeSheet === 'end' && toISO(draft.end) === toISO(draft.start) ? draft.start : undefined}
+              onChange={(_, d) => {
+                if (!d) return;
+                if (timeSheet === 'end') set({ end: new Date(draft.end.getFullYear(), draft.end.getMonth(), draft.end.getDate(), d.getHours(), d.getMinutes()) });
+                else changeStart(new Date(draft.start.getFullYear(), draft.start.getMonth(), draft.start.getDate(), d.getHours(), d.getMinutes()));
+              }}
+            />
+          </View>
+        )}
+      </BottomSheet>
+      <BottomSheet visible={dateSheet !== null} onClose={() => setDateSheet(null)} title={t(dateSheet === 'end' ? 'plan.endDateTitle' : 'plan.dateTitle')}>
         <View style={{ alignItems: 'center', paddingBottom: 8 }}>
           <DateTimePicker
-            value={draft.start}
+            value={dateSheet === 'end' ? draft.end : draft.start}
             mode="date"
             display="inline"
-            minimumDate={new Date()}
+            // The end can be the start day itself, or any later day.
+            minimumDate={dateSheet === 'end' ? new Date(draft.start.getFullYear(), draft.start.getMonth(), draft.start.getDate()) : new Date()}
             {...picker}
             onChange={(_, d) => {
               if (!d) return;
-              changeStart(new Date(d.getFullYear(), d.getMonth(), d.getDate(), draft.start.getHours(), draft.start.getMinutes()));
-              setDateSheet(false);
+              if (dateSheet === 'end') {
+                const end = new Date(d.getFullYear(), d.getMonth(), d.getDate(), draft.end.getHours(), draft.end.getMinutes());
+                // Same day with an end time before the start: keep at least 15 minutes.
+                set({ end: end.getTime() > draft.start.getTime() ? end : new Date(draft.start.getTime() + 15 * 60_000) });
+              } else {
+                changeStart(new Date(d.getFullYear(), d.getMonth(), d.getDate(), draft.start.getHours(), draft.start.getMinutes()));
+              }
+              setDateSheet(null);
             }}
           />
         </View>
@@ -552,7 +603,7 @@ function NewPlan({
         onClose={() => setIconSheet(false)}
         selected={draft.icon}
         color={draft.color}
-        colors={SwatchColors}
+        colors={[DefaultTaskColor]}
         onColor={(color) => set({ color })}
         recent={recentIcons(usage)}
         onPick={(icon) => {
@@ -689,6 +740,8 @@ const styles = StyleSheet.create({
   modeText: { ...f(13, 700) },
   when: { flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, paddingHorizontal: 14, paddingVertical: 12, gap: 14 },
   whenCol: { gap: 6, alignItems: 'flex-start' },
+  chipDivider: { width: 1, alignSelf: 'stretch', marginVertical: -9 },
+  rangeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, borderTopWidth: StyleSheet.hairlineWidth, paddingHorizontal: 14, paddingVertical: 9 },
   dateChip: { height: 34, borderRadius: 8, paddingHorizontal: 11, justifyContent: 'center' },
   repeatRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTopWidth: StyleSheet.hairlineWidth, paddingHorizontal: 14, minHeight: 50 },
   repeatValue: { flexDirection: 'row', alignItems: 'center', gap: 4 },

@@ -212,7 +212,9 @@ export function IconPickerSheet({ visible, onClose, selected, color, colors, onC
           </View>
 
           {/* The app has 8 plan colours (the mock shows 5), so the dots get their own line under the label. */}
-          <Text style={[font(13, 500), styles.colourLabel, { color: ink55 }]}>{t('icon.colourFollows')}</Text>
+          {/* One colour (onboarding) means no choice, so the row is left out. */}
+          {colors.length > 1 && <Text style={[font(13, 500), styles.colourLabel, { color: ink55 }]}>{t('icon.colourFollows')}</Text>}
+          {colors.length > 1 && (
           <View style={styles.colourRow}>
             {colors.map((c) => (
               <Pressable key={c} onPress={() => onColor(c)} hitSlop={4} accessibilityLabel={c} accessibilityState={{ selected: c === color }}>
@@ -221,6 +223,7 @@ export function IconPickerSheet({ visible, onClose, selected, color, colors, onC
               </Pressable>
             ))}
           </View>
+          )}
 
           <ScrollView style={styles.scroll} contentContainerStyle={{ paddingBottom: insets.bottom + 24 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
             {q ? (

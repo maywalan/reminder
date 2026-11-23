@@ -15,7 +15,7 @@ import { resolvePlanIcon } from '@/utils/plan-icons';
 import { toISO } from '@/utils/dates';
 import { confirmPlanDelete } from '@/utils/repeat-scope';
 import { t } from '@/i18n';
-import { fmtTime, fmtTimeRange } from '@/i18n/format';
+import { fmtPlanRange } from '@/i18n/format';
 
 interface Props {
   plan: Plan;
@@ -57,7 +57,7 @@ export function TodoItem({
   const todayISO = toISO(new Date());
   const missed = !plan.completed && !selectMode && (plan.date < todayISO || (plan.date === todayISO && isMissedToday(plan, Date.now())));
   const metaColor = missed ? theme.danger : theme.textSecondary;
-  const when = plan.allDay ? t('common.allDay') : plan.endTime ? fmtTimeRange(plan.time, plan.endTime) : fmtTime(plan.time);
+  const when = plan.allDay ? t('common.allDay') : fmtPlanRange(plan);
 
   const checkBg = selectMode ? (selected ? theme.accentFill : theme.surface) : plan.completed ? theme.accentFill : theme.surface;
   const checkBorder = selectMode ? (selected ? theme.accentFill : theme.textFaint) : plan.completed ? theme.accentFill : theme.textFaint;

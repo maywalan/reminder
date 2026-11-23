@@ -1,6 +1,6 @@
 import type { Plan } from '@/store/types';
 import { EARLIER_WINDOW_DAYS, findPastPlans, planDateTime, planEndDateTime } from '@/utils/countdown';
-import { pad, timeToMinutes, toISO } from '@/utils/dates';
+import { daysBetween, pad, timeToMinutes, toISO } from '@/utils/dates';
 import { t } from '@/i18n';
 
 /**
@@ -112,7 +112,8 @@ export function buildHomeFeed(plans: Plan[], nowMs: number, matches: (p: Plan) =
 
 export function durationMinutes(plan: Plan): number {
   if (!plan.endTime) return 0;
-  return Math.max(0, timeToMinutes(plan.endTime) - timeToMinutes(plan.time));
+  const days = plan.endDate ? daysBetween(plan.date, plan.endDate) : 0;
+  return Math.max(0, days * 1440 + timeToMinutes(plan.endTime) - timeToMinutes(plan.time));
 }
 
 /** "45 min", "1 hr", "2 hr", "1 hr 30 min". */

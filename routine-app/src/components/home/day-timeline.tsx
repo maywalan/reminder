@@ -11,7 +11,7 @@ import { Text } from '@/components/text';
 import { Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { t as tr } from '@/i18n';
-import { fmtDate, fmtTime, fmtTimeRange, monthShort, weekdayShort, lang, uses12hTime } from '@/i18n/format';
+import { fmtDate, fmtPlanRange, planEndDayLabel, fmtTime, monthShort, weekdayShort, lang, uses12hTime } from '@/i18n/format';
 import type { Plan } from '@/store/types';
 import { usePlannerStore } from '@/store/use-planner-store';
 import { planDateTime } from '@/utils/countdown';
@@ -211,14 +211,14 @@ function TimelineRow({
     }
   } else if (missed) {
     subColor = k.rose;
-    sub = <Text style={[t.cardSub, { color: k.rose }]}>{tr('home.missedAt', { time: plan.endTime ? fmtTimeRange(plan.time, plan.endTime) : fmtTime(plan.time) })}</Text>;
+    sub = <Text style={[t.cardSub, { color: k.rose }]}>{tr('home.missedAt', { time: plan.endTime ? fmtPlanRange(plan) : fmtTime(plan.time) })}</Text>;
   } else if (countdown) {
     subColor = k.azure;
     sub = <Text style={[t.cardSubStrong, { color: k.azure }]}>{countdown}</Text>;
   } else if (plan.allDay) {
     sub = tr('home.allDay');
   } else {
-    sub = plan.endTime ? fmtTimeRange(plan.time, plan.endTime) : fmtTime(plan.time);
+    sub = plan.endTime ? fmtPlanRange(plan) : fmtTime(plan.time);
   }
 
   function toggle() {
@@ -240,7 +240,8 @@ function TimelineRow({
         </Text>
         {range && (
           <Text numberOfLines={1} style={[styles.timeRight, t.endTime, { color: k.ink50 }]}>
-            {fmtTime(plan.endTime!, { compact: true })}
+            {/* The rail is narrow: a range ending on a later day shows just that day; the card has the time. */}
+            {plan.endDate && plan.endDate !== plan.date ? planEndDayLabel(plan) : fmtTime(plan.endTime!, { compact: true })}
           </Text>
         )}
       </View>

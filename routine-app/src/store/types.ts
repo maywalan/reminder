@@ -12,6 +12,7 @@ export interface Plan {
   date: string; // YYYY-MM-DD
   time: string; // HH:MM (24h) — start time (kept as a nominal value when allDay is true)
   endTime?: string; // HH:MM (24h) — set when the plan uses a time range instead of one specific time
+  endDate?: string; // YYYY-MM-DD — a range ending on a later day (2026-11-24); unset = ends on `date`
   allDay?: boolean;
   alerts: string[]; // minutes-before offsets (e.g. '0','5','15'), up to 5, no duplicates
   notes?: string;

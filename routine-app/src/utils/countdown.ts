@@ -29,7 +29,7 @@ export function secondsUntilPlan(plan: Plan): number {
 
 export function planEndDateTime(plan: Plan): Date | null {
   if (!plan.endTime) return null;
-  return zonedWallTimeToDate(plan.date, plan.endTime, plan.timezone ?? deviceTimeZone());
+  return zonedWallTimeToDate(plan.endDate ?? plan.date, plan.endTime, plan.timezone ?? deviceTimeZone());
 }
 
 /** Seconds until `plan.endTime`, or null for a plan with no end time set. */

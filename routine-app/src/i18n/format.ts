@@ -110,6 +110,27 @@ export function fmtTimeRange(start: string, end: string): string {
   return `${a.slice(0, -3)} – ${b}`;
 }
 
+/**
+ * A plan's time range. One that ends on a later day names that day before the end time
+ * ("20:00 – Sun 18:00", 2026-11-24); a plan only shows on its start day, so the end day matters.
+ */
+export function fmtPlanRange(plan: { date: string; time: string; endTime?: string; endDate?: string }): string {
+  if (!plan.endTime) return fmtTime(plan.time);
+  if (!plan.endDate || plan.endDate === plan.date) return fmtTimeRange(plan.time, plan.endTime);
+  return `${fmtTime(plan.time)} – ${planEndDayLabel(plan)} ${fmtTime(plan.endTime)}`;
+}
+
+/** The end day of a multi-day range: its weekday within a week of the start ("Sun"), else its date ("Dec 2"). */
+export function planEndDayLabel(plan: { date: string; endDate?: string }): string {
+  if (!plan.endDate) return '';
+  const [y, mo, d] = plan.endDate.split('-').map(Number);
+  const end = new Date(y, mo - 1, d);
+  const [sy, sm, sd] = plan.date.split('-').map(Number);
+  const days = Math.round((end.getTime() - new Date(sy, sm - 1, sd).getTime()) / 86_400_000);
+  if (lang() === 'th') return days < 7 ? WEEKDAY_SHORT.th[end.getDay()] : `${end.getDate()} ${MONTH_SHORT.th[end.getMonth()]}`;
+  return days < 7 ? WEEKDAY_SHORT.en[end.getDay()] : `${MONTH_SHORT.en[end.getMonth()]} ${end.getDate()}`;
+}
+
 /** True when times show as 12-hour ("2:30 PM"); layouts size time columns from it. */
 export function uses12hTime(): boolean {
   return lang() !== 'th' && !phone24h;

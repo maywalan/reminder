@@ -3,7 +3,7 @@ import type { Plan } from '@/store/types';
 import { t } from '@/i18n';
 import { displayYear, fmtDate, lang, monthLong, monthShortList } from '@/i18n/format';
 import { fromISO, toISO } from '@/utils/dates';
-import { isMissedToday } from '@/utils/home-feed';
+import { isMissed } from '@/utils/home-feed';
 
 /** Progress screen data logic — every stat here is derived from real plans in the store. */
 
@@ -172,7 +172,7 @@ export function weekEndISO(startISO: string): string {
 /** Unfinished plans in `dates` that are already missed by Home's rule. */
 export function missedCount(dates: string[], todayISO: string, plans: Plan[], nowMs: number): number {
   const set = new Set(dates);
-  return plans.filter((p) => set.has(p.date) && !p.completed && (p.date < todayISO || (p.date === todayISO && isMissedToday(p, nowMs)))).length;
+  return plans.filter((p) => set.has(p.date) && isMissed(p, todayISO, nowMs)).length;
 }
 
 /** The hour (0–23) when most finished, timed plans in `dates` were set; null when there are none. */

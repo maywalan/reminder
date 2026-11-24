@@ -9,7 +9,7 @@ import { Fonts, Radii, RowMinHeight, Typography } from '@/constants/theme';
 import type { Group, Plan } from '@/store/types';
 import { useEffectiveScheme, useTheme } from '@/hooks/use-theme';
 import { usePlannerStore } from '@/store/use-planner-store';
-import { isMissedToday } from '@/utils/home-feed';
+import { isMissed } from '@/utils/home-feed';
 import { useIsPremium } from '@/hooks/use-is-premium';
 import { resolvePlanIcon } from '@/utils/plan-icons';
 import { toISO } from '@/utils/dates';
@@ -18,6 +18,8 @@ import { t } from '@/i18n';
 import { fmtPlanRange } from '@/i18n/format';
 
 interface Props {
+  /** The day being listed; a multi-day range names its start day on its later days. */
+  dayISO?: string;
   plan: Plan;
   group: Group | undefined;
   selectMode: boolean;
@@ -36,6 +38,7 @@ interface Props {
 
 export function TodoItem({
   plan,
+  dayISO,
   group,
   selectMode,
   selected,
@@ -55,9 +58,9 @@ export function TodoItem({
   const icon = resolvePlanIcon(plan, premium);
   // Missed by Home's rule (a day already gone, or past its end plus grace today), shown in rose.
   const todayISO = toISO(new Date());
-  const missed = !plan.completed && !selectMode && (plan.date < todayISO || (plan.date === todayISO && isMissedToday(plan, Date.now())));
+  const missed = !selectMode && isMissed(plan, todayISO, Date.now());
   const metaColor = missed ? theme.danger : theme.textSecondary;
-  const when = plan.allDay ? t('common.allDay') : fmtPlanRange(plan);
+  const when = plan.allDay ? t('common.allDay') : fmtPlanRange(plan, dayISO);
 
   const checkBg = selectMode ? (selected ? theme.accentFill : theme.surface) : plan.completed ? theme.accentFill : theme.surface;
   const checkBorder = selectMode ? (selected ? theme.accentFill : theme.textFaint) : plan.completed ? theme.accentFill : theme.textFaint;

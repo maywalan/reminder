@@ -22,6 +22,7 @@ import { usePlannerStore } from '@/store/use-planner-store';
 import { t } from '@/i18n';
 import { fmtDate } from '@/i18n/format';
 import { toISO } from '@/utils/dates';
+import { compareOnDay, plansOnDay } from '@/utils/home-feed';
 import { colorForPlan } from '@/utils/plans';
 
 type CalView = 'week' | 'month' | 'year';
@@ -170,7 +171,8 @@ export default function CalendarScreen() {
     setCalYear(d.getFullYear());
     setSelectedDate(iso);
     if (linkParams.plan) {
-      router.push({ pathname: '/add-plan', params: { id: linkParams.plan } });
+      // A multi-day plan's later days come from the widget as "<id>~<day>" (widget-sync.ts).
+      router.push({ pathname: '/add-plan', params: { id: linkParams.plan.split('~')[0] } });
     } else if (linkParams.add) {
       router.push({ pathname: '/add-plan', params: { date: iso } });
     } else {
@@ -181,7 +183,8 @@ export default function CalendarScreen() {
 
   const getColor = (p: (typeof plans)[number]) => colorForPlan(p, groups, theme.accent);
 
-  const selectedDayPlans = plans.filter((p) => p.date === selectedDate).sort((a, b) => a.time.localeCompare(b.time));
+  // A multi-day range is listed on every day it covers (2026-11-25).
+  const selectedDayPlans = plansOnDay(plans, selectedDate).sort(compareOnDay(selectedDate));
   const selectedDateLabel = fmtDate(new Date(selectedDate + 'T00:00:00'), { weekday: 'long', month: 'long' });
 
   return (
@@ -243,6 +246,7 @@ export default function CalendarScreen() {
                     <TodoItem
                       key={p.id}
                       plan={p}
+                      dayISO={selectedDate}
                       group={groups.find((g) => g.id === p.groupId)}
                       selectMode={false}
                       selected={false}

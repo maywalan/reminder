@@ -16,7 +16,7 @@ import type { Plan } from '@/store/types';
 import { usePlannerStore } from '@/store/use-planner-store';
 import { planDateTime } from '@/utils/countdown';
 import { confirmPlanDelete } from '@/utils/repeat-scope';
-import { fromISO, toISO } from '@/utils/dates';
+import { fromISO, planDayRole, toISO } from '@/utils/dates';
 import { dueProgress, formatDuration, formatLiveCountdown, formatStartsIn, isMissedToday, liveProgress, type HomeFeed } from '@/utils/home-feed';
 import { useIsPremium } from '@/hooks/use-is-premium';
 import { resolvePlanIcon } from '@/utils/plan-icons';
@@ -129,6 +129,7 @@ function livePct(plan: Plan, nowMs: number): `${number}%` {
 
 function TimelineRow({
   plan,
+  dayISO,
   live,
   missed,
   nowMs,
@@ -139,6 +140,8 @@ function TimelineRow({
   h,
 }: {
   plan: Plan;
+  /** The day the timeline shows; a multi-day range reads differently on its later days. */
+  dayISO: string;
   live: boolean;
   /** Left undone past its live window today: stated plainly, like Earlier's missed rows. */
   missed: boolean;
@@ -162,6 +165,7 @@ function TimelineRow({
   const icon = resolvePlanIcon(plan, premium);
   const p = planPalette(color, k.dark);
   const range = !!plan.endTime && !plan.allDay;
+  const role = planDayRole(plan, dayISO);
 
   // Checking a task off fades the card down and draws a strike through the title left to right;
   // unchecking undoes both quicker (user, 2026-10-22).
@@ -211,14 +215,14 @@ function TimelineRow({
     }
   } else if (missed) {
     subColor = k.rose;
-    sub = <Text style={[t.cardSub, { color: k.rose }]}>{tr('home.missedAt', { time: plan.endTime ? fmtPlanRange(plan) : fmtTime(plan.time) })}</Text>;
+    sub = <Text style={[t.cardSub, { color: k.rose }]}>{tr('home.missedAt', { time: plan.endTime ? fmtPlanRange(plan, dayISO) : fmtTime(plan.time) })}</Text>;
   } else if (countdown) {
     subColor = k.azure;
     sub = <Text style={[t.cardSubStrong, { color: k.azure }]}>{countdown}</Text>;
   } else if (plan.allDay) {
     sub = tr('home.allDay');
   } else {
-    sub = plan.endTime ? fmtPlanRange(plan) : fmtTime(plan.time);
+    sub = plan.endTime ? fmtPlanRange(plan, dayISO) : fmtTime(plan.time);
   }
 
   function toggle() {
@@ -235,13 +239,15 @@ function TimelineRow({
   const body = (
     <View style={styles.row}>
       <View style={[styles.timeCol, { width: timeCol.width }, (range || live) && styles.timeColRange]}>
-        <Text numberOfLines={1} style={[styles.timeRight, plan.allDay ? t.endTime : t.railTime, { color: plan.allDay ? k.ink50 : k.ink }]}>
-          {plan.allDay ? tr('home.allDay') : fmtTime(plan.time, { compact: true })}
+        {/* A multi-day range on a later day: the middle days read "All day", the last day its end
+            time; the card spells out the whole range (2026-11-25). */}
+        <Text numberOfLines={1} style={[styles.timeRight, plan.allDay || role === 'middle' ? t.endTime : t.railTime, { color: plan.allDay || role === 'middle' ? k.ink50 : k.ink }]}>
+          {plan.allDay || role === 'middle' ? tr('home.allDay') : fmtTime(role === 'end' ? plan.endTime! : plan.time, { compact: true })}
         </Text>
-        {range && (
+        {range && role !== 'middle' && (
           <Text numberOfLines={1} style={[styles.timeRight, t.endTime, { color: k.ink50 }]}>
             {/* The rail is narrow: a range ending on a later day shows just that day; the card has the time. */}
-            {plan.endDate && plan.endDate !== plan.date ? planEndDayLabel(plan) : fmtTime(plan.endTime!, { compact: true })}
+            {role === 'start' ? planEndDayLabel(plan) : role === 'end' ? tr('home.endsRail') : fmtTime(plan.endTime!, { compact: true })}
           </Text>
         )}
       </View>
@@ -441,6 +447,7 @@ export function DayTimeline({ feed, nowMs, emptyText, countdownPlanId, onReorder
           renderItem={({ item, drag, isActive }) => (
             <TimelineRow
               plan={item}
+              dayISO={dayISO}
               live={live?.id === item.id}
               missed={isToday && isMissedToday(item, nowMs)}
               nowMs={nowMs}

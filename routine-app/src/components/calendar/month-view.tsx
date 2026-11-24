@@ -13,7 +13,7 @@ import { t } from '@/i18n';
 import { displayYear, monthLong, weekdayLetterList } from '@/i18n/format';
 import { buildMonthGrid } from '@/utils/calendar';
 import { fromISO } from '@/utils/dates';
-import { isMissedToday } from '@/utils/home-feed';
+import { compareOnDay, isMissed, isMissedToday, plansOnDay } from '@/utils/home-feed';
 
 interface Props {
   year: number;
@@ -161,12 +161,13 @@ export function MonthView({ year, month, todayISO, selectedDate, plans, colorFor
                   }
                   const isToday = cell.date === todayISO;
                   const isSelected = cell.date === selectedDate;
-                  const dayPlans = plans.filter((p) => p.date === cell.date).sort((a, b) => a.time.localeCompare(b.time));
+                  // A multi-day range counts and dots on every day it covers (2026-11-25).
+                  const dayPlans = plansOnDay(plans, cell.date).sort(compareOnDay(cell.date));
                   // Counts are for work still ahead; a past day's unfinished plans are missed, marked in rose
                   // like Home, so history doesn't shout "7 to do" (critique, 2026-10-29).
                   const isPast = cell.date < todayISO;
                   const ahead = isPast ? [] : dayPlans.filter((p) => !p.completed && !(isToday && isMissedToday(p, nowMs)));
-                  const hasMissed = dayPlans.some((p) => !p.completed && (isPast || (isToday && isMissedToday(p, nowMs))));
+                  const hasMissed = dayPlans.some((p) => isMissed(p, todayISO, nowMs));
                   const holidayName = holidayByDate[cell.date];
 
                   return (

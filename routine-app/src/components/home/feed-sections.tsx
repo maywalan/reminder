@@ -14,7 +14,7 @@ import { useIsPremium } from '@/hooks/use-is-premium';
 import { resolvePlanIcon } from '@/utils/plan-icons';
 import { fromISO, toISO } from '@/utils/dates';
 import { t as tr } from '@/i18n';
-import { fmtTime, weekdayShort } from '@/i18n/format';
+import { fmtPlanDayTime, fmtTime, weekdayShort } from '@/i18n/format';
 
 /**
  * The Upcoming and Earlier sections of Home's feed sheet (design_handoff_tickle_home_timeline),
@@ -244,7 +244,7 @@ export function UpcomingBlock({ days, groups, ...s }: SelectProps & { days: Upco
               summary={
                 <>
                   <Text style={[t.upTitle, { color: k.ink }]}>{first.name}</Text>
-                  <Text style={[t.upTitle, { color: k.ink45 }]}>{` · ${first.allDay ? tr('home.allDay') : fmtTime(first.time)}`}</Text>
+                  <Text style={[t.upTitle, { color: k.ink45 }]}>{` · ${fmtPlanDayTime(first, d.dateISO)}`}</Text>
                 </>
               }
               openSummary={<Text style={[t.upTitle, { color: k.ink }]}>{tr('home.taskCount', { count: d.plans.length })}</Text>}
@@ -283,7 +283,7 @@ export function UpcomingBlock({ days, groups, ...s }: SelectProps & { days: Upco
                       )}
                     </View>
                     <View style={[styles.timeChip, { backgroundColor: k.azureTint }]}>
-                      <Text style={[t.timeChip, { color: k.azureDark }]}>{p.allDay ? tr('home.allDay') : fmtTime(p.time)}</Text>
+                      <Text style={[t.timeChip, { color: k.azureDark }]}>{fmtPlanDayTime(p, d.dateISO)}</Text>
                     </View>
                   </Pressable>
                 );

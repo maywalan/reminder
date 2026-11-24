@@ -7,7 +7,7 @@ import { t } from '@/i18n';
 import type { Plan, Settings } from '@/store/types';
 import { usePlannerStore } from '@/store/use-planner-store';
 import { planDateTime, planEndDateTime } from '@/utils/countdown';
-import { fromISO, toISO } from '@/utils/dates';
+import { fromISO, planCoversDate, toISO } from '@/utils/dates';
 
 Notifications.setNotificationHandler({
   handleNotification: async (n) => {
@@ -288,7 +288,8 @@ export async function refreshDailyRecap(
 
   const targetISO = toISO(target);
   const isToday = targetISO === toISO(now);
-  const dayPlans = plans.filter((p) => p.date === targetISO && !p.completed);
+  // Includes a multi-day range still running that day (2026-11-25).
+  const dayPlans = plans.filter((p) => planCoversDate(p, targetISO) && !p.completed);
 
   await Notifications.scheduleNotificationAsync({
     identifier: RECAP_IDENTIFIER,

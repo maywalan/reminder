@@ -112,12 +112,37 @@ export function fmtTimeRange(start: string, end: string): string {
 
 /**
  * A plan's time range. One that ends on a later day names that day before the end time
- * ("20:00 – Sun 18:00", 2026-11-24); a plan only shows on its start day, so the end day matters.
+ * ("20:00 – Sun 18:00", 2026-11-24). Shown on one of its later days (`dayISO`), the start names its
+ * day too ("Fri 20:00 – Sun 18:00"), since the plan began before the day being looked at.
  */
-export function fmtPlanRange(plan: { date: string; time: string; endTime?: string; endDate?: string }): string {
+export function fmtPlanRange(plan: { date: string; time: string; endTime?: string; endDate?: string }, dayISO?: string): string {
   if (!plan.endTime) return fmtTime(plan.time);
   if (!plan.endDate || plan.endDate === plan.date) return fmtTimeRange(plan.time, plan.endTime);
-  return `${fmtTime(plan.time)} – ${planEndDayLabel(plan)} ${fmtTime(plan.endTime)}`;
+  const start = dayISO && dayISO > plan.date ? `${dayLabel(plan.date, plan.endDate)} ${fmtTime(plan.time)}` : fmtTime(plan.time);
+  return `${start} – ${planEndDayLabel(plan)} ${fmtTime(plan.endTime)}`;
+}
+
+/** A day as a weekday when within a week of `ref`, else as a short date. */
+function dayLabel(iso: string, ref: string): string {
+  const [y, mo, d] = iso.split('-').map(Number);
+  const day = new Date(y, mo - 1, d);
+  const [ry, rm, rd] = ref.split('-').map(Number);
+  const days = Math.abs(Math.round((new Date(ry, rm - 1, rd).getTime() - day.getTime()) / 86_400_000));
+  if (lang() === 'th') return days < 7 ? WEEKDAY_SHORT.th[day.getDay()] : `${day.getDate()} ${MONTH_SHORT.th[day.getMonth()]}`;
+  return days < 7 ? WEEKDAY_SHORT.en[day.getDay()] : `${MONTH_SHORT.en[day.getMonth()]} ${day.getDate()}`;
+}
+
+/**
+ * The short time a list shows for a plan on one day, like iOS Calendar for multi-day events: its
+ * start time on the start day, "All day" in between, "Ends 18:00" on the last day (2026-11-25).
+ */
+export function fmtPlanDayTime(plan: { date: string; time: string; endTime?: string; endDate?: string; allDay?: boolean }, dayISO: string): string {
+  const th = lang() === 'th';
+  if (plan.allDay) return th ? 'ทั้งวัน' : 'All day';
+  const role = !plan.endDate || plan.endDate <= plan.date ? 'single' : dayISO <= plan.date ? 'start' : dayISO >= plan.endDate ? 'end' : 'middle';
+  if (role === 'middle') return th ? 'ทั้งวัน' : 'All day';
+  if (role === 'end' && plan.endTime) return th ? `จบ ${fmtTime(plan.endTime)}` : `Ends ${fmtTime(plan.endTime)}`;
+  return fmtTime(plan.time);
 }
 
 /** The end day of a multi-day range: its weekday within a week of the start ("Sun"), else its date ("Dec 2"). */

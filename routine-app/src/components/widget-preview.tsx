@@ -5,8 +5,9 @@ import { Text } from '@/components/text';
 import { Colors } from '@/constants/theme';
 import { usePlannerStore } from '@/store/use-planner-store';
 import { t } from '@/i18n';
-import { fmtDate, fmtTime } from '@/i18n/format';
+import { fmtDate, fmtPlanDayTime } from '@/i18n/format';
 import { toISO } from '@/utils/dates';
+import { compareOnDay, plansOnDay } from '@/utils/home-feed';
 
 interface WidgetPreviewProps {
   variant: 'mini' | 'compact';
@@ -20,7 +21,7 @@ export function WidgetPreview({ variant }: WidgetPreviewProps) {
   const todayISO = toISO(now);
   const dateLabel = fmtDate(now, { weekday: 'short' });
 
-  const todays = plans.filter((p) => p.date === todayISO && !p.completed).sort((a, b) => a.time.localeCompare(b.time));
+  const todays = plansOnDay(plans, todayISO).filter((p) => !p.completed).sort(compareOnDay(todayISO));
 
   const limit = variant === 'mini' ? 3 : 5;
   const items = todays.slice(0, limit);
@@ -49,7 +50,7 @@ export function WidgetPreview({ variant }: WidgetPreviewProps) {
             <Text style={styles.taskName} numberOfLines={1}>
               {p.name}
             </Text>
-            {variant === 'compact' && <Text style={styles.taskTime}>{p.allDay ? t('common.allDay') : fmtTime(p.time)}</Text>}
+            {variant === 'compact' && <Text style={styles.taskTime}>{fmtPlanDayTime(p, todayISO)}</Text>}
           </View>
         ))
       )}

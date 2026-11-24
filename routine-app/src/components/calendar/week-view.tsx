@@ -7,10 +7,10 @@ import { Radii, Typography } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { Plan } from '@/store/types';
 import { t } from '@/i18n';
-import { fmtDate, fmtTime, weekdayShort } from '@/i18n/format';
+import { fmtDate, fmtPlanDayTime, weekdayShort } from '@/i18n/format';
 import { buildWeekDates } from '@/utils/calendar';
 import { fromISO } from '@/utils/dates';
-import { isMissedToday } from '@/utils/home-feed';
+import { compareOnDay, isMissedToday, plansOnDay } from '@/utils/home-feed';
 
 interface Props {
   selectedDate: string;
@@ -61,7 +61,7 @@ export function WeekView({ selectedDate, todayISO, plans, colorForPlan, onShiftW
       {weekDates.map((iso) => {
         const d = fromISO(iso);
         const isToday = iso === todayISO;
-        const dayPlans = plans.filter((p) => p.date === iso).sort((a, b) => a.time.localeCompare(b.time));
+        const dayPlans = plansOnDay(plans, iso).sort(compareOnDay(iso));
 
         return (
           <View
@@ -103,7 +103,7 @@ export function WeekView({ selectedDate, todayISO, plans, colorForPlan, onShiftW
                     onPress={() => onPressPlan(p.id)}
                     style={[styles.planRow, { borderColor: theme.cardBorder, borderLeftColor: colorForPlan(p) }, p.completed && styles.planDone]}>
                     <Text style={[styles.planTime, { color: missed ? theme.danger : p.completed ? theme.textTertiary : theme.accentStrong }]}>
-                      {p.allDay ? t('common.allDay') : fmtTime(p.time)}
+                      {fmtPlanDayTime(p, iso)}
                     </Text>
                     <Text
                       numberOfLines={1}

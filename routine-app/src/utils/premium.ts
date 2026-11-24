@@ -30,7 +30,7 @@ export function isPeriodLocked(period: Period, state: SubscriptionState): boolea
 
 /** An occurrence still to do: not done, not on a past day, and not already missed today. */
 function isOpen(plan: Plan, todayISO: string, nowMs: number): boolean {
-  if (plan.completed || plan.date < todayISO) return false;
+  if (plan.completed || (plan.endDate ?? plan.date) < todayISO) return false;
   if (plan.date > todayISO) return true;
   return !isMissedToday(plan, nowMs);
 }

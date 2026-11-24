@@ -31,6 +31,8 @@ export default {
   'home.inMin': { en: 'in {min} min', th: 'อีก {min} นาที' },
   'home.allDayLower': { en: 'all day', th: 'ทั้งวัน' },
   'home.allDay': { en: 'All day', th: 'ทั้งวัน' },
+  // Under the end time on the last day of a multi-day range (2026-11-25).
+  'home.endsRail': { en: 'ends', th: 'จบ' },
   'home.alerts': { en: '{count} alerts', th: 'แจ้งเตือน {count} ครั้ง' },
   'home.alerts_one': { en: '1 alert', th: 'แจ้งเตือน 1 ครั้ง' },
   'home.reminder': { en: 'reminder', th: 'เตือนความจำ' },
@@ -86,4 +88,7 @@ export default {
   'duration.min': { en: '{m} min', th: '{m} นาที' },
   'duration.hr': { en: '{h} hr', th: '{h} ชม.' },
   'duration.hrMin': { en: '{h} hr {m} min', th: '{h} ชม. {m} นาที' },
+  // A multi-day range's live countdown, a day or more out (2026-11-25).
+  'duration.dayHr': { en: '{d} d {h} hr', th: '{d} วัน {h} ชม.' },
+  'duration.day': { en: '{d} d', th: '{d} วัน' },
 } satisfies Record<string, Entry>;

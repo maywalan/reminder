@@ -26,7 +26,7 @@ import { useEffectiveScheme } from '@/hooks/use-theme';
 import { useToast } from '@/hooks/use-toast';
 import { usePlannerStore } from '@/store/use-planner-store';
 import type { Plan } from '@/store/types';
-import { toISO } from '@/utils/dates';
+import { planDays, toISO } from '@/utils/dates';
 import { planDateTime, planEndDateTime } from '@/utils/countdown';
 import { buildHomeFeed, findLiveActivityPlan, START_TICK_MS } from '@/utils/home-feed';
 
@@ -204,8 +204,9 @@ export default function HomeScreen() {
 
   const feed = useMemo(() => buildHomeFeed(plans, nowMs, matches, selectedISO), [plans, nowMs, matches, selectedISO]);
   // Dots mark days with something still to do, so a busy past week doesn't dot every day (critique, 2026-10-28).
+  // A multi-day time range dots every day it covers (2026-11-25).
   const markedISOs = useMemo(
-    () => new Set(plans.filter((p) => matches(p) && !p.completed && p.date >= todayISO).map((p) => p.date)),
+    () => new Set(plans.filter((p) => matches(p) && !p.completed && (p.endDate ?? p.date) >= todayISO).flatMap((p) => planDays(p).filter((d) => d >= todayISO))),
     [plans, matches, todayISO]
   );
   const liveActivity = useMemo(

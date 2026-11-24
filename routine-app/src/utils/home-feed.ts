@@ -1,6 +1,6 @@
 import type { Plan } from '@/store/types';
 import { EARLIER_WINDOW_DAYS, findPastPlans, planDateTime, planEndDateTime } from '@/utils/countdown';
-import { daysBetween, pad, timeToMinutes, toISO } from '@/utils/dates';
+import { daysBetween, pad, planCoversDate, planDayRole, timeToMinutes, toISO } from '@/utils/dates';
 import { t } from '@/i18n';
 
 /**
@@ -39,6 +39,36 @@ export function isMissedToday(plan: Plan, nowMs: number) {
   return end ? end.getTime() <= nowMs - RANGE_GRACE_MS : planDateTime(plan).getTime() <= nowMs - POINT_DUE_MS;
 }
 
+/** A range that ends on a later day than it starts (2026-11-24). */
+export const isMultiDay = (plan: Plan) => !!plan.endDate && plan.endDate > plan.date;
+
+/**
+ * Not done and over: a past day's plan, or today's past its live window. A multi-day range is only
+ * missed once its real end has passed, so it isn't "missed" on the days it is still running (2026-11-25).
+ */
+export function isMissed(plan: Plan, todayISO: string, nowMs: number) {
+  if (plan.completed) return false;
+  if (isMultiDay(plan)) return isMissedToday(plan, nowMs);
+  return plan.date < todayISO || (plan.date === todayISO && isMissedToday(plan, nowMs));
+}
+
+/** Plans that fall on `iso`: those starting that day plus multi-day ranges still running (2026-11-25). */
+export function plansOnDay(plans: Plan[], iso: string): Plan[] {
+  return plans.filter((p) => planCoversDate(p, iso));
+}
+
+/**
+ * Order within one day: all-day plans and the whole middle days of a multi-day range first, then
+ * a range's last day (it has been running since midnight), then by start time.
+ */
+export function compareOnDay(iso: string) {
+  const rank = (p: Plan) => {
+    const role = planDayRole(p, iso);
+    return p.allDay || role === 'middle' ? 0 : role === 'end' ? 1 : 2;
+  };
+  return (a: Plan, b: Plan) => rank(a) - rank(b) || (rank(a) === 2 ? a.time.localeCompare(b.time) : 0);
+}
+
 export interface UpcomingDay {
   dateISO: string;
   plans: Plan[];
@@ -65,6 +95,7 @@ export interface HomeFeed {
 /** Whether a plan is over: its end (or, for a point reminder, its time) has passed. All-day plans end with their day. */
 export function planIsPast(plan: Plan, nowMs: number): boolean {
   const todayISO = toISO(new Date(nowMs));
+  if (isMultiDay(plan)) return (planEndDateTime(plan) ?? planDateTime(plan)).getTime() <= nowMs;
   if (plan.date !== todayISO) return plan.date < todayISO;
   if (plan.allDay) return false;
   return (planEndDateTime(plan) ?? planDateTime(plan)).getTime() <= nowMs;
@@ -74,8 +105,8 @@ export function buildHomeFeed(plans: Plan[], nowMs: number, matches: (p: Plan) =
   const todayISO = toISO(new Date(nowMs));
   const selected = dayISO ?? todayISO;
   const isToday = selected === todayISO;
-  const todayPlans = plans.filter((p) => p.date === todayISO && matches(p));
-  const dayPlans = isToday ? todayPlans : plans.filter((p) => p.date === selected && matches(p));
+  const todayPlans = plansOnDay(plans, todayISO).filter(matches);
+  const dayPlans = isToday ? todayPlans : plansOnDay(plans, selected).filter(matches);
 
   const live = isToday
     ? (dayPlans
@@ -83,27 +114,32 @@ export function buildHomeFeed(plans: Plan[], nowMs: number, matches: (p: Plan) =
         .sort((a, b) => a.time.localeCompare(b.time))[0] ?? null)
     : null;
 
-  const hasManualOrder = dayPlans.some((p) => p.order !== undefined);
+  const hasManualOrder = dayPlans.some((p) => p.order !== undefined && p.date === selected);
+  const byTime = compareOnDay(selected);
   const day = [...dayPlans].sort((a, b) => {
-    // All-day tasks have no real time, so they sit at the top of the timeline.
+    // All-day tasks have no real time, so they sit at the top of the timeline; so do a multi-day
+    // range's later days. A manual order only applies to plans starting that day.
+    const contA = a.date !== selected;
+    if (contA !== (b.date !== selected)) return contA ? -1 : 1;
+    if (contA || !hasManualOrder) return byTime(a, b);
     if (!!a.allDay !== !!b.allDay) return a.allDay ? -1 : 1;
-    return hasManualOrder ? (a.order ?? Infinity) - (b.order ?? Infinity) : a.time.localeCompare(b.time);
+    return (a.order ?? Infinity) - (b.order ?? Infinity);
   });
 
   const undone = day.filter((p) => !p.completed);
   const leftCount = selected < todayISO ? 0 : undone.filter((p) => !isToday || !isMissedToday(p, nowMs)).length;
   const missedCount = selected < todayISO ? undone.length : 0;
 
-  const older = findPastPlans(plans, EARLIER_WINDOW_DAYS).filter((p) => p.date < todayISO && matches(p));
+  const older = findPastPlans(plans, EARLIER_WINDOW_DAYS).filter((p) => (p.endDate ?? p.date) < todayISO && matches(p));
 
   const upcoming: UpcomingDay[] = [];
   for (let i = 1; i <= upcomingDays; i++) {
     const d = new Date(nowMs);
     d.setDate(d.getDate() + i);
     const iso = toISO(d);
-    const items = plans
-      .filter((p) => p.date === iso && !p.completed && matches(p))
-      .sort((a, b) => (!!a.allDay !== !!b.allDay ? (a.allDay ? -1 : 1) : a.time.localeCompare(b.time)));
+    const items = plansOnDay(plans, iso)
+      .filter((p) => !p.completed && matches(p))
+      .sort(compareOnDay(iso));
     if (items.length) upcoming.push({ dateISO: iso, plans: items });
   }
 
@@ -156,6 +192,13 @@ export function formatStartsIn(untilMs: number): string {
 export function formatLiveCountdown(secondsLeft: number): string {
   const over = secondsLeft < 0;
   const s = Math.abs(secondsLeft);
+  // A day or more (a multi-day range) reads in days and hours; a ticking "102:23:51" can't be read.
+  if (s >= 86_400) {
+    const d = Math.floor(s / 86_400);
+    const dh = Math.floor((s % 86_400) / 3600);
+    const text = dh ? t('duration.dayHr', { d, h: dh }) : t('duration.day', { d });
+    return over ? `+${text}` : text;
+  }
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
   const clock = h > 0 ? `${h}:${pad(m)}:${pad(s % 60)}` : `${m}:${pad(s % 60)}`;
@@ -172,10 +215,11 @@ export function formatLiveCountdown(secondsLeft: number): string {
  */
 export function findLiveActivityPlan(plans: Plan[], nowMs: number): { plan: Plan; phase: 'upcoming' | 'live' } | null {
   const todayISO = toISO(new Date(nowMs));
-  const candidates = plans.filter((p) => p.live && !p.completed && !p.allDay && p.date >= todayISO);
+  const candidates = plans.filter((p) => p.live && !p.completed && !p.allDay && (p.endDate ?? p.date) >= todayISO);
 
+  // A multi-day range is running on each of its days until its real end (2026-11-25).
   const running = candidates
-    .filter((p) => p.date === todayISO && p.endTime && hasStarted(p, nowMs) && !isMissedToday(p, nowMs))
+    .filter((p) => planCoversDate(p, todayISO) && p.endTime && hasStarted(p, nowMs) && !isMissedToday(p, nowMs))
     .sort((a, b) => a.time.localeCompare(b.time))[0];
   if (running) return { plan: running, phase: 'live' };
 

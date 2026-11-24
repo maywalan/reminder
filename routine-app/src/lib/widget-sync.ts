@@ -5,9 +5,9 @@ import { setWidgetData } from '../../modules/tickle-live-activity';
 import { Colors } from '@/constants/theme';
 import type { Group, Plan } from '@/store/types';
 import { lang, t } from '@/i18n';
-import { fmtTime } from '@/i18n/format';
+import { fmtPlanDayTime } from '@/i18n/format';
 import { deviceRegion, getHolidays } from '@/lib/holidays';
-import { toISO } from '@/utils/dates';
+import { planDays, planDayRole, toISO } from '@/utils/dates';
 import { colorForPlan } from '@/utils/plans';
 
 const APP_GROUP = 'group.com.maywalan.tickle';
@@ -32,18 +32,30 @@ export async function syncWidgetData(plans: Plan[], groups: Group[]) {
   const fromISO = toISO(from);
   const toISODate = toISO(to);
 
+  // A multi-day range goes in once per day it covers, so the widget lists and dots it on each of
+  // them without a widget change (2026-11-25): the middle days as all-day, the last day at its end
+  // time ("Ends 18:00"). Later days get their own id ("<id>~<day>") so SwiftUI lists never see a
+  // duplicate; the Calendar tab strips the suffix when a widget tap opens the plan.
   const widgetPlans = plans
-    .filter((p) => p.date >= fromISO && p.date <= toISODate)
-    .map((p) => ({
-      id: p.id,
-      title: p.name,
-      date: p.date,
-      time: p.time,
-      allDay: !!p.allDay,
-      color: colorForPlan(p, groups, Colors.light.accent),
-      done: p.completed,
-      timeLabel: p.allDay ? t('common.allDay') : fmtTime(p.time),
-    }));
+    .filter((p) => (p.endDate ?? p.date) >= fromISO && p.date <= toISODate)
+    .flatMap((p) =>
+      planDays(p)
+        .filter((iso) => iso >= fromISO && iso <= toISODate)
+        .map((iso) => {
+          const role = planDayRole(p, iso);
+          const allDay = !!p.allDay || role === 'middle';
+          return {
+            id: iso === p.date ? p.id : `${p.id}~${iso}`,
+            title: p.name,
+            date: iso,
+            time: role === 'end' && p.endTime ? p.endTime : p.time,
+            allDay,
+            color: colorForPlan(p, groups, Colors.light.accent),
+            done: p.completed,
+            timeLabel: allDay ? t('common.allDay') : fmtPlanDayTime(p, iso),
+          };
+        })
+    );
 
   // Holidays come from the same cached API as the Calendar screen; a miss just leaves dates uncoloured.
   const holidays: Record<string, string> = {};
